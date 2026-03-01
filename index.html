@@ -36,9 +36,18 @@
         <button {...props} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #e5e7eb", background: props.disabled ? "#f3f4f6" : "#f9fafb", cursor: props.disabled ? "not-allowed" : "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", ...style }}>{children}</button>
       );
       const Input = (props) => (<input {...props} style={{ padding: "8px 10px", border: "1px solid #e5e7eb", borderRadius: 8, outline: "none", width: "100%" }} />);
-      const Textarea = (props) => (
-        <textarea {...props} style={{ padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 8, outline: "none", width: "100%", minHeight: 84, fontFamily: props.readOnly ? "ui-monospace, SFMono-Regular, Menlo, monospace" : undefined }} />
-      );
+      const Textarea = ({ onChange, onKeyDown, ...props }) => {
+        const handleKeyDown = (e) => {
+          if (e.key === "Tab" && !e.shiftKey && props.placeholder && !e.target.value) {
+            e.preventDefault();
+            onChange && onChange({ target: { value: props.placeholder } });
+          }
+          onKeyDown && onKeyDown(e);
+        };
+        return (
+          <textarea {...props} onChange={onChange} onKeyDown={handleKeyDown} style={{ padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 8, outline: "none", width: "100%", minHeight: 84, fontFamily: props.readOnly ? "ui-monospace, SFMono-Regular, Menlo, monospace" : undefined }} />
+        );
+      };
       const Label = ({ children, htmlFor, style }) => (<label htmlFor={htmlFor} style={{ color: "#374151", fontSize: 13, ...style }}>{children}</label>);
 
       async function safeCopy(text) {
