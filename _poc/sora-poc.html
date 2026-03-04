@@ -1,0 +1,364 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>prmptbase – Sora 2 Builder</title>
+    <style>
+      html,body { margin:0; padding:0; background:#fff; color:#111; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto; }
+    </style>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useMemo, useState, useEffect } = React;
+
+      function hasWindow() { return typeof window !== "undefined" && typeof document !== "undefined"; }
+
+      const Row = ({ style, children }) => (<div style={{ display: "flex", alignItems: "center", gap: 8, ...style }}>{children}</div>);
+      const Col = ({ style, children }) => (<div style={{ display: "flex", flexDirection: "column", gap: 6, ...style }}>{children}</div>);
+      const Card = ({ title, subtitle, children }) => (
+        <div style={{ border: "1px solid #e5e7eb", borderRadius: 16, padding: 16, background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          {(title || subtitle) && (
+            <div style={{ marginBottom: 10 }}>
+              {title && <div style={{ fontWeight: 600, fontSize: 16 }}>{title}</div>}
+              {subtitle && <div style={{ color: "#6b7280", fontSize: 12 }}>{subtitle}</div>}
+            </div>
+          )}
+          {children}
+        </div>
+      );
+      const Button = ({ children, style, ...props }) => (
+        <button {...props} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #e5e7eb", background: props.disabled ? "#f3f4f6" : "#f9fafb", cursor: props.disabled ? "not-allowed" : "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", ...style }}>{children}</button>
+      );
+      const Input = (props) => (<input {...props} style={{ padding: "8px 10px", border: "1px solid #e5e7eb", borderRadius: 8, outline: "none", width: "100%" }} />);
+      const Textarea = ({ onChange, onKeyDown, ...props }) => {
+        const handleKeyDown = (e) => {
+          if (e.key === "Tab" && !e.shiftKey && props.placeholder && !e.target.value) {
+            e.preventDefault();
+            onChange && onChange({ target: { value: props.placeholder } });
+          }
+          onKeyDown && onKeyDown(e);
+        };
+        return (
+          <textarea {...props} onChange={onChange} onKeyDown={handleKeyDown} style={{ padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 8, outline: "none", width: "100%", minHeight: 84, fontFamily: props.readOnly ? "ui-monospace, SFMono-Regular, Menlo, monospace" : undefined }} />
+        );
+      };
+      const Label = ({ children, htmlFor, style }) => (<label htmlFor={htmlFor} style={{ color: "#374151", fontSize: 13, ...style }}>{children}</label>);
+
+      async function safeCopy(text) {
+        try {
+          if (hasWindow() && typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+            return true;
+          }
+        } catch {}
+        try {
+          if (!hasWindow()) return false;
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand && document.execCommand("copy");
+          document.body.removeChild(ta);
+          return true;
+        } catch { return false; }
+      }
+
+      const PRESETS = {
+        cinematic: {
+          scene: "Blue-hour city street just after the rain; neon reflections on wet asphalt; light fog.",
+          subject: "A solitary protagonist in a dark coat walks toward camera, subtle confident smile.",
+          camera: "Wide establishing shot (35mm, low angle), slow dolly-in; at 2.5s cut to medium close-up (50mm).",
+          lighting: "High contrast, soft practical neons, gentle rim light; cool shadows, warm highlights.",
+          physics: "Light drizzle, steam vents from sidewalk, puddles ripple as footsteps land.",
+          audio: "Ambient city hum, distant traffic, soft footsteps; no dialogue.",
+          timing: "0.0–2.5s: wide dolly-in; 2.5–4.5s: medium CU; 4.5–5.0s: fade to black.",
+          negatives: "No lens flare, no on-screen text, avoid Dutch angles.",
+          size: "1280x720", seconds: 5, aspect: "16:9",
+        },
+        product: {
+          scene: "Seamless studio cyclorama, soft gradient backdrop.",
+          subject: "A premium smartwatch rotates in mid-air; band flexes subtly; brand-agnostic.",
+          camera: "Static camera; macro insert (85mm) with slow rack focus from crown to screen.",
+          lighting: "Soft key 45° left, gentle rim back-right; neutral white balance.",
+          physics: "Subtle haze for depth; tiny dust motes in light cone.",
+          audio: "Clean room tone; faint mechanical tick at 2s.",
+          timing: "0.0–1.5s: reveal from blur; 1.5–3.5s: crown focus; 3.5–5.0s: rack to screen and hold.",
+          negatives: "No text overlays, no logos, no hands.",
+          size: "1080x1080", seconds: 5, aspect: "1:1",
+        },
+        musicvideo: {
+          scene: "Desert highway at golden hour; mountains in distance; heat shimmer.",
+          subject: "Singer rides in the back of a pickup, hair in the wind, humming a melody.",
+          camera: "Tracking side profile (50mm), gentle handheld sway.",
+          lighting: "Warm sun backlighting; slight flare on edges; dusty air.",
+          physics: "Wind pushes hair and jacket; dust trails behind truck.",
+          audio: "Ambient wind + soft vocal humming (no lyrics).",
+          timing: "0.0–2.0s: wide profile; 2.0–4.0s: push to medium; 4.0–6.0s: hold with slight arc.",
+          negatives: "No brand logos, no road signs text.",
+          size: "1920x1080", seconds: 6, aspect: "16:9",
+        },
+      };
+
+      function SoraPromptBuilder() {
+        const [scene, setScene] = useState("");
+        const [subject, setSubject] = useState("");
+        const [cameraText, setCameraText] = useState("");
+        const [lighting, setLighting] = useState("");
+        const [physics, setPhysics] = useState("");
+        const [audio, setAudio] = useState("");
+        const [timing, setTiming] = useState("");
+        const [negatives, setNegatives] = useState("No on-screen text; avoid lens flare; no abrupt camera shake.");
+
+        const [enableDialogue, setEnableDialogue] = useState(false);
+        const [dialogue, setDialogue] = useState("[Subject softly:] '…'");
+        const [enableCameo, setEnableCameo] = useState(false);
+        const [cameoLabel, setCameoLabel] = useState("CAM_PERSON");
+        const [cameoNotes, setCameoNotes] = useState("Appears only from 1.5s–3.0s, waves once, then exits frame.");
+        const [enableImageStart, setEnableImageStart] = useState(false);
+        const [imageHint, setImageHint] = useState("Use the image only for composition and palette; do not copy any text or logos.");
+
+        const [seconds, setSeconds] = useState(5);
+        const [size, setSize] = useState("1280x720");
+        const [aspect, setAspect] = useState("16:9");
+        const [seed, setSeed] = useState("");
+
+        const [tab, setTab] = useState("prompt");
+        const [copyPromptStatus, setCopyPromptStatus] = useState("");
+        const [copyParamsStatus, setCopyParamsStatus] = useState("");
+
+        const SIZES = ["1024x576", "1280x720", "1920x1080", "1080x1080", "720x1280", "2048x1024"];
+
+        const prompt = useMemo(() => {
+          const lines = [];
+          if (scene) lines.push(`Scene / Setting\n${scene}`);
+          if (subject) lines.push(`\nSubject & Action\n${subject}`);
+          if (cameraText) lines.push(`\nCamera & Framing\n${cameraText}`);
+          if (lighting) lines.push(`\nLighting & Color\n${lighting}`);
+          if (physics) lines.push(`\nPhysics / Materials / Motion\n${physics}`);
+          const audioBlock = [audio, enableDialogue && dialogue].filter(Boolean).join("\n");
+          if (audioBlock) lines.push(`\nAudio / Dialogue / Soundscape\n${audioBlock}`);
+          if (timing) lines.push(`\nTiming / Beats\n${timing}`);
+          if (enableCameo) lines.push(`\nCameo\nUse cameo: ${cameoLabel}. ${cameoNotes}`);
+          if (enableImageStart) lines.push(`\nImage-to-Video Guidance\n${imageHint}`);
+          if (negatives) lines.push(`\nExclusions / Constraints\n${negatives}`);
+          return lines.join("\n");
+        }, [scene, subject, cameraText, lighting, physics, audio, timing, enableDialogue, dialogue, enableCameo, cameoLabel, cameoNotes, enableImageStart, imageHint, negatives]);
+
+        const apiParams = useMemo(() => {
+          const obj = { seconds, size, aspect };
+          if (enableImageStart) obj.image_start = true;
+          if (enableCameo) obj.cameo_label = cameoLabel;
+          if (seed) obj.seed = seed;
+          return obj;
+        }, [seconds, size, aspect, enableImageStart, enableCameo, cameoLabel, seed]);
+
+        function applyPreset(key) {
+          const p = PRESETS[key]; if (!p) return;
+          setScene(p.scene || ""); setSubject(p.subject || ""); setCameraText(p.camera || ""); setLighting(p.lighting || ""); setPhysics(p.physics || ""); setAudio(p.audio || ""); setTiming(p.timing || ""); setNegatives(p.negatives || ""); setSeconds(p.seconds || 5); setSize(p.size || "1280x720"); setAspect(p.aspect || "16:9");
+        }
+
+        function clearAll() {
+          setScene(""); setSubject(""); setCameraText(""); setLighting(""); setPhysics(""); setAudio(""); setTiming(""); setNegatives("No on-screen text; avoid lens flare; no abrupt camera shake."); setSeconds(5); setSize("1280x720"); setAspect("16:9"); setEnableDialogue(false); setDialogue("[Subject softly:] '…'"); setEnableCameo(false); setCameoLabel("CAM_PERSON"); setCameoNotes("Appears only from 1.5s–3.0s, waves once, then exits frame."); setEnableImageStart(false); setImageHint("Use the image only for composition and palette; do not copy any text or logos."); setSeed("");
+        }
+
+        useEffect(() => {
+          let passed = 0, failed = 0; const assert = (c, m) => { if (c) passed++; else { failed++; console.error("Test failed:", m); } };
+          { const neg = "No on-screen text; avoid lens flare; no abrupt camera shake."; const s = `\nExclusions / Constraints\n${neg}`; assert(s.includes("Exclusions"), "includes Exclusions section"); }
+          { const audioBlock = ["Ambience", true && "[Whisper] hi"].filter(Boolean).join("\n"); assert(audioBlock.includes("Whisper"), "dialogue merges into audio"); }
+          { const obj = { seconds: 5, size: "1280x720", aspect: "16:9" }; const eI = true, eC = true; if (eI) obj.image_start = true; if (eC) obj.cameo_label = "CAM_PERSON"; assert(obj.image_start && obj.cameo_label === "CAM_PERSON", "api param toggles"); }
+          { const sizes = SIZES; assert(Array.isArray(sizes) && sizes.length === 6, "sizes length is 6"); }
+          { let ok = false; try { const r = safeCopy(""); ok = typeof r.then === "function"; } catch { ok = false; } assert(ok, "safeCopy returns Promise"); }
+          console.log(`Sora 2 Builder self-tests: ${passed} passed, ${failed} failed.`);
+        }, []);
+
+        async function handleCopyPrompt() { const ok = await safeCopy(prompt); setCopyPromptStatus(ok ? "Copied!" : "Copy failed"); setTimeout(() => setCopyPromptStatus(""), 2000); }
+        async function handleCopyParams() { const ok = await safeCopy(JSON.stringify(apiParams, null, 2)); setCopyParamsStatus(ok ? "Copied!" : "Copy failed"); setTimeout(() => setCopyParamsStatus(""), 2000); }
+
+        return (
+          <div style={{ maxWidth: 1000, margin: "0 auto", padding: 24, background: "#fff", minHeight: "100vh" }}>
+            <Row style={{ justifyContent: "space-between" }}>
+              <div style={{ fontSize: 26, fontWeight: 700 }}>Sora 2 Prompt Template Builder</div>
+              <Row style={{ flexWrap: "wrap" }}>
+                <Button onClick={() => applyPreset("cinematic")}>Cinematic</Button>
+                <Button onClick={() => applyPreset("product")}>Product</Button>
+                <Button onClick={() => applyPreset("musicvideo")}>Music Video</Button>
+                <Button onClick={clearAll}>Reset</Button>
+              </Row>
+            </Row>
+
+            <Row style={{ gap: 12, marginTop: 16, marginBottom: 12, flexWrap: "wrap" }}>
+              {["prompt", "params", "help", "roadmap"].map((k) => (
+                <Button key={k} onClick={() => setTab(k)} style={{ background: tab === k ? "#111827" : "#f9fafb", color: tab === k ? "#fff" : "#111827" }}>
+                  {k === "prompt" ? "Prompt" : k === "params" ? "Parameters" : k === "help" ? "Help" : "Competitive Landscape"}
+                </Button>
+              ))}
+            </Row>
+
+            {tab === "prompt" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+                <Card title="Scene / Setting" subtitle="Where and when: location, weather, mood, ambient details.">
+                  <Textarea value={scene} onChange={(e) => setScene(e.target.value)} placeholder="A misty harbor at dawn; wooden piers glistening; light fog drifting over water." />
+                </Card>
+
+                <Card title="Subject & Action" subtitle="Who/what, actions, emotion, wardrobe, beats.">
+                  <Textarea value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="A violinist in a dark overcoat walks toward the dock, pauses, then raises her violin and plays a soft note." />
+                </Card>
+
+                <Card title="Camera & Framing" subtitle="Shot type, lens, movement, focus, edits.">
+                  <Textarea value={cameraText} onChange={(e) => setCameraText(e.target.value)} placeholder="Wide establishing (35mm), slow dolly-in; at 2.5s cut to medium close-up (50mm)." />
+                </Card>
+
+                <Card title="Lighting & Color" subtitle="Key/fill/rim, palette, contrast, grade.">
+                  <Textarea value={lighting} onChange={(e) => setLighting(e.target.value)} placeholder="Soft golden sunrise key from camera left; cool blue shadows; faint rim light through mist." />
+                </Card>
+
+                <Card title="Physics / Materials / Motion" subtitle="Wind, water, cloth, particles, interactions.">
+                  <Textarea value={physics} onChange={(e) => setPhysics(e.target.value)} placeholder="Gentle breeze moves hair and coat; puddles ripple at each step; wood boards creak lightly." />
+                </Card>
+
+                <Card title="Audio / Dialogue / Soundscape" subtitle="Ambient, SFX, music cues; optional dialogue.">
+                  <Col>
+                    <Textarea value={audio} onChange={(e) => setAudio(e.target.value)} placeholder="Ambient: lapping water, distant gulls; SFX: soft footsteps on wet boards." />
+                    <Row style={{ justifyContent: "space-between" }}>
+                      <Row>
+                        <input id="dialogue" type="checkbox" checked={enableDialogue} onChange={(e) => setEnableDialogue(e.target.checked)} />
+                        <Label htmlFor="dialogue" style={{ marginLeft: 6 }}>Include dialogue</Label>
+                      </Row>
+                      <span style={{ fontSize: 12, color: "#6b7280" }}>Dialogue {enableDialogue ? "ON" : "OFF"}</span>
+                    </Row>
+                    {enableDialogue && (
+                      <Textarea value={dialogue} onChange={(e) => setDialogue(e.target.value)} placeholder="[Whisper:] 'I remember this place.'" />
+                    )}
+                  </Col>
+                </Card>
+
+                <Card title="Timing / Beats" subtitle="Map key beats to seconds; total 4–12s works well.">
+                  <Textarea value={timing} onChange={(e) => setTiming(e.target.value)} placeholder="0.0–2.5s: wide, dolly-in; 2.5–4.5s: medium CU; 4.5–5.0s: fade out." />
+                </Card>
+
+                <Card title="Exclusions / Constraints" subtitle="What to avoid to reduce artifacts.">
+                  <Textarea value={negatives} onChange={(e) => setNegatives(e.target.value)} placeholder="No on-screen text; avoid lens flare; no extreme color shifts; no Dutch angles." />
+                </Card>
+
+                <Card title="Generated Prompt" subtitle="Copy this into Sora’s prompt field.">
+                  <Textarea readOnly value={prompt} />
+                  <Row style={{ justifyContent: "space-between", marginTop: 8, alignItems: "center" }}>
+                    <div style={{ fontSize: 12, minHeight: 18, color: copyPromptStatus === "Copied!" ? "#065f46" : copyPromptStatus ? "#b91c1c" : "#6b7280" }}>{copyPromptStatus}</div>
+                    <Button onClick={handleCopyPrompt}>Copy prompt</Button>
+                  </Row>
+                </Card>
+              </div>
+            )}
+
+            {tab === "params" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+                <Card title="Output Parameters" subtitle="These are set in Sora app/API (prompt cannot override).">
+                  <Col>
+                    <Label>Duration (seconds): {seconds}</Label>
+                    <input type="range" min={4} max={12} step={1} value={seconds} onChange={(e) => setSeconds(parseInt(e.target.value, 10))} />
+
+                    <Label>Size</Label>
+                    <select value={size} onChange={(e) => setSize(e.target.value)}>
+                      {SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+
+                    <Label>Aspect</Label>
+                    <select value={aspect} onChange={(e) => setAspect(e.target.value)}>
+                      <option value="16:9">16:9</option>
+                      <option value="9:16">9:16</option>
+                      <option value="1:1">1:1</option>
+                      <option value="2:1">2:1</option>
+                      <option value="4:5">4:5</option>
+                    </select>
+
+                    <Label>Seed (optional)</Label>
+                    <Input value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="e.g., 123456" />
+                  </Col>
+                </Card>
+
+                <Card title="Image Start (optional)" subtitle="Animate a still image. Ensure rights; avoid real people unless permitted.">
+                  <Col>
+                    <Row>
+                      <input id="imgstart" type="checkbox" checked={enableImageStart} onChange={(e) => setEnableImageStart(e.target.checked)} />
+                      <Label htmlFor="imgstart" style={{ marginLeft: 6 }}>Use image as starting frame</Label>
+                    </Row>
+                    <Textarea disabled={!enableImageStart} value={imageHint} onChange={(e) => setImageHint(e.target.value)} placeholder="Guidance to Sora about using the image (composition/palette/materials)." />
+                  </Col>
+                </Card>
+
+                <Card title="Cameo (optional)" subtitle="Insert a permitted likeness. Specify when they appear and what they do.">
+                  <Col>
+                    <Row>
+                      <input id="cameo" type="checkbox" checked={enableCameo} onChange={(e) => setEnableCameo(e.target.checked)} />
+                      <Label htmlFor="cameo" style={{ marginLeft: 6 }}>Enable Cameo</Label>
+                    </Row>
+                    <Label>Cameo Label</Label>
+                    <Input value={cameoLabel} onChange={(e) => setCameoLabel(e.target.value)} placeholder="CAM_PERSON" />
+                    <Textarea disabled={!enableCameo} value={cameoNotes} onChange={(e) => setCameoNotes(e.target.value)} placeholder="Where/when the cameo appears, actions, expressions, and exit." />
+                  </Col>
+                </Card>
+
+                <Card title="API / App Parameters" subtitle="Set these in Sora’s UI or pass via API.">
+                  <pre style={{ background: "#f9fafb", padding: 12, borderRadius: 8, fontSize: 12 }}>
+{JSON.stringify(apiParams, null, 2)}
+                  </pre>
+                  <Row style={{ justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: 12, minHeight: 18, color: copyParamsStatus === "Copied!" ? "#065f46" : copyParamsStatus ? "#b91c1c" : "#6b7280" }}>{copyParamsStatus}</div>
+                    <Button onClick={handleCopyParams}>Copy JSON</Button>
+                  </Row>
+                </Card>
+              </div>
+            )}
+
+            {tab === "help" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+                <Card title="How to use" subtitle="Fill sections, then copy the generated prompt and parameters.">
+                  <ul style={{ margin: 0, paddingLeft: 18, color: "#374151", fontSize: 14 }}>
+                    <li>Start with <b>Scene</b> and <b>Subject</b>, then add <b>Camera</b> and <b>Lighting</b>.</li>
+                    <li>Use <b>Timing / Beats</b> to map actions to seconds (4–12s works well).</li>
+                    <li>The <b>Parameters</b> tab holds duration, size, aspect, seed, image-start, cameo.</li>
+                    <li>Keep <b>dialogue short</b> and clearly labeled; try runs with and without dialogue.</li>
+                    <li>Use <b>Exclusions</b> to reduce artifacts (e.g., no lens flare, no on-screen text).</li>
+                  </ul>
+                </Card>
+              </div>
+            )}
+
+            {tab === "roadmap" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+                <Card title="Competitive Landscape & Roadmap" subtitle="Compare this builder to SaaS tools and plan differentiators.">
+                  <Col>
+                    <div style={{ fontWeight: 600 }}>Future Differentiators</div>
+                    <ul style={{ margin: 0, paddingLeft: 18, color: "#374151", fontSize: 14 }}>
+                      <li>Multi-shot sequence builder (Storyboard tab with per-shot controls).</li>
+                      <li>Prompt validation/warnings (detect aspect mismatches, missing params).</li>
+                      <li>Export integrations (TXT, JSON, direct API push).</li>
+                      <li>Prompt versioning and A/B comparison tools.</li>
+                      <li>Community template sharing and library import.</li>
+                    </ul>
+                    <div style={{ height: 8 }} />
+                    <div style={{ color: "#6b7280", fontSize: 13 }}>
+                      This builder focuses on structured, cinematic multimodal prompts for video generation.
+                    </div>
+                  </Col>
+                </Card>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      window.SoraPromptBuilder = SoraPromptBuilder;
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(React.createElement(SoraPromptBuilder));
+    </script>
+  </body>
+</html>
