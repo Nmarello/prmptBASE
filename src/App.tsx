@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
+import Pricing from './pages/Pricing'
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/pricing" element={<Pricing />} />
           {/* More routes added as we build */}
         </Routes>
       </AuthProvider>
