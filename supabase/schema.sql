@@ -51,7 +51,7 @@ create table if not exists public.prompt_runs (
 -- 5. Subscriptions (Stripe billing)
 create table if not exists public.subscriptions (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles(id) on delete cascade,
+  user_id uuid not null unique references public.profiles(id) on delete cascade,
   stripe_customer_id text unique,
   stripe_subscription_id text unique,
   tier text not null default 'newbie' check (tier in ('newbie', 'creator', 'studio', 'pro')),
