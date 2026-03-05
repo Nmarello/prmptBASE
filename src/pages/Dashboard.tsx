@@ -18,7 +18,8 @@ export default function Dashboard() {
   const [selectedGenType, setSelectedGenType] = useState<GenType | null>(null)
   const [template, setTemplate] = useState<Template | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [result, setResult] = useState<string | null>(null)
+  const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string } | null>(null)
+  const [generateError, setGenerateError] = useState<string | null>(null)
 
   const [projects, setProjects] = useState<UserProject[]>([])
   const [newProjectName, setNewProjectName] = useState('')
@@ -58,17 +59,42 @@ export default function Dashboard() {
     if (!selectedModel || !selectedGenType || !template) return
     setSubmitting(true)
     setResult(null)
+    setGenerateError(null)
     try {
-      const { data: prompt } = await supabase.from('prompts').insert({
+      // Save prompt record first
+      const { data: promptRecord } = await supabase.from('prompts').insert({
         user_id: user!.id,
         title: `${selectedModel.name} — ${GEN_TYPE_LABELS[selectedGenType]}`,
         content: JSON.stringify(values),
         tags: [selectedModel.slug, selectedGenType],
       }).select().single()
-      console.log('Prompt saved:', prompt?.id)
-      setResult('__placeholder__')
+
+      // Call generate-image edge function
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session!.access_token}`,
+          },
+          body: JSON.stringify({
+            values,
+            model_id: selectedModel.id,
+            prompt_id: promptRecord?.id ?? null,
+            size: values.size ?? '1024x1024',
+            quality: values.quality ?? 'standard',
+          }),
+        }
+      )
+
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+
+      setResult({ url: data.asset.url, prompt: data.prompt, revised_prompt: data.revised_prompt })
     } catch (err) {
-      console.error(err)
+      setGenerateError(err instanceof Error ? err.message : 'Generation failed')
     } finally {
       setSubmitting(false)
     }
@@ -187,29 +213,51 @@ export default function Dashboard() {
                     ← {selectedModel.name}
                   </button>
 
-                  {result === '__placeholder__' ? (
-                    <div className="space-y-6">
-                      <div className="bg-white/3 border border-dashed border-white/15 rounded-2xl aspect-square max-w-md flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="text-3xl mb-3">🎨</div>
-                          <p className="text-slate-400 text-sm font-medium">Prompt saved successfully</p>
-                          <p className="text-slate-600 text-xs mt-1">Generation API coming next session</p>
+                  {result ? (
+                    <div className="space-y-5">
+                      <img
+                        src={result.url}
+                        alt={result.prompt}
+                        className="rounded-2xl w-full max-w-lg border border-white/10"
+                      />
+                      {result.revised_prompt && (
+                        <div className="bg-white/3 border border-white/8 rounded-xl p-4">
+                          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Revised prompt</div>
+                          <p className="text-slate-400 text-sm">{result.revised_prompt}</p>
                         </div>
+                      )}
+                      <div className="flex gap-3">
+                        <a
+                          href={result.url}
+                          download
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium transition-all"
+                        >
+                          Download
+                        </a>
+                        <button
+                          onClick={() => { setResult(null); setGenerateError(null) }}
+                          className="px-5 py-2.5 bg-white/8 hover:bg-white/12 border border-white/10 rounded-xl text-sm font-medium"
+                        >
+                          ← New prompt
+                        </button>
                       </div>
-                      <button
-                        onClick={() => setResult(null)}
-                        className="px-5 py-2.5 bg-white/8 hover:bg-white/12 border border-white/10 rounded-xl text-sm font-medium"
-                      >
-                        ← New prompt
-                      </button>
                     </div>
                   ) : (
-                    <TemplateForm
-                      template={template}
-                      genType={selectedGenType}
-                      onSubmit={handleGenerate}
-                      submitting={submitting}
-                    />
+                    <>
+                      {generateError && (
+                        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+                          {generateError}
+                        </div>
+                      )}
+                      <TemplateForm
+                        template={template}
+                        genType={selectedGenType}
+                        onSubmit={handleGenerate}
+                        submitting={submitting}
+                      />
+                    </>
                   )}
                 </div>
               )}
