@@ -5,15 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const ASPECT_TO_FAL_SIZE: Record<string, string> = {
-  square_hd: 'square_hd',
-  square: 'square',
-  portrait_4_3: 'portrait_4_3',
-  portrait_16_9: 'portrait_16_9',
-  landscape_4_3: 'landscape_4_3',
-  landscape_16_9: 'landscape_16_9',
-}
-
 const FAL_SIZE_DIMS: Record<string, [number, number]> = {
   square_hd: [1024, 1024],
   square: [512, 512],
@@ -23,22 +14,89 @@ const FAL_SIZE_DIMS: Record<string, [number, number]> = {
   landscape_16_9: [1024, 576],
 }
 
-const STYLE_SUFFIX: Record<string, string> = {
-  photorealistic: 'photorealistic photography',
-  cinematic: 'cinematic film still',
-  digital_art: 'digital art',
-  oil_painting: 'oil painting',
-  watercolor: 'watercolor painting',
-  pencil_sketch: 'pencil sketch',
-  '3d_render': '3D render',
-  anime: 'anime style',
+const STYLE_MAP: Record<string, string> = {
+  photorealistic: 'photorealistic photography, hyperrealistic',
+  cinematic: 'cinematic film still, anamorphic lens, movie lighting',
+  digital_art: 'digital art, concept art, highly detailed illustration',
+  oil_painting: 'oil painting, brush strokes, textured canvas',
+  watercolor: 'watercolor painting, soft washes, paper texture',
+  pencil_sketch: 'pencil sketch, graphite drawing, fine linework',
+  '3d_render': '3D render, CGI, octane render, ray tracing',
+  anime: 'anime style, cel shaded, vibrant colors',
 }
 
-function buildFalPrompt(prompt: string, style?: string, negative_prompt?: string): string {
-  const parts = [prompt.trim()]
-  if (style && STYLE_SUFFIX[style]) parts.push(STYLE_SUFFIX[style])
-  else if (style && style.trim()) parts.push(style.trim())
+const LIGHTING_MAP: Record<string, string> = {
+  golden_hour: 'golden hour lighting, warm sunlight, long shadows',
+  blue_hour: 'blue hour, deep blue twilight, cool tones',
+  studio: 'studio lighting, three-point lighting, clean and sharp',
+  neon: 'neon lighting, cyberpunk glow, colorful reflections',
+  dramatic: 'dramatic chiaroscuro lighting, high contrast shadows',
+  soft: 'soft diffused lighting, even illumination, no harsh shadows',
+  backlit: 'backlit, rim light, silhouette, glowing edges',
+  volumetric: 'volumetric light, god rays, atmospheric haze',
+  overcast: 'overcast sky, flat even lighting, muted shadows',
+  night: 'nighttime, dark atmosphere, artificial light sources',
+}
+
+const MOOD_MAP: Record<string, string> = {
+  epic: 'epic, grand scale, awe-inspiring',
+  serene: 'serene, peaceful, tranquil',
+  mysterious: 'mysterious, enigmatic, atmospheric',
+  melancholic: 'melancholic, somber, contemplative',
+  tense: 'tense, ominous, foreboding',
+  whimsical: 'whimsical, playful, fantastical',
+  dark: 'dark, moody, brooding',
+  vibrant: 'vibrant, energetic, lively',
+}
+
+const QUALITY_MAP: Record<string, string> = {
+  highly_detailed: 'highly detailed',
+  '8k': '8K resolution',
+  sharp_focus: 'sharp focus, crisp',
+  professional: 'professional photography',
+  award_winning: 'award winning',
+  intricate: 'intricate details, fine textures',
+}
+
+function buildPrompt(body: Record<string, unknown>): string {
+  const parts: string[] = []
+
+  if (body.prompt) parts.push(String(body.prompt).trim())
+
+  const style = body.style as string | undefined
+  if (style && STYLE_MAP[style]) parts.push(STYLE_MAP[style])
+  else if (style?.trim()) parts.push(style.trim())
+
+  const lighting = body.lighting as string | undefined
+  if (lighting && LIGHTING_MAP[lighting]) parts.push(LIGHTING_MAP[lighting])
+
+  const mood = body.mood as string[] | undefined
+  if (Array.isArray(mood) && mood.length > 0) {
+    parts.push(mood.map((m) => MOOD_MAP[m] ?? m).join(', '))
+  }
+
+  const quality = body.quality as string[] | undefined
+  if (Array.isArray(quality) && quality.length > 0) {
+    parts.push(quality.map((q) => QUALITY_MAP[q] ?? q).join(', '))
+  }
+
   return parts.filter(Boolean).join(', ')
+}
+
+async function storeImage(adminClient: ReturnType<typeof createClient>, tempUrl: string, userId: string | null): Promise<string> {
+  try {
+    const imgRes = await fetch(tempUrl)
+    const imgBlob = await imgRes.arrayBuffer()
+    const fileName = `${userId ?? 'anon'}/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`
+    const { error: uploadErr } = await adminClient.storage
+      .from('assets')
+      .upload(fileName, imgBlob, { contentType: 'image/webp', upsert: false })
+    if (!uploadErr) {
+      const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(fileName)
+      return publicUrl
+    }
+  } catch (_) { /* fall back */ }
+  return tempUrl
 }
 
 Deno.serve(async (req) => {
@@ -48,17 +106,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json()
-    const {
-      user_token,
-      prompt,
-      aspect_ratio,
-      style,
-      negative_prompt,
-      seed,
-      model_id,
-      prompt_id,
-      byok_key,
-    } = body
+    const { user_token, aspect_ratio, seed, steps, num_images, model_id, prompt_id, byok_key } = body
 
     const falKey = byok_key ?? Deno.env.get('FAL_KEY')
     if (!falKey) throw new Error('No fal.ai API key available')
@@ -74,20 +122,22 @@ Deno.serve(async (req) => {
       userId = user?.id ?? null
     }
 
-    const builtPrompt = buildFalPrompt(prompt ?? '', style, negative_prompt)
+    const builtPrompt = buildPrompt(body)
     if (!builtPrompt.trim()) throw new Error('Prompt is empty')
 
-    const falSize = ASPECT_TO_FAL_SIZE[aspect_ratio ?? 'square_hd'] ?? 'square_hd'
-    const [w, h] = FAL_SIZE_DIMS[falSize] ?? [1024, 1024]
+    const falSize = (aspect_ratio && FAL_SIZE_DIMS[aspect_ratio]) ? aspect_ratio : 'square_hd'
+    const [w, h] = FAL_SIZE_DIMS[falSize]
+    const numImages = Math.min(Math.max(Number(num_images) || 1, 1), 4)
+    const numSteps = Math.min(Math.max(Number(steps) || 4, 1), 12)
 
     const falPayload: Record<string, unknown> = {
       prompt: builtPrompt,
       image_size: falSize,
-      num_inference_steps: 4,
-      num_images: 1,
+      num_inference_steps: numSteps,
+      num_images: numImages,
+      enable_safety_checker: true,
     }
-    if (negative_prompt?.trim()) falPayload.negative_prompt = negative_prompt.trim()
-    if (seed != null) falPayload.seed = Number(seed)
+    if (seed != null && seed !== '') falPayload.seed = Number(seed)
 
     const falRes = await fetch('https://fal.run/fal-ai/flux/schnell', {
       method: 'POST',
@@ -104,41 +154,50 @@ Deno.serve(async (req) => {
     }
 
     const falData = await falRes.json()
-    const tempUrl: string = falData.images?.[0]?.url
-    if (!tempUrl) throw new Error(`No image in fal.ai response: ${JSON.stringify(falData)}`)
+    const images: { url: string }[] = falData.images ?? []
+    if (images.length === 0) throw new Error(`No images in fal.ai response: ${JSON.stringify(falData)}`)
 
-    // Download and store permanently
-    let permanentUrl = tempUrl
-    try {
-      const imgRes = await fetch(tempUrl)
-      const imgBlob = await imgRes.arrayBuffer()
-      const fileName = `${userId ?? 'anon'}/${Date.now()}.png`
-      const { error: uploadErr } = await adminClient.storage
-        .from('assets')
-        .upload(fileName, imgBlob, { contentType: 'image/png', upsert: false })
-      if (!uploadErr) {
-        const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(fileName)
-        permanentUrl = publicUrl
-      }
-    } catch (_) { /* fall back to temp URL */ }
+    // Store all images, collect assets
+    const metadata = {
+      prompt: builtPrompt,
+      aspect_ratio: falSize,
+      style: body.style ?? null,
+      lighting: body.lighting ?? null,
+      mood: body.mood ?? null,
+      quality: body.quality ?? null,
+      steps: numSteps,
+      num_images: numImages,
+      seed: falData.seed ?? seed ?? null,
+    }
 
-    const { data: asset, error: assetErr } = await adminClient
-      .from('assets')
-      .insert({
-        user_id: userId,
-        prompt_id: prompt_id ?? null,
-        model_id: model_id ?? null,
-        gen_type: 'txt2img',
-        url: permanentUrl,
-        width: w,
-        height: h,
-        metadata: { prompt: builtPrompt, aspect_ratio: falSize, style: style ?? null, seed: seed ?? null },
+    const insertedAssets = await Promise.all(
+      images.map(async (img) => {
+        const permanentUrl = await storeImage(adminClient, img.url, userId)
+        const { data } = await adminClient.from('assets').insert({
+          user_id: userId,
+          prompt_id: prompt_id ?? null,
+          model_id: model_id ?? null,
+          gen_type: 'txt2img',
+          url: permanentUrl,
+          width: w,
+          height: h,
+          metadata,
+        }).select().single()
+        return data
       })
-      .select()
-      .single()
+    )
+
+    const firstAsset = insertedAssets[0]
+    const firstUrl = firstAsset?.url ?? images[0].url
 
     return new Response(
-      JSON.stringify({ asset: assetErr ? null : asset, image_url: permanentUrl, prompt: builtPrompt }),
+      JSON.stringify({
+        asset: firstAsset,
+        image_url: firstUrl,
+        all_assets: insertedAssets,
+        prompt: builtPrompt,
+        seed: falData.seed ?? null,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err) {
