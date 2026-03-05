@@ -7,9 +7,10 @@ interface Props {
   loading: boolean
   onDelete: (id: string) => void
   onGenerate: () => void
+  onSendToImg2Img: (url: string) => void
 }
 
-export default function AssetGrid({ assets, projects, loading, onDelete, onGenerate }: Props) {
+export default function AssetGrid({ assets, projects, loading, onDelete, onGenerate, onSendToImg2Img }: Props) {
   const [lightbox, setLightbox] = useState<Asset | null>(null)
   const [filter, setFilter] = useState<string>('all')
 
@@ -90,6 +91,7 @@ export default function AssetGrid({ assets, projects, loading, onDelete, onGener
                   projectName={asset.project_id ? projectMap[asset.project_id] : null}
                   onClick={() => setLightbox(asset)}
                   onDelete={onDelete}
+                  onSendToImg2Img={onSendToImg2Img}
                 />
               ))}
             </div>
@@ -104,17 +106,19 @@ export default function AssetGrid({ assets, projects, loading, onDelete, onGener
           projectName={lightbox.project_id ? projectMap[lightbox.project_id] : null}
           onClose={() => setLightbox(null)}
           onDelete={(id) => { onDelete(id); setLightbox(null) }}
+          onSendToImg2Img={onSendToImg2Img}
         />
       )}
     </>
   )
 }
 
-function AssetCard({ asset, projectName, onClick, onDelete }: {
+function AssetCard({ asset, projectName, onClick, onDelete, onSendToImg2Img }: {
   asset: Asset
   projectName: string | null
   onClick: () => void
   onDelete: (id: string) => void
+  onSendToImg2Img: (url: string) => void
 }) {
   const [hover, setHover] = useState(false)
   const prompt = (asset.metadata as Record<string, unknown>)?.prompt as string | undefined
@@ -155,6 +159,14 @@ function AssetCard({ asset, projectName, onClick, onDelete }: {
             ✕
           </button>
         </div>
+        <div className="mb-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); onSendToImg2Img(asset.url) }}
+            className="w-full py-1.5 bg-sky-500/20 hover:bg-sky-500/40 border border-sky-500/40 rounded-lg text-sky-300 text-xs font-medium transition-all"
+          >
+            Send to img2img →
+          </button>
+        </div>
         <div>
           {projectName && (
             <span className="text-[10px] text-sky-400 font-medium uppercase tracking-wider">{projectName}</span>
@@ -169,11 +181,12 @@ function AssetCard({ asset, projectName, onClick, onDelete }: {
   )
 }
 
-function Lightbox({ asset, projectName, onClose, onDelete }: {
+function Lightbox({ asset, projectName, onClose, onDelete, onSendToImg2Img }: {
   asset: Asset
   projectName: string | null
   onClose: () => void
   onDelete: (id: string) => void
+  onSendToImg2Img: (url: string) => void
 }) {
   const prompt = (asset.metadata as Record<string, unknown>)?.prompt as string | undefined
   const revisedPrompt = (asset.metadata as Record<string, unknown>)?.revised_prompt as string | undefined
@@ -221,22 +234,30 @@ function Lightbox({ asset, projectName, onClose, onDelete }: {
             <div className="text-xs text-slate-600">{asset.width} × {asset.height}px</div>
           )}
 
-          <div className="flex gap-2 mt-auto pt-2">
-            <a
-              href={asset.url}
-              download
-              target="_blank"
-              rel="noreferrer"
-              className="flex-1 py-2.5 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium text-center transition-all"
-            >
-              Download
-            </a>
+          <div className="flex flex-col gap-2 mt-auto pt-2">
             <button
-              onClick={() => onDelete(asset.id)}
-              className="px-3 py-2.5 bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 rounded-xl text-sm text-slate-400 hover:text-red-400 transition-all"
+              onClick={() => { onSendToImg2Img(asset.url); onClose() }}
+              className="w-full py-2.5 bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 rounded-xl text-sm font-medium text-sky-300 transition-all"
             >
-              Delete
+              Send to img2img →
             </button>
+            <div className="flex gap-2">
+              <a
+                href={asset.url}
+                download
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 py-2.5 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium text-center transition-all"
+              >
+                Download
+              </a>
+              <button
+                onClick={() => onDelete(asset.id)}
+                className="px-3 py-2.5 bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 rounded-xl text-sm text-slate-400 hover:text-red-400 transition-all"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       </div>

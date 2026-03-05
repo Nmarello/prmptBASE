@@ -7,6 +7,7 @@ interface Props {
   genType: GenType
   onSubmit: (values: Record<string, unknown>) => void
   submitting: boolean
+  initialValues?: Record<string, unknown>
 }
 
 function FieldInput({ field, value, onChange }: {
@@ -139,8 +140,8 @@ function FieldInput({ field, value, onChange }: {
   return null
 }
 
-export default function TemplateForm({ template, genType, onSubmit, submitting }: Props) {
-  const [values, setValues] = useState<Record<string, unknown>>({})
+export default function TemplateForm({ template, genType, onSubmit, submitting, initialValues }: Props) {
+  const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
 
   function set(id: string, val: unknown) {
     setValues((prev) => ({ ...prev, [id]: val }))

@@ -6,6 +6,7 @@ import { GEN_TYPE_LABELS } from '../types'
 import ModelCard from '../components/dashboard/ModelCard'
 import TemplateForm from '../components/dashboard/TemplateForm'
 import AssetGrid from '../components/dashboard/AssetGrid'
+import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
 
 type View = 'models' | 'builder' | 'assets'
 
@@ -25,6 +26,9 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<UserProject[]>([])
   const [assets, setAssets] = useState<Asset[]>([])
   const [assetsLoading, setAssetsLoading] = useState(false)
+
+  const [img2imgPickerUrl, setImg2imgPickerUrl] = useState<string | null>(null)
+  const [img2imgInitialValues, setImg2imgInitialValues] = useState<Record<string, unknown> | undefined>(undefined)
 
   const loadAssets = useCallback(async () => {
     if (!user) return
@@ -54,6 +58,7 @@ export default function Dashboard() {
     setSelectedGenType(null)
     setTemplate(null)
     setResult(null)
+    setImg2imgInitialValues(undefined)
     setView('builder')
   }
 
@@ -136,6 +141,37 @@ export default function Dashboard() {
   async function deleteAsset(id: string) {
     await supabase.from('assets').delete().eq('id', id)
     setAssets((prev) => prev.filter((a) => a.id !== id))
+  }
+
+  async function sendToImg2Img(imageUrl: string) {
+    // Fetch image and convert to base64 data URL
+    const res = await fetch(imageUrl)
+    const blob = await res.blob()
+    const reader = new FileReader()
+    reader.onload = () => {
+      setImg2imgInitialValues({ source_image: reader.result as string })
+      setImg2imgPickerUrl(imageUrl)
+    }
+    reader.readAsDataURL(blob)
+  }
+
+  async function handleImg2ImgPick(model: Model) {
+    setImg2imgPickerUrl(null)
+    // Load the img2img template for this model
+    const { data } = await supabase
+      .from('templates')
+      .select('*')
+      .eq('model_id', model.id)
+      .eq('gen_type', 'img2img')
+      .single()
+    if (data) {
+      setSelectedModel(model)
+      setSelectedGenType('img2img')
+      setTemplate(data as Template)
+      setResult(null)
+      setGenerateError(null)
+      setView('builder')
+    }
   }
 
   return (
@@ -256,7 +292,7 @@ export default function Dashboard() {
                           <p className="text-slate-400 text-sm">{result.revised_prompt}</p>
                         </div>
                       )}
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 flex-wrap">
                         <a
                           href={result.url}
                           download
@@ -266,6 +302,12 @@ export default function Dashboard() {
                         >
                           Download
                         </a>
+                        <button
+                          onClick={() => sendToImg2Img(result.url)}
+                          className="px-5 py-2.5 bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 rounded-xl text-sm font-medium text-sky-300 transition-all"
+                        >
+                          Send to img2img →
+                        </button>
                         <button
                           onClick={() => { setView('assets'); loadAssets() }}
                           className="px-5 py-2.5 bg-white/8 hover:bg-white/12 border border-white/10 rounded-xl text-sm font-medium"
@@ -292,6 +334,7 @@ export default function Dashboard() {
                         genType={selectedGenType}
                         onSubmit={handleGenerate}
                         submitting={submitting}
+                        initialValues={img2imgInitialValues}
                       />
                     </>
                   )}
@@ -309,9 +352,19 @@ export default function Dashboard() {
             loading={assetsLoading}
             onDelete={deleteAsset}
             onGenerate={() => setView('models')}
+            onSendToImg2Img={sendToImg2Img}
           />
         )}
       </div>
+
+      {/* Img2Img model picker */}
+      {img2imgPickerUrl && (
+        <Img2ImgPicker
+          models={models.filter((m) => m.supported_gen_types.includes('img2img'))}
+          onPick={handleImg2ImgPick}
+          onClose={() => setImg2imgPickerUrl(null)}
+        />
+      )}
     </div>
   )
 }
