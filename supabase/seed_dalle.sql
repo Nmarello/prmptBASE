@@ -4,7 +4,7 @@ values (
   'dalle',
   'DALL-E 3',
   'OpenAI',
-  'OpenAI''s most capable image generation model. Excels at following detailed prompts with high accuracy.',
+  'OpenAI''s most capable image model. Always rewrites your prompt internally before generating — your input becomes a creative brief, not a literal instruction. Best for exploratory work where you want the AI to interpret and enhance your idea.',
   array['txt2img'],
   'newbie',
   1
