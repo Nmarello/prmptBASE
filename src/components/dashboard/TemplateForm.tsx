@@ -225,6 +225,36 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
   const [customOptions, setCustomOptions] = useState<Record<string, FieldOption[]>>({})
   const [addingTo, setAddingTo] = useState<string | null>(null)
+  const [assisting, setAssisting] = useState<string | null>(null)
+
+  async function handleAiAssist(fieldId: string) {
+    setAssisting(fieldId)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assist`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            user_token: session?.access_token ?? null,
+            field_id: fieldId,
+            field_label: template.fields.find((f) => f.id === fieldId)?.label ?? fieldId,
+            current_value: values[fieldId] ?? '',
+            form_values: values,
+          }),
+        }
+      )
+      const data = await res.json()
+      if (data.suggestion) set(fieldId, data.suggestion)
+    } finally {
+      setAssisting(null)
+    }
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -274,8 +304,13 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
           </label>
           <div className="flex items-center gap-3">
             {field.ai_assist && (
-              <button type="button" className="text-xs text-sky-500 hover:text-sky-400 flex items-center gap-1">
-                ✨ AI assist
+              <button
+                type="button"
+                onClick={() => handleAiAssist(field.id)}
+                disabled={assisting === field.id}
+                className="text-xs text-sky-500 hover:text-sky-400 disabled:opacity-50 flex items-center gap-1 transition-colors"
+              >
+                {assisting === field.id ? '⏳ Thinking…' : '✨ AI assist'}
               </button>
             )}
             {showAddButton && (
