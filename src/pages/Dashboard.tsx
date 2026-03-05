@@ -70,30 +70,21 @@ export default function Dashboard() {
       }).select().single()
 
       // Call generate-image edge function
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session!.access_token}`,
-          },
-          body: JSON.stringify({
-            values,
-            model_id: selectedModel.id,
-            prompt_id: promptRecord?.id ?? null,
-            size: values.size ?? '1024x1024',
-            quality: values.quality ?? 'standard',
-          }),
-        }
-      )
+      const { data, error: fnError } = await supabase.functions.invoke('generate-image', {
+        body: {
+          values,
+          model_id: selectedModel.id,
+          prompt_id: promptRecord?.id ?? null,
+          size: values.size ?? '1024x1024',
+          quality: values.quality ?? 'standard',
+        },
+      })
 
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
+      if (fnError) throw new Error(fnError.message)
+      if (data?.error) throw new Error(data.error)
 
-      const imageUrl = data.asset?.url ?? data.image_url
-      if (!imageUrl) throw new Error(`No image URL returned. Response: ${JSON.stringify(data)}`)
+      const imageUrl = data?.asset?.url ?? data?.image_url
+      if (!imageUrl) throw new Error(`No image URL. Response: ${JSON.stringify(data)}`)
       setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt })
     } catch (err) {
       setGenerateError(err instanceof Error ? err.message : 'Generation failed')
