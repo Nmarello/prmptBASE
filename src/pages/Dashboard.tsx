@@ -80,7 +80,12 @@ export default function Dashboard() {
         },
       })
 
-      if (fnError || data?.error) throw new Error(data?.error ?? fnError?.message ?? 'Unknown error')
+      if (fnError) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const body = await (fnError as any).context?.json().catch(() => null)
+        throw new Error(body?.error ?? fnError.message)
+      }
+      if (data?.error) throw new Error(data.error)
 
       const imageUrl = data?.asset?.url ?? data?.image_url
       if (!imageUrl) throw new Error(`No image URL. Response: ${JSON.stringify(data)}`)
