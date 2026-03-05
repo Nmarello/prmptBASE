@@ -116,7 +116,7 @@ SELECT
     },
     {
       "id": "num_images",
-      "label": "Images",
+      "label": "# of Images",
       "type": "select",
       "options": [
         {"value": "1", "label": "1 image"},
