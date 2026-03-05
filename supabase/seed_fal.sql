@@ -125,6 +125,39 @@ SELECT
       ]
     },
     {
+      "id": "guidance_scale",
+      "label": "Guidance Scale",
+      "type": "select",
+      "hint": "How closely to follow your prompt. Higher = more literal, lower = more creative",
+      "options": [
+        {"value": "2", "label": "2 — Very Creative"},
+        {"value": "3.5", "label": "3.5 — Default"},
+        {"value": "6", "label": "6 — Balanced"},
+        {"value": "10", "label": "10 — Prompt-Adherent"},
+        {"value": "15", "label": "15 — Very Literal"}
+      ]
+    },
+    {
+      "id": "output_format",
+      "label": "Output Format",
+      "type": "select",
+      "options": [
+        {"value": "jpeg", "label": "JPEG (smaller file)"},
+        {"value": "png", "label": "PNG (lossless)"}
+      ]
+    },
+    {
+      "id": "acceleration",
+      "label": "Acceleration",
+      "type": "select",
+      "hint": "Speed boost — may slightly affect quality",
+      "options": [
+        {"value": "none", "label": "None (default)"},
+        {"value": "regular", "label": "Regular"},
+        {"value": "high", "label": "High"}
+      ]
+    },
+    {
       "id": "seed",
       "label": "Seed",
       "type": "textarea",

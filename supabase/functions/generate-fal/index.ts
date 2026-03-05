@@ -83,14 +83,15 @@ function buildPrompt(body: Record<string, unknown>): string {
   return parts.filter(Boolean).join(', ')
 }
 
-async function storeImage(adminClient: ReturnType<typeof createClient>, tempUrl: string, userId: string | null): Promise<string> {
+async function storeImage(adminClient: ReturnType<typeof createClient>, tempUrl: string, userId: string | null, fmt = 'jpeg'): Promise<string> {
   try {
     const imgRes = await fetch(tempUrl)
     const imgBlob = await imgRes.arrayBuffer()
-    const fileName = `${userId ?? 'anon'}/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`
+    const ext = fmt === 'png' ? 'png' : 'jpg'
+    const fileName = `${userId ?? 'anon'}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     const { error: uploadErr } = await adminClient.storage
       .from('assets')
-      .upload(fileName, imgBlob, { contentType: 'image/webp', upsert: false })
+      .upload(fileName, imgBlob, { contentType: `image/${fmt === 'png' ? 'png' : 'jpeg'}`, upsert: false })
     if (!uploadErr) {
       const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(fileName)
       return publicUrl
@@ -106,7 +107,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json()
-    const { user_token, aspect_ratio, seed, steps, num_images, model_id, prompt_id, byok_key } = body
+    const { user_token, aspect_ratio, seed, steps, num_images, guidance_scale, output_format, acceleration, model_id, prompt_id, byok_key } = body
 
     const falKey = byok_key ?? Deno.env.get('FAL_KEY')
     if (!falKey) throw new Error('No fal.ai API key available')
@@ -130,11 +131,18 @@ Deno.serve(async (req) => {
     const numImages = Math.min(Math.max(Number(num_images) || 1, 1), 4)
     const numSteps = Math.min(Math.max(Number(steps) || 4, 1), 12)
 
+    const fmt = ['jpeg', 'png'].includes(output_format) ? output_format : 'jpeg'
+    const accel = ['none', 'regular', 'high'].includes(acceleration) ? acceleration : 'none'
+    const guidanceVal = guidance_scale != null ? Math.min(Math.max(Number(guidance_scale), 1), 20) : 3.5
+
     const falPayload: Record<string, unknown> = {
       prompt: builtPrompt,
       image_size: falSize,
       num_inference_steps: numSteps,
       num_images: numImages,
+      guidance_scale: guidanceVal,
+      output_format: fmt,
+      acceleration: accel,
       enable_safety_checker: true,
     }
     if (seed != null && seed !== '') falPayload.seed = Number(seed)
@@ -167,12 +175,15 @@ Deno.serve(async (req) => {
       quality: body.quality ?? null,
       steps: numSteps,
       num_images: numImages,
+      guidance_scale: guidanceVal,
+      output_format: fmt,
+      acceleration: accel,
       seed: falData.seed ?? seed ?? null,
     }
 
     const insertedAssets = await Promise.all(
       images.map(async (img) => {
-        const permanentUrl = await storeImage(adminClient, img.url, userId)
+        const permanentUrl = await storeImage(adminClient, img.url, userId, fmt)
         const { data } = await adminClient.from('assets').insert({
           user_id: userId,
           prompt_id: prompt_id ?? null,
