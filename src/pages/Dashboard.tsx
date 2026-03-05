@@ -107,10 +107,14 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#0d1117] text-white flex flex-col">
       {/* Top nav */}
-      <header className="border-b border-white/8 px-6 py-4 flex items-center justify-between flex-shrink-0">
+      <header className="border-b border-white/8 px-6 py-4 flex items-center justify-between flex-shrink-0 relative">
         <div className="flex items-center gap-6">
           <span className="text-xl font-black tracking-tight">
             prmpt<span className="text-sky-400">BASE</span>
+          </span>
+          <span className="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-600 font-mono">
+            {/* @ts-ignore */}
+            {__COMMIT__}
           </span>
           <nav className="flex gap-1">
             {(['models', 'assets'] as View[]).map((v) => (
