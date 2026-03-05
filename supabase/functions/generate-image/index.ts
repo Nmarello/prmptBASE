@@ -124,10 +124,25 @@ Deno.serve(async (req) => {
     }
 
     const openaiData = await openaiRes.json()
-    const imageUrl = openaiData.data[0].url
+    const tempUrl = openaiData.data[0].url
     const revisedPrompt = openaiData.data[0].revised_prompt
 
     const [w, h] = (size ?? '1024x1024').split('x').map(Number)
+
+    // Download image and upload to permanent Supabase Storage
+    let permanentUrl = tempUrl
+    try {
+      const imgRes = await fetch(tempUrl)
+      const imgBlob = await imgRes.arrayBuffer()
+      const fileName = `${userId ?? 'anon'}/${Date.now()}.png`
+      const { error: uploadErr } = await adminClient.storage
+        .from('assets')
+        .upload(fileName, imgBlob, { contentType: 'image/png', upsert: false })
+      if (!uploadErr) {
+        const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(fileName)
+        permanentUrl = publicUrl
+      }
+    } catch (_) { /* fall back to temp URL */ }
 
     const { data: asset, error: assetErr } = await adminClient
       .from('assets')
@@ -136,7 +151,7 @@ Deno.serve(async (req) => {
         prompt_id: prompt_id ?? null,
         model_id: model_id ?? null,
         gen_type: 'txt2img',
-        url: imageUrl,
+        url: permanentUrl,
         width: w,
         height: h,
         metadata: { prompt, revised_prompt: revisedPrompt, size, quality },
@@ -144,10 +159,9 @@ Deno.serve(async (req) => {
       .select()
       .single()
 
-    // Asset save is best-effort — don't block on it
     const assetData = assetErr ? null : asset
 
-    return new Response(JSON.stringify({ asset: assetData, image_url: imageUrl, prompt, revised_prompt: revisedPrompt }), {
+    return new Response(JSON.stringify({ asset: assetData, image_url: permanentUrl, prompt, revised_prompt: revisedPrompt }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {
