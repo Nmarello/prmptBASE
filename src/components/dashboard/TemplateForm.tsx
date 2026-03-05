@@ -282,7 +282,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
               <button
                 type="button"
                 onClick={() => setAddingTo(addingTo === field.id ? null : field.id)}
-                className="text-xs text-slate-500 hover:text-sky-400 transition-colors flex items-center gap-1"
+                className="text-xs text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
               >
                 + Add your own
               </button>
@@ -335,7 +335,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
                         <button
                           type="button"
                           onClick={() => setAddingTo(addingTo === f.id ? null : f.id)}
-                          className="text-xs text-slate-500 hover:text-sky-400 transition-colors"
+                          className="text-xs text-emerald-500 hover:text-emerald-400 transition-colors"
                         >
                           + Add
                         </button>
