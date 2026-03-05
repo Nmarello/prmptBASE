@@ -108,7 +108,7 @@ function FieldInput({ field, value, onChange, customOptions }: {
         onChange={(e) => onChange(e.target.value)}
         className="w-full bg-[#161b22] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500/50"
       >
-        <option value="">Select…</option>
+        <option value="">Auto</option>
         {(field.options ?? []).map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
