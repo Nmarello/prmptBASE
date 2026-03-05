@@ -83,9 +83,30 @@ export default function Dashboard() {
       }).select().single()
 
       const { data: { session } } = await supabase.auth.getSession()
+      const isImg2Img = selectedGenType === 'img2img'
+
+      const endpoint = isImg2Img ? 'edit-image' : 'generate-image'
+      const body = isImg2Img
+        ? {
+            user_token: session?.access_token ?? null,
+            source_image_b64: values.source_image,
+            prompt: values.prompt,
+            model_id: selectedModel.id,
+            prompt_id: promptRecord?.id ?? null,
+            size: values.size ?? '1024x1024',
+            quality: values.quality ?? 'medium',
+          }
+        : {
+            user_token: session?.access_token ?? null,
+            values,
+            model_id: selectedModel.id,
+            prompt_id: promptRecord?.id ?? null,
+            size: values.size ?? '1024x1024',
+            quality: values.quality ?? 'standard',
+          }
 
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`,
         {
           method: 'POST',
           headers: {
@@ -93,14 +114,7 @@ export default function Dashboard() {
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
-          body: JSON.stringify({
-            user_token: session?.access_token ?? null,
-            values,
-            model_id: selectedModel.id,
-            prompt_id: promptRecord?.id ?? null,
-            size: values.size ?? '1024x1024',
-            quality: values.quality ?? 'standard',
-          }),
+          body: JSON.stringify(body),
         }
       )
 

@@ -99,6 +99,43 @@ function FieldInput({ field, value, onChange }: {
     )
   }
 
+  if (field.type === 'image_upload') {
+    const preview = value as string | undefined
+    return (
+      <div>
+        <label className="block cursor-pointer">
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              const reader = new FileReader()
+              reader.onload = () => onChange(reader.result as string)
+              reader.readAsDataURL(file)
+            }}
+          />
+          {preview ? (
+            <div className="relative group">
+              <img src={preview} alt="Source" className="rounded-xl w-full max-h-64 object-cover border border-white/10" />
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+                <span className="text-sm text-white font-medium">Click to change</span>
+              </div>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-white/15 hover:border-sky-500/50 rounded-xl p-10 text-center transition-all">
+              <div className="text-3xl mb-2">🖼️</div>
+              <p className="text-slate-400 text-sm font-medium">Click to upload image</p>
+              <p className="text-slate-600 text-xs mt-1">PNG, JPG, WEBP — max 20MB</p>
+            </div>
+          )}
+        </label>
+        {field.hint && <p className="text-xs text-slate-600 mt-1">{field.hint}</p>}
+      </div>
+    )
+  }
+
   return null
 }
 

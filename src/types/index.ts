@@ -1,6 +1,6 @@
 export type GenType = 'txt2img' | 'img2img' | 'multi_img2img' | 'txt2vid' | 'img2vid'
 
-export type FieldType = 'textarea' | 'select' | 'multi_select' | 'style_picker'
+export type FieldType = 'textarea' | 'select' | 'multi_select' | 'style_picker' | 'image_upload'
 
 export interface FieldOption {
   value: string
