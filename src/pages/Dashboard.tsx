@@ -93,7 +93,7 @@ export default function Dashboard() {
       )
 
       const data = await res.json()
-      if (!res.ok || data?.error) throw new Error(data?.error ?? `HTTP ${res.status}`)
+      if (!res.ok || data?.error) throw new Error(data?.error ?? data?.message ?? `HTTP ${res.status}: ${JSON.stringify(data)}`)
 
       const imageUrl = data?.asset?.url ?? data?.image_url
       if (!imageUrl) throw new Error(`No image URL. Response: ${JSON.stringify(data)}`)
