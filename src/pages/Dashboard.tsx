@@ -69,23 +69,31 @@ export default function Dashboard() {
         tags: [selectedModel.slug, selectedGenType],
       }).select().single()
 
-      // Call generate-image edge function
-      const { data, error: fnError } = await supabase.functions.invoke('generate-image', {
-        body: {
-          values,
-          model_id: selectedModel.id,
-          prompt_id: promptRecord?.id ?? null,
-          size: values.size ?? '1024x1024',
-          quality: values.quality ?? 'standard',
-        },
-      })
+      // Refresh session to ensure token is valid
+      const { data: { session } } = await supabase.auth.refreshSession()
+      if (!session) throw new Error('Session expired — please sign in again')
 
-      if (fnError) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const body = await (fnError as any).context?.json().catch(() => null)
-        throw new Error(body?.error ?? fnError.message)
-      }
-      if (data?.error) throw new Error(data.error)
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            values,
+            model_id: selectedModel.id,
+            prompt_id: promptRecord?.id ?? null,
+            size: values.size ?? '1024x1024',
+            quality: values.quality ?? 'standard',
+          }),
+        }
+      )
+
+      const data = await res.json()
+      if (!res.ok || data?.error) throw new Error(data?.error ?? `HTTP ${res.status}`)
 
       const imageUrl = data?.asset?.url ?? data?.image_url
       if (!imageUrl) throw new Error(`No image URL. Response: ${JSON.stringify(data)}`)
