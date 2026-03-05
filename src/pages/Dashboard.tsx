@@ -69,9 +69,7 @@ export default function Dashboard() {
         tags: [selectedModel.slug, selectedGenType],
       }).select().single()
 
-      // Refresh session to ensure token is valid
-      const { data: { session } } = await supabase.auth.refreshSession()
-      if (!session) throw new Error('Session expired — please sign in again')
+      const { data: { session } } = await supabase.auth.getSession()
 
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`,
@@ -79,10 +77,11 @@ export default function Dashboard() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
+            user_token: session?.access_token ?? null,
             values,
             model_id: selectedModel.id,
             prompt_id: promptRecord?.id ?? null,

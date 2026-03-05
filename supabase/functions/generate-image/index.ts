@@ -81,19 +81,20 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) throw new Error('Missing auth header')
+    const body = await req.json()
+    const { user_token, values, model_id, prompt_id, size, quality } = body
 
-    const supabase = createClient(
+    // Use service role to verify user token and do DB ops
+    const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) throw new Error('Unauthorized')
-
-    const { values, model_id, prompt_id, size, quality } = await req.json()
+    let userId: string | null = null
+    if (user_token) {
+      const { data: { user } } = await adminClient.auth.getUser(user_token)
+      userId = user?.id ?? null
+    }
 
     const prompt = buildPrompt(values)
     if (!prompt.trim()) throw new Error('Prompt is empty')
@@ -128,10 +129,10 @@ Deno.serve(async (req) => {
 
     const [w, h] = (size ?? '1024x1024').split('x').map(Number)
 
-    const { data: asset, error: assetErr } = await supabase
+    const { data: asset, error: assetErr } = await adminClient
       .from('assets')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         prompt_id: prompt_id ?? null,
         model_id: model_id ?? null,
         gen_type: 'txt2img',
