@@ -1,6 +1,14 @@
-import { useState } from 'react'
-import type { Template, TemplateField, GenType } from '../../types'
+import { useEffect, useState } from 'react'
+import type { Template, TemplateField, GenType, FieldOption } from '../../types'
 import { GEN_TYPE_LABELS } from '../../types'
+import { supabase } from '../../lib/supabase'
+
+interface CustomOption {
+  id: string
+  field_id: string
+  label: string
+  prompt_text: string
+}
 
 interface Props {
   template: Template
@@ -10,11 +18,73 @@ interface Props {
   initialValues?: Record<string, unknown>
 }
 
-function FieldInput({ field, value, onChange }: {
+const CUSTOM_SUPPORTED = ['select', 'multi_select', 'style_picker']
+
+// Inline form for adding a custom option
+function AddCustomForm({ fieldId, onSave, onCancel }: {
+  fieldId: string
+  onSave: (opt: CustomOption) => void
+  onCancel: () => void
+}) {
+  const [label, setLabel] = useState('')
+  const [promptText, setPromptText] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    if (!label.trim() || !promptText.trim()) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const { data, error } = await supabase
+      .from('user_custom_options')
+      .insert({ user_id: user.id, field_id: fieldId, label: label.trim(), prompt_text: promptText.trim() })
+      .select()
+      .single()
+    setSaving(false)
+    if (!error && data) onSave(data as CustomOption)
+  }
+
+  return (
+    <div className="mt-3 p-3 bg-white/3 border border-white/10 rounded-xl space-y-2">
+      <input
+        type="text"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        placeholder="Name (e.g. Cyberpunk Neon)"
+        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50"
+      />
+      <textarea
+        value={promptText}
+        onChange={(e) => setPromptText(e.target.value)}
+        placeholder="Describe it for the AI (e.g. cyberpunk neon aesthetic with rain-slicked streets and holographic signs)"
+        rows={2}
+        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50 resize-none"
+      />
+      <div className="flex gap-2 justify-end">
+        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-slate-500 hover:text-white transition-colors">
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving || !label.trim() || !promptText.trim()}
+          className="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-40 rounded-lg text-xs font-medium transition-all"
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function FieldInput({ field, value, onChange, customOptions }: {
   field: TemplateField
   value: unknown
   onChange: (val: unknown) => void
+  customOptions: FieldOption[]
 }) {
+  const allOptions = [...(field.options ?? []), ...customOptions]
+
   if (field.type === 'textarea') {
     return (
       <div>
@@ -38,9 +108,17 @@ function FieldInput({ field, value, onChange }: {
         className="w-full bg-[#161b22] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500/50"
       >
         <option value="">Select…</option>
-        {field.options?.map((opt) => (
+        {(field.options ?? []).map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
+        {customOptions.length > 0 && (
+          <>
+            <option disabled>── My custom ──</option>
+            {customOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>★ {opt.label}</option>
+            ))}
+          </>
+        )}
       </select>
     )
   }
@@ -49,24 +127,23 @@ function FieldInput({ field, value, onChange }: {
     const selected = (value as string[]) ?? []
     return (
       <div className="flex flex-wrap gap-2">
-        {field.options?.map((opt) => {
+        {allOptions.map((opt) => {
           const active = selected.includes(opt.value)
+          const isCustom = customOptions.some((c) => c.value === opt.value)
           return (
             <button
               key={opt.value}
               type="button"
-              onClick={() => {
-                onChange(
-                  active ? selected.filter((v) => v !== opt.value) : [...selected, opt.value]
-                )
-              }}
+              onClick={() => onChange(active ? selected.filter((v) => v !== opt.value) : [...selected, opt.value])}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 active
                   ? 'bg-sky-500/20 border-sky-500/50 text-sky-300'
+                  : isCustom
+                  ? 'bg-white/5 border-white/20 text-slate-300 hover:border-sky-500/30'
                   : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'
               }`}
             >
-              {opt.label}
+              {isCustom && <span className="mr-1 text-sky-500">★</span>}{opt.label}
             </button>
           )
         })}
@@ -78,8 +155,9 @@ function FieldInput({ field, value, onChange }: {
     const selected = (value as string) ?? ''
     return (
       <div className="grid grid-cols-8 gap-1.5">
-        {field.options?.map((opt) => {
+        {allOptions.map((opt) => {
           const active = selected === opt.value
+          const isCustom = customOptions.some((c) => c.value === opt.value)
           return (
             <button
               key={opt.value}
@@ -88,10 +166,12 @@ function FieldInput({ field, value, onChange }: {
               className={`aspect-square rounded-lg border flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-all ${
                 active
                   ? 'bg-sky-500/20 border-sky-500/50 text-sky-300'
+                  : isCustom
+                  ? 'bg-white/5 border-white/20 text-slate-300 hover:border-sky-500/30'
                   : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'
               }`}
             >
-              <span className="text-sm">🎨</span>
+              <span className="text-sm">{isCustom ? '★' : '🎨'}</span>
               <span className="text-center leading-tight px-0.5">{opt.label}</span>
             </button>
           )
@@ -142,14 +222,87 @@ function FieldInput({ field, value, onChange }: {
 
 export default function TemplateForm({ template, genType, onSubmit, submitting, initialValues }: Props) {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
+  const [customOptions, setCustomOptions] = useState<Record<string, FieldOption[]>>({})
+  const [addingTo, setAddingTo] = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase
+        .from('user_custom_options')
+        .select('*')
+        .eq('user_id', user.id)
+        .then(({ data }) => {
+          if (!data) return
+          const grouped: Record<string, FieldOption[]> = {}
+          for (const row of data as CustomOption[]) {
+            if (!grouped[row.field_id]) grouped[row.field_id] = []
+            grouped[row.field_id].push({ label: row.label, value: row.prompt_text })
+          }
+          setCustomOptions(grouped)
+        })
+    })
+  }, [])
 
   function set(id: string, val: unknown) {
     setValues((prev) => ({ ...prev, [id]: val }))
   }
 
+  function handleCustomSaved(fieldId: string, opt: CustomOption) {
+    setCustomOptions((prev) => ({
+      ...prev,
+      [fieldId]: [...(prev[fieldId] ?? []), { label: opt.label, value: opt.prompt_text }],
+    }))
+    setAddingTo(null)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     onSubmit(values)
+  }
+
+  function renderField(field: TemplateField) {
+    const fieldCustomOpts = customOptions[field.id] ?? []
+    const showAddButton = CUSTOM_SUPPORTED.includes(field.type)
+    return (
+      <div key={field.id}>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-sm font-medium text-slate-300">
+            {field.label}
+            {field.required && <span className="text-sky-400 ml-1">*</span>}
+          </label>
+          <div className="flex items-center gap-3">
+            {field.ai_assist && (
+              <button type="button" className="text-xs text-sky-500 hover:text-sky-400 flex items-center gap-1">
+                ✨ AI assist
+              </button>
+            )}
+            {showAddButton && (
+              <button
+                type="button"
+                onClick={() => setAddingTo(addingTo === field.id ? null : field.id)}
+                className="text-xs text-slate-500 hover:text-sky-400 transition-colors flex items-center gap-1"
+              >
+                + Add your own
+              </button>
+            )}
+          </div>
+        </div>
+        <FieldInput
+          field={field}
+          value={values[field.id]}
+          onChange={(v) => set(field.id, v)}
+          customOptions={fieldCustomOpts}
+        />
+        {addingTo === field.id && (
+          <AddCustomForm
+            fieldId={field.id}
+            onSave={(opt) => handleCustomSaved(field.id, opt)}
+            onCancel={() => setAddingTo(null)}
+          />
+        )}
+      </div>
+    )
   }
 
   return (
@@ -168,38 +321,38 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
         while (i < fields.length) {
           const field = fields[i]
           const next = fields[i + 1]
-          // Pair consecutive selects into a 2-col row
           if (field.type === 'select' && next?.type === 'select') {
             rendered.push(
               <div key={`${field.id}-${next.id}`} className="grid grid-cols-2 gap-4">
                 {[field, next].map((f) => (
                   <div key={f.id}>
-                    <label className="text-sm font-medium text-slate-300 block mb-2">
-                      {f.label}{f.required && <span className="text-sky-400 ml-1">*</span>}
-                    </label>
-                    <FieldInput field={f} value={values[f.id]} onChange={(v) => set(f.id, v)} />
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium text-slate-300">
+                        {f.label}{f.required && <span className="text-sky-400 ml-1">*</span>}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setAddingTo(addingTo === f.id ? null : f.id)}
+                        className="text-xs text-slate-500 hover:text-sky-400 transition-colors"
+                      >
+                        + Add
+                      </button>
+                    </div>
+                    <FieldInput field={f} value={values[f.id]} onChange={(v) => set(f.id, v)} customOptions={customOptions[f.id] ?? []} />
+                    {addingTo === f.id && (
+                      <AddCustomForm
+                        fieldId={f.id}
+                        onSave={(opt) => handleCustomSaved(f.id, opt)}
+                        onCancel={() => setAddingTo(null)}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
             )
             i += 2
           } else {
-            rendered.push(
-              <div key={field.id}>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-300">
-                    {field.label}
-                    {field.required && <span className="text-sky-400 ml-1">*</span>}
-                  </label>
-                  {field.ai_assist && (
-                    <button type="button" className="text-xs text-sky-500 hover:text-sky-400 flex items-center gap-1">
-                      ✨ AI assist
-                    </button>
-                  )}
-                </div>
-                <FieldInput field={field} value={values[field.id]} onChange={(v) => set(field.id, v)} />
-              </div>
-            )
+            rendered.push(renderField(field))
             i += 1
           }
         }
