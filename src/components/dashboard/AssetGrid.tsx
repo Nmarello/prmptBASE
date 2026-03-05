@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import type { Asset, UserProject } from '../../types'
+import { useRef, useState } from 'react'
+import type { Asset, Model, UserProject } from '../../types'
 
 interface Props {
   assets: Asset[]
+  models: Model[]
   projects: UserProject[]
   loading: boolean
   onDelete: (id: string) => void
@@ -10,15 +11,26 @@ interface Props {
   onSendToImg2Img: (url: string) => void
 }
 
-export default function AssetGrid({ assets, projects, loading, onDelete, onGenerate, onSendToImg2Img }: Props) {
+export default function AssetGrid({ assets, models, projects, loading, onDelete, onGenerate, onSendToImg2Img }: Props) {
   const [lightbox, setLightbox] = useState<Asset | null>(null)
-  const [filter, setFilter] = useState<string>('all')
 
+  const modelMap = Object.fromEntries(models.map((m) => [m.id, m]))
   const projectMap = Object.fromEntries(projects.map((p) => [p.id, p.name]))
 
-  const filtered = filter === 'all'
-    ? assets
-    : assets.filter((a) => a.project_id === filter)
+  // Group assets by model_id, unknown model last
+  const grouped = assets.reduce<Record<string, Asset[]>>((acc, asset) => {
+    const key = asset.model_id ?? '__unknown__'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(asset)
+    return acc
+  }, {})
+
+  // Sort: known models in sort_order, unknown last
+  const groupKeys = Object.keys(grouped).sort((a, b) => {
+    if (a === '__unknown__') return 1
+    if (b === '__unknown__') return -1
+    return (modelMap[a]?.sort_order ?? 99) - (modelMap[b]?.sort_order ?? 99)
+  })
 
   if (loading) {
     return (
@@ -47,31 +59,12 @@ export default function AssetGrid({ assets, projects, loading, onDelete, onGener
             </button>
           </div>
 
-          {/* Project filter */}
-          {projects.length > 0 && (
-            <div className="flex gap-2 mb-6 flex-wrap">
-              {[{ id: 'all', name: 'All' }, ...projects].map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setFilter(p.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    filter === p.id
-                      ? 'bg-sky-500/20 border border-sky-500/50 text-sky-300'
-                      : 'bg-white/5 border border-white/10 text-slate-400 hover:border-white/20'
-                  }`}
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          )}
-
           {/* Empty state */}
-          {filtered.length === 0 && (
+          {assets.length === 0 && (
             <div className="bg-white/3 border border-dashed border-white/10 rounded-2xl p-20 text-center">
               <div className="text-5xl mb-4">🎨</div>
               <p className="text-slate-400 font-medium mb-1">No images yet</p>
-              <p className="text-slate-600 text-sm mb-6">Generate something with DALL-E to see it here</p>
+              <p className="text-slate-600 text-sm mb-6">Generate something to see it here</p>
               <button
                 onClick={onGenerate}
                 className="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium transition-all"
@@ -81,21 +74,38 @@ export default function AssetGrid({ assets, projects, loading, onDelete, onGener
             </div>
           )}
 
-          {/* Grid */}
-          {filtered.length > 0 && (
-            <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 space-y-4">
-              {filtered.map((asset) => (
-                <AssetCard
-                  key={asset.id}
-                  asset={asset}
-                  projectName={asset.project_id ? projectMap[asset.project_id] : null}
-                  onClick={() => setLightbox(asset)}
-                  onDelete={onDelete}
-                  onSendToImg2Img={onSendToImg2Img}
-                />
-              ))}
-            </div>
-          )}
+          {/* Accordion groups */}
+          <div className="space-y-2">
+            {groupKeys.map((key) => {
+              const groupAssets = grouped[key]
+              const model = key !== '__unknown__' ? modelMap[key] : null
+              const label = model?.name ?? 'Unknown Model'
+              const provider = model?.provider ?? ''
+              return (
+                <AccordionGroup
+                  key={key}
+                  label={label}
+                  provider={provider}
+                  count={groupAssets.length}
+                  defaultOpen={true}
+                >
+                  <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 space-y-4 pb-6">
+                    {groupAssets.map((asset) => (
+                      <AssetCard
+                        key={asset.id}
+                        asset={asset}
+                        projectName={asset.project_id ? projectMap[asset.project_id] : null}
+                        onClick={() => setLightbox(asset)}
+                        onDelete={onDelete}
+                        onSendToImg2Img={onSendToImg2Img}
+                      />
+                    ))}
+                  </div>
+                </AccordionGroup>
+              )
+            })}
+          </div>
+
         </div>
       </div>
 
@@ -104,12 +114,81 @@ export default function AssetGrid({ assets, projects, loading, onDelete, onGener
         <Lightbox
           asset={lightbox}
           projectName={lightbox.project_id ? projectMap[lightbox.project_id] : null}
+          modelName={lightbox.model_id ? (modelMap[lightbox.model_id]?.name ?? null) : null}
           onClose={() => setLightbox(null)}
           onDelete={(id) => { onDelete(id); setLightbox(null) }}
           onSendToImg2Img={onSendToImg2Img}
         />
       )}
     </>
+  )
+}
+
+function AccordionGroup({ label, provider, count, defaultOpen, children }: {
+  label: string
+  provider: string
+  count: number
+  defaultOpen: boolean
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  const bodyRef = useRef<HTMLDivElement>(null)
+
+  function toggle() {
+    const body = bodyRef.current
+    if (!body) return
+    if (!open) {
+      body.style.maxHeight = body.scrollHeight + 'px'
+    } else {
+      body.style.maxHeight = body.scrollHeight + 'px'
+      requestAnimationFrame(() => { body.style.maxHeight = '0px' })
+    }
+    setOpen(!open)
+  }
+
+  // Set initial max-height after mount
+  const initRef = useRef(false)
+  const contentRef = (el: HTMLDivElement | null) => {
+    if (el && !initRef.current) {
+      initRef.current = true
+      el.style.maxHeight = defaultOpen ? el.scrollHeight + 'px' : '0px'
+    }
+    // @ts-ignore
+    bodyRef.current = el
+  }
+
+  return (
+    <div className="border border-white/8 rounded-2xl overflow-hidden bg-white/2">
+      {/* Header */}
+      <button
+        onClick={toggle}
+        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/3 transition-colors"
+      >
+        <svg
+          className="w-4 h-4 text-slate-500 transition-transform duration-300 flex-shrink-0"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+        <span className="font-semibold text-white">{label}</span>
+        {provider && (
+          <span className="text-xs text-slate-500">{provider}</span>
+        )}
+        <span className="ml-auto text-xs text-slate-600 font-mono">{count}</span>
+      </button>
+
+      {/* Body */}
+      <div
+        ref={contentRef}
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: defaultOpen ? '9999px' : '0px' }}
+      >
+        <div className="px-5">
+          {children}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -190,9 +269,10 @@ function AssetCard({ asset, projectName, onClick, onDelete, onSendToImg2Img }: {
   )
 }
 
-function Lightbox({ asset, projectName, onClose, onDelete, onSendToImg2Img }: {
+function Lightbox({ asset, projectName, modelName, onClose, onDelete, onSendToImg2Img }: {
   asset: Asset
   projectName: string | null
+  modelName: string | null
   onClose: () => void
   onDelete: (id: string) => void
   onSendToImg2Img: (url: string) => void
@@ -220,6 +300,10 @@ function Lightbox({ asset, projectName, onClose, onDelete, onSendToImg2Img }: {
             <span className="text-xs text-slate-500">{new Date(asset.created_at).toLocaleString()}</span>
             <button onClick={onClose} className="text-slate-500 hover:text-white text-lg">✕</button>
           </div>
+
+          {modelName && (
+            <span className="text-xs text-slate-400 font-medium">{modelName} · {asset.gen_type}</span>
+          )}
 
           {projectName && (
             <span className="text-xs text-sky-400 font-medium uppercase tracking-wider">{projectName}</span>

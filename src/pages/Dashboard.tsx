@@ -348,6 +348,7 @@ export default function Dashboard() {
         {view === 'assets' && (
           <AssetGrid
             assets={assets}
+            models={models}
             projects={projects}
             loading={assetsLoading}
             onDelete={deleteAsset}
