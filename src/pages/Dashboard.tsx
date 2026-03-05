@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
-import type { Model, Template, GenType, UserProject } from '../types'
+import type { Asset, Model, Template, GenType, UserProject } from '../types'
 import { GEN_TYPE_LABELS } from '../types'
 import ModelCard from '../components/dashboard/ModelCard'
 import TemplateForm from '../components/dashboard/TemplateForm'
+import AssetGrid from '../components/dashboard/AssetGrid'
 
 type View = 'models' | 'builder' | 'assets'
 
@@ -22,8 +23,20 @@ export default function Dashboard() {
   const [generateError, setGenerateError] = useState<string | null>(null)
 
   const [projects, setProjects] = useState<UserProject[]>([])
-  const [newProjectName, setNewProjectName] = useState('')
-  const [creatingProject, setCreatingProject] = useState(false)
+  const [assets, setAssets] = useState<Asset[]>([])
+  const [assetsLoading, setAssetsLoading] = useState(false)
+
+  const loadAssets = useCallback(async () => {
+    if (!user) return
+    setAssetsLoading(true)
+    const { data } = await supabase
+      .from('assets')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+    if (data) setAssets(data as Asset[])
+    setAssetsLoading(false)
+  }, [user])
 
   useEffect(() => {
     if (!user) return
@@ -33,7 +46,8 @@ export default function Dashboard() {
       .then(({ data }) => { if (data) setModels(data as Model[]) })
     supabase.from('user_projects').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
       .then(({ data }) => { if (data) setProjects(data as UserProject[]) })
-  }, [user])
+    loadAssets()
+  }, [user, loadAssets])
 
   async function selectModel(model: Model) {
     setSelectedModel(model)
@@ -61,7 +75,6 @@ export default function Dashboard() {
     setResult(null)
     setGenerateError(null)
     try {
-      // Save prompt record first
       const { data: promptRecord } = await supabase.from('prompts').insert({
         user_id: user!.id,
         title: `${selectedModel.name} — ${GEN_TYPE_LABELS[selectedGenType]}`,
@@ -96,7 +109,9 @@ export default function Dashboard() {
 
       const imageUrl = data?.asset?.url ?? data?.image_url
       if (!imageUrl) throw new Error(`No image URL. Response: ${JSON.stringify(data)}`)
+
       setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt })
+      loadAssets() // refresh assets grid in background
     } catch (err) {
       setGenerateError(err instanceof Error ? err.message : 'Generation failed')
     } finally {
@@ -104,16 +119,9 @@ export default function Dashboard() {
     }
   }
 
-  async function createProject() {
-    if (!newProjectName.trim() || !user) return
-    setCreatingProject(true)
-    const { data } = await supabase.from('user_projects').insert({
-      user_id: user.id,
-      name: newProjectName.trim(),
-    }).select().single()
-    if (data) setProjects((p) => [data as UserProject, ...p])
-    setNewProjectName('')
-    setCreatingProject(false)
+  async function deleteAsset(id: string) {
+    await supabase.from('assets').delete().eq('id', id)
+    setAssets((prev) => prev.filter((a) => a.id !== id))
   }
 
   return (
@@ -132,14 +140,14 @@ export default function Dashboard() {
             {(['models', 'assets'] as View[]).map((v) => (
               <button
                 key={v}
-                onClick={() => setView(v)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-all ${
+                onClick={() => { setView(v); if (v === 'assets') loadAssets() }}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                   view === v || (v === 'models' && view === 'builder')
                     ? 'bg-white/10 text-white'
                     : 'text-slate-500 hover:text-white'
                 }`}
               >
-                {v === 'models' ? 'Models' : 'Assets'}
+                {v === 'models' ? 'Models' : `Assets${assets.length > 0 ? ` (${assets.length})` : ''}`}
               </button>
             ))}
           </nav>
@@ -215,7 +223,7 @@ export default function Dashboard() {
               {selectedModel && selectedGenType && template && (
                 <div className="max-w-2xl">
                   <button
-                    onClick={() => { setSelectedGenType(null); setTemplate(null); setResult(null) }}
+                    onClick={() => { setSelectedGenType(null); setTemplate(null); setResult(null); setGenerateError(null) }}
                     className="text-slate-500 hover:text-white text-sm mb-8 flex items-center gap-1"
                   >
                     ← {selectedModel.name}
@@ -245,8 +253,14 @@ export default function Dashboard() {
                           Download
                         </a>
                         <button
-                          onClick={() => { setResult(null); setGenerateError(null) }}
+                          onClick={() => { setView('assets'); loadAssets() }}
                           className="px-5 py-2.5 bg-white/8 hover:bg-white/12 border border-white/10 rounded-xl text-sm font-medium"
+                        >
+                          View in Assets →
+                        </button>
+                        <button
+                          onClick={() => { setResult(null); setGenerateError(null) }}
+                          className="px-5 py-2.5 bg-white/5 hover:bg-white/8 border border-white/8 rounded-xl text-sm font-medium text-slate-400"
                         >
                           ← New prompt
                         </button>
@@ -275,50 +289,13 @@ export default function Dashboard() {
 
         {/* Assets view */}
         {view === 'assets' && (
-          <main className="flex-1 overflow-y-auto p-8">
-            <div className="max-w-4xl">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold">Projects</h2>
-                <div className="flex items-center gap-2">
-                  <input
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && createProject()}
-                    placeholder="New project name…"
-                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50 w-48"
-                  />
-                  <button
-                    onClick={createProject}
-                    disabled={creatingProject || !newProjectName.trim()}
-                    className="px-4 py-2 bg-sky-500 hover:bg-sky-400 disabled:opacity-40 rounded-xl text-sm font-medium transition-all"
-                  >
-                    Create
-                  </button>
-                </div>
-              </div>
-
-              {projects.length === 0 ? (
-                <div className="bg-white/3 border border-dashed border-white/10 rounded-2xl p-16 text-center">
-                  <div className="text-3xl mb-3">📁</div>
-                  <p className="text-slate-400 font-medium">No projects yet</p>
-                  <p className="text-slate-600 text-sm mt-1">Create a project to organize your generated assets</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-4">
-                  {projects.map((p) => (
-                    <div key={p.id} className="bg-white/3 border border-white/8 rounded-2xl p-5 hover:border-white/20 transition-all cursor-pointer">
-                      <div className="text-2xl mb-3">📁</div>
-                      <div className="font-semibold text-white">{p.name}</div>
-                      {p.description && <div className="text-slate-500 text-xs mt-1">{p.description}</div>}
-                      <div className="text-slate-600 text-xs mt-2">
-                        {new Date(p.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </main>
+          <AssetGrid
+            assets={assets}
+            projects={projects}
+            loading={assetsLoading}
+            onDelete={deleteAsset}
+            onGenerate={() => setView('models')}
+          />
         )}
       </div>
     </div>
