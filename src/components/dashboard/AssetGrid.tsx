@@ -121,6 +121,7 @@ function AssetCard({ asset, projectName, onClick, onDelete, onSendToImg2Img }: {
   onSendToImg2Img: (url: string) => void
 }) {
   const [hover, setHover] = useState(false)
+  const [imgError, setImgError] = useState(false)
   const prompt = (asset.metadata as Record<string, unknown>)?.prompt as string | undefined
 
   return (
@@ -130,12 +131,20 @@ function AssetCard({ asset, projectName, onClick, onDelete, onSendToImg2Img }: {
       onMouseLeave={() => setHover(false)}
       onClick={onClick}
     >
-      <img
-        src={asset.url}
-        alt={prompt ?? 'Generated image'}
-        className="w-full block"
-        loading="lazy"
-      />
+      {imgError ? (
+        <div className="w-full aspect-square flex flex-col items-center justify-center gap-2 text-slate-600 p-4">
+          <span className="text-3xl">🖼️</span>
+          <span className="text-xs text-center">Image expired</span>
+        </div>
+      ) : (
+        <img
+          src={asset.url}
+          alt={prompt ?? 'Generated image'}
+          className="w-full block"
+          loading="lazy"
+          onError={() => setImgError(true)}
+        />
+      )}
 
       {/* Hover overlay */}
       <div className={`absolute inset-0 bg-black/70 flex flex-col justify-between p-3 transition-opacity ${hover ? 'opacity-100' : 'opacity-0'}`}>
