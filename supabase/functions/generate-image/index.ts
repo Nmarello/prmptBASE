@@ -70,6 +70,68 @@ function buildPrompt(values: Record<string, unknown>): string {
     parts.push(palettes.join(', '))
   }
 
+  if (values.lens) {
+    const lensMap: Record<string, string> = {
+      '85mm': 'shot on 85mm f/1.4 lens',
+      '50mm': 'shot on 50mm lens',
+      '24mm': 'shot on 24mm wide angle lens',
+      '14mm': 'shot on 14mm ultra wide lens',
+      macro: 'shot with macro lens',
+      fisheye: 'fisheye lens',
+      anamorphic: 'anamorphic lens with lens flares',
+      telephoto: 'shot on 200mm telephoto lens',
+    }
+    parts.push(lensMap[String(values.lens)] ?? String(values.lens))
+  }
+
+  if (values.depth_of_field) {
+    const dofMap: Record<string, string> = {
+      shallow: 'shallow depth of field, soft bokeh background',
+      medium: 'subject in sharp focus, softly blurred background',
+      deep: 'deep focus, everything sharp',
+      tilt_shift: 'tilt-shift lens, miniature effect',
+    }
+    parts.push(dofMap[String(values.depth_of_field)] ?? String(values.depth_of_field))
+  }
+
+  if (values.camera_medium) {
+    const mediumMap: Record<string, string> = {
+      digital: 'shot on digital camera, clean and sharp',
+      '35mm_film': 'shot on 35mm film, grain and warmth',
+      medium_format: 'shot on medium format camera, rich detail',
+      polaroid: 'Polaroid photo, faded nostalgic look',
+      daguerreotype: 'daguerreotype, antique photographic process',
+      vhs: 'VHS camcorder footage, lo-fi analog look',
+    }
+    parts.push(mediumMap[String(values.camera_medium)] ?? String(values.camera_medium))
+  }
+
+  if (values.time_of_day) {
+    const timeMap: Record<string, string> = {
+      dawn: 'at dawn, soft pink and purple light',
+      morning: 'in the morning, fresh bright light',
+      midday: 'at midday, harsh overhead sun',
+      afternoon: 'in the afternoon, warm light',
+      dusk: 'at dusk, orange and purple sky',
+      blue_hour: 'during blue hour, deep blue twilight',
+      night: 'at night, dark and moody',
+    }
+    parts.push(timeMap[String(values.time_of_day)] ?? String(values.time_of_day))
+  }
+
+  if (values.weather) {
+    const weatherMap: Record<string, string> = {
+      clear: 'clear sky, crisp and sunny',
+      overcast: 'overcast sky, flat even lighting',
+      foggy: 'foggy atmosphere, mysterious haze',
+      rainy: 'raining, wet reflections on surfaces',
+      stormy: 'stormy sky, dark and dramatic clouds',
+      snowy: 'snowing, cold and serene',
+      dusty: 'dusty hazy atmosphere, desert heat',
+    }
+    parts.push(weatherMap[String(values.weather)] ?? String(values.weather))
+  }
+
   if (values.additional_details) parts.push(String(values.additional_details))
 
   return parts.join(', ')

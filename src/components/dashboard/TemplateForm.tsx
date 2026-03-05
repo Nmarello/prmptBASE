@@ -77,7 +77,7 @@ function FieldInput({ field, value, onChange }: {
   if (field.type === 'style_picker') {
     const selected = (value as string) ?? ''
     return (
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-8 gap-1.5">
         {field.options?.map((opt) => {
           const active = selected === opt.value
           return (
@@ -85,14 +85,14 @@ function FieldInput({ field, value, onChange }: {
               key={opt.value}
               type="button"
               onClick={() => onChange(opt.value)}
-              className={`aspect-square rounded-xl border flex flex-col items-center justify-center gap-1 text-xs font-medium transition-all ${
+              className={`aspect-square rounded-lg border flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-all ${
                 active
                   ? 'bg-sky-500/20 border-sky-500/50 text-sky-300'
                   : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'
               }`}
             >
-              <span className="text-lg">🎨</span>
-              <span className="text-center leading-tight px-1">{opt.label}</span>
+              <span className="text-sm">🎨</span>
+              <span className="text-center leading-tight px-0.5">{opt.label}</span>
             </button>
           )
         })}
@@ -161,25 +161,50 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
         <span className="text-slate-500 text-sm">{template.description}</span>
       </div>
 
-      {template.fields.map((field) => (
-        <div key={field.id}>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-slate-300">
-              {field.label}
-              {field.required && <span className="text-sky-400 ml-1">*</span>}
-            </label>
-            {field.ai_assist && (
-              <button
-                type="button"
-                className="text-xs text-sky-500 hover:text-sky-400 flex items-center gap-1"
-              >
-                ✨ AI assist
-              </button>
-            )}
-          </div>
-          <FieldInput field={field} value={values[field.id]} onChange={(v) => set(field.id, v)} />
-        </div>
-      ))}
+      {(() => {
+        const fields = template.fields
+        const rendered: React.ReactNode[] = []
+        let i = 0
+        while (i < fields.length) {
+          const field = fields[i]
+          const next = fields[i + 1]
+          // Pair consecutive selects into a 2-col row
+          if (field.type === 'select' && next?.type === 'select') {
+            rendered.push(
+              <div key={`${field.id}-${next.id}`} className="grid grid-cols-2 gap-4">
+                {[field, next].map((f) => (
+                  <div key={f.id}>
+                    <label className="text-sm font-medium text-slate-300 block mb-2">
+                      {f.label}{f.required && <span className="text-sky-400 ml-1">*</span>}
+                    </label>
+                    <FieldInput field={f} value={values[f.id]} onChange={(v) => set(f.id, v)} />
+                  </div>
+                ))}
+              </div>
+            )
+            i += 2
+          } else {
+            rendered.push(
+              <div key={field.id}>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-slate-300">
+                    {field.label}
+                    {field.required && <span className="text-sky-400 ml-1">*</span>}
+                  </label>
+                  {field.ai_assist && (
+                    <button type="button" className="text-xs text-sky-500 hover:text-sky-400 flex items-center gap-1">
+                      ✨ AI assist
+                    </button>
+                  )}
+                </div>
+                <FieldInput field={field} value={values[field.id]} onChange={(v) => set(field.id, v)} />
+              </div>
+            )
+            i += 1
+          }
+        }
+        return rendered
+      })()}
 
       <button
         type="submit"
