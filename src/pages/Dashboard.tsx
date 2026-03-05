@@ -92,7 +92,9 @@ export default function Dashboard() {
       const data = await res.json()
       if (data.error) throw new Error(data.error)
 
-      setResult({ url: data.asset.url, prompt: data.prompt, revised_prompt: data.revised_prompt })
+      const imageUrl = data.asset?.url ?? data.image_url
+      if (!imageUrl) throw new Error('No image URL returned')
+      setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt })
     } catch (err) {
       setGenerateError(err instanceof Error ? err.message : 'Generation failed')
     } finally {

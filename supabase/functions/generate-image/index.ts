@@ -143,9 +143,10 @@ Deno.serve(async (req) => {
       .select()
       .single()
 
-    if (assetErr) throw new Error(assetErr.message)
+    // Asset save is best-effort — don't block on it
+    const assetData = assetErr ? null : asset
 
-    return new Response(JSON.stringify({ asset, prompt, revised_prompt: revisedPrompt }), {
+    return new Response(JSON.stringify({ asset: assetData, image_url: imageUrl, prompt, revised_prompt: revisedPrompt }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {
