@@ -29,6 +29,7 @@ export default function Dashboard() {
 
   const [img2imgPickerUrl, setImg2imgPickerUrl] = useState<string | null>(null)
   const [img2imgInitialValues, setImg2imgInitialValues] = useState<Record<string, unknown> | undefined>(undefined)
+  const [byokKey, setByokKey] = useState<string | null>(null)
 
   const loadAssets = useCallback(async () => {
     if (!user) return
@@ -89,9 +90,25 @@ export default function Dashboard() {
 
       const { data: { session } } = await supabase.auth.getSession()
       const isImg2Img = selectedGenType === 'img2img'
+      const isFal = selectedModel.provider === 'fal.ai'
 
-      const endpoint = isImg2Img ? 'edit-image' : 'generate-image'
-      const body = isImg2Img
+      const endpoint = isFal
+        ? 'generate-fal'
+        : isImg2Img ? 'edit-image' : 'generate-image'
+
+      const body = isFal
+        ? {
+            user_token: session?.access_token ?? null,
+            prompt: values.prompt,
+            aspect_ratio: values.aspect_ratio ?? 'square_hd',
+            style: values.style ?? '',
+            negative_prompt: values.negative_prompt ?? '',
+            seed: values.seed ? Number(values.seed) : null,
+            model_id: selectedModel.id,
+            prompt_id: promptRecord?.id ?? null,
+            byok_key: byokKey ?? null,
+          }
+        : isImg2Img
         ? {
             user_token: session?.access_token ?? null,
             source_image_b64: values.source_image,
@@ -332,9 +349,11 @@ export default function Dashboard() {
                       <TemplateForm
                         template={template}
                         genType={selectedGenType}
+                        model={selectedModel}
                         onSubmit={handleGenerate}
                         submitting={submitting}
                         initialValues={img2imgInitialValues}
+                        onByokKeyChange={setByokKey}
                       />
                     </>
                   )}
