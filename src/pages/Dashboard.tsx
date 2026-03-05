@@ -80,8 +80,7 @@ export default function Dashboard() {
         },
       })
 
-      if (fnError) throw new Error(fnError.message)
-      if (data?.error) throw new Error(data.error)
+      if (fnError || data?.error) throw new Error(data?.error ?? fnError?.message ?? 'Unknown error')
 
       const imageUrl = data?.asset?.url ?? data?.image_url
       if (!imageUrl) throw new Error(`No image URL. Response: ${JSON.stringify(data)}`)
