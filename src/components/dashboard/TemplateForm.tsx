@@ -19,6 +19,7 @@ interface Props {
 }
 
 const CUSTOM_SUPPORTED = ['select', 'multi_select', 'style_picker']
+const CUSTOM_EXCLUDED_FIELDS = ['size', 'quality']
 
 // Inline form for adding a custom option
 function AddCustomForm({ fieldId, onSave, onCancel }: {
@@ -263,7 +264,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
 
   function renderField(field: TemplateField) {
     const fieldCustomOpts = customOptions[field.id] ?? []
-    const showAddButton = CUSTOM_SUPPORTED.includes(field.type)
+    const showAddButton = CUSTOM_SUPPORTED.includes(field.type) && !CUSTOM_EXCLUDED_FIELDS.includes(field.id)
     return (
       <div key={field.id}>
         <div className="flex items-center justify-between mb-2">
@@ -330,13 +331,15 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
                       <label className="text-sm font-medium text-slate-300">
                         {f.label}{f.required && <span className="text-sky-400 ml-1">*</span>}
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => setAddingTo(addingTo === f.id ? null : f.id)}
-                        className="text-xs text-slate-500 hover:text-sky-400 transition-colors"
-                      >
-                        + Add
-                      </button>
+                      {!CUSTOM_EXCLUDED_FIELDS.includes(f.id) && (
+                        <button
+                          type="button"
+                          onClick={() => setAddingTo(addingTo === f.id ? null : f.id)}
+                          className="text-xs text-slate-500 hover:text-sky-400 transition-colors"
+                        >
+                          + Add
+                        </button>
+                      )}
                     </div>
                     <FieldInput field={f} value={values[f.id]} onChange={(v) => set(f.id, v)} customOptions={customOptions[f.id] ?? []} />
                     {addingTo === f.id && (
