@@ -114,7 +114,7 @@ export default function Dashboard() {
           </span>
           <span className="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-600 font-mono">
             {/* @ts-ignore */}
-            {__COMMIT__}
+            v-0.0.{__BUILD__} · {__COMMIT__}
           </span>
           <nav className="flex gap-1">
             {(['models', 'assets'] as View[]).map((v) => (
