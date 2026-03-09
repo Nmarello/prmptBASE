@@ -70,8 +70,7 @@ export default function Dashboard() {
   }
 
   async function selectModel(model: Model) {
-    const provider = model.slug?.startsWith('kling') ? 'kling' : model.slug?.startsWith('luma') ? 'luma' : model.provider
-    setSelectedProvider(provider)
+    setSelectedProvider(model.provider)
     setSelectedModel(model)
     setSelectedGenType(null)
     setTemplate(null)
@@ -123,6 +122,7 @@ export default function Dashboard() {
             ...values,
             model_id: selectedModel.id,
             model_slug: selectedModel.slug,
+            gen_type: selectedGenType,
             prompt_id: promptRecord?.id ?? null,
             byok_key: byokKey ?? null,
           }
@@ -494,11 +494,11 @@ export default function Dashboard() {
                   <button
                     onClick={() => {
                       setSelectedGenType(null); setTemplate(null); setResult(null); setGenerateError(null)
-                      if (selectedModel.slug?.startsWith('kling') || selectedModel.slug?.startsWith('luma') || selectedModel.provider === 'fal.ai') setSelectedModel(null)
+                      if (selectedModel.provider === 'fal.ai') setSelectedModel(null)
                     }}
                     className="text-slate-500 hover:text-white text-sm mb-8 flex items-center gap-1"
                   >
-                    ← {selectedModel.slug?.startsWith('kling') ? 'Kling' : selectedModel.slug?.startsWith('luma') ? 'Dream Machine' : selectedModel.provider === 'fal.ai' ? 'Flux Models' : selectedModel.name}
+                    ← {selectedModel.provider === 'fal.ai' ? 'Flux Models' : selectedModel.name}
                   </button>
 
                   {pendingVideo && !result && (

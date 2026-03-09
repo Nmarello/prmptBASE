@@ -13,12 +13,18 @@ const FAL_ENDPOINTS: Record<string, string> = {
   'flux-dev-img2img':  'https://fal.run/fal-ai/flux/dev/image-to-image',
 }
 
-const FAL_VIDEO_ENDPOINTS: Record<string, string> = {
-  'kling-txt2vid':  'fal-ai/kling-video/v1.6/standard/text-to-video',
-  'kling-img2vid':  'fal-ai/kling-video/v1.6/standard/image-to-video',
-  'luma-txt2vid':   'fal-ai/luma-dream-machine/ray-2/text-to-video',
-  'luma-img2vid':   'fal-ai/luma-dream-machine/ray-2/image-to-video',
-  'minimax-txt2vid': 'fal-ai/minimax/video-01',
+const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
+  'kling': {
+    'txt2vid': 'fal-ai/kling-video/v1.6/standard/text-to-video',
+    'img2vid': 'fal-ai/kling-video/v1.6/standard/image-to-video',
+  },
+  'luma': {
+    'txt2vid': 'fal-ai/luma-dream-machine/ray-2/text-to-video',
+    'img2vid': 'fal-ai/luma-dream-machine/ray-2/image-to-video',
+  },
+  'minimax-txt2vid': {
+    'txt2vid': 'fal-ai/minimax/video-01',
+  },
 }
 
 const FAL_QUEUE_BASE = 'https://queue.fal.run'
@@ -238,9 +244,11 @@ Deno.serve(async (req) => {
     // --- video path ---
     const isVideo = slug in FAL_VIDEO_ENDPOINTS
     if (isVideo) {
-      const modelPath = FAL_VIDEO_ENDPOINTS[slug]
+      const genType = (body.gen_type as string | undefined) ?? 'txt2vid'
+      const isImgVid = genType === 'img2vid'
+      const modelPath = FAL_VIDEO_ENDPOINTS[slug]?.[genType] ?? FAL_VIDEO_ENDPOINTS[slug]?.['txt2vid']
+      if (!modelPath) throw new Error(`No fal endpoint for ${slug}/${genType}`)
       const prompt = (body.prompt as string | undefined)?.trim() ?? ''
-      const isImgVid = slug.endsWith('img2vid')
 
       // Build fal payload
       const falPayload: Record<string, unknown> = {}
