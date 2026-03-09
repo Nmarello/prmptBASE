@@ -202,6 +202,7 @@ function AssetCard({ asset, projectName, onClick, onDelete, onSendToImg2Img }: {
   const [hover, setHover] = useState(false)
   const [imgError, setImgError] = useState(false)
   const prompt = (asset.metadata as Record<string, unknown>)?.prompt as string | undefined
+  const isVideo = asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid'
 
   return (
     <div
@@ -210,7 +211,9 @@ function AssetCard({ asset, projectName, onClick, onDelete, onSendToImg2Img }: {
       onMouseLeave={() => setHover(false)}
       onClick={onClick}
     >
-      {imgError ? (
+      {isVideo ? (
+        <video src={asset.url} className="w-full block" muted loop autoPlay playsInline />
+      ) : imgError ? (
         <div className="w-full aspect-square flex flex-col items-center justify-center gap-2 text-slate-600 p-4">
           <span className="text-3xl">🖼️</span>
           <span className="text-xs text-center">Image expired</span>
@@ -289,9 +292,13 @@ function Lightbox({ asset, projectName, modelName, onClose, onDelete, onSendToIm
         className="bg-[#161b22] border border-white/10 rounded-2xl overflow-hidden max-w-4xl w-full flex flex-col lg:flex-row shadow-2xl max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Image */}
+        {/* Image / Video */}
         <div className="flex-1 bg-black flex items-center justify-center min-h-64">
-          <img src={asset.url} alt={prompt ?? ''} className="max-w-full max-h-[80vh] object-contain" />
+          {asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid' ? (
+            <video src={asset.url} controls autoPlay loop className="max-w-full max-h-[80vh]" />
+          ) : (
+            <img src={asset.url} alt={prompt ?? ''} className="max-w-full max-h-[80vh] object-contain" />
+          )}
         </div>
 
         {/* Info panel */}

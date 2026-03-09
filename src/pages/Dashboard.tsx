@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { Asset, Model, Template, GenType, UserProject } from '../types'
@@ -21,7 +21,9 @@ export default function Dashboard() {
   const [selectedGenType, setSelectedGenType] = useState<GenType | null>(null)
   const [template, setTemplate] = useState<Template | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string } | null>(null)
+  const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string; isVideo?: boolean } | null>(null)
+  const [pendingVeo, setPendingVeo] = useState<{ assetId: string; operationName: string } | null>(null)
+  const veoPollerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [generateError, setGenerateError] = useState<string | null>(null)
 
   const [projects, setProjects] = useState<UserProject[]>([])
@@ -102,11 +104,15 @@ export default function Dashboard() {
       }).select().single()
 
       const { data: { session } } = await supabase.auth.getSession()
-      const isImg2Img = selectedGenType === 'img2img'
       const isFal = selectedModel.provider === 'fal.ai'
+      const isGoogle = selectedModel.provider === 'Google'
+      const isImg2Img = selectedGenType === 'img2img'
+      const isVideo = selectedGenType === 'txt2vid' || selectedGenType === 'img2vid'
 
       const endpoint = isFal
         ? 'generate-fal'
+        : isGoogle
+        ? 'generate-google'
         : isImg2Img ? 'edit-image' : 'generate-image'
 
       const body = isFal
@@ -117,6 +123,15 @@ export default function Dashboard() {
             model_slug: selectedModel.slug,
             prompt_id: promptRecord?.id ?? null,
             byok_key: byokKey ?? null,
+          }
+        : isGoogle
+        ? {
+            user_token: session?.access_token ?? null,
+            ...values,
+            model_id: selectedModel.id,
+            model_slug: selectedModel.slug,
+            prompt_id: promptRecord?.id ?? null,
+            gen_type: selectedGenType,
           }
         : isImg2Img
         ? {
@@ -153,17 +168,62 @@ export default function Dashboard() {
       const data = await res.json()
       if (!res.ok || data?.error) throw new Error(data?.error ?? data?.message ?? `HTTP ${res.status}: ${JSON.stringify(data)}`)
 
+      // Veo: async pending — start polling
+      if (isVideo && data.status === 'pending') {
+        setPendingVeo({ assetId: data.asset?.id, operationName: data.operation_name })
+        setSubmitting(false)
+        return
+      }
+
       const imageUrl = data?.asset?.url ?? data?.image_url
       if (!imageUrl) throw new Error(`No image URL. Response: ${JSON.stringify(data)}`)
 
-      setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt })
-      loadAssets() // refresh assets grid in background
+      setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt, isVideo })
+      loadAssets()
     } catch (err) {
       setGenerateError(err instanceof Error ? err.message : 'Generation failed')
     } finally {
       setSubmitting(false)
     }
   }
+
+  // Veo polling
+  useEffect(() => {
+    if (!pendingVeo) {
+      if (veoPollerRef.current) clearInterval(veoPollerRef.current)
+      return
+    }
+    async function poll() {
+      if (!pendingVeo) return
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-veo-job`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              user_token: session?.access_token ?? null,
+              asset_id: pendingVeo.assetId,
+              operation_name: pendingVeo.operationName,
+            }),
+          },
+        )
+        const data = await res.json()
+        if (data.status === 'complete' && data.video_url) {
+          setPendingVeo(null)
+          setResult({ url: data.video_url, prompt: '', isVideo: true })
+          loadAssets()
+        }
+      } catch (_) { /* keep polling */ }
+    }
+    veoPollerRef.current = setInterval(poll, 5000)
+    return () => { if (veoPollerRef.current) clearInterval(veoPollerRef.current) }
+  }, [pendingVeo])
 
   async function deleteAsset(id: string) {
     await supabase.from('assets').delete().eq('id', id)
@@ -369,13 +429,31 @@ export default function Dashboard() {
                     ← {selectedModel.provider === 'fal.ai' ? 'fal.ai Models' : selectedModel.name}
                   </button>
 
+                  {pendingVeo && !result && (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                      <div className="w-10 h-10 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+                      <p className="text-slate-400 font-medium">Veo is rendering your video…</p>
+                      <p className="text-slate-600 text-sm">This usually takes 2–4 minutes. Hang tight.</p>
+                    </div>
+                  )}
+
                   {result ? (
                     <div className="space-y-5">
-                      <img
-                        src={result.url}
-                        alt={result.prompt}
-                        className="rounded-2xl w-full max-w-lg border border-white/10"
-                      />
+                      {result.isVideo ? (
+                        <video
+                          src={result.url}
+                          controls
+                          autoPlay
+                          loop
+                          className="rounded-2xl w-full max-w-lg border border-white/10"
+                        />
+                      ) : (
+                        <img
+                          src={result.url}
+                          alt={result.prompt}
+                          className="rounded-2xl w-full max-w-lg border border-white/10"
+                        />
+                      )}
                       {result.revised_prompt && (
                         <div className="bg-white/3 border border-white/8 rounded-xl p-4">
                           <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Revised prompt</div>
