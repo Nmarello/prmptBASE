@@ -396,54 +396,21 @@ export default function Dashboard() {
                 })()}
 
                 {mediaTab === 'video' && (() => {
-                  const klingModels = models.filter((m) => m.slug.startsWith('kling'))
-                  const lumaModels = models.filter((m) => m.slug.startsWith('luma'))
-                  const otherVideoModels = models.filter((m) =>
-                    m.supported_gen_types.some((g) => g === 'txt2vid' || g === 'img2vid') &&
-                    !m.slug.startsWith('kling') && !m.slug.startsWith('luma')
+                  const videoModels = models.filter((m) =>
+                    m.supported_gen_types.some((g) => g === 'txt2vid' || g === 'img2vid')
                   )
-                  return (
-                    <>
-                      {klingModels.length > 0 && (
-                        <button
-                          onClick={() => selectProviderTile('kling')}
-                          className={`relative w-full text-left rounded-2xl p-5 border transition-all ${
-                            selectedProvider === 'kling' && !selectedModel
-                              ? 'bg-sky-500/10 border-sky-500/50'
-                              : 'bg-white/3 border-white/8 hover:border-white/20 hover:bg-white/6'
-                          }`}
-                        >
-                          <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-sky-400">Kuaishou</div>
-                          <div className="text-white font-bold text-lg leading-tight">Kling</div>
-                          <div className="text-slate-500 text-xs mt-1.5">{klingModels.length} models available</div>
-                          <div className="mt-3 text-xs text-slate-600">Select to choose model →</div>
-                        </button>
-                      )}
-                      {lumaModels.length > 0 && (
-                        <button
-                          onClick={() => selectProviderTile('luma')}
-                          className={`relative w-full text-left rounded-2xl p-5 border transition-all ${
-                            selectedProvider === 'luma' && !selectedModel
-                              ? 'bg-sky-500/10 border-sky-500/50'
-                              : 'bg-white/3 border-white/8 hover:border-white/20 hover:bg-white/6'
-                          }`}
-                        >
-                          <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-sky-400">Luma AI</div>
-                          <div className="text-white font-bold text-lg leading-tight">Dream Machine</div>
-                          <div className="text-slate-500 text-xs mt-1.5">{lumaModels.length} models available</div>
-                          <div className="mt-3 text-xs text-slate-600">Select to choose model →</div>
-                        </button>
-                      )}
-                      {otherVideoModels.map((model) => (
-                        <ModelCard
-                          key={model.id}
-                          model={model}
-                          userTier={userTier}
-                          selected={selectedModel?.id === model.id}
-                          onClick={() => selectModel(model)}
-                        />
-                      ))}
-                    </>
+                  return videoModels.length === 0 ? (
+                    <p className="text-slate-600 text-sm px-1">No video models available</p>
+                  ) : (
+                    videoModels.map((model) => (
+                      <ModelCard
+                        key={model.id}
+                        model={model}
+                        userTier={userTier}
+                        selected={selectedModel?.id === model.id}
+                        onClick={() => selectModel(model)}
+                      />
+                    ))
                   )
                 })()}
               </div>
@@ -491,80 +458,6 @@ export default function Dashboard() {
                               <span key={gt} className="text-xs bg-white/8 text-slate-400 px-2 py-0.5 rounded-full">
                                 {gt}
                               </span>
-                            ))}
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Kling model picker */}
-              {selectedProvider === 'kling' && !selectedModel && (
-                <div className="max-w-2xl">
-                  <h2 className="text-2xl font-bold mb-1">Kling</h2>
-                  <p className="text-slate-400 text-sm mb-8">Choose a generation type</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {models.filter((m) => m.slug.startsWith('kling')).map((model) => {
-                      const accessible = tierCanAccess(userTier, model.min_tier)
-                      return (
-                        <button
-                          key={model.id}
-                          onClick={accessible ? () => selectModel(model) : undefined}
-                          className={`relative text-left rounded-2xl p-5 border transition-all ${
-                            accessible
-                              ? 'bg-white/3 border-white/8 hover:border-sky-500/50 hover:bg-sky-500/5'
-                              : 'bg-white/2 border-white/5 opacity-50 cursor-not-allowed'
-                          }`}
-                        >
-                          {!accessible && (
-                            <span className="absolute top-3 right-3 text-xs bg-white/10 text-slate-400 px-2 py-0.5 rounded-full">
-                              {model.min_tier}
-                            </span>
-                          )}
-                          <div className="text-white font-bold text-base leading-tight mb-1">{model.name}</div>
-                          <div className="text-slate-500 text-xs line-clamp-2 mb-3">{model.description}</div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {model.supported_gen_types.map((gt) => (
-                              <span key={gt} className="text-xs bg-white/8 text-slate-400 px-2 py-0.5 rounded-full">{gt}</span>
-                            ))}
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Luma model picker */}
-              {selectedProvider === 'luma' && !selectedModel && (
-                <div className="max-w-2xl">
-                  <h2 className="text-2xl font-bold mb-1">Dream Machine</h2>
-                  <p className="text-slate-400 text-sm mb-8">Choose a generation type</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {models.filter((m) => m.slug.startsWith('luma')).map((model) => {
-                      const accessible = tierCanAccess(userTier, model.min_tier)
-                      return (
-                        <button
-                          key={model.id}
-                          onClick={accessible ? () => selectModel(model) : undefined}
-                          className={`relative text-left rounded-2xl p-5 border transition-all ${
-                            accessible
-                              ? 'bg-white/3 border-white/8 hover:border-sky-500/50 hover:bg-sky-500/5'
-                              : 'bg-white/2 border-white/5 opacity-50 cursor-not-allowed'
-                          }`}
-                        >
-                          {!accessible && (
-                            <span className="absolute top-3 right-3 text-xs bg-white/10 text-slate-400 px-2 py-0.5 rounded-full">
-                              {model.min_tier}
-                            </span>
-                          )}
-                          <div className="text-white font-bold text-base leading-tight mb-1">{model.name}</div>
-                          <div className="text-slate-500 text-xs line-clamp-2 mb-3">{model.description}</div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {model.supported_gen_types.map((gt) => (
-                              <span key={gt} className="text-xs bg-white/8 text-slate-400 px-2 py-0.5 rounded-full">{gt}</span>
                             ))}
                           </div>
                         </button>
@@ -684,6 +577,8 @@ export default function Dashboard() {
                         submitting={submitting}
                         initialValues={img2imgInitialValues}
                         onByokKeyChange={setByokKey}
+                        userTier={userTier}
+                        modelMinTier={selectedModel?.min_tier}
                       />
                     </>
                   )}

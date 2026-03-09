@@ -27,15 +27,13 @@ export default function ModelCard({ model, userTier, selected, onClick }: Props)
 
   return (
     <button
-      onClick={accessible && !comingSoon ? onClick : undefined}
+      onClick={!comingSoon ? onClick : undefined}
       className={`relative w-full text-left rounded-2xl p-5 border transition-all ${
         comingSoon
           ? 'bg-white/2 border-white/5 opacity-50 cursor-not-allowed'
           : selected
           ? 'bg-sky-500/10 border-sky-500/50'
-          : accessible
-          ? 'bg-white/3 border-white/8 hover:border-white/20 hover:bg-white/6'
-          : 'bg-white/2 border-white/5 opacity-50 cursor-not-allowed'
+          : 'bg-white/3 border-white/8 hover:border-white/20 hover:bg-white/6'
       }`}
     >
       {comingSoon && (

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Model, Template, TemplateField, GenType, FieldOption } from '../../types'
-import { GEN_TYPE_LABELS } from '../../types'
+import { GEN_TYPE_LABELS, tierCanAccess } from '../../types'
 import { supabase } from '../../lib/supabase'
 
 interface CustomOption {
@@ -18,6 +18,8 @@ interface Props {
   submitting: boolean
   initialValues?: Record<string, unknown>
   onByokKeyChange?: (key: string | null) => void
+  userTier?: string
+  modelMinTier?: string
 }
 
 const CUSTOM_SUPPORTED = ['select', 'multi_select', 'style_picker']
@@ -223,7 +225,7 @@ function FieldInput({ field, value, onChange, customOptions }: {
   return null
 }
 
-export default function TemplateForm({ template, genType, model, onSubmit, submitting, initialValues, onByokKeyChange }: Props) {
+export default function TemplateForm({ template, genType, model, onSubmit, submitting, initialValues, onByokKeyChange, userTier, modelMinTier }: Props) {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
   const [customOptions, setCustomOptions] = useState<Record<string, FieldOption[]>>({})
   const [addingTo, setAddingTo] = useState<string | null>(null)
@@ -480,13 +482,31 @@ export default function TemplateForm({ template, genType, model, onSubmit, submi
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full py-3.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-semibold text-sm transition-all"
-      >
-        {submitting ? 'Generating…' : 'Generate →'}
-      </button>
+      {(() => {
+        const canGenerate = !userTier || !modelMinTier || tierCanAccess(userTier, modelMinTier)
+        if (canGenerate) {
+          return (
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-3.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-semibold text-sm transition-all"
+            >
+              {submitting ? 'Generating…' : 'Generate →'}
+            </button>
+          )
+        }
+        return (
+          <div className="space-y-2">
+            <a
+              href="/pricing"
+              className="block w-full py-3.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-xl font-semibold text-sm text-center transition-all"
+            >
+              Upgrade to {modelMinTier} to generate →
+            </a>
+            <p className="text-center text-xs text-slate-600">You can still explore and fill out the template</p>
+          </div>
+        )
+      })()}
     </form>
   )
 }
