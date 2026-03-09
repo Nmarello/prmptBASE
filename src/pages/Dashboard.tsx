@@ -23,8 +23,8 @@ export default function Dashboard() {
   const [template, setTemplate] = useState<Template | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string; isVideo?: boolean } | null>(null)
-  const [pendingVeo, setPendingVeo] = useState<{ assetId: string; operationName: string } | null>(null)
-  const veoPollerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [pendingVideo, setPendingVideo] = useState<{ assetId: string; operationName: string; provider: 'google' | 'fal.ai' } | null>(null)
+  const videoPollerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [generateError, setGenerateError] = useState<string | null>(null)
 
   const [projects, setProjects] = useState<UserProject[]>([])
@@ -169,9 +169,10 @@ export default function Dashboard() {
       const data = await res.json()
       if (!res.ok || data?.error) throw new Error(data?.error ?? data?.message ?? `HTTP ${res.status}: ${JSON.stringify(data)}`)
 
-      // Veo: async pending — start polling
+      // Async video pending — start polling
       if (isVideo && data.status === 'pending') {
-        setPendingVeo({ assetId: data.asset?.id, operationName: data.operation_name })
+        const provider = data.provider === 'fal.ai' ? 'fal.ai' : 'google'
+        setPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, provider })
         setSubmitting(false)
         return
       }
@@ -188,18 +189,19 @@ export default function Dashboard() {
     }
   }
 
-  // Veo polling
+  // Video polling (Veo + fal.ai)
   useEffect(() => {
-    if (!pendingVeo) {
-      if (veoPollerRef.current) clearInterval(veoPollerRef.current)
+    if (!pendingVideo) {
+      if (videoPollerRef.current) clearInterval(videoPollerRef.current)
       return
     }
     async function poll() {
-      if (!pendingVeo) return
+      if (!pendingVideo) return
       try {
         const { data: { session } } = await supabase.auth.getSession()
+        const endpoint = pendingVideo.provider === 'fal.ai' ? 'check-fal-video' : 'check-veo-job'
         const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-veo-job`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`,
           {
             method: 'POST',
             headers: {
@@ -209,22 +211,22 @@ export default function Dashboard() {
             },
             body: JSON.stringify({
               user_token: session?.access_token ?? null,
-              asset_id: pendingVeo.assetId,
-              operation_name: pendingVeo.operationName,
+              asset_id: pendingVideo.assetId,
+              operation_name: pendingVideo.operationName,
             }),
           },
         )
         const data = await res.json()
         if (data.status === 'complete' && data.video_url) {
-          setPendingVeo(null)
+          setPendingVideo(null)
           setResult({ url: data.video_url, prompt: '', isVideo: true })
           loadAssets()
         }
       } catch (_) { /* keep polling */ }
     }
-    veoPollerRef.current = setInterval(poll, 5000)
-    return () => { if (veoPollerRef.current) clearInterval(veoPollerRef.current) }
-  }, [pendingVeo])
+    videoPollerRef.current = setInterval(poll, 5000)
+    return () => { if (videoPollerRef.current) clearInterval(videoPollerRef.current) }
+  }, [pendingVideo])
 
   async function deleteAsset(id: string) {
     await supabase.from('assets').delete().eq('id', id)
@@ -492,11 +494,11 @@ export default function Dashboard() {
                     ← {selectedModel.provider === 'fal.ai' ? 'fal.ai Models' : selectedModel.name}
                   </button>
 
-                  {pendingVeo && !result && (
+                  {pendingVideo && !result && (
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
                       <div className="w-10 h-10 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
-                      <p className="text-slate-400 font-medium">Veo is rendering your video…</p>
-                      <p className="text-slate-600 text-sm">This usually takes 2–4 minutes. Hang tight.</p>
+                      <p className="text-slate-400 font-medium">Rendering your video…</p>
+                      <p className="text-slate-600 text-sm">This usually takes 2–5 minutes. Hang tight.</p>
                     </div>
                   )}
 

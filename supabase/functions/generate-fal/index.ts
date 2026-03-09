@@ -13,6 +13,16 @@ const FAL_ENDPOINTS: Record<string, string> = {
   'flux-dev-img2img':  'https://fal.run/fal-ai/flux/dev/image-to-image',
 }
 
+const FAL_VIDEO_ENDPOINTS: Record<string, string> = {
+  'kling-txt2vid':  'fal-ai/kling-video/v1.6/standard/text-to-video',
+  'kling-img2vid':  'fal-ai/kling-video/v1.6/standard/image-to-video',
+  'luma-txt2vid':   'fal-ai/luma-dream-machine/ray-2/text-to-video',
+  'luma-img2vid':   'fal-ai/luma-dream-machine/ray-2/image-to-video',
+  'minimax-txt2vid': 'fal-ai/minimax/video-01',
+}
+
+const FAL_QUEUE_BASE = 'https://queue.fal.run'
+
 const FAL_SIZE_DIMS: Record<string, [number, number]> = {
   square_hd:      [1024, 1024],
   square:         [512,  512],
@@ -221,6 +231,85 @@ Deno.serve(async (req) => {
       const firstAsset = insertedAssets[0]
       return new Response(
         JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt, seed: falData.seed ?? null }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // --- video path ---
+    const isVideo = slug in FAL_VIDEO_ENDPOINTS
+    if (isVideo) {
+      const modelPath = FAL_VIDEO_ENDPOINTS[slug]
+      const prompt = (body.prompt as string | undefined)?.trim() ?? ''
+      const isImgVid = slug.endsWith('img2vid')
+
+      // Build fal payload
+      const falPayload: Record<string, unknown> = {}
+
+      // img2vid: upload source image to get a URL
+      if (isImgVid) {
+        if (!source_image) throw new Error('Source image is required for image-to-video')
+        const base64Data = (source_image as string).replace(/^data:image\/\w+;base64,/, '')
+        const mimeMatch = (source_image as string).match(/^data:(image\/\w+);base64,/)
+        const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+        const ext = mimeType.split('/')[1] ?? 'jpg'
+        const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+        const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
+        const { error: srcErr } = await adminClient.storage
+          .from('assets').upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
+        if (srcErr) throw new Error(`Source upload failed: ${srcErr.message}`)
+        const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
+        falPayload.image_url = publicUrl
+      }
+
+      if (prompt) falPayload.prompt = prompt
+      if (body.negative_prompt) falPayload.negative_prompt = body.negative_prompt
+
+      // Model-specific params
+      if (slug.startsWith('kling')) {
+        falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
+        falPayload.duration = body.duration ?? '5'
+        if (body.cfg_scale) falPayload.cfg_scale = Number(body.cfg_scale)
+      } else if (slug.startsWith('luma')) {
+        falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
+        if (body.loop) falPayload.loop = body.loop === 'true' || body.loop === true
+      } else if (slug.startsWith('minimax')) {
+        falPayload.prompt_optimizer = body.prompt_optimizer !== 'false'
+      }
+
+      // Submit to fal queue
+      const queueRes = await fetch(`${FAL_QUEUE_BASE}/${modelPath}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
+        body: JSON.stringify(falPayload),
+      })
+      if (!queueRes.ok) {
+        const err = await queueRes.text()
+        throw new Error(`fal.ai queue error: ${err}`)
+      }
+      const queueData = await queueRes.json()
+      const statusUrl: string = queueData.status_url ?? ''
+      if (!statusUrl) throw new Error(`No status_url in fal response: ${JSON.stringify(queueData)}`)
+
+      // Insert pending asset
+      const { data: asset } = await adminClient.from('assets').insert({
+        user_id: userId,
+        prompt_id: prompt_id ?? null,
+        model_id: model_id ?? null,
+        gen_type: isImgVid ? 'img2vid' : 'txt2vid',
+        url: '',
+        metadata: {
+          prompt,
+          model_slug: slug,
+          status: 'pending',
+          status_url: statusUrl,
+          response_url: queueData.response_url ?? '',
+          aspect_ratio: body.aspect_ratio ?? '16:9',
+          duration: body.duration ?? null,
+        },
+      }).select().single()
+
+      return new Response(
+        JSON.stringify({ asset, operation_name: statusUrl, status: 'pending', prompt, provider: 'fal.ai' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }

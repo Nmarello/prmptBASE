@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
     }
 
     // ── IMAGE: Imagen 3 ───────────────────────────────────────────────────────
-    const slug = model_slug ?? 'imagen-3.0-generate-002'
+    const slug = model_slug ?? 'imagen-4.0-generate-001'
     const numImages = Math.min(Math.max(Number(body.num_images ?? 1), 1), 4)
     const aspectRatio = body.aspect_ratio ?? '1:1'
 
