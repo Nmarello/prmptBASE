@@ -341,12 +341,13 @@ export default function Dashboard() {
                   const imageModels = models.filter((m) =>
                     m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
                   )
-                  // Group fal.ai as one tile, others individually
-                  const nonFal = imageModels.filter((m) => m.provider !== 'fal.ai')
+                  // Group fal.ai as one tile, others individually; Google always last
+                  const nonFalNonGoogle = imageModels.filter((m) => m.provider !== 'fal.ai' && m.provider !== 'Google')
+                  const googleModels = imageModels.filter((m) => m.provider === 'Google')
                   const hasFal = imageModels.some((m) => m.provider === 'fal.ai')
                   return (
                     <>
-                      {nonFal.map((model) => (
+                      {nonFalNonGoogle.map((model) => (
                         <ModelCard
                           key={model.id}
                           model={model}
@@ -372,6 +373,15 @@ export default function Dashboard() {
                           <div className="mt-3 text-xs text-slate-600">Select to choose model →</div>
                         </button>
                       )}
+                      {googleModels.map((model) => (
+                        <ModelCard
+                          key={model.id}
+                          model={model}
+                          userTier={userTier}
+                          selected={selectedModel?.id === model.id}
+                          onClick={() => selectModel(model)}
+                        />
+                      ))}
                     </>
                   )
                 })()}
