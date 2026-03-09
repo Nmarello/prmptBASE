@@ -340,16 +340,22 @@ export default function Dashboard() {
                 )}
 
                 {mediaTab === 'image' && (() => {
-                  const imageModels = models.filter((m) =>
+                  const fluxImageModels = models.filter((m) =>
+                    m.provider === 'fal.ai' &&
                     m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
                   )
-                  // Group fal.ai as one tile, others individually; Google always last
-                  const nonFalNonGoogle = imageModels.filter((m) => m.provider !== 'fal.ai' && m.provider !== 'Google')
-                  const googleModels = imageModels.filter((m) => m.provider === 'Google')
-                  const hasFal = imageModels.some((m) => m.provider === 'fal.ai')
+                  const openaiImageModels = models.filter((m) =>
+                    m.provider === 'OpenAI' &&
+                    m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
+                  )
+                  const googleImageModels = models.filter((m) =>
+                    m.provider === 'Google' &&
+                    m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
+                  )
+                  const hasFlux = fluxImageModels.length > 0
                   return (
                     <>
-                      {nonFalNonGoogle.map((model) => (
+                      {openaiImageModels.map((model) => (
                         <ModelCard
                           key={model.id}
                           model={model}
@@ -358,7 +364,7 @@ export default function Dashboard() {
                           onClick={() => selectModel(model)}
                         />
                       ))}
-                      {hasFal && (
+                      {hasFlux && (
                         <button
                           onClick={() => selectProviderTile('fal.ai')}
                           className={`relative w-full text-left rounded-2xl p-5 border transition-all ${
@@ -367,15 +373,15 @@ export default function Dashboard() {
                               : 'bg-white/3 border-white/8 hover:border-white/20 hover:bg-white/6'
                           }`}
                         >
-                          <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-sky-400">fal.ai</div>
-                          <div className="text-white font-bold text-lg leading-tight">fal.ai Models</div>
+                          <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-sky-400">Black Forest Labs</div>
+                          <div className="text-white font-bold text-lg leading-tight">Flux</div>
                           <div className="text-slate-500 text-xs mt-1.5">
-                            {models.filter((m) => m.provider === 'fal.ai').length} models available
+                            {fluxImageModels.length} models available
                           </div>
                           <div className="mt-3 text-xs text-slate-600">Select to choose model →</div>
                         </button>
                       )}
-                      {googleModels.map((model) => (
+                      {googleImageModels.map((model) => (
                         <ModelCard
                           key={model.id}
                           model={model}
@@ -421,13 +427,13 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* fal.ai model picker */}
+              {/* Flux model picker */}
               {selectedProvider === 'fal.ai' && !selectedModel && (
                 <div className="max-w-2xl">
-                  <h2 className="text-2xl font-bold mb-1">fal.ai Models</h2>
-                  <p className="text-slate-400 text-sm mb-8">Choose a model to build your prompt</p>
+                  <h2 className="text-2xl font-bold mb-1">Flux Models</h2>
+                  <p className="text-slate-400 text-sm mb-8">Choose a Flux model to build your prompt</p>
                   <div className="grid grid-cols-2 gap-3">
-                    {models.filter((m) => m.provider === 'fal.ai').map((model) => {
+                    {models.filter((m) => m.provider === 'fal.ai' && m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')).map((model) => {
                       const accessible = tierCanAccess(userTier, model.min_tier)
                       return (
                         <button
@@ -491,7 +497,7 @@ export default function Dashboard() {
                     }}
                     className="text-slate-500 hover:text-white text-sm mb-8 flex items-center gap-1"
                   >
-                    ← {selectedModel.provider === 'fal.ai' ? 'fal.ai Models' : selectedModel.name}
+                    ← {selectedModel.provider === 'fal.ai' ? 'Flux Models' : selectedModel.name}
                   </button>
 
                   {pendingVideo && !result && (
