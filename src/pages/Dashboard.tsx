@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { Asset, Model, Template, GenType, UserProject } from '../types'
-import { GEN_TYPE_LABELS } from '../types'
+import { GEN_TYPE_LABELS, tierCanAccess } from '../types'
 import ModelCard from '../components/dashboard/ModelCard'
 import TemplateForm from '../components/dashboard/TemplateForm'
 import AssetGrid from '../components/dashboard/AssetGrid'
@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [userTier, setUserTier] = useState('newbie')
 
   const [models, setModels] = useState<Model[]>([])
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
   const [selectedModel, setSelectedModel] = useState<Model | null>(null)
   const [selectedGenType, setSelectedGenType] = useState<GenType | null>(null)
   const [template, setTemplate] = useState<Template | null>(null)
@@ -54,7 +55,19 @@ export default function Dashboard() {
     loadAssets()
   }, [user, loadAssets])
 
+  function selectProviderTile(provider: string) {
+    setSelectedProvider(provider)
+    setSelectedModel(null)
+    setSelectedGenType(null)
+    setTemplate(null)
+    setResult(null)
+    setGenerateError(null)
+    setImg2imgInitialValues(undefined)
+    setView('builder')
+  }
+
   async function selectModel(model: Model) {
+    setSelectedProvider(model.provider)
     setSelectedModel(model)
     setSelectedGenType(null)
     setTemplate(null)
@@ -99,12 +112,9 @@ export default function Dashboard() {
       const body = isFal
         ? {
             user_token: session?.access_token ?? null,
-            prompt: values.prompt,
-            aspect_ratio: values.aspect_ratio ?? 'square_hd',
-            style: values.style ?? '',
-            negative_prompt: values.negative_prompt ?? '',
-            seed: values.seed ? Number(values.seed) : null,
+            ...values,
             model_id: selectedModel.id,
+            model_slug: selectedModel.slug,
             prompt_id: promptRecord?.id ?? null,
             byok_key: byokKey ?? null,
           }
@@ -242,7 +252,8 @@ export default function Dashboard() {
               {models.length === 0 && (
                 <p className="text-slate-600 text-sm px-1">Loading…</p>
               )}
-              {models.map((model) => (
+              {/* Non-fal.ai models rendered individually */}
+              {models.filter((m) => m.provider !== 'fal.ai').map((model) => (
                 <ModelCard
                   key={model.id}
                   model={model}
@@ -251,16 +262,75 @@ export default function Dashboard() {
                   onClick={() => selectModel(model)}
                 />
               ))}
+              {/* fal.ai provider tile */}
+              {models.some((m) => m.provider === 'fal.ai') && (
+                <button
+                  onClick={() => selectProviderTile('fal.ai')}
+                  className={`relative w-full text-left rounded-2xl p-5 border transition-all ${
+                    selectedProvider === 'fal.ai' && !selectedModel
+                      ? 'bg-sky-500/10 border-sky-500/50'
+                      : 'bg-white/3 border-white/8 hover:border-white/20 hover:bg-white/6'
+                  }`}
+                >
+                  <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-sky-400">
+                    fal.ai
+                  </div>
+                  <div className="text-white font-bold text-lg leading-tight">fal.ai Models</div>
+                  <div className="text-slate-500 text-xs mt-1.5">
+                    {models.filter((m) => m.provider === 'fal.ai').length} models available
+                  </div>
+                  <div className="mt-3 text-xs text-slate-600">Select to choose model →</div>
+                </button>
+              )}
             </aside>
 
             {/* Main panel */}
             <main className="flex-1 overflow-y-auto p-8">
-              {!selectedModel && (
+              {!selectedModel && !selectedProvider && (
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-4xl mb-4">⚡</div>
                     <p className="text-slate-400 font-medium">Select a model to get started</p>
                     <p className="text-slate-600 text-sm mt-1">Choose an AI model from the left to open the prompt builder</p>
+                  </div>
+                </div>
+              )}
+
+              {/* fal.ai model picker */}
+              {selectedProvider === 'fal.ai' && !selectedModel && (
+                <div className="max-w-2xl">
+                  <h2 className="text-2xl font-bold mb-1">fal.ai Models</h2>
+                  <p className="text-slate-400 text-sm mb-8">Choose a model to build your prompt</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {models.filter((m) => m.provider === 'fal.ai').map((model) => {
+                      const accessible = tierCanAccess(userTier, model.min_tier)
+                      return (
+                        <button
+                          key={model.id}
+                          onClick={accessible ? () => selectModel(model) : undefined}
+                          className={`relative text-left rounded-2xl p-5 border transition-all ${
+                            accessible
+                              ? 'bg-white/3 border-white/8 hover:border-sky-500/50 hover:bg-sky-500/5'
+                              : 'bg-white/2 border-white/5 opacity-50 cursor-not-allowed'
+                          }`}
+                        >
+                          {!accessible && (
+                            <span className="absolute top-3 right-3 text-xs bg-white/10 text-slate-400 px-2 py-0.5 rounded-full">
+                              {model.min_tier}
+                            </span>
+                          )}
+                          <div className="text-white font-bold text-base leading-tight mb-1">{model.name}</div>
+                          <div className="text-slate-500 text-xs line-clamp-2 mb-3">{model.description}</div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {model.supported_gen_types.map((gt) => (
+                              <span key={gt} className="text-xs bg-white/8 text-slate-400 px-2 py-0.5 rounded-full">
+                                {gt}
+                              </span>
+                            ))}
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -290,10 +360,13 @@ export default function Dashboard() {
               {selectedModel && selectedGenType && template && (
                 <div className="max-w-2xl">
                   <button
-                    onClick={() => { setSelectedGenType(null); setTemplate(null); setResult(null); setGenerateError(null) }}
+                    onClick={() => {
+                      setSelectedGenType(null); setTemplate(null); setResult(null); setGenerateError(null)
+                      if (selectedModel.provider === 'fal.ai') setSelectedModel(null)
+                    }}
                     className="text-slate-500 hover:text-white text-sm mb-8 flex items-center gap-1"
                   >
-                    ← {selectedModel.name}
+                    ← {selectedModel.provider === 'fal.ai' ? 'fal.ai Models' : selectedModel.name}
                   </button>
 
                   {result ? (
