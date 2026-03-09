@@ -14,6 +14,12 @@ const providerColors: Record<string, string> = {
   default: 'text-sky-400',
 }
 
+const providerDisplayNames: Record<string, string> = {
+  OpenAI: 'OpenAI',
+  Google: 'Google',
+  Midjourney: 'Midjourney',
+}
+
 export default function ModelCard({ model, userTier, selected, onClick }: Props) {
   const accessible = tierCanAccess(userTier, model.min_tier)
   const comingSoon = model.provider === 'Google'
@@ -43,9 +49,11 @@ export default function ModelCard({ model, userTier, selected, onClick }: Props)
         </span>
       )}
 
-      <div className={`text-xs font-semibold uppercase tracking-wider mb-1 ${color}`}>
-        {model.provider}
-      </div>
+      {providerDisplayNames[model.provider] && (
+        <div className={`text-xs font-semibold uppercase tracking-wider mb-1 ${color}`}>
+          {providerDisplayNames[model.provider]}
+        </div>
+      )}
       <div className="text-white font-bold text-lg leading-tight">{model.name}</div>
       <div className="text-slate-500 text-xs mt-1.5 line-clamp-2">{model.description}</div>
 
