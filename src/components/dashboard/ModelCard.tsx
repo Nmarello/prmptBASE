@@ -16,20 +16,28 @@ const providerColors: Record<string, string> = {
 
 export default function ModelCard({ model, userTier, selected, onClick }: Props) {
   const accessible = tierCanAccess(userTier, model.min_tier)
+  const comingSoon = model.provider === 'Google'
   const color = providerColors[model.provider] ?? providerColors.default
 
   return (
     <button
-      onClick={accessible ? onClick : undefined}
+      onClick={accessible && !comingSoon ? onClick : undefined}
       className={`relative w-full text-left rounded-2xl p-5 border transition-all ${
-        selected
+        comingSoon
+          ? 'bg-white/2 border-white/5 opacity-50 cursor-not-allowed'
+          : selected
           ? 'bg-sky-500/10 border-sky-500/50'
           : accessible
           ? 'bg-white/3 border-white/8 hover:border-white/20 hover:bg-white/6'
           : 'bg-white/2 border-white/5 opacity-50 cursor-not-allowed'
       }`}
     >
-      {!accessible && (
+      {comingSoon && (
+        <span className="absolute top-3 right-3 text-xs bg-amber-500/15 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full">
+          coming soon
+        </span>
+      )}
+      {!comingSoon && !accessible && (
         <span className="absolute top-3 right-3 text-xs bg-white/10 text-slate-400 px-2 py-0.5 rounded-full">
           {model.min_tier}
         </span>

@@ -5,13 +5,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const FAL_ENDPOINTS: Record<string, string> = {
+  'flux-schnell':      'https://fal.run/fal-ai/flux/schnell',
+  'flux-dev':          'https://fal.run/fal-ai/flux/dev',
+  'flux-pro':          'https://fal.run/fal-ai/flux-pro',
+  'flux-pro-ultra':    'https://fal.run/fal-ai/flux-pro/v1.1-ultra',
+  'flux-dev-img2img':  'https://fal.run/fal-ai/flux/dev/image-to-image',
+}
+
 const FAL_SIZE_DIMS: Record<string, [number, number]> = {
-  square_hd: [1024, 1024],
-  square: [512, 512],
-  portrait_4_3: [768, 1024],
-  portrait_16_9: [576, 1024],
-  landscape_4_3: [1024, 768],
+  square_hd:      [1024, 1024],
+  square:         [512,  512],
+  portrait_4_3:   [768,  1024],
+  portrait_16_9:  [576,  1024],
+  landscape_4_3:  [1024, 768],
   landscape_16_9: [1024, 576],
+}
+
+// Ultra uses different aspect_ratio strings
+const ULTRA_ASPECT_DIMS: Record<string, [number, number]> = {
+  '21:9': [2048, 880],
+  '16:9': [1920, 1080],
+  '4:3':  [1344, 1024],
+  '1:1':  [1024, 1024],
+  '3:4':  [1024, 1344],
+  '9:16': [1080, 1920],
 }
 
 const STYLE_MAP: Record<string, string> = {
@@ -107,7 +125,12 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json()
-    const { user_token, aspect_ratio, seed, steps, num_images, guidance_scale, output_format, acceleration, model_id, prompt_id, byok_key } = body
+    const {
+      user_token, aspect_ratio, seed, steps, num_images,
+      guidance_scale, output_format, acceleration,
+      model_id, model_slug, prompt_id, byok_key,
+      source_image, strength,
+    } = body
 
     const falKey = byok_key ?? Deno.env.get('FAL_KEY')
     if (!falKey) throw new Error('No fal.ai API key available')
@@ -123,31 +146,151 @@ Deno.serve(async (req) => {
       userId = user?.id ?? null
     }
 
+    const slug = (model_slug as string) ?? 'flux-schnell'
+    const isImg2Img = slug === 'flux-dev-img2img'
+
+    // --- img2img path ---
+    if (isImg2Img) {
+      const prompt = (body.prompt as string | undefined)?.trim()
+      if (!prompt) throw new Error('Prompt is required')
+      if (!source_image) throw new Error('Source image is required')
+
+      // Upload base64 source image to storage to get a public URL for fal
+      const base64Data = (source_image as string).replace(/^data:image\/\w+;base64,/, '')
+      const mimeMatch = (source_image as string).match(/^data:(image\/\w+);base64,/)
+      const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+      const ext = mimeType.split('/')[1] ?? 'jpg'
+      const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+      const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
+      const { error: srcUploadErr } = await adminClient.storage
+        .from('assets')
+        .upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
+      if (srcUploadErr) throw new Error(`Source upload failed: ${srcUploadErr.message}`)
+      const { data: { publicUrl: sourceUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
+
+      const fmt = ['jpeg', 'png'].includes(output_format) ? output_format : 'jpeg'
+      const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
+      const numImages = Math.min(Math.max(Number(num_images) || 1, 1), 4)
+      const strengthVal = Math.min(Math.max(Number(strength) || 0.85, 0.1), 1.0)
+      const numSteps = Math.min(Math.max(Number(steps) || 28, 1), 50)
+      const guidanceVal = guidance_scale != null ? Math.min(Math.max(Number(guidance_scale), 1), 20) : 3.5
+
+      const falPayload: Record<string, unknown> = {
+        image_url: sourceUrl,
+        prompt,
+        strength: strengthVal,
+        num_inference_steps: numSteps,
+        guidance_scale: guidanceVal,
+        num_images: numImages,
+        output_format: fmt,
+        enable_safety_checker: true,
+        ...(seedVal !== undefined ? { seed: seedVal } : {}),
+      }
+
+      const falRes = await fetch(FAL_ENDPOINTS['flux-dev-img2img'], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
+        body: JSON.stringify(falPayload),
+      })
+      if (!falRes.ok) {
+        const err = await falRes.text()
+        throw new Error(`fal.ai error: ${err}`)
+      }
+
+      const falData = await falRes.json()
+      const images: { url: string; width?: number; height?: number }[] = falData.images ?? []
+      if (images.length === 0) throw new Error(`No images in fal.ai response: ${JSON.stringify(falData)}`)
+
+      const insertedAssets = await Promise.all(
+        images.map(async (img) => {
+          const permanentUrl = await storeImage(adminClient, img.url, userId, fmt)
+          const { data } = await adminClient.from('assets').insert({
+            user_id: userId,
+            prompt_id: prompt_id ?? null,
+            model_id: model_id ?? null,
+            gen_type: 'img2img',
+            url: permanentUrl,
+            width: img.width ?? 1024,
+            height: img.height ?? 1024,
+            metadata: { prompt, strength: strengthVal, steps: numSteps, guidance_scale: guidanceVal, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
+          }).select().single()
+          return data
+        })
+      )
+
+      const firstAsset = insertedAssets[0]
+      return new Response(
+        JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt, seed: falData.seed ?? null }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // --- txt2img path ---
     const builtPrompt = buildPrompt(body)
     if (!builtPrompt.trim()) throw new Error('Prompt is empty')
 
-    const falSize = (aspect_ratio && FAL_SIZE_DIMS[aspect_ratio]) ? aspect_ratio : 'square_hd'
-    const [w, h] = FAL_SIZE_DIMS[falSize]
+    const endpoint = FAL_ENDPOINTS[slug] ?? FAL_ENDPOINTS['flux-schnell']
+    const isUltra   = slug === 'flux-pro-ultra'
+    const isPro     = slug === 'flux-pro'
+    const isSchnell = slug === 'flux-schnell'
+
     const numImages = Math.min(Math.max(Number(num_images) || 1, 1), 4)
-    const numSteps = Math.min(Math.max(Number(steps) || 4, 1), 12)
-
     const fmt = ['jpeg', 'png'].includes(output_format) ? output_format : 'jpeg'
-    const accel = ['none', 'regular', 'high'].includes(acceleration) ? acceleration : 'none'
-    const guidanceVal = guidance_scale != null ? Math.min(Math.max(Number(guidance_scale), 1), 20) : 3.5
+    const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
 
-    const falPayload: Record<string, unknown> = {
-      prompt: builtPrompt,
-      image_size: falSize,
-      num_inference_steps: numSteps,
-      num_images: numImages,
-      guidance_scale: guidanceVal,
-      output_format: fmt,
-      acceleration: accel,
-      enable_safety_checker: true,
+    let falPayload: Record<string, unknown>
+    let w: number, h: number
+
+    if (isUltra) {
+      const ultraAspect = (aspect_ratio && ULTRA_ASPECT_DIMS[aspect_ratio]) ? aspect_ratio : '1:1'
+      ;[w, h] = ULTRA_ASPECT_DIMS[ultraAspect]
+      falPayload = {
+        prompt: builtPrompt,
+        aspect_ratio: ultraAspect,
+        num_images: numImages,
+        output_format: fmt,
+        enable_safety_checker: true,
+        ...(body.raw === 'true' || body.raw === true ? { raw: true } : {}),
+        ...(seedVal !== undefined ? { seed: seedVal } : {}),
+      }
+    } else if (isPro) {
+      const falSize = (aspect_ratio && FAL_SIZE_DIMS[aspect_ratio]) ? aspect_ratio : 'square_hd'
+      ;[w, h] = FAL_SIZE_DIMS[falSize]
+      const numSteps = Math.min(Math.max(Number(steps) || 28, 1), 50)
+      const guidanceVal = guidance_scale != null ? Math.min(Math.max(Number(guidance_scale), 1), 10) : 3.5
+      falPayload = {
+        prompt: builtPrompt,
+        image_size: falSize,
+        steps: numSteps,
+        guidance: guidanceVal,
+        num_images: numImages,
+        output_format: fmt,
+        safety_tolerance: '2',
+        ...(seedVal !== undefined ? { seed: seedVal } : {}),
+      }
+    } else {
+      // Schnell + Dev
+      const falSize = (aspect_ratio && FAL_SIZE_DIMS[aspect_ratio]) ? aspect_ratio : 'square_hd'
+      ;[w, h] = FAL_SIZE_DIMS[falSize]
+      const maxSteps = isSchnell ? 12 : 50
+      const defaultSteps = isSchnell ? 4 : 28
+      const numSteps = Math.min(Math.max(Number(steps) || defaultSteps, 1), maxSteps)
+      const guidanceVal = guidance_scale != null ? Math.min(Math.max(Number(guidance_scale), 1), 20) : 3.5
+      const accel = ['none', 'regular', 'high'].includes(acceleration) ? acceleration : 'none'
+      falPayload = {
+        prompt: builtPrompt,
+        image_size: falSize,
+        num_inference_steps: numSteps,
+        num_images: numImages,
+        guidance_scale: guidanceVal,
+        output_format: fmt,
+        enable_safety_checker: true,
+        ...(isSchnell ? { acceleration: accel } : {}),
+        ...(seedVal !== undefined ? { seed: seedVal } : {}),
+      }
     }
-    if (seed != null && seed !== '') falPayload.seed = Number(seed)
 
-    const falRes = await fetch('https://fal.run/fal-ai/flux/schnell', {
+    const falRes = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -165,20 +308,19 @@ Deno.serve(async (req) => {
     const images: { url: string }[] = falData.images ?? []
     if (images.length === 0) throw new Error(`No images in fal.ai response: ${JSON.stringify(falData)}`)
 
-    // Store all images, collect assets
     const metadata = {
       prompt: builtPrompt,
-      aspect_ratio: falSize,
+      model_slug: slug,
+      aspect_ratio: aspect_ratio ?? null,
       style: body.style ?? null,
       lighting: body.lighting ?? null,
       mood: body.mood ?? null,
       quality: body.quality ?? null,
-      steps: numSteps,
+      steps: falPayload.num_inference_steps ?? falPayload.steps ?? null,
       num_images: numImages,
-      guidance_scale: guidanceVal,
+      guidance: falPayload.guidance_scale ?? falPayload.guidance ?? null,
       output_format: fmt,
-      acceleration: accel,
-      seed: falData.seed ?? seed ?? null,
+      seed: falData.seed ?? seedVal ?? null,
     }
 
     const insertedAssets = await Promise.all(
