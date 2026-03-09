@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [userTier, setUserTier] = useState('newbie')
 
   const [models, setModels] = useState<Model[]>([])
+  const [mediaTab, setMediaTab] = useState<'image' | 'video'>('image')
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
   const [selectedModel, setSelectedModel] = useState<Model | null>(null)
   const [selectedGenType, setSelectedGenType] = useState<GenType | null>(null)
@@ -305,43 +306,95 @@ export default function Dashboard() {
         {(view === 'models' || view === 'builder') && (
           <>
             {/* Left panel — model list */}
-            <aside className="w-72 border-r border-white/8 p-4 overflow-y-auto space-y-3 flex-shrink-0">
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-1 mb-3">
-                AI Models
+            <aside className="w-72 border-r border-white/8 flex flex-col flex-shrink-0">
+              {/* Image / Video tabs */}
+              <div className="flex border-b border-white/8 flex-shrink-0">
+                {(['image', 'video'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => {
+                      setMediaTab(tab)
+                      setSelectedProvider(null)
+                      setSelectedModel(null)
+                      setSelectedGenType(null)
+                      setTemplate(null)
+                      setResult(null)
+                      setGenerateError(null)
+                    }}
+                    className={`flex-1 py-3 text-sm font-semibold tracking-wide transition-all ${
+                      mediaTab === tab
+                        ? 'text-white border-b-2 border-sky-400'
+                        : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    {tab === 'image' ? 'Image' : 'Video'}
+                  </button>
+                ))}
               </div>
-              {models.length === 0 && (
-                <p className="text-slate-600 text-sm px-1">Loading…</p>
-              )}
-              {/* Non-fal.ai models rendered individually */}
-              {models.filter((m) => m.provider !== 'fal.ai').map((model) => (
-                <ModelCard
-                  key={model.id}
-                  model={model}
-                  userTier={userTier}
-                  selected={selectedModel?.id === model.id}
-                  onClick={() => selectModel(model)}
-                />
-              ))}
-              {/* fal.ai provider tile */}
-              {models.some((m) => m.provider === 'fal.ai') && (
-                <button
-                  onClick={() => selectProviderTile('fal.ai')}
-                  className={`relative w-full text-left rounded-2xl p-5 border transition-all ${
-                    selectedProvider === 'fal.ai' && !selectedModel
-                      ? 'bg-sky-500/10 border-sky-500/50'
-                      : 'bg-white/3 border-white/8 hover:border-white/20 hover:bg-white/6'
-                  }`}
-                >
-                  <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-sky-400">
-                    fal.ai
-                  </div>
-                  <div className="text-white font-bold text-lg leading-tight">fal.ai Models</div>
-                  <div className="text-slate-500 text-xs mt-1.5">
-                    {models.filter((m) => m.provider === 'fal.ai').length} models available
-                  </div>
-                  <div className="mt-3 text-xs text-slate-600">Select to choose model →</div>
-                </button>
-              )}
+
+              <div className="p-4 overflow-y-auto space-y-3 flex-1">
+                {models.length === 0 && (
+                  <p className="text-slate-600 text-sm px-1">Loading…</p>
+                )}
+
+                {mediaTab === 'image' && (() => {
+                  const imageModels = models.filter((m) =>
+                    m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
+                  )
+                  // Group fal.ai as one tile, others individually
+                  const nonFal = imageModels.filter((m) => m.provider !== 'fal.ai')
+                  const hasFal = imageModels.some((m) => m.provider === 'fal.ai')
+                  return (
+                    <>
+                      {nonFal.map((model) => (
+                        <ModelCard
+                          key={model.id}
+                          model={model}
+                          userTier={userTier}
+                          selected={selectedModel?.id === model.id}
+                          onClick={() => selectModel(model)}
+                        />
+                      ))}
+                      {hasFal && (
+                        <button
+                          onClick={() => selectProviderTile('fal.ai')}
+                          className={`relative w-full text-left rounded-2xl p-5 border transition-all ${
+                            selectedProvider === 'fal.ai' && !selectedModel
+                              ? 'bg-sky-500/10 border-sky-500/50'
+                              : 'bg-white/3 border-white/8 hover:border-white/20 hover:bg-white/6'
+                          }`}
+                        >
+                          <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-sky-400">fal.ai</div>
+                          <div className="text-white font-bold text-lg leading-tight">fal.ai Models</div>
+                          <div className="text-slate-500 text-xs mt-1.5">
+                            {models.filter((m) => m.provider === 'fal.ai').length} models available
+                          </div>
+                          <div className="mt-3 text-xs text-slate-600">Select to choose model →</div>
+                        </button>
+                      )}
+                    </>
+                  )
+                })()}
+
+                {mediaTab === 'video' && (() => {
+                  const videoModels = models.filter((m) =>
+                    m.supported_gen_types.some((g) => g === 'txt2vid' || g === 'img2vid')
+                  )
+                  return videoModels.length === 0 ? (
+                    <p className="text-slate-600 text-sm px-1">No video models available</p>
+                  ) : (
+                    videoModels.map((model) => (
+                      <ModelCard
+                        key={model.id}
+                        model={model}
+                        userTier={userTier}
+                        selected={selectedModel?.id === model.id}
+                        onClick={() => selectModel(model)}
+                      />
+                    ))
+                  )
+                })()}
+              </div>
             </aside>
 
             {/* Main panel */}
