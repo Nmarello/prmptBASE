@@ -1,12 +1,27 @@
 import type { Asset } from '../../types'
 
 // ─── Showcase assets ──────────────────────────────────────────────────────────
-// Replace these URLs with real platform-generated showcase images stored in
-// Supabase storage under assets/showcase/. They fill empty bento slots at 90%
-// opacity so users notice their own content slowly taking over.
-const SHOWCASE_URLS: string[] = [
-  // TODO: populate with real showcase images
-  // e.g. 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/showcase/01.jpg',
+// Platform-generated showcase content used to backfill empty bento slots.
+// Shown at 90% opacity so users notice their own assets taking over.
+const SHOWCASE: { url: string; isVideo: boolean }[] = [
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773097957715-vbcmkai9f0h.jpg', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773097895754-gisdzjotcn9.jpg', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773097840496-zln7cfsexdb.jpg', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773097779411-6tbdqm308qy.jpg', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773097728856-v3ap7gzlfnn.jpg', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773097669991-vcaf8o2fhni.jpg', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1772773304799.png', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1772772981088.png', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1772772684856.png', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1772772580175.png', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1772772445427.png', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1772772089090.png', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1772772002691.png', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1772729597864.png', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1772729476761.png', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1772726421198.png', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1772726010394.png', isVideo: false },
+  { url: 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773102057074-8lky3sgejaq.mp4', isVideo: true },
 ]
 
 // ─── Bento slot config ────────────────────────────────────────────────────────
@@ -92,10 +107,11 @@ export default function HomeGrid({ assets, onSelectModel }: Props) {
   }
 
   // Backfill remaining slots with showcase assets at 90% opacity
-  if (slots.length < TOTAL_SLOTS && SHOWCASE_URLS.length > 0) {
+  if (slots.length < TOTAL_SLOTS && SHOWCASE.length > 0) {
     let si = 0
-    while (slots.length < TOTAL_SLOTS && si < SHOWCASE_URLS.length) {
-      slots.push({ url: SHOWCASE_URLS[si % SHOWCASE_URLS.length], isShowcase: true, isVideo: false })
+    while (slots.length < TOTAL_SLOTS && si < SHOWCASE.length) {
+      const s = SHOWCASE[si % SHOWCASE.length]
+      slots.push({ url: s.url, isShowcase: true, isVideo: s.isVideo })
       si++
     }
   }
