@@ -71,11 +71,25 @@ export default function Dashboard() {
   async function selectModel(model: Model) {
     setSelectedProvider(model.provider)
     setSelectedModel(model)
-    setSelectedGenType(null)
     setTemplate(null)
     setResult(null)
     setImg2imgInitialValues(undefined)
     setView('builder')
+
+    // Auto-select gen type if the model only supports one
+    if (model.supported_gen_types.length === 1) {
+      const gt = model.supported_gen_types[0] as GenType
+      setSelectedGenType(gt)
+      const { data } = await supabase
+        .from('templates')
+        .select('*')
+        .eq('model_id', model.id)
+        .eq('gen_type', gt)
+        .single()
+      if (data) setTemplate(data as Template)
+    } else {
+      setSelectedGenType(null)
+    }
   }
 
   async function selectGenType(gt: GenType) {
