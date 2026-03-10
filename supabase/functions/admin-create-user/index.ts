@@ -9,16 +9,16 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const adminClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    const adminClient = createClient(supabaseUrl, serviceKey)
 
     // Verify caller is admin
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) throw new Error('Missing auth header')
     const callerClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
+      supabaseUrl,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
     )
@@ -35,25 +35,33 @@ Deno.serve(async (req) => {
     const VALID_TIERS = ['newbie', 'creator', 'studio', 'pro']
     if (!VALID_TIERS.includes(tier)) throw new Error('Invalid tier')
 
-    // Create the auth user (email confirmed immediately)
-    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-      email,
-      password: password || undefined,
-      email_confirm: true,
+    // Create auth user via REST API directly (most reliable in Deno)
+    const createRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': `Bearer ${serviceKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        password: password || undefined,
+        email_confirm: true,
+      }),
     })
-    if (createError) throw new Error(createError.message)
 
-    const userId = newUser.user.id
+    const userData = await createRes.json()
+    if (!createRes.ok) throw new Error(userData.message ?? userData.msg ?? `Auth error ${createRes.status}`)
 
-    // Update profile (trigger creates it, but set tier + display_name)
-    await adminClient.from('profiles').upsert({
-      id: userId,
-      email,
-      display_name: display_name || null,
+    const userId = userData.id
+
+    // Profile is auto-created by trigger; update tier + display_name
+    await adminClient.from('profiles').update({
       tier,
-    }, { onConflict: 'id' })
+      ...(display_name ? { display_name } : {}),
+    }).eq('id', userId)
 
-    // Upsert subscription record
+    // Upsert subscription
     await adminClient.from('subscriptions').upsert(
       { user_id: userId, tier, status: 'active', updated_at: new Date().toISOString() },
       { onConflict: 'user_id' }

@@ -152,7 +152,7 @@ export default function Admin() {
         }
       )
       const data = await res.json()
-      if (data.error) throw new Error(data.error)
+      if (!res.ok || data.error) throw new Error(data.error ?? data.message ?? `HTTP ${res.status}`)
       setShowCreate(false)
       setCreateEmail(''); setCreatePassword(''); setCreateName(''); setCreateTier('newbie')
       loadAll()
