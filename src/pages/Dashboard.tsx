@@ -47,6 +47,7 @@ export default function Dashboard() {
 
   const [img2imgPickerUrl, setImg2imgPickerUrl] = useState<string | null>(null)
   const [img2imgInitialValues, setImg2imgInitialValues] = useState<Record<string, unknown> | undefined>(undefined)
+  const [img2vidPickerUrl, setImg2vidPickerUrl] = useState<string | null>(null)
 
   const loadAssets = useCallback(async () => {
     if (!user) return
@@ -270,6 +271,29 @@ export default function Dashboard() {
       setImg2imgPickerUrl(imageUrl)
     }
     reader.readAsDataURL(blob)
+  }
+
+  function sendToImg2Vid(imageUrl: string) {
+    setImg2vidPickerUrl(imageUrl)
+  }
+
+  async function handleImg2VidPick(model: Model) {
+    setImg2vidPickerUrl(null)
+    const { data } = await supabase
+      .from('templates')
+      .select('*')
+      .eq('model_id', model.id)
+      .eq('gen_type', 'img2vid')
+      .single()
+    if (data) {
+      setSelectedModel(model)
+      setSelectedGenType('img2vid')
+      setTemplate(data as Template)
+      setImg2imgInitialValues({ source_image: img2vidPickerUrl })
+      setResult(null)
+      setGenerateError(null)
+      setView('builder')
+    }
   }
 
   async function handleImg2ImgPick(model: Model) {
@@ -591,6 +615,14 @@ export default function Dashboard() {
                         >
                           Send to img2img →
                         </button>
+                        {!result.isVideo && (
+                          <button
+                            onClick={() => sendToImg2Vid(result.url)}
+                            className="px-5 py-2.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/40 rounded-xl text-sm font-medium text-violet-300 transition-all"
+                          >
+                            Send to img2vid →
+                          </button>
+                        )}
                         <button
                           onClick={() => { setView('assets'); loadAssets() }}
                           className="px-5 py-2.5 bg-white/8 hover:bg-white/12 border border-white/10 rounded-xl text-sm font-medium"
@@ -639,6 +671,7 @@ export default function Dashboard() {
             onDelete={deleteAsset}
             onGenerate={() => setView('models')}
             onSendToImg2Img={sendToImg2Img}
+            onSendToImg2Vid={sendToImg2Vid}
           />
         )}
       </div>
@@ -649,6 +682,18 @@ export default function Dashboard() {
           models={models.filter((m) => m.supported_gen_types.includes('img2img'))}
           onPick={handleImg2ImgPick}
           onClose={() => setImg2imgPickerUrl(null)}
+        />
+      )}
+
+      {/* Img2Vid model picker */}
+      {img2vidPickerUrl && (
+        <Img2ImgPicker
+          title="Animate this image"
+          subtitle="Choose a video model to animate your image"
+          genLabel="img2vid"
+          models={models.filter((m) => m.supported_gen_types.includes('img2vid'))}
+          onPick={handleImg2VidPick}
+          onClose={() => setImg2vidPickerUrl(null)}
         />
       )}
     </div>

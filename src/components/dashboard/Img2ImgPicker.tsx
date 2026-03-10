@@ -4,9 +4,12 @@ interface Props {
   models: Model[]
   onPick: (model: Model) => void
   onClose: () => void
+  title?: string
+  subtitle?: string
+  genLabel?: string
 }
 
-export default function Img2ImgPicker({ models, onPick, onClose }: Props) {
+export default function Img2ImgPicker({ models, onPick, onClose, title, subtitle }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
@@ -18,8 +21,8 @@ export default function Img2ImgPicker({ models, onPick, onClose }: Props) {
       >
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="text-white font-semibold">Send to img2img</h3>
-            <p className="text-slate-500 text-xs mt-0.5">Choose a model to edit this image</p>
+            <h3 className="text-white font-semibold">{title ?? 'Send to img2img'}</h3>
+            <p className="text-slate-500 text-xs mt-0.5">{subtitle ?? 'Choose a model to edit this image'}</p>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-white text-lg">✕</button>
         </div>

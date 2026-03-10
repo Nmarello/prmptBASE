@@ -9,9 +9,10 @@ interface Props {
   onDelete: (id: string) => void
   onGenerate: () => void
   onSendToImg2Img: (url: string) => void
+  onSendToImg2Vid: (url: string) => void
 }
 
-export default function AssetGrid({ assets, models, projects, loading, onDelete, onGenerate, onSendToImg2Img }: Props) {
+export default function AssetGrid({ assets, models, projects, loading, onDelete, onGenerate, onSendToImg2Img, onSendToImg2Vid }: Props) {
   const [lightbox, setLightbox] = useState<Asset | null>(null)
 
   const modelMap = Object.fromEntries(models.map((m) => [m.id, m]))
@@ -98,6 +99,7 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
                         onClick={() => setLightbox(asset)}
                         onDelete={onDelete}
                         onSendToImg2Img={onSendToImg2Img}
+                        onSendToImg2Vid={onSendToImg2Vid}
                       />
                     ))}
                   </div>
@@ -118,6 +120,7 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
           onClose={() => setLightbox(null)}
           onDelete={(id) => { onDelete(id); setLightbox(null) }}
           onSendToImg2Img={onSendToImg2Img}
+          onSendToImg2Vid={onSendToImg2Vid}
         />
       )}
     </>
@@ -192,12 +195,13 @@ function AccordionGroup({ label, provider, count, defaultOpen, children }: {
   )
 }
 
-function AssetCard({ asset, projectName, onClick, onDelete, onSendToImg2Img }: {
+function AssetCard({ asset, projectName, onClick, onDelete, onSendToImg2Img, onSendToImg2Vid }: {
   asset: Asset
   projectName: string | null
   onClick: () => void
   onDelete: (id: string) => void
   onSendToImg2Img: (url: string) => void
+  onSendToImg2Vid: (url: string) => void
 }) {
   const [hover, setHover] = useState(false)
   const [imgError, setImgError] = useState(false)
@@ -250,7 +254,15 @@ function AssetCard({ asset, projectName, onClick, onDelete, onSendToImg2Img }: {
             ✕
           </button>
         </div>
-        <div className="mb-1">
+        <div className="mb-1 flex flex-col gap-1">
+          {!isVideo && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onSendToImg2Vid(asset.url) }}
+              className="w-full py-1.5 bg-violet-500/20 hover:bg-violet-500/40 border border-violet-500/40 rounded-lg text-violet-300 text-xs font-medium transition-all"
+            >
+              Send to img2vid →
+            </button>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); onSendToImg2Img(asset.url) }}
             className="w-full py-1.5 bg-sky-500/20 hover:bg-sky-500/40 border border-sky-500/40 rounded-lg text-sky-300 text-xs font-medium transition-all"
@@ -272,13 +284,14 @@ function AssetCard({ asset, projectName, onClick, onDelete, onSendToImg2Img }: {
   )
 }
 
-function Lightbox({ asset, projectName, modelName, onClose, onDelete, onSendToImg2Img }: {
+function Lightbox({ asset, projectName, modelName, onClose, onDelete, onSendToImg2Img, onSendToImg2Vid }: {
   asset: Asset
   projectName: string | null
   modelName: string | null
   onClose: () => void
   onDelete: (id: string) => void
   onSendToImg2Img: (url: string) => void
+  onSendToImg2Vid: (url: string) => void
 }) {
   const prompt = (asset.metadata as Record<string, unknown>)?.prompt as string | undefined
   const revisedPrompt = (asset.metadata as Record<string, unknown>)?.revised_prompt as string | undefined
@@ -335,6 +348,14 @@ function Lightbox({ asset, projectName, modelName, onClose, onDelete, onSendToIm
           )}
 
           <div className="flex flex-col gap-2 mt-auto pt-2">
+            {asset.gen_type !== 'txt2vid' && asset.gen_type !== 'img2vid' && (
+              <button
+                onClick={() => { onSendToImg2Vid(asset.url); onClose() }}
+                className="w-full py-2.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/40 rounded-xl text-sm font-medium text-violet-300 transition-all"
+              >
+                Send to img2vid →
+              </button>
+            )}
             <button
               onClick={() => { onSendToImg2Img(asset.url); onClose() }}
               className="w-full py-2.5 bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 rounded-xl text-sm font-medium text-sky-300 transition-all"
