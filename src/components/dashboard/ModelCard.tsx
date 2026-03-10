@@ -6,11 +6,16 @@ interface Props {
   userTier: string
   selected: boolean
   onClick: () => void
+  comingSoon?: boolean
 }
 
 const providerColors: Record<string, string> = {
   OpenAI: 'text-emerald-400',
   Midjourney: 'text-purple-400',
+  Adobe: 'text-red-400',
+  Runway: 'text-pink-400',
+  Pika: 'text-violet-400',
+  Ideogram: 'text-orange-400',
   default: 'text-sky-400',
 }
 
@@ -18,11 +23,15 @@ const providerDisplayNames: Record<string, string> = {
   OpenAI: 'OpenAI',
   Google: 'Google',
   Midjourney: 'Midjourney',
+  Adobe: 'Adobe',
+  Runway: 'Runway',
+  Pika: 'Pika',
+  Ideogram: 'Ideogram',
 }
 
-export default function ModelCard({ model, userTier, selected, onClick }: Props) {
+export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp }: Props) {
   const accessible = tierCanAccess(userTier, model.min_tier)
-  const comingSoon = model.provider === 'Google'
+  const comingSoon = comingSoonProp || model.provider === 'Google'
   const color = providerColors[model.provider] ?? providerColors.default
 
   return (

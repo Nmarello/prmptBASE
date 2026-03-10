@@ -10,6 +10,18 @@ import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
 
 type View = 'models' | 'builder' | 'assets'
 
+const COMING_SOON_IMAGE: Partial<Model>[] = [
+  { slug: 'cs-midjourney', name: 'Midjourney', provider: 'Midjourney', description: 'The gold standard for artistic AI image generation. Unmatched aesthetic quality.', supported_gen_types: ['txt2img'] },
+  { slug: 'cs-ideogram', name: 'Ideogram', provider: 'Ideogram', description: 'Best-in-class text rendering inside images. Typography that actually works.', supported_gen_types: ['txt2img'] },
+  { slug: 'cs-firefly', name: 'Adobe Firefly', provider: 'Adobe', description: 'Commercially safe image generation built for creative professionals.', supported_gen_types: ['txt2img', 'img2img'] },
+]
+
+const COMING_SOON_VIDEO: Partial<Model>[] = [
+  { slug: 'cs-sora', name: 'Sora', provider: 'OpenAI', description: 'OpenAI\'s flagship video model. Photorealistic scenes with deep world understanding.', supported_gen_types: ['txt2vid'] },
+  { slug: 'cs-runway', name: 'Runway Gen-4', provider: 'Runway', description: 'The leading creative video AI. Gen-4 sets the bar for motion and cinematic quality.', supported_gen_types: ['txt2vid', 'img2vid'] },
+  { slug: 'cs-pika', name: 'Pika', provider: 'Pika', description: 'Fast, expressive video generation built for social-first creators.', supported_gen_types: ['txt2vid', 'img2vid'] },
+]
+
 export default function Dashboard() {
   const { user, signOut } = useAuth()
   const [view, setView] = useState<View>('models')
@@ -403,6 +415,16 @@ export default function Dashboard() {
                           onClick={() => selectModel(model)}
                         />
                       ))}
+                      {COMING_SOON_IMAGE.map((m) => (
+                        <ModelCard
+                          key={m.slug}
+                          model={m as Model}
+                          userTier={userTier}
+                          selected={false}
+                          onClick={() => {}}
+                          comingSoon
+                        />
+                      ))}
                     </>
                   )
                 })()}
@@ -411,18 +433,28 @@ export default function Dashboard() {
                   const videoModels = models.filter((m) =>
                     m.supported_gen_types.some((g) => g === 'txt2vid' || g === 'img2vid')
                   )
-                  return videoModels.length === 0 ? (
-                    <p className="text-slate-600 text-sm px-1">No video models available</p>
-                  ) : (
-                    videoModels.map((model) => (
-                      <ModelCard
-                        key={model.id}
-                        model={model}
-                        userTier={userTier}
-                        selected={selectedModel?.id === model.id}
-                        onClick={() => selectModel(model)}
-                      />
-                    ))
+                  return (
+                    <>
+                      {videoModels.map((model) => (
+                        <ModelCard
+                          key={model.id}
+                          model={model}
+                          userTier={userTier}
+                          selected={selectedModel?.id === model.id}
+                          onClick={() => selectModel(model)}
+                        />
+                      ))}
+                      {COMING_SOON_VIDEO.map((m) => (
+                        <ModelCard
+                          key={m.slug}
+                          model={m as Model}
+                          userTier={userTier}
+                          selected={false}
+                          onClick={() => {}}
+                          comingSoon
+                        />
+                      ))}
+                    </>
                   )
                 })()}
               </div>
