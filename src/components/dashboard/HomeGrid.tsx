@@ -42,7 +42,7 @@ const SLOT_CLASSES = [
 const TOTAL_SLOTS = SLOT_CLASSES.length
 
 // Flip to 0 before launch
-const ONBOARDING_THRESHOLD = 999
+const ONBOARDING_THRESHOLD = 0
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ShowcaseRow { url: string; gen_type: string | null }
