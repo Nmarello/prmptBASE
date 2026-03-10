@@ -33,7 +33,6 @@ export default function Dashboard() {
 
   const [img2imgPickerUrl, setImg2imgPickerUrl] = useState<string | null>(null)
   const [img2imgInitialValues, setImg2imgInitialValues] = useState<Record<string, unknown> | undefined>(undefined)
-  const [byokKey, setByokKey] = useState<string | null>(null)
 
   const loadAssets = useCallback(async () => {
     if (!user) return
@@ -124,7 +123,6 @@ export default function Dashboard() {
             model_slug: selectedModel.slug,
             gen_type: selectedGenType,
             prompt_id: promptRecord?.id ?? null,
-            byok_key: byokKey ?? null,
           }
         : isGoogle
         ? {
@@ -572,11 +570,9 @@ export default function Dashboard() {
                       <TemplateForm
                         template={template}
                         genType={selectedGenType}
-                        model={selectedModel}
                         onSubmit={handleGenerate}
                         submitting={submitting}
                         initialValues={img2imgInitialValues}
-                        onByokKeyChange={setByokKey}
                         userTier={userTier}
                         modelMinTier={selectedModel?.min_tier}
                       />

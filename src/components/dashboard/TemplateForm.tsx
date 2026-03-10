@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import type { Model, Template, TemplateField, GenType, FieldOption } from '../../types'
+import { useEffect, useState } from 'react'
+import type { Template, TemplateField, GenType, FieldOption } from '../../types'
 import { GEN_TYPE_LABELS, tierCanAccess } from '../../types'
 import { supabase } from '../../lib/supabase'
 
@@ -13,11 +13,9 @@ interface CustomOption {
 interface Props {
   template: Template
   genType: GenType
-  model: Model
   onSubmit: (values: Record<string, unknown>) => void
   submitting: boolean
   initialValues?: Record<string, unknown>
-  onByokKeyChange?: (key: string | null) => void
   userTier?: string
   modelMinTier?: string
 }
@@ -225,15 +223,11 @@ function FieldInput({ field, value, onChange, customOptions }: {
   return null
 }
 
-export default function TemplateForm({ template, genType, model, onSubmit, submitting, initialValues, onByokKeyChange, userTier, modelMinTier }: Props) {
+export default function TemplateForm({ template, genType, onSubmit, submitting, initialValues, userTier, modelMinTier }: Props) {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
   const [customOptions, setCustomOptions] = useState<Record<string, FieldOption[]>>({})
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [assisting, setAssisting] = useState<string | null>(null)
-  const [byokKey, setByokKey] = useState<string>('')
-  const [byokOpen, setByokOpen] = useState(false)
-  const [byokSaving, setByokSaving] = useState(false)
-  const byokTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   async function handleAiAssist(fieldId: string) {
     setAssisting(fieldId)
@@ -283,41 +277,6 @@ export default function TemplateForm({ template, genType, model, onSubmit, submi
     })
   }, [])
 
-  // Load BYOK key from profile on mount (fal.ai only)
-  useEffect(() => {
-    if (model.provider !== 'fal.ai') return
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return
-      supabase.from('profiles').select('api_keys').eq('id', user.id).single()
-        .then(({ data }) => {
-          const key = (data?.api_keys as Record<string, string> | null)?.fal ?? ''
-          setByokKey(key)
-          onByokKeyChange?.(key || null)
-        })
-    })
-  }, [model.provider])
-
-  async function saveByokKey(key: string) {
-    setByokSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      await supabase.from('profiles').update({ api_keys: { fal: key } }).eq('id', user.id)
-    }
-    setByokSaving(false)
-  }
-
-  function handleByokChange(key: string) {
-    setByokKey(key)
-    onByokKeyChange?.(key || null)
-    if (byokTimer.current) clearTimeout(byokTimer.current)
-    byokTimer.current = setTimeout(() => saveByokKey(key), 800)
-  }
-
-  function clearByokKey() {
-    setByokKey('')
-    onByokKeyChange?.(null)
-    saveByokKey('')
-  }
 
   function set(id: string, val: unknown) {
     setValues((prev) => ({ ...prev, [id]: val }))
@@ -441,46 +400,6 @@ export default function TemplateForm({ template, genType, model, onSubmit, submi
         return rendered
       })()}
 
-      {model.provider === 'fal.ai' && (
-        <div className="border border-white/8 rounded-xl overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setByokOpen((o) => !o)}
-            className="w-full px-4 py-3 flex items-center justify-between text-sm text-slate-400 hover:text-white hover:bg-white/3 transition-all"
-          >
-            <span className="flex items-center gap-2">
-              <span>⚡</span>
-              <span>Use your own fal.ai key</span>
-              {byokKey && <span className="text-xs text-emerald-400 font-medium">Your key active ✓</span>}
-            </span>
-            <span className="text-xs text-slate-600">{byokOpen ? '▲' : '▼'}</span>
-          </button>
-          {byokOpen && (
-            <div className="px-4 pb-4 space-y-2 bg-white/2">
-              <p className="text-xs text-slate-600">Your key is stored in your profile. Generations use your key at cost — no platform credits consumed.</p>
-              <div className="flex gap-2">
-                <input
-                  type="password"
-                  value={byokKey}
-                  onChange={(e) => handleByokChange(e.target.value)}
-                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-700 focus:outline-none focus:border-sky-500/50 font-mono"
-                />
-                {byokKey && (
-                  <button
-                    type="button"
-                    onClick={clearByokKey}
-                    className="px-3 py-2 text-xs text-slate-500 hover:text-red-400 border border-white/10 rounded-lg transition-colors"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              {byokSaving && <p className="text-xs text-slate-600">Saving…</p>}
-            </div>
-          )}
-        </div>
-      )}
 
       {(() => {
         const canGenerate = !userTier || !modelMinTier || tierCanAccess(userTier, modelMinTier)
