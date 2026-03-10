@@ -51,42 +51,37 @@ export default function Admin() {
     setLoading(true)
     const { data: { session } } = await supabase.auth.getSession()
     const token = session?.access_token
-    if (!token) return
+    if (!token) { setLoading(false); return }
 
-    // Load users with asset counts via RPC-style query
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('id, email, display_name, tier, created_at')
-      .order('created_at', { ascending: false })
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-list-users`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ user_token: token }),
+      }
+    )
+    const data = await res.json()
+    if (data.error) { setLoading(false); return }
 
-    if (profileData) {
-      // Get asset counts per user
-      const { data: assetCounts } = await supabase
-        .from('assets')
-        .select('user_id')
+    const rows: UserRow[] = data.users.map((p: UserRow) => ({ ...p, tier: p.tier as Tier }))
+    setUsers(rows)
 
-      const countMap: Record<string, number> = {}
-      assetCounts?.forEach(a => { countMap[a.user_id] = (countMap[a.user_id] ?? 0) + 1 })
-
-      const rows: UserRow[] = profileData.map(p => ({
-        ...p,
-        tier: p.tier as Tier,
-        asset_count: countMap[p.id] ?? 0,
-      }))
-      setUsers(rows)
-
-      // Build stats
-      const byTier = { newbie: 0, creator: 0, studio: 0, pro: 0 } as Record<Tier, number>
-      rows.forEach(r => { byTier[r.tier] = (byTier[r.tier] ?? 0) + 1 })
-      const today = new Date().toISOString().slice(0, 10)
-      setStats({
-        total_users: rows.length,
-        by_tier: byTier,
-        total_assets: Object.values(countMap).reduce((a, b) => a + b, 0),
-        assets_today: assetCounts?.filter(a => a.user_id).length ?? 0, // rough
-        new_users_today: rows.filter(r => r.created_at.startsWith(today)).length,
-      })
-    }
+    const byTier = { newbie: 0, creator: 0, studio: 0, pro: 0 } as Record<Tier, number>
+    rows.forEach(r => { byTier[r.tier] = (byTier[r.tier] ?? 0) + 1 })
+    const today = new Date().toISOString().slice(0, 10)
+    const totalAssets = rows.reduce((a, r) => a + r.asset_count, 0)
+    setStats({
+      total_users: rows.length,
+      by_tier: byTier,
+      total_assets: totalAssets,
+      assets_today: 0,
+      new_users_today: rows.filter(r => r.created_at.startsWith(today)).length,
+    })
     setLoading(false)
   }
 
