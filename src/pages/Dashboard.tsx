@@ -550,7 +550,6 @@ export default function Dashboard() {
               {!selectedModel && !selectedProvider && (
                 <HomeGrid
                   assets={assets}
-                  onSelectModel={() => setView('models')}
                   onAssetClick={(asset) => setLightboxAsset(asset)}
                 />
               )}

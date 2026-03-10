@@ -63,7 +63,6 @@ interface GridItem extends ShowcaseRow {
 
 interface Props {
   assets: Asset[]
-  onSelectModel: () => void
   onAssetClick?: (asset: Asset) => void
 }
 
@@ -124,7 +123,7 @@ function ShowcaseBg({ rows, numCols }: { rows: ShowcaseRow[]; numCols: number })
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function HomeGrid({ assets, onSelectModel, onAssetClick }: Props) {
+export default function HomeGrid({ assets, onAssetClick }: Props) {
   const numCols = useNumCols()
   const [showcase, setShowcase] = useState<ShowcaseRow[]>([])
 
