@@ -11,6 +11,19 @@ const FAL_ENDPOINTS: Record<string, string> = {
   'flux-pro':          'https://fal.run/fal-ai/flux-pro',
   'flux-pro-ultra':    'https://fal.run/fal-ai/flux-pro/v1.1-ultra',
   'flux-dev-img2img':  'https://fal.run/fal-ai/flux/dev/image-to-image',
+  'nano-banana':       'https://fal.run/fal-ai/nano-banana-2',
+  'nano-banana-edit':  'https://fal.run/fal-ai/nano-banana-2/edit',
+}
+
+const NANO_BANANA_ASPECT_DIMS: Record<string, [number, number]> = {
+  '1:1':  [1024, 1024],
+  '16:9': [1920, 1080],
+  '9:16': [1080, 1920],
+  '4:3':  [1365, 1024],
+  '3:4':  [1024, 1365],
+  '3:2':  [1536, 1024],
+  '2:3':  [1024, 1536],
+  'auto': [1024, 1024],
 }
 
 const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
@@ -513,6 +526,115 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ asset, operation_name: statusUrl, status: 'pending', prompt, provider: 'fal.ai' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // --- nano-banana path ---
+    const isNanoBanana = slug === 'nano-banana'
+    if (isNanoBanana) {
+      const builtPrompt = buildPrompt(body)
+      if (!builtPrompt.trim()) throw new Error('Prompt is empty')
+
+      const numImages = Math.min(Math.max(Number(num_images) || 1, 1), 4)
+      const fmt = ['jpeg', 'png', 'webp'].includes(output_format) ? output_format : 'jpeg'
+      const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
+      const aspectRatio = (aspect_ratio && NANO_BANANA_ASPECT_DIMS[aspect_ratio]) ? aspect_ratio : '1:1'
+      const [nbW, nbH] = NANO_BANANA_ASPECT_DIMS[aspectRatio]
+
+      if (isImg2Img && source_image) {
+        // Edit path — upload source image first
+        let imageUrl: string
+        const src = source_image as string
+        if (src.startsWith('http')) {
+          imageUrl = src
+        } else {
+          const base64Data = src.replace(/^data:image\/\w+;base64,/, '')
+          const mimeMatch = src.match(/^data:(image\/\w+);base64,/)
+          const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+          const ext = mimeType.split('/')[1] ?? 'jpg'
+          const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+          const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
+          const { error: srcErr } = await adminClient.storage.from('assets').upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
+          if (srcErr) throw new Error(`Source upload failed: ${srcErr.message}`)
+          const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
+          imageUrl = publicUrl
+        }
+
+        const falPayload: Record<string, unknown> = {
+          prompt: builtPrompt,
+          image_urls: [imageUrl],
+          num_images: numImages,
+          output_format: fmt,
+          aspect_ratio: aspectRatio,
+          ...(body.resolution ? { resolution: body.resolution } : { resolution: '1K' }),
+          ...(body.thinking_level ? { thinking_level: body.thinking_level } : {}),
+          ...(seedVal !== undefined ? { seed: seedVal } : {}),
+        }
+
+        const falRes = await fetch(FAL_ENDPOINTS['nano-banana-edit'], {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
+          body: JSON.stringify(falPayload),
+        })
+        if (!falRes.ok) throw new Error(`fal.ai error: ${await falRes.text()}`)
+        const falData = await falRes.json()
+        const images: { url: string; width?: number; height?: number }[] = falData.images ?? []
+        if (images.length === 0) throw new Error(`No images in fal.ai response`)
+
+        const insertedAssets = await Promise.all(images.map(async (img) => {
+          const permanentUrl = await storeImage(adminClient, img.url, userId, fmt)
+          const { data } = await adminClient.from('assets').insert({
+            user_id: userId, prompt_id: prompt_id ?? null, model_id: model_id ?? null,
+            gen_type: 'img2img', url: permanentUrl,
+            width: img.width ?? nbW, height: img.height ?? nbH,
+            metadata: { prompt: builtPrompt, model_slug: slug, aspect_ratio: aspectRatio, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
+          }).select().single()
+          return data
+        }))
+
+        const firstAsset = insertedAssets[0]
+        return new Response(
+          JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt, seed: falData.seed ?? null }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+
+      // txt2img path
+      const falPayload: Record<string, unknown> = {
+        prompt: builtPrompt,
+        num_images: numImages,
+        output_format: fmt,
+        aspect_ratio: aspectRatio,
+        ...(body.resolution ? { resolution: body.resolution } : { resolution: '1K' }),
+        ...(body.thinking_level ? { thinking_level: body.thinking_level } : {}),
+        ...(seedVal !== undefined ? { seed: seedVal } : {}),
+      }
+
+      const falRes = await fetch(FAL_ENDPOINTS['nano-banana'], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
+        body: JSON.stringify(falPayload),
+      })
+      if (!falRes.ok) throw new Error(`fal.ai error: ${await falRes.text()}`)
+      const falData = await falRes.json()
+      const images: { url: string; width?: number; height?: number }[] = falData.images ?? []
+      if (images.length === 0) throw new Error(`No images in fal.ai response`)
+
+      const insertedAssets = await Promise.all(images.map(async (img) => {
+        const permanentUrl = await storeImage(adminClient, img.url, userId, fmt)
+        const { data } = await adminClient.from('assets').insert({
+          user_id: userId, prompt_id: prompt_id ?? null, model_id: model_id ?? null,
+          gen_type: 'txt2img', url: permanentUrl,
+          width: img.width ?? nbW, height: img.height ?? nbH,
+          metadata: { prompt: builtPrompt, model_slug: slug, aspect_ratio: aspectRatio, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
+        }).select().single()
+        return data
+      }))
+
+      const firstAsset = insertedAssets[0]
+      return new Response(
+        JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt, seed: falData.seed ?? null }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
