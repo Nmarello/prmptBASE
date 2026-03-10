@@ -208,13 +208,7 @@ export default function HomeGrid({ assets, onSelectModel, onAssetClick }: Props)
               ))}
             </div>
 
-            <button
-              onClick={onSelectModel}
-              className="w-full py-3.5 bg-sky-500 hover:bg-sky-400 active:bg-sky-600 rounded-2xl text-white font-semibold text-sm transition-all shadow-lg shadow-sky-500/20"
-            >
-              Start generating →
-            </button>
-            <p className="text-slate-600 text-xs mt-4">
+            <p className="text-slate-600 text-xs">
               15 free generations per day — no credit card required
             </p>
 
