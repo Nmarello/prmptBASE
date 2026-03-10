@@ -14,12 +14,16 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceKey)
 
-    // Verify caller is admin
+    // Verify caller is admin (same pattern as admin-update-user)
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) throw new Error('Missing auth header')
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user: caller }, error: authError } = await adminClient.auth.getUser(token)
-    if (authError || !caller) throw new Error(authError?.message ?? 'Unauthorized')
+    const callerClient = createClient(
+      supabaseUrl,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    )
+    const { data: { user: caller } } = await callerClient.auth.getUser()
+    if (!caller) throw new Error('Unauthorized')
 
     const { data: callerProfile } = await adminClient
       .from('profiles').select('is_admin').eq('id', caller.id).single()
