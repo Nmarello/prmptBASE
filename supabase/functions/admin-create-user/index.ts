@@ -14,28 +14,25 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceKey)
 
-    // Verify caller is admin (same pattern as admin-update-user)
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) throw new Error('Missing auth header')
-    const callerClient = createClient(
-      supabaseUrl,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
-    )
-    const { data: { user: caller } } = await callerClient.auth.getUser()
-    if (!caller) throw new Error('Unauthorized')
+    const body = await req.json()
+    const { email, password, tier = 'newbie', display_name, user_token } = body
+
+    if (!user_token) throw new Error('Missing user_token')
+
+    // Verify caller is admin using their JWT
+    const { data: { user: caller }, error: authError } = await adminClient.auth.getUser(user_token)
+    if (authError || !caller) throw new Error(authError?.message ?? 'Unauthorized')
 
     const { data: callerProfile } = await adminClient
       .from('profiles').select('is_admin').eq('id', caller.id).single()
     if (!callerProfile?.is_admin) throw new Error('Forbidden')
 
-    const { email, password, tier = 'newbie', display_name } = await req.json()
     if (!email) throw new Error('Missing email')
 
     const VALID_TIERS = ['newbie', 'creator', 'studio', 'pro']
     if (!VALID_TIERS.includes(tier)) throw new Error('Invalid tier')
 
-    // Create auth user via REST API directly (most reliable in Deno)
+    // Create auth user via REST API
     const createRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
       method: 'POST',
       headers: {

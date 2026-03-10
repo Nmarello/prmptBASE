@@ -142,10 +142,11 @@ export default function Admin() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
+            user_token: token,
             email: createEmail.trim(),
             password: createPassword.trim() || undefined,
             display_name: createName.trim() || undefined,
