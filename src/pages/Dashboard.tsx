@@ -39,7 +39,7 @@ const COMING_SOON_VIDEO: Partial<Model>[] = [
 ]
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth()
+  const { user, signOut, isAdmin } = useAuth()
   const [view, setView] = useState<View>('models')
   const [userTier, setUserTier] = useState('newbie')
 
@@ -378,6 +378,11 @@ export default function Dashboard() {
           >
             {userTier}
           </Link>
+          {isAdmin && (
+            <a href="/admin" className="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full font-medium transition-colors">
+              Admin
+            </a>
+          )}
           <span className="text-sm text-slate-400">{user?.email}</span>
           <button onClick={signOut} className="text-xs text-slate-600 hover:text-white transition-colors">
             Sign out

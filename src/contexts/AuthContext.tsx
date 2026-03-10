@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
+  isAdmin: boolean
   signInWithGoogle: () => Promise<void>
   signInWithMicrosoft: () => Promise<void>
   signInWithFacebook: () => Promise<void>
@@ -18,19 +19,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  async function loadProfile(userId: string) {
+    const { data } = await supabase.from('profiles').select('is_admin').eq('id', userId).single()
+    setIsAdmin(data?.is_admin ?? false)
+  }
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
+      if (session?.user) loadProfile(session.user.id)
       setLoading(false)
     })
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
+      if (session?.user) loadProfile(session.user.id)
+      else setIsAdmin(false)
       setLoading(false)
     })
 
@@ -64,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, session, loading,
+      user, session, loading, isAdmin,
       signInWithGoogle, signInWithMicrosoft, signInWithFacebook,
       signOut,
     }}>
