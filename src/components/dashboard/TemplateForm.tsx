@@ -157,7 +157,7 @@ function FieldInput({ field, value, onChange, customOptions }: {
   if (field.type === 'style_picker') {
     const selected = (value as string) ?? ''
     return (
-      <div className="grid grid-cols-8 gap-1.5">
+      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1.5">
         {allOptions.map((opt) => {
           const active = selected === opt.value
           const isCustom = customOptions.some((c) => c.value === opt.value)
@@ -362,7 +362,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
           const next = fields[i + 1]
           if (field.type === 'select' && next?.type === 'select') {
             rendered.push(
-              <div key={`${field.id}-${next.id}`} className="grid grid-cols-2 gap-4">
+              <div key={`${field.id}-${next.id}`} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[field, next].map((f) => (
                   <div key={f.id}>
                     <div className="flex items-center justify-between mb-2">

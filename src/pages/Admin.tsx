@@ -151,7 +151,7 @@ export default function Admin() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
         {/* Stats row */}
         {stats && (
@@ -173,13 +173,13 @@ export default function Admin() {
         )}
 
         {/* Filters */}
-        <div className="flex gap-3 mb-4 flex-wrap items-center">
+        <div className="flex gap-3 mb-4 flex-wrap items-center w-full">
           <input
             type="text"
             placeholder="Search email or name…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50 w-64"
+            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50 w-full sm:w-64"
           />
           <div className="flex gap-1">
             {(['all', ...TIERS] as const).map(t => (
@@ -200,7 +200,7 @@ export default function Admin() {
         </div>
 
         {/* User table */}
-        <div className="bg-white/2 border border-white/8 rounded-2xl overflow-hidden">
+        <div className="bg-white/2 border border-white/8 rounded-2xl overflow-hidden overflow-x-auto">
           {loading ? (
             <div className="flex items-center justify-center py-20 text-slate-500 text-sm animate-pulse">
               Loading users…

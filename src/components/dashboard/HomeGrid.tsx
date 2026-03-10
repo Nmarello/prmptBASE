@@ -1,6 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Asset } from '../../types'
 
+function useNumCols() {
+  const get = () => {
+    if (typeof window === 'undefined') return 5
+    if (window.innerWidth < 640) return 2
+    if (window.innerWidth < 1024) return 3
+    return 5
+  }
+  const [numCols, setNumCols] = useState(get)
+  useEffect(() => {
+    const handler = () => setNumCols(get())
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return numCols
+}
+
 // ─── Supabase (anon — showcase_assets is publicly readable) ──────────────────
 const SUPABASE_URL = 'https://knlelqirhlvgvmmwiske.supabase.co'
 const ANON_KEY     = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtubGVscWlyaGx2Z3ZtbXdpc2tlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzkzNDEsImV4cCI6MjA4ODIxNTM0MX0.o7xSpuOl-1-6C9MZcFDm-XIwMhJdvIiZNlL6ZSwKTsc'
@@ -32,7 +48,6 @@ const SOCIAL_FORMATS: [number, number][] = [
   [1.91, 1], // Facebook/IG landscape ad
 ]
 
-const NUM_COLS = 5
 
 // Flip to 0 before launch
 const ONBOARDING_THRESHOLD = 0
@@ -53,10 +68,10 @@ interface Props {
 }
 
 // ─── Background grid for onboarding screen ───────────────────────────────────
-function ShowcaseBg({ rows }: { rows: ShowcaseRow[] }) {
+function ShowcaseBg({ rows, numCols }: { rows: ShowcaseRow[]; numCols: number }) {
   // Shuffle + assign formats once per mount — new arrangement every page load
   const columns = useMemo<GridItem[][]>(() => {
-    if (rows.length === 0) return [[], [], [], [], []]
+    if (rows.length === 0) return Array.from({ length: numCols }, () => [])
     const shuffled = shuffle(rows)
     const items: GridItem[] = shuffled.map(row => {
       const [w, h] = pickFormat()
@@ -67,11 +82,10 @@ function ShowcaseBg({ rows }: { rows: ShowcaseRow[] }) {
         isVideo: row.gen_type === 'txt2vid' || row.gen_type === 'img2vid',
       }
     })
-    // Distribute into 5 columns
-    const cols: GridItem[][] = [[], [], [], [], []]
-    items.forEach((item, i) => cols[i % 5].push(item))
+    const cols: GridItem[][] = Array.from({ length: numCols }, () => [])
+    items.forEach((item, i) => cols[i % numCols].push(item))
     return cols
-  }, [rows])
+  }, [rows, numCols])
 
   if (rows.length === 0) return null
 
@@ -111,6 +125,7 @@ function ShowcaseBg({ rows }: { rows: ShowcaseRow[] }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function HomeGrid({ assets, onSelectModel, onAssetClick }: Props) {
+  const numCols = useNumCols()
   const [showcase, setShowcase] = useState<ShowcaseRow[]>([])
 
   useEffect(() => {
@@ -127,12 +142,12 @@ export default function HomeGrid({ assets, onSelectModel, onAssetClick }: Props)
   // Always call useMemo (hooks must be called unconditionally).
   // When assets is empty the result is unused (onboarding renders instead).
   const columns = useMemo(() => {
-    if (assets.length === 0) return Array.from({ length: NUM_COLS }, () => [] as never[])
+    if (assets.length === 0) return Array.from({ length: numCols }, () => [] as never[])
 
     const shuffledAssets = shuffle([...assets])
 
     // Round up to the nearest complete row so all columns have equal item counts
-    const neededTotal = Math.max(NUM_COLS, Math.ceil(shuffledAssets.length / NUM_COLS) * NUM_COLS)
+    const neededTotal = Math.max(numCols, Math.ceil(shuffledAssets.length / numCols) * numCols)
     const backfillCount = neededTotal - shuffledAssets.length
     const backfillPool = shuffle([...showcase])
 
@@ -146,11 +161,10 @@ export default function HomeGrid({ assets, onSelectModel, onAssetClick }: Props)
       const [w, h] = pickFormat()
       return { ...a, aspectW: w, aspectH: h, isVideo: a.gen_type === 'txt2vid' || a.gen_type === 'img2vid' }
     })
-    const cols: typeof items[] = Array.from({ length: NUM_COLS }, () => [])
-    // Row-first: item 0→col0, item 1→col1, ..., item 5→col0, ...
-    items.forEach((item, i) => cols[i % NUM_COLS].push(item))
+    const cols: typeof items[] = Array.from({ length: numCols }, () => [])
+    items.forEach((item, i) => cols[i % numCols].push(item))
     return cols
-  }, [assets, showcase])
+  }, [assets, showcase, numCols])
 
   // ── Onboarding (0 assets) ─────────────────────────────────────────────────
   if (assets.length <= ONBOARDING_THRESHOLD) {
@@ -158,27 +172,27 @@ export default function HomeGrid({ assets, onSelectModel, onAssetClick }: Props)
       <div className="relative h-full overflow-hidden rounded-2xl">
 
         {/* Decorative background — varied aspect ratio showcase grid */}
-        <ShowcaseBg rows={showcase} />
+        <ShowcaseBg rows={showcase} numCols={numCols} />
 
         {/* Dark overlay */}
         <div className="absolute inset-0 bg-[#0a0a0f]/80 backdrop-blur-sm" />
 
         {/* Content */}
-        <div className="relative h-full flex flex-col items-center justify-start pt-16 px-8">
+        <div className="relative h-full flex flex-col items-center justify-start pt-8 sm:pt-16 px-4 sm:px-8">
           <div className="max-w-md w-full text-center">
 
             <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-sky-400">
               Welcome to prmptVAULT
             </div>
-            <h2 className="text-3xl font-bold text-white mb-3 leading-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 leading-tight">
               Build better AI prompts,<br />faster.
             </h2>
-            <p className="text-slate-400 text-sm mb-10 leading-relaxed">
-              Pick any model, fill a structured template, and generate.<br />
+            <p className="text-slate-400 text-sm mb-8 sm:mb-10 leading-relaxed">
+              Pick any model, fill a structured template, and generate.<br className="hidden sm:block" />
               Everything you create is saved automatically in your library.
             </p>
 
-            <div className="flex items-start justify-center gap-6 mb-10">
+            <div className="flex items-start justify-center gap-4 sm:gap-6 mb-8 sm:mb-10">
               {[
                 { icon: '⬡', label: 'Pick a model',      sub: 'Images or video' },
                 { icon: '▤', label: 'Fill the template', sub: 'No blank boxes'  },

@@ -43,7 +43,7 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-8">
         <div className="max-w-6xl mx-auto">
 
           {/* Header */}
@@ -62,7 +62,7 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
 
           {/* Empty state */}
           {assets.length === 0 && (
-            <div className="bg-white/3 border border-dashed border-white/10 rounded-2xl p-20 text-center">
+            <div className="bg-white/3 border border-dashed border-white/10 rounded-2xl p-8 sm:p-20 text-center">
               <div className="text-5xl mb-4">🎨</div>
               <p className="text-slate-400 font-medium mb-1">No images yet</p>
               <p className="text-slate-600 text-sm mb-6">Generate something to see it here</p>
@@ -306,16 +306,16 @@ function Lightbox({ asset, projectName, modelName, onClose, onDelete, onSendToIm
         onClick={(e) => e.stopPropagation()}
       >
         {/* Image / Video */}
-        <div className="flex-1 bg-black flex items-center justify-center min-h-64">
+        <div className="flex-1 bg-black flex items-center justify-center min-h-48 max-h-[50vh] lg:max-h-none">
           {asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid' ? (
-            <video src={asset.url} controls autoPlay loop className="max-w-full max-h-[80vh]" />
+            <video src={asset.url} controls autoPlay loop className="max-w-full max-h-[50vh] lg:max-h-[80vh]" />
           ) : (
-            <img src={asset.url} alt={prompt ?? ''} className="max-w-full max-h-[80vh] object-contain" />
+            <img src={asset.url} alt={prompt ?? ''} className="max-w-full max-h-[50vh] lg:max-h-[80vh] object-contain" />
           )}
         </div>
 
         {/* Info panel */}
-        <div className="w-full lg:w-72 flex-shrink-0 p-5 overflow-y-auto flex flex-col gap-4">
+        <div className="w-full lg:w-72 flex-shrink-0 p-4 sm:p-5 overflow-y-auto flex flex-col gap-3 sm:gap-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500">{new Date(asset.created_at).toLocaleString()}</span>
             <button onClick={onClose} className="text-slate-500 hover:text-white text-lg">✕</button>

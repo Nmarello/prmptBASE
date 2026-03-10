@@ -63,6 +63,7 @@ export default function Dashboard() {
   const [img2imgPickerUrl, setImg2imgPickerUrl] = useState<string | null>(null)
   const [img2imgInitialValues, setImg2imgInitialValues] = useState<Record<string, unknown> | undefined>(undefined)
   const [img2vidPickerUrl, setImg2vidPickerUrl] = useState<string | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const loadAssets = useCallback(async () => {
     if (!user) return
@@ -88,6 +89,7 @@ export default function Dashboard() {
   }, [user, loadAssets])
 
   function selectProviderTile(provider: string) {
+    setSidebarOpen(false)
     setSelectedProvider(provider)
     setSelectedModel(null)
     setSelectedGenType(null)
@@ -99,6 +101,7 @@ export default function Dashboard() {
   }
 
   async function selectModel(model: Model) {
+    setSidebarOpen(false)
     setSelectedProvider(model.provider)
     setSelectedModel(model)
     setTemplate(null)
@@ -346,20 +349,31 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#0d1117] text-white flex flex-col">
       {/* Top nav */}
-      <header className="border-b border-white/8 px-6 py-4 flex items-center justify-between flex-shrink-0 relative">
-        <div className="flex items-center gap-6">
+      <header className="border-b border-white/8 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 relative">
+        <div className="flex items-center gap-3 sm:gap-6">
           <span className="text-xl font-black tracking-tight">
             prmpt<span className="text-sky-400">VAULT</span>
           </span>
-          <span className="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-600 font-mono">
+          <span className="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-600 font-mono hidden md:block">
             {/* @ts-ignore */}
             v-0.0.{__BUILD__} · {__COMMIT__}
           </span>
+          {(view === 'models' || view === 'builder') && (
+            <button
+              onClick={() => setSidebarOpen(v => !v)}
+              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors"
+              aria-label="Toggle models panel"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          )}
           <nav className="flex gap-1">
             {(['models', 'assets'] as View[]).map((v) => (
               <button
                 key={v}
-                onClick={() => { setView(v); if (v === 'assets') loadAssets() }}
+                onClick={() => { setView(v); setSidebarOpen(false); if (v === 'assets') loadAssets() }}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                   view === v || (v === 'models' && view === 'builder')
                     ? 'bg-white/10 text-white'
@@ -371,7 +385,7 @@ export default function Dashboard() {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Link
             to="/pricing"
             className="text-xs bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/30 px-2.5 py-1 rounded-full font-medium capitalize transition-colors"
@@ -383,7 +397,7 @@ export default function Dashboard() {
               Admin
             </a>
           )}
-          <span className="text-sm text-slate-400">{user?.email}</span>
+          <span className="text-sm text-slate-400 hidden sm:block">{user?.email}</span>
           <button onClick={signOut} className="text-xs text-slate-600 hover:text-white transition-colors">
             Sign out
           </button>
@@ -394,8 +408,17 @@ export default function Dashboard() {
         {/* Models / Builder view */}
         {(view === 'models' || view === 'builder') && (
           <>
+            {/* Mobile backdrop */}
+            {sidebarOpen && (
+              <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setSidebarOpen(false)} />
+            )}
             {/* Left panel — model list */}
-            <aside className="w-72 border-r border-white/8 flex flex-col flex-shrink-0 min-h-0 overflow-hidden">
+            <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#0d1117] border-r border-white/8 flex flex-col flex-shrink-0 overflow-hidden transition-transform duration-200 md:static md:z-auto md:translate-x-0 md:min-h-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+              {/* Mobile sidebar header */}
+              <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
+                <span className="text-sm font-semibold text-slate-300">Choose a model</span>
+                <button onClick={() => setSidebarOpen(false)} className="text-slate-500 hover:text-white p-1 text-lg leading-none">✕</button>
+              </div>
               {/* Image / Video tabs */}
               <div className="flex border-b border-white/8 flex-shrink-0">
                 {(['image', 'video'] as const).map((tab) => (
@@ -523,7 +546,7 @@ export default function Dashboard() {
             </aside>
 
             {/* Main panel */}
-            <main className="flex-1 overflow-y-auto p-8">
+            <main className="flex-1 overflow-y-auto p-4 md:p-8">
               {!selectedModel && !selectedProvider && (
                 <HomeGrid
                   assets={assets}
@@ -537,7 +560,7 @@ export default function Dashboard() {
                 <div className="max-w-2xl">
                   <h2 className="text-2xl font-bold mb-1">Flux Models</h2>
                   <p className="text-slate-400 text-sm mb-8">Choose a Flux model to build your prompt</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {models.filter((m) => m.provider === 'fal.ai' && m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')).map((model) => {
                       const accessible = tierCanAccess(userTier, model.min_tier)
                       return (
@@ -578,7 +601,7 @@ export default function Dashboard() {
                   <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
                     Choose generation type
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {selectedModel.supported_gen_types.map((gt) => (
                       <button
                         key={gt}
@@ -646,7 +669,7 @@ export default function Dashboard() {
                           <p className="text-slate-400 text-sm">{result.revised_prompt}</p>
                         </div>
                       )}
-                      <div className="flex gap-3 flex-wrap">
+                      <div className="flex gap-2 sm:gap-3 flex-wrap">
                         <button
                           onClick={() => downloadFile(result.url, result.isVideo)}
                           className="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium transition-all"
