@@ -132,7 +132,7 @@ export default function Admin() {
     if (!createEmail.trim()) return
     setCreating(true)
     setCreateError(null)
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { session } } = await supabase.auth.refreshSession()
     try {
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`,
