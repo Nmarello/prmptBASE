@@ -34,6 +34,7 @@ const slugBrandLabels: Record<string, { label: string; color: string }> = {
   'kling':           { label: 'Kuaishou',  color: 'text-cyan-400' },
   'luma':            { label: 'Luma AI',   color: 'text-lime-400' },
   'minimax-txt2vid': { label: 'MiniMax',   color: 'text-fuchsia-400' },
+  'nano-banana':     { label: 'Google',    color: 'text-blue-400' },
 }
 
 export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp }: Props) {

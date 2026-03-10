@@ -469,6 +469,7 @@ export default function Dashboard() {
                 {mediaTab === 'image' && (() => {
                   const fluxImageModels = models.filter((m) =>
                     m.provider === 'fal.ai' &&
+                    m.slug !== 'nano-banana' &&
                     m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
                   )
                   const openaiImageModels = models.filter((m) =>
@@ -476,7 +477,7 @@ export default function Dashboard() {
                     m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
                   )
                   const googleImageModels = models.filter((m) =>
-                    m.provider === 'Google' &&
+                    (m.provider === 'Google' || m.slug === 'nano-banana') &&
                     m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
                   )
                   const hasFlux = fluxImageModels.length > 0
