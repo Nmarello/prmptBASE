@@ -7,6 +7,7 @@ import ModelCard from '../components/dashboard/ModelCard'
 import TemplateForm from '../components/dashboard/TemplateForm'
 import AssetGrid from '../components/dashboard/AssetGrid'
 import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
+import HomeGrid from '../components/dashboard/HomeGrid'
 
 type View = 'models' | 'builder' | 'assets'
 
@@ -464,13 +465,10 @@ export default function Dashboard() {
             {/* Main panel */}
             <main className="flex-1 overflow-y-auto p-8">
               {!selectedModel && !selectedProvider && (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-4xl mb-4">⚡</div>
-                    <p className="text-slate-400 font-medium">Select a model to get started</p>
-                    <p className="text-slate-600 text-sm mt-1">Choose an AI model from the left to open the prompt builder</p>
-                  </div>
-                </div>
+                <HomeGrid
+                  assets={assets}
+                  onSelectModel={() => setView('models')}
+                />
               )}
 
               {/* Flux model picker */}
