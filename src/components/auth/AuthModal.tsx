@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 
 interface AuthModalProps {
@@ -5,11 +6,24 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ onClose }: AuthModalProps) {
-  const { signInWithGoogle, signInWithMicrosoft, signInWithFacebook } = useAuth()
+  const { signInWithGoogle, signInWithMicrosoft, signInWithFacebook, signInWithEmail } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  async function handleEmailLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+    const { error: err } = await signInWithEmail(email, password)
+    if (err) setError(err)
+    setLoading(false)
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#161b22] border border-white/10 rounded-2xl p-8 w-full max-w-sm mx-4 shadow-2xl">
+      <div className="bg-[#161b22] border border-white/10 rounded-2xl p-8 w-full max-w-sm mx-4 shadow-2xl relative">
 
         {/* Logo + heading */}
         <div className="text-center mb-8">
@@ -49,18 +63,37 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         {/* Divider */}
         <div className="flex items-center gap-3 my-5">
           <div className="flex-1 h-px bg-white/8" />
-          <span className="text-xs text-slate-500">more coming soon</span>
+          <span className="text-xs text-slate-500">or</span>
           <div className="flex-1 h-px bg-white/8" />
         </div>
 
-        {/* Apple — placeholder */}
-        <button
-          disabled
-          className="flex items-center justify-center gap-3 w-full py-3 px-4 bg-white/3 border border-white/6 rounded-xl text-sm font-medium text-slate-600 cursor-not-allowed"
-        >
-          <span className="text-base leading-none"></span>
-          Continue with Apple <span className="text-xs ml-1 text-slate-600">(soon)</span>
-        </button>
+        {/* Email + password */}
+        <form onSubmit={handleEmailLogin} className="flex flex-col gap-3">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
+          />
+          {error && <p className="text-xs text-red-400">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 rounded-xl text-sm font-semibold text-white transition-all"
+          >
+            {loading ? 'Signing in…' : 'Sign in with email'}
+          </button>
+        </form>
 
         <p className="text-center text-xs text-slate-600 mt-6">
           By signing in you agree to our{' '}

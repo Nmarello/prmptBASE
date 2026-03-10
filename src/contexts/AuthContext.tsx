@@ -11,6 +11,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>
   signInWithMicrosoft: () => Promise<void>
   signInWithFacebook: () => Promise<void>
+  signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
@@ -72,6 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  const signInWithEmail = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    return { error: error?.message ?? null }
+  }
+
   const signOut = async () => {
     await supabase.auth.signOut()
   }
@@ -80,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{
       user, session, loading, isAdmin, adminLoading,
       signInWithGoogle, signInWithMicrosoft, signInWithFacebook,
-      signOut,
+      signInWithEmail, signOut,
     }}>
       {children}
     </AuthContext.Provider>
