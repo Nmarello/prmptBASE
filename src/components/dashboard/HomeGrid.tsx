@@ -123,6 +123,35 @@ export default function HomeGrid({ assets, onSelectModel, onAssetClick }: Props)
       .catch(() => {})
   }, [])
 
+  // ── Returning user — random aspect-ratio column grid ─────────────────────
+  // Always call useMemo (hooks must be called unconditionally).
+  // When assets is empty the result is unused (onboarding renders instead).
+  const columns = useMemo(() => {
+    if (assets.length === 0) return Array.from({ length: NUM_COLS }, () => [] as never[])
+
+    const shuffledAssets = shuffle([...assets])
+
+    // Round up to the nearest complete row so all columns have equal item counts
+    const neededTotal = Math.max(NUM_COLS, Math.ceil(shuffledAssets.length / NUM_COLS) * NUM_COLS)
+    const backfillCount = neededTotal - shuffledAssets.length
+    const backfillPool = shuffle([...showcase])
+
+    type CombinedItem = { url: string; gen_type: string | null; _key: string; _asset?: Asset }
+    const combined: CombinedItem[] = [
+      ...shuffledAssets.map(a => ({ url: a.url, gen_type: a.gen_type, _key: a.id, _asset: a })),
+      ...backfillPool.slice(0, backfillCount).map((s, i) => ({ url: s.url, gen_type: s.gen_type, _key: `sc-${i}` })),
+    ]
+
+    const items = combined.map(a => {
+      const [w, h] = pickFormat()
+      return { ...a, aspectW: w, aspectH: h, isVideo: a.gen_type === 'txt2vid' || a.gen_type === 'img2vid' }
+    })
+    const cols: typeof items[] = Array.from({ length: NUM_COLS }, () => [])
+    // Row-first: item 0→col0, item 1→col1, ..., item 5→col0, ...
+    items.forEach((item, i) => cols[i % NUM_COLS].push(item))
+    return cols
+  }, [assets, showcase])
+
   // ── Onboarding (0 assets) ─────────────────────────────────────────────────
   if (assets.length <= ONBOARDING_THRESHOLD) {
     return (
@@ -180,34 +209,6 @@ export default function HomeGrid({ assets, onSelectModel, onAssetClick }: Props)
       </div>
     )
   }
-
-  // ── Returning user — random aspect-ratio column grid ─────────────────────
-  // Shuffle assets, backfill with showcase to complete the last row (no empty cells),
-  // then distribute row-first across columns.
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const columns = useMemo(() => {
-    const shuffledAssets = shuffle([...assets])
-
-    // Round up to the nearest complete row so all columns have equal item counts
-    const neededTotal = Math.max(NUM_COLS, Math.ceil(shuffledAssets.length / NUM_COLS) * NUM_COLS)
-    const backfillCount = neededTotal - shuffledAssets.length
-    const backfillPool = shuffle([...showcase])
-
-    type CombinedItem = { url: string; gen_type: string | null; _key: string; _asset?: Asset }
-    const combined: CombinedItem[] = [
-      ...shuffledAssets.map(a => ({ url: a.url, gen_type: a.gen_type, _key: a.id, _asset: a })),
-      ...backfillPool.slice(0, backfillCount).map((s, i) => ({ url: s.url, gen_type: s.gen_type, _key: `sc-${i}` })),
-    ]
-
-    const items = combined.map(a => {
-      const [w, h] = pickFormat()
-      return { ...a, aspectW: w, aspectH: h, isVideo: a.gen_type === 'txt2vid' || a.gen_type === 'img2vid' }
-    })
-    const cols: typeof items[] = Array.from({ length: NUM_COLS }, () => [])
-    // Row-first: item 0→col0, item 1→col1, ..., item 5→col0, ...
-    items.forEach((item, i) => cols[i % NUM_COLS].push(item))
-    return cols
-  }, [assets, showcase])
 
   return (
     <div className="h-full flex flex-col">
