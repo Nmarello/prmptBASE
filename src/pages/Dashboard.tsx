@@ -14,6 +14,7 @@ const COMING_SOON_IMAGE: Partial<Model>[] = [
   { slug: 'cs-midjourney', name: 'Midjourney', provider: 'Midjourney', description: 'The gold standard for artistic AI image generation. Unmatched aesthetic quality.', supported_gen_types: ['txt2img'] },
   { slug: 'cs-ideogram', name: 'Ideogram', provider: 'Ideogram', description: 'Best-in-class text rendering inside images. Typography that actually works.', supported_gen_types: ['txt2img'] },
   { slug: 'cs-firefly', name: 'Adobe Firefly', provider: 'Adobe', description: 'Commercially safe image generation built for creative professionals.', supported_gen_types: ['txt2img', 'img2img'] },
+  { slug: 'cs-nano-banana', name: 'Nano Banana', provider: 'Google', description: 'Gemini 2.5 Flash Image — Google\'s advanced image generation and editing model. Precise edits, 4K output, strong subject consistency.', supported_gen_types: ['txt2img', 'img2img'] },
 ]
 
 const COMING_SOON_VIDEO: Partial<Model>[] = [
