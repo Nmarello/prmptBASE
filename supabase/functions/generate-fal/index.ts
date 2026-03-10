@@ -19,7 +19,7 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'img2vid': 'fal-ai/kling-video/v1.6/standard/image-to-video',
   },
   'luma': {
-    'txt2vid': 'fal-ai/luma-dream-machine/ray-2/text-to-video',
+    'txt2vid': 'fal-ai/luma-dream-machine/ray-2',
     'img2vid': 'fal-ai/luma-dream-machine/ray-2/image-to-video',
   },
   'minimax-txt2vid': {
@@ -359,20 +359,27 @@ Deno.serve(async (req) => {
       // Build fal payload
       const falPayload: Record<string, unknown> = {}
 
-      // img2vid: upload source image to get a URL
+      // img2vid: get a public URL for the source image
       if (isImgVid) {
         if (!source_image) throw new Error('Source image is required for image-to-video')
-        const base64Data = (source_image as string).replace(/^data:image\/\w+;base64,/, '')
-        const mimeMatch = (source_image as string).match(/^data:(image\/\w+);base64,/)
-        const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
-        const ext = mimeType.split('/')[1] ?? 'jpg'
-        const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
-        const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
-        const { error: srcErr } = await adminClient.storage
-          .from('assets').upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
-        if (srcErr) throw new Error(`Source upload failed: ${srcErr.message}`)
-        const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
-        falPayload.image_url = publicUrl
+        const src = source_image as string
+        if (src.startsWith('http')) {
+          // Already a public URL (e.g. from Supabase storage) — use directly
+          falPayload.image_url = src
+        } else {
+          // base64 data URL — upload to storage first
+          const base64Data = src.replace(/^data:image\/\w+;base64,/, '')
+          const mimeMatch = src.match(/^data:(image\/\w+);base64,/)
+          const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+          const ext = mimeType.split('/')[1] ?? 'jpg'
+          const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+          const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
+          const { error: srcErr } = await adminClient.storage
+            .from('assets').upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
+          if (srcErr) throw new Error(`Source upload failed: ${srcErr.message}`)
+          const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
+          falPayload.image_url = publicUrl
+        }
       }
 
       if (prompt) falPayload.prompt = prompt
@@ -406,8 +413,13 @@ Deno.serve(async (req) => {
       } else if (slug.startsWith('luma')) {
         falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
         if (body.loop) falPayload.loop = body.loop === 'true' || body.loop === true
+        // resolution: "540p" | "720p" | "1080p"
         if (body.resolution) falPayload.resolution = body.resolution
-        if (body.duration) falPayload.duration = body.duration
+        // duration: "5s" | "9s" — ensure "s" suffix
+        if (body.duration) {
+          const d = String(body.duration).replace(/s$/, '')
+          falPayload.duration = `${d}s`
+        }
 
         // Camera motion — append as prompt modifier for Luma
         const lumaCamera = body.camera_motion as string | undefined
@@ -433,6 +445,38 @@ Deno.serve(async (req) => {
         }
       } else if (slug.startsWith('minimax')) {
         falPayload.prompt_optimizer = body.prompt_optimizer !== 'false'
+        if (body.negative_prompt) falPayload.negative_prompt = body.negative_prompt
+
+        const MINIMAX_CAM: Record<string, string> = {
+          static:      'static locked-off camera',
+          zoom_in:     'slow zoom in',
+          zoom_out:    'slow zoom out',
+          pan_left:    'camera pans left',
+          pan_right:   'camera pans right',
+          push_in:     'camera pushes forward toward subject',
+          pull_out:    'camera pulls back away from subject',
+          orbit_left:  'camera orbits left around subject',
+          orbit_right: 'camera orbits right around subject',
+          crane_up:    'camera cranes upward',
+          crane_down:  'camera cranes downward',
+          handheld:    'handheld camera, slight natural shake',
+        }
+        const MINIMAX_STYLE: Record<string, string> = {
+          cinematic:    'cinematic film quality, movie-grade lighting and color grading',
+          documentary:  'documentary style, natural lighting, realistic handheld feel',
+          slow_motion:  'slow motion, dramatic timing, fluid movement',
+          commercial:   'commercial production quality, polished, clean and bright',
+          noir:         'film noir, high contrast, dramatic shadows, moody atmosphere',
+          hyperlapse:   'hyperlapse, time-accelerated motion, sweeping movement',
+        }
+        const camMove = body.camera_movement as string | undefined
+        if (camMove && camMove !== 'none' && MINIMAX_CAM[camMove]) {
+          falPayload.prompt = `${falPayload.prompt ?? ''}, ${MINIMAX_CAM[camMove]}`.replace(/^, /, '')
+        }
+        const style = body.video_style as string | undefined
+        if (style && style !== 'none' && MINIMAX_STYLE[style]) {
+          falPayload.prompt = `${falPayload.prompt ?? ''}, ${MINIMAX_STYLE[style]}`.replace(/^, /, '')
+        }
       }
 
       // Submit to fal queue

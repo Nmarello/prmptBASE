@@ -115,6 +115,31 @@ SELECT m.id, 'txt2vid', 'Minimax — Text to Video',
   'Generate detailed, dynamic video from text. Minimax handles complex motion and fine detail well.',
   '[
     {"id":"prompt","label":"Prompt","type":"textarea","required":true,"ai_assist":true,"placeholder":"A futuristic city at night, flying cars weaving between glowing skyscrapers, rain-slicked streets reflecting neon lights..."},
+    {"id":"negative_prompt","label":"Negative Prompt","type":"textarea","placeholder":"blurry, low quality, watermark, distorted faces..."},
+    {"id":"camera_movement","label":"Camera Movement","type":"select","hint":"Cinematic camera direction appended to your prompt","options":[
+      {"value":"none","label":"None"},
+      {"value":"static","label":"Static — locked off"},
+      {"value":"zoom_in","label":"Zoom In"},
+      {"value":"zoom_out","label":"Zoom Out"},
+      {"value":"pan_left","label":"Pan Left"},
+      {"value":"pan_right","label":"Pan Right"},
+      {"value":"push_in","label":"Push In — dolly forward"},
+      {"value":"pull_out","label":"Pull Out — dolly back"},
+      {"value":"orbit_left","label":"Orbit Left"},
+      {"value":"orbit_right","label":"Orbit Right"},
+      {"value":"crane_up","label":"Crane Up"},
+      {"value":"crane_down","label":"Crane Down"},
+      {"value":"handheld","label":"Handheld — natural shake"}
+    ]},
+    {"id":"video_style","label":"Visual Style","type":"select","options":[
+      {"value":"none","label":"None"},
+      {"value":"cinematic","label":"Cinematic — film grade"},
+      {"value":"documentary","label":"Documentary — naturalistic"},
+      {"value":"slow_motion","label":"Slow Motion"},
+      {"value":"commercial","label":"Commercial — polished"},
+      {"value":"noir","label":"Film Noir — dark & dramatic"},
+      {"value":"hyperlapse","label":"Hyperlapse — accelerated"}
+    ]},
     {"id":"prompt_optimizer","label":"Prompt Optimizer","type":"select","hint":"Let Minimax enhance your prompt automatically","options":[
       {"value":"true","label":"On (recommended)"},
       {"value":"false","label":"Off"}
