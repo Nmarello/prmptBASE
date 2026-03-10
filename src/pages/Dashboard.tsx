@@ -335,7 +335,7 @@ export default function Dashboard() {
         {(view === 'models' || view === 'builder') && (
           <>
             {/* Left panel — model list */}
-            <aside className="w-72 border-r border-white/8 flex flex-col flex-shrink-0">
+            <aside className="w-72 border-r border-white/8 flex flex-col flex-shrink-0 min-h-0 overflow-hidden">
               {/* Image / Video tabs */}
               <div className="flex border-b border-white/8 flex-shrink-0">
                 {(['image', 'video'] as const).map((tab) => (
