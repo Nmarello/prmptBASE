@@ -595,10 +595,10 @@ export default function Dashboard() {
                               {model.min_tier}
                             </span>
                           )}
-                          <div className="text-white font-bold text-base leading-tight mb-1">{model.name}</div>
+                          <div className="text-white font-bold text-base leading-tight mb-1">{model.name.replace(/ [—–-]+ img2img$/i, '')}</div>
                           <div className="text-slate-500 text-xs line-clamp-2 mb-3">{model.description}</div>
                           <div className="flex flex-wrap gap-1.5">
-                            {model.supported_gen_types.filter((gt) => gt !== 'img2img' && gt !== 'multi_img2img').map((gt) => (
+                            {model.supported_gen_types.map((gt) => (
                               <span key={gt} className="text-xs bg-white/8 text-slate-400 px-2 py-0.5 rounded-full">
                                 {gt}
                               </span>

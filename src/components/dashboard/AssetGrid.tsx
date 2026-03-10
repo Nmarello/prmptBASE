@@ -134,7 +134,7 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
                       onClick={() => setModelFilter(modelFilter === m.id ? 'all' : m.id)}
                       className={`px-3 py-1 rounded-xl text-xs font-medium transition-all border ${modelFilter === m.id ? 'bg-white/10 border-white/20 text-white' : 'border-white/8 text-slate-500 hover:text-slate-300'}`}
                     >
-                      {m.name}
+                      {m.name.replace(/ [—–-]+ img2img$/i, '')}
                     </button>
                   ))}
                 </div>
