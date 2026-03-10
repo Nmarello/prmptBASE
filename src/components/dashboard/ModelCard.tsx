@@ -29,10 +29,19 @@ const providerDisplayNames: Record<string, string> = {
   Ideogram: 'Ideogram',
 }
 
+// Brand overrides for models where provider ≠ display brand (e.g. fal.ai-hosted models)
+const slugBrandLabels: Record<string, { label: string; color: string }> = {
+  'kling':           { label: 'Kuaishou',  color: 'text-cyan-400' },
+  'luma':            { label: 'Luma AI',   color: 'text-lime-400' },
+  'minimax-txt2vid': { label: 'MiniMax',   color: 'text-fuchsia-400' },
+}
+
 export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp }: Props) {
   const accessible = tierCanAccess(userTier, model.min_tier)
   const comingSoon = comingSoonProp || model.provider === 'Google'
-  const color = providerColors[model.provider] ?? providerColors.default
+  const slugBrand = slugBrandLabels[model.slug]
+  const brandLabel = slugBrand?.label ?? providerDisplayNames[model.provider]
+  const color = slugBrand?.color ?? providerColors[model.provider] ?? providerColors.default
 
   return (
     <button
@@ -56,9 +65,9 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
         </span>
       )}
 
-      {providerDisplayNames[model.provider] && (
+      {brandLabel && (
         <div className={`text-xs font-semibold uppercase tracking-wider mb-1 ${color}`}>
-          {providerDisplayNames[model.provider]}
+          {brandLabel}
         </div>
       )}
       <div className="text-white font-bold text-lg leading-tight">{model.name}</div>
