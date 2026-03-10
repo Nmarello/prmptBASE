@@ -37,6 +37,13 @@ export default function Admin() {
   const [tierFilter, setTierFilter] = useState<Tier | 'all'>('all')
   const [loading, setLoading] = useState(true)
   const [updatingTier, setUpdatingTier] = useState<string | null>(null)
+  const [showCreate, setShowCreate] = useState(false)
+  const [createEmail, setCreateEmail] = useState('')
+  const [createPassword, setCreatePassword] = useState('')
+  const [createName, setCreateName] = useState('')
+  const [createTier, setCreateTier] = useState<Tier>('newbie')
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
 
   useEffect(() => { loadAll() }, [])
 
@@ -121,6 +128,40 @@ export default function Admin() {
     setUpdatingTier(null)
   }
 
+  async function createUser() {
+    if (!createEmail.trim()) return
+    setCreating(true)
+    setCreateError(null)
+    const { data: { session } } = await supabase.auth.getSession()
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            email: createEmail.trim(),
+            password: createPassword.trim() || undefined,
+            display_name: createName.trim() || undefined,
+            tier: createTier,
+          }),
+        }
+      )
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setShowCreate(false)
+      setCreateEmail(''); setCreatePassword(''); setCreateName(''); setCreateTier('newbie')
+      loadAll()
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create user')
+    }
+    setCreating(false)
+  }
+
   const filtered = users.filter(u => {
     const matchTier = tierFilter === 'all' || u.tier === tierFilter
     const q = search.toLowerCase()
@@ -129,6 +170,7 @@ export default function Admin() {
   })
 
   return (
+    <>
     <div className="min-h-screen bg-[#0d1117] text-white">
       {/* Header */}
       <header className="border-b border-white/8 px-6 py-4 flex items-center justify-between">
@@ -197,6 +239,12 @@ export default function Admin() {
             ))}
           </div>
           <span className="text-xs text-slate-600 ml-auto">{filtered.length} users</span>
+          <button
+            onClick={() => { setShowCreate(true); setCreateError(null) }}
+            className="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 rounded-lg text-xs font-medium transition-all"
+          >
+            + Add user
+          </button>
         </div>
 
         {/* User table */}
@@ -280,5 +328,81 @@ export default function Admin() {
 
       </div>
     </div>
+
+    {/* Create user modal */}
+    {showCreate && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" onClick={() => setShowCreate(false)}>
+        <div className="bg-[#161b22] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-base font-semibold">Add test user</h3>
+            <button onClick={() => setShowCreate(false)} className="text-slate-500 hover:text-white text-lg leading-none">✕</button>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-slate-400 mb-1 block">Email *</label>
+              <input
+                type="email"
+                value={createEmail}
+                onChange={e => setCreateEmail(e.target.value)}
+                placeholder="test@example.com"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 mb-1 block">Password <span className="text-slate-600">(leave blank to send magic link)</span></label>
+              <input
+                type="text"
+                value={createPassword}
+                onChange={e => setCreatePassword(e.target.value)}
+                placeholder="Set a password"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 mb-1 block">Display name <span className="text-slate-600">(optional)</span></label>
+              <input
+                type="text"
+                value={createName}
+                onChange={e => setCreateName(e.target.value)}
+                placeholder="First Last"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 mb-1 block">Tier</label>
+              <div className="flex gap-2">
+                {TIERS.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setCreateTier(t)}
+                    className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-all capitalize ${
+                      createTier === t
+                        ? TIER_COLORS[t] + ' ring-1 ring-current'
+                        : 'bg-white/5 border-white/10 text-slate-500 hover:text-white'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {createError && (
+              <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{createError}</p>
+            )}
+
+            <button
+              onClick={createUser}
+              disabled={creating || !createEmail.trim()}
+              className="w-full py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm font-semibold transition-all mt-1"
+            >
+              {creating ? 'Creating…' : 'Create user'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }
