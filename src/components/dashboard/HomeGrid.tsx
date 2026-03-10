@@ -31,9 +31,12 @@ function shuffle<T>(arr: T[]): T[] {
 
 // ─── Bento config (returning users) ──────────────────────────────────────────
 const SLOT_CLASSES = [
-  'col-span-2 row-span-2',
-  'col-span-1 row-span-2',
-  'col-span-1 row-span-2',
+  'col-span-2 row-span-1',
+  'col-span-1 row-span-1',
+  'col-span-1 row-span-1',
+  'col-span-1 row-span-1',
+  'col-span-1 row-span-1',
+  'col-span-1 row-span-1',
   'col-span-1 row-span-1',
   'col-span-1 row-span-1',
   'col-span-1 row-span-1',
@@ -208,7 +211,7 @@ export default function HomeGrid({ assets, onSelectModel }: Props) {
         </button>
       </div>
 
-      <div className="grid grid-cols-4 grid-rows-3 gap-2 flex-1 min-h-0">
+      <div className="grid grid-cols-5 grid-rows-2 gap-2 flex-1 min-h-0">
         {userSlots.map((a, i) => {
           const isVideo = a.gen_type === 'txt2vid' || a.gen_type === 'img2vid'
           return (
