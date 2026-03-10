@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null
   loading: boolean
   isAdmin: boolean
+  adminLoading: boolean
   signInWithGoogle: () => Promise<void>
   signInWithMicrosoft: () => Promise<void>
   signInWithFacebook: () => Promise<void>
@@ -20,30 +21,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [adminLoading, setAdminLoading] = useState(false)
 
-  async function loadProfile(userId: string) {
-    const { data } = await supabase.from('profiles').select('is_admin').eq('id', userId).single()
-    setIsAdmin(data?.is_admin ?? false)
-  }
-
+  // Auth state — never blocks loading
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
-      if (session?.user) await loadProfile(session.user.id)
       setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-      if (session?.user) await loadProfile(session.user.id)
-      else setIsAdmin(false)
+      if (!session) { setIsAdmin(false); setAdminLoading(false) }
       setLoading(false)
     })
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // Load is_admin separately — doesn't affect main loading state
+  useEffect(() => {
+    if (!user) { setAdminLoading(false); return }
+    setAdminLoading(true)
+    supabase.from('profiles').select('is_admin').eq('id', user.id).single()
+      .then(({ data }) => { setIsAdmin(data?.is_admin ?? false); setAdminLoading(false) })
+  }, [user?.id])
 
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
@@ -72,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, session, loading, isAdmin,
+      user, session, loading, isAdmin, adminLoading,
       signInWithGoogle, signInWithMicrosoft, signInWithFacebook,
       signOut,
     }}>
