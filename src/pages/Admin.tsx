@@ -132,15 +132,17 @@ export default function Admin() {
     if (!createEmail.trim()) return
     setCreating(true)
     setCreateError(null)
-    const { data: { session } } = await supabase.auth.refreshSession()
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('Not authenticated')
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
+            'Authorization': `Bearer ${token}`,
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
@@ -158,8 +160,9 @@ export default function Admin() {
       loadAll()
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'Failed to create user')
+    } finally {
+      setCreating(false)
     }
-    setCreating(false)
   }
 
   const filtered = users.filter(u => {
