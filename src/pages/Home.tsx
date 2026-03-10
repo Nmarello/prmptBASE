@@ -14,7 +14,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#0d1117] text-white flex flex-col items-center justify-center px-4">
       <div className="text-center max-w-2xl">
         <h1 className="text-5xl font-black tracking-tight mb-3">
-          prmpt<span className="text-sky-400">BASE</span>
+          prmpt<span className="text-sky-400">VAULT</span>
         </h1>
         <p className="text-xl text-slate-400 mb-2">Build better AI prompts, faster.</p>
         <p className="text-sm text-slate-500 mb-10">

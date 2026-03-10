@@ -14,7 +14,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         {/* Logo + heading */}
         <div className="text-center mb-8">
           <div className="text-3xl font-black tracking-tight text-white mb-1">
-            prmpt<span className="text-sky-400">BASE</span>
+            prmpt<span className="text-sky-400">VAULT</span>
           </div>
           <p className="text-sm text-slate-400">Sign in to start building better prompts</p>
         </div>

@@ -49,22 +49,11 @@ interface GridItem extends ShowcaseRow {
 interface Props {
   assets: Asset[]
   onSelectModel: () => void
+  onAssetClick?: (asset: Asset) => void
 }
 
 // ─── Background grid for onboarding screen ───────────────────────────────────
-function ShowcaseBg() {
-  const [rows, setRows] = useState<ShowcaseRow[]>([])
-
-  useEffect(() => {
-    fetch(
-      `${SUPABASE_URL}/rest/v1/showcase_assets?select=url,gen_type&order=created_at.desc&limit=40`,
-      { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
-    )
-      .then(r => r.json())
-      .then((data: ShowcaseRow[]) => setRows(data))
-      .catch(() => {})
-  }, [])
-
+function ShowcaseBg({ rows }: { rows: ShowcaseRow[] }) {
   // Shuffle + assign formats once per mount — new arrangement every page load
   const columns = useMemo<GridItem[][]>(() => {
     if (rows.length === 0) return [[], [], [], [], []]
@@ -121,7 +110,18 @@ function ShowcaseBg() {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function HomeGrid({ assets, onSelectModel }: Props) {
+export default function HomeGrid({ assets, onSelectModel, onAssetClick }: Props) {
+  const [showcase, setShowcase] = useState<ShowcaseRow[]>([])
+
+  useEffect(() => {
+    fetch(
+      `${SUPABASE_URL}/rest/v1/showcase_assets?select=url,gen_type&order=created_at.desc&limit=40`,
+      { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
+    )
+      .then(r => r.json())
+      .then((data: ShowcaseRow[]) => setShowcase(data))
+      .catch(() => {})
+  }, [])
 
   // ── Onboarding (0 assets) ─────────────────────────────────────────────────
   if (assets.length <= ONBOARDING_THRESHOLD) {
@@ -129,7 +129,7 @@ export default function HomeGrid({ assets, onSelectModel }: Props) {
       <div className="relative h-full overflow-hidden rounded-2xl">
 
         {/* Decorative background — varied aspect ratio showcase grid */}
-        <ShowcaseBg />
+        <ShowcaseBg rows={showcase} />
 
         {/* Dark overlay */}
         <div className="absolute inset-0 bg-[#0a0a0f]/80 backdrop-blur-sm" />
@@ -139,7 +139,7 @@ export default function HomeGrid({ assets, onSelectModel }: Props) {
           <div className="max-w-md w-full text-center">
 
             <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-sky-400">
-              Welcome to prmptBASE
+              Welcome to prmptVAULT
             </div>
             <h2 className="text-3xl font-bold text-white mb-3 leading-tight">
               Build better AI prompts,<br />faster.
@@ -182,36 +182,35 @@ export default function HomeGrid({ assets, onSelectModel }: Props) {
   }
 
   // ── Returning user — random aspect-ratio column grid ─────────────────────
-  // Shuffle assets + assign a random real-world format per asset on every mount
+  // Shuffle assets, backfill with showcase to complete the last row (no empty cells),
+  // then distribute row-first across columns.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const columns = useMemo(() => {
-    const shuffled = shuffle([...assets])
-    const items = shuffled.map(a => {
+    const shuffledAssets = shuffle([...assets])
+
+    // Round up to the nearest complete row so all columns have equal item counts
+    const neededTotal = Math.max(NUM_COLS, Math.ceil(shuffledAssets.length / NUM_COLS) * NUM_COLS)
+    const backfillCount = neededTotal - shuffledAssets.length
+    const backfillPool = shuffle([...showcase])
+
+    type CombinedItem = { url: string; gen_type: string | null; _key: string; _asset?: Asset }
+    const combined: CombinedItem[] = [
+      ...shuffledAssets.map(a => ({ url: a.url, gen_type: a.gen_type, _key: a.id, _asset: a })),
+      ...backfillPool.slice(0, backfillCount).map((s, i) => ({ url: s.url, gen_type: s.gen_type, _key: `sc-${i}` })),
+    ]
+
+    const items = combined.map(a => {
       const [w, h] = pickFormat()
       return { ...a, aspectW: w, aspectH: h, isVideo: a.gen_type === 'txt2vid' || a.gen_type === 'img2vid' }
     })
     const cols: typeof items[] = Array.from({ length: NUM_COLS }, () => [])
+    // Row-first: item 0→col0, item 1→col1, ..., item 5→col0, ...
     items.forEach((item, i) => cols[i % NUM_COLS].push(item))
     return cols
-  }, [assets])
+  }, [assets, showcase])
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <div>
-          <h2 className="text-white font-bold text-lg">Your Assets</h2>
-          <p className="text-slate-500 text-xs mt-0.5">
-            {assets.length} generation{assets.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <button
-          onClick={onSelectModel}
-          className="px-4 py-2 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium transition-all"
-        >
-          + New generation
-        </button>
-      </div>
-
       <div className="flex gap-2 flex-1 min-h-0 overflow-hidden">
         {columns.map((col, ci) => (
           <div key={ci} className="flex flex-col gap-2 flex-1 overflow-hidden">
@@ -219,8 +218,9 @@ export default function HomeGrid({ assets, onSelectModel }: Props) {
               const pct = (item.aspectH / item.aspectW) * 100
               return (
                 <div
-                  key={item.id}
-                  className="relative w-full flex-shrink-0 rounded-xl overflow-hidden bg-white/3 border border-white/8 hover:border-white/20 transition-all group"
+                  key={item._key}
+                  onClick={() => item._asset && onAssetClick?.(item._asset)}
+                  className={`relative w-full flex-shrink-0 rounded-xl overflow-hidden bg-white/3 border border-white/8 hover:border-white/20 transition-all group${item._asset ? ' cursor-pointer' : ''}`}
                   style={{ paddingBottom: `${pct}%` }}
                 >
                   {item.isVideo ? (

@@ -1,4 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+
+async function downloadFile(url: string, isVideo?: boolean) {
+  const res = await fetch(url)
+  const blob = await res.blob()
+  const objectUrl = URL.createObjectURL(blob)
+  const ext = isVideo ? 'mp4' : (blob.type.includes('png') ? 'png' : 'jpg')
+  const filename = `prmptVAULT-${Date.now()}.${ext}`
+  const a = document.createElement('a')
+  a.href = objectUrl
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(objectUrl)
+}
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { Asset, Model, Template, GenType, UserProject } from '../types'
@@ -37,7 +51,8 @@ export default function Dashboard() {
   const [template, setTemplate] = useState<Template | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string; isVideo?: boolean } | null>(null)
-  const [pendingVideo, setPendingVideo] = useState<{ assetId: string; operationName: string; provider: 'google' | 'fal.ai' } | null>(null)
+  const [lightboxAsset, setLightboxAsset] = useState<Asset | null>(null)
+  const [pendingVideo, setPendingVideo] = useState<{ assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number } | null>(null)
   const videoPollerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [generateError, setGenerateError] = useState<string | null>(null)
 
@@ -200,7 +215,7 @@ export default function Dashboard() {
       // Async video pending — start polling
       if (isVideo && data.status === 'pending') {
         const provider = data.provider === 'fal.ai' ? 'fal.ai' : 'google'
-        setPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, provider })
+        setPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, provider, startedAt: Date.now() })
         setSubmitting(false)
         return
       }
@@ -225,6 +240,13 @@ export default function Dashboard() {
     }
     async function poll() {
       if (!pendingVideo) return
+      // 15-minute timeout
+      if (Date.now() - pendingVideo.startedAt > 15 * 60 * 1000) {
+        if (videoPollerRef.current) clearInterval(videoPollerRef.current)
+        setPendingVideo(null)
+        setGenerateError('Video generation timed out after 15 minutes. Please try again.')
+        return
+      }
       try {
         const { data: { session } } = await supabase.auth.getSession()
         const endpoint = pendingVideo.provider === 'fal.ai' ? 'check-fal-video' : 'check-veo-job'
@@ -245,12 +267,18 @@ export default function Dashboard() {
           },
         )
         const data = await res.json()
+        if (data.error) {
+          if (videoPollerRef.current) clearInterval(videoPollerRef.current)
+          setPendingVideo(null)
+          setGenerateError(`Video generation failed: ${data.error}`)
+          return
+        }
         if (data.status === 'complete' && data.video_url) {
           setPendingVideo(null)
           setResult({ url: data.video_url, prompt: '', isVideo: true })
           loadAssets()
         }
-      } catch (_) { /* keep polling */ }
+      } catch (_) { /* network hiccup — keep polling */ }
     }
     videoPollerRef.current = setInterval(poll, 5000)
     return () => { if (videoPollerRef.current) clearInterval(videoPollerRef.current) }
@@ -321,7 +349,7 @@ export default function Dashboard() {
       <header className="border-b border-white/8 px-6 py-4 flex items-center justify-between flex-shrink-0 relative">
         <div className="flex items-center gap-6">
           <span className="text-xl font-black tracking-tight">
-            prmpt<span className="text-sky-400">BASE</span>
+            prmpt<span className="text-sky-400">VAULT</span>
           </span>
           <span className="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-600 font-mono">
             {/* @ts-ignore */}
@@ -344,9 +372,12 @@ export default function Dashboard() {
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-xs bg-sky-500/20 text-sky-400 border border-sky-500/30 px-2.5 py-1 rounded-full font-medium capitalize">
+          <Link
+            to="/pricing"
+            className="text-xs bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/30 px-2.5 py-1 rounded-full font-medium capitalize transition-colors"
+          >
             {userTier}
-          </span>
+          </Link>
           <span className="text-sm text-slate-400">{user?.email}</span>
           <button onClick={signOut} className="text-xs text-slate-600 hover:text-white transition-colors">
             Sign out
@@ -492,6 +523,7 @@ export default function Dashboard() {
                 <HomeGrid
                   assets={assets}
                   onSelectModel={() => setView('models')}
+                  onAssetClick={(asset) => setLightboxAsset(asset)}
                 />
               )}
 
@@ -573,6 +605,16 @@ export default function Dashboard() {
                       <div className="w-10 h-10 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
                       <p className="text-slate-400 font-medium">Rendering your video…</p>
                       <p className="text-slate-600 text-sm">This usually takes 2–5 minutes. Hang tight.</p>
+                      <button
+                        onClick={() => {
+                          if (videoPollerRef.current) clearInterval(videoPollerRef.current)
+                          setPendingVideo(null)
+                          setGenerateError(null)
+                        }}
+                        className="mt-2 text-xs text-slate-600 hover:text-slate-400 transition-colors"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   )}
 
@@ -600,15 +642,12 @@ export default function Dashboard() {
                         </div>
                       )}
                       <div className="flex gap-3 flex-wrap">
-                        <a
-                          href={result.url}
-                          download
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          onClick={() => downloadFile(result.url, result.isVideo)}
                           className="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium transition-all"
                         >
                           Download
-                        </a>
+                        </button>
                         <button
                           onClick={() => sendToImg2Img(result.url)}
                           className="px-5 py-2.5 bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 rounded-xl text-sm font-medium text-sky-300 transition-all"
@@ -696,6 +735,76 @@ export default function Dashboard() {
           onClose={() => setImg2vidPickerUrl(null)}
         />
       )}
+
+      {/* Asset lightbox */}
+      {lightboxAsset && (() => {
+        const isVideo = lightboxAsset.gen_type === 'txt2vid' || lightboxAsset.gen_type === 'img2vid'
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+            onClick={() => setLightboxAsset(null)}
+          >
+            <div
+              className="relative bg-[#161b22] border border-white/10 rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setLightboxAsset(null)}
+                className="absolute top-4 right-4 text-slate-500 hover:text-white text-xl leading-none"
+              >
+                ×
+              </button>
+
+              <div className="mb-5">
+                {isVideo ? (
+                  <video
+                    src={lightboxAsset.url}
+                    controls autoPlay loop
+                    className="rounded-xl w-full border border-white/10"
+                  />
+                ) : (
+                  <img
+                    src={lightboxAsset.url}
+                    alt=""
+                    className="rounded-xl w-full border border-white/10"
+                  />
+                )}
+              </div>
+
+              <div className="flex gap-3 flex-wrap">
+                <button
+                  onClick={() => downloadFile(lightboxAsset.url, isVideo)}
+                  className="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium transition-all"
+                >
+                  Download
+                </button>
+                {!isVideo && (
+                  <button
+                    onClick={() => { setLightboxAsset(null); sendToImg2Img(lightboxAsset.url) }}
+                    className="px-5 py-2.5 bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 rounded-xl text-sm font-medium text-sky-300 transition-all"
+                  >
+                    Send to img2img →
+                  </button>
+                )}
+                {!isVideo && (
+                  <button
+                    onClick={() => { setLightboxAsset(null); sendToImg2Vid(lightboxAsset.url) }}
+                    className="px-5 py-2.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/40 rounded-xl text-sm font-medium text-violet-300 transition-all"
+                  >
+                    Send to img2vid →
+                  </button>
+                )}
+                <button
+                  onClick={() => { setLightboxAsset(null); setView('assets'); loadAssets() }}
+                  className="px-5 py-2.5 bg-white/8 hover:bg-white/12 border border-white/10 rounded-xl text-sm font-medium transition-all"
+                >
+                  View in Assets →
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
