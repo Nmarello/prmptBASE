@@ -52,7 +52,25 @@ export default function Dashboard() {
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string; isVideo?: boolean } | null>(null)
   const [lightboxAsset, setLightboxAsset] = useState<Asset | null>(null)
-  const [pendingVideo, setPendingVideo] = useState<{ assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number } | null>(null)
+  const PENDING_VIDEO_KEY = 'prmptVAULT_pendingVideo'
+  const [pendingVideo, setPendingVideoRaw] = useState<{ assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number } | null>(() => {
+    try {
+      const stored = localStorage.getItem('prmptVAULT_pendingVideo')
+      if (!stored) return null
+      const parsed = JSON.parse(stored)
+      // Discard if already expired (30-min window)
+      if (Date.now() - parsed.startedAt > 30 * 60 * 1000) {
+        localStorage.removeItem('prmptVAULT_pendingVideo')
+        return null
+      }
+      return parsed
+    } catch { return null }
+  })
+  function setPendingVideo(val: { assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number } | null) {
+    setPendingVideoRaw(val)
+    if (val) localStorage.setItem(PENDING_VIDEO_KEY, JSON.stringify(val))
+    else localStorage.removeItem(PENDING_VIDEO_KEY)
+  }
   const videoPollerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [generateError, setGenerateError] = useState<string | null>(null)
 
@@ -243,11 +261,11 @@ export default function Dashboard() {
     }
     async function poll() {
       if (!pendingVideo) return
-      // 15-minute timeout
-      if (Date.now() - pendingVideo.startedAt > 15 * 60 * 1000) {
+      // 30-minute timeout
+      if (Date.now() - pendingVideo.startedAt > 30 * 60 * 1000) {
         if (videoPollerRef.current) clearInterval(videoPollerRef.current)
         setPendingVideo(null)
-        setGenerateError('Video generation timed out after 15 minutes. Please try again.')
+        setGenerateError('Video generation timed out after 30 minutes. Please try again.')
         return
       }
       try {
