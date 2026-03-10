@@ -142,7 +142,7 @@ export default function HomeGrid({ assets, onSelectModel }: Props) {
         <div className="absolute inset-0 bg-[#0a0a0f]/80 backdrop-blur-sm" />
 
         {/* Content */}
-        <div className="relative h-full flex flex-col items-center justify-center px-8">
+        <div className="relative h-full flex flex-col items-center justify-start pt-16 px-8">
           <div className="max-w-md w-full text-center">
 
             <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-sky-400">
