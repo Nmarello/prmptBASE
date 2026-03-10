@@ -40,7 +40,7 @@ const SLOT_CLASSES = [
   'col-span-1 row-span-1',
 ]
 const TOTAL_SLOTS = SLOT_CLASSES.length
-const ONBOARDING_THRESHOLD = 0  // show onboarding only when 0 assets
+const ONBOARDING_THRESHOLD = 999  // PREVIEW: set back to 0 before launch
 
 interface Props {
   assets: Asset[]
@@ -57,38 +57,72 @@ export default function HomeGrid({ assets, onSelectModel }: Props) {
   // ── Onboarding state (0 assets) ──────────────────────────────────────────
   if (assets.length === ONBOARDING_THRESHOLD) {
     return (
-      <div className="h-full flex flex-col items-center justify-center max-w-lg mx-auto text-center gap-10">
-        <div>
-          <p className="text-2xl font-bold text-white mb-2">Welcome to prmptBASE</p>
-          <p className="text-slate-400 text-sm">Your AI generation workspace. Start with three steps.</p>
-        </div>
+      <div className="relative h-full overflow-hidden rounded-2xl">
 
-        <div className="w-full space-y-3">
-          {[
-            { n: '01', label: 'Pick a model', sub: 'Choose from the sidebar — images or video', action: true },
-            { n: '02', label: 'Fill the template', sub: 'Structured fields replace the blank box' },
-            { n: '03', label: 'Generate & save', sub: 'Every output lands in your asset library automatically' },
-          ].map(({ n, label, sub, action }) => (
-            <button
-              key={n}
-              onClick={action ? onSelectModel : undefined}
-              className={`w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all ${
-                action
-                  ? 'bg-sky-500/10 border-sky-500/30 hover:bg-sky-500/20 cursor-pointer'
-                  : 'bg-white/3 border-white/8 cursor-default'
-              }`}
-            >
-              <span className="text-2xl font-bold text-white/20 w-8 shrink-0">{n}</span>
-              <div>
-                <div className="text-white font-semibold text-sm">{label}</div>
-                <div className="text-slate-500 text-xs mt-0.5">{sub}</div>
-              </div>
-              {action && <span className="ml-auto text-sky-400 text-sm">→</span>}
-            </button>
+        {/* Background bento — showcase at very low opacity as a teaser */}
+        <div className="absolute inset-0 grid grid-cols-4 grid-rows-3 gap-2 p-2">
+          {SHOWCASE.slice(0, TOTAL_SLOTS).map((s, i) => (
+            <div key={i} className={`${SLOT_CLASSES[i]} relative rounded-xl overflow-hidden`}>
+              {s.isVideo ? (
+                <video src={s.url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
+              ) : (
+                <img src={s.url} alt="" className="w-full h-full object-cover" />
+              )}
+            </div>
           ))}
         </div>
 
-        <p className="text-slate-600 text-xs">No credit card required to get started</p>
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-[#0a0a0f]/80 backdrop-blur-sm" />
+
+        {/* Centered content */}
+        <div className="relative h-full flex flex-col items-center justify-center px-8">
+          <div className="max-w-md w-full text-center">
+
+            {/* Headline */}
+            <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-sky-400">
+              Welcome to prmptBASE
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-3 leading-tight">
+              Build better AI prompts,<br />faster.
+            </h2>
+            <p className="text-slate-400 text-sm mb-10 leading-relaxed">
+              Pick any model, fill a structured template, and generate.<br />
+              Everything you create is saved automatically in your library.
+            </p>
+
+            {/* Steps */}
+            <div className="flex items-start justify-center gap-6 mb-10">
+              {[
+                { icon: '⬡', label: 'Pick a model', sub: 'Images or video' },
+                { icon: '▤', label: 'Fill the template', sub: 'No blank boxes' },
+                { icon: '◈', label: 'Generate & save', sub: 'Auto-organized' },
+              ].map(({ icon, label, sub }, i) => (
+                <div key={i} className="flex flex-col items-center gap-2 flex-1">
+                  <div className="w-10 h-10 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-lg">
+                    {icon}
+                  </div>
+                  {i < 2 && (
+                    <div className="absolute mt-5 ml-24 text-white/20 text-xs">→</div>
+                  )}
+                  <div className="text-white text-xs font-semibold">{label}</div>
+                  <div className="text-slate-600 text-xs">{sub}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <button
+              onClick={onSelectModel}
+              className="w-full py-3.5 bg-sky-500 hover:bg-sky-400 active:bg-sky-600 rounded-2xl text-white font-semibold text-sm transition-all shadow-lg shadow-sky-500/20"
+            >
+              Start generating →
+            </button>
+            <p className="text-slate-600 text-xs mt-4">
+              Your first 5 generations are free — no credit card required
+            </p>
+          </div>
+        </div>
       </div>
     )
   }
