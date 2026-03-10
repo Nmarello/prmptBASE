@@ -92,10 +92,91 @@ const QUALITY_MAP: Record<string, string> = {
   intricate: 'intricate details, fine textures',
 }
 
+const LENS_MAP: Record<string, string> = {
+  '85mm': '85mm portrait lens, shallow depth of field, subject separation',
+  '50mm': '50mm standard lens, natural perspective',
+  '24mm': '24mm wide angle lens, environmental context',
+  '14mm': '14mm ultra-wide lens, dramatic perspective distortion',
+  'macro': 'macro lens, extreme close-up, fine detail',
+  'fisheye': 'fisheye lens, 180° field of view, curved distortion',
+  'anamorphic': 'anamorphic lens, cinematic widescreen, oval bokeh, lens flares',
+  'telephoto': '200mm telephoto lens, compressed perspective, distant subject',
+  'tilt_shift': 'tilt-shift lens, selective focus, miniature effect',
+}
+
+const DOF_MAP: Record<string, string> = {
+  'shallow': 'shallow depth of field, soft creamy bokeh background',
+  'medium': 'medium depth of field, subject sharp, background softly blurred',
+  'deep': 'deep depth of field, everything in sharp focus',
+  'tilt_shift': 'tilt-shift focus, selective plane of focus',
+}
+
+const COMPOSITION_MAP: Record<string, string> = {
+  'close_up': 'close-up shot, face or subject fills frame',
+  'medium_shot': 'medium shot, waist up',
+  'wide_shot': 'wide establishing shot, full environment visible',
+  'aerial': 'aerial bird\'s eye view, looking straight down',
+  'macro': 'extreme macro close-up, microscopic detail',
+  'worms_eye': 'worm\'s eye view, looking sharply upward',
+  'rule_of_thirds': 'rule of thirds composition, subject off-center',
+  'symmetrical': 'perfectly symmetrical composition, centered',
+  'dutch_angle': 'dutch angle, tilted camera, tension and unease',
+  'over_shoulder': 'over-the-shoulder shot',
+  'pov': 'first-person POV shot',
+}
+
+const COLOR_MAP: Record<string, string> = {
+  'warm': 'warm color palette, amber and orange tones',
+  'cool': 'cool color palette, blue and teal tones',
+  'monochrome': 'monochromatic color scheme',
+  'vibrant': 'vibrant saturated colors, high chroma',
+  'muted': 'muted desaturated colors, faded palette',
+  'pastel': 'soft pastel colors, gentle hues',
+  'dark': 'dark moody palette, deep shadows',
+  'neon': 'neon color palette, electric hues',
+  'earthy': 'earthy natural tones, browns and greens',
+  'golden': 'golden warm tones, amber and honey',
+}
+
+const TIME_MAP: Record<string, string> = {
+  'dawn': 'just before sunrise, soft pink and purple sky',
+  'morning': 'early morning, fresh light, long soft shadows',
+  'midday': 'harsh midday sun, high contrast, bleached highlights',
+  'afternoon': 'warm afternoon light, golden cast',
+  'dusk': 'dusk, orange and purple sky, fading light',
+  'blue_hour': 'blue hour, deep twilight, electric blue atmosphere',
+  'night': 'night, dark sky, artificial light sources',
+  'golden_hour': 'golden hour, warm glowing sun just above horizon',
+}
+
+const WEATHER_MAP: Record<string, string> = {
+  'clear': 'clear blue sky, bright crisp light',
+  'overcast': 'overcast sky, flat even diffused light',
+  'foggy': 'heavy fog, mysterious haze, reduced visibility',
+  'rainy': 'rain, wet reflective surfaces, dramatic atmosphere',
+  'stormy': 'storm clouds, lightning, dramatic dark sky',
+  'snowy': 'snowfall, cold white atmosphere, muted tones',
+  'dusty': 'dusty hazy atmosphere, desert heat shimmer',
+  'partly_cloudy': 'partly cloudy, dramatic cloud shadows',
+}
+
+const MEDIUM_MAP: Record<string, string> = {
+  'digital': 'digital photography, clean sharp image',
+  '35mm_film': '35mm film, natural grain, warm color rendition',
+  'medium_format': 'medium format photography, rich tonal range, ultra detailed',
+  'polaroid': 'polaroid instant film, faded colors, soft vignette',
+  'daguerreotype': 'daguerreotype, antique silver, historical photographic process',
+  'vhs': 'VHS analog video, scan lines, lo-fi aesthetic',
+  'super8': 'Super 8 film, vintage grain, warm flickering look',
+  'infrared': 'infrared photography, glowing foliage, dark skies, ethereal',
+}
+
 function buildPrompt(body: Record<string, unknown>): string {
   const parts: string[] = []
 
   if (body.prompt) parts.push(String(body.prompt).trim())
+  // subject field (DALL-E style)
+  if (body.subject) parts.push(String(body.subject).trim())
 
   const style = body.style as string | undefined
   if (style && STYLE_MAP[style]) parts.push(STYLE_MAP[style])
@@ -104,15 +185,40 @@ function buildPrompt(body: Record<string, unknown>): string {
   const lighting = body.lighting as string | undefined
   if (lighting && LIGHTING_MAP[lighting]) parts.push(LIGHTING_MAP[lighting])
 
+  const lens = body.lens as string | undefined
+  if (lens && LENS_MAP[lens]) parts.push(LENS_MAP[lens])
+
+  const dof = body.depth_of_field as string | undefined
+  if (dof && DOF_MAP[dof]) parts.push(DOF_MAP[dof])
+
+  const composition = body.composition as string | undefined
+  if (composition && COMPOSITION_MAP[composition]) parts.push(COMPOSITION_MAP[composition])
+
+  const timeOfDay = body.time_of_day as string | undefined
+  if (timeOfDay && TIME_MAP[timeOfDay]) parts.push(TIME_MAP[timeOfDay])
+
+  const weather = body.weather as string | undefined
+  if (weather && WEATHER_MAP[weather]) parts.push(WEATHER_MAP[weather])
+
+  const medium = body.camera_medium as string | undefined
+  if (medium && MEDIUM_MAP[medium]) parts.push(MEDIUM_MAP[medium])
+
   const mood = body.mood as string[] | undefined
   if (Array.isArray(mood) && mood.length > 0) {
     parts.push(mood.map((m) => MOOD_MAP[m] ?? m).join(', '))
+  }
+
+  const colorPalette = body.color_palette as string[] | undefined
+  if (Array.isArray(colorPalette) && colorPalette.length > 0) {
+    parts.push(colorPalette.map((c) => COLOR_MAP[c] ?? c).join(', '))
   }
 
   const quality = body.quality as string[] | undefined
   if (Array.isArray(quality) && quality.length > 0) {
     parts.push(quality.map((q) => QUALITY_MAP[q] ?? q).join(', '))
   }
+
+  if (body.additional_details) parts.push(String(body.additional_details).trim())
 
   return parts.filter(Boolean).join(', ')
 }
@@ -277,9 +383,54 @@ Deno.serve(async (req) => {
         falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
         falPayload.duration = body.duration ?? '5'
         if (body.cfg_scale) falPayload.cfg_scale = Number(body.cfg_scale)
+
+        // Camera movement — map preset to camera_control object
+        const camMove = body.camera_movement as string | undefined
+        if (camMove && camMove !== 'none') {
+          const CAM_CONTROL: Record<string, Record<string, number>> = {
+            zoom_in:    { horizontal: 0, vertical: 0, zoom: 8,  pan: 0, tilt: 0, roll: 0 },
+            zoom_out:   { horizontal: 0, vertical: 0, zoom: -8, pan: 0, tilt: 0, roll: 0 },
+            pan_left:   { horizontal: 0, vertical: 0, zoom: 0,  pan: -8, tilt: 0, roll: 0 },
+            pan_right:  { horizontal: 0, vertical: 0, zoom: 0,  pan: 8, tilt: 0, roll: 0 },
+            tilt_up:    { horizontal: 0, vertical: 0, zoom: 0,  pan: 0, tilt: 8, roll: 0 },
+            tilt_down:  { horizontal: 0, vertical: 0, zoom: 0,  pan: 0, tilt: -8, roll: 0 },
+            move_left:  { horizontal: -8, vertical: 0, zoom: 0, pan: 0, tilt: 0, roll: 0 },
+            move_right: { horizontal: 8,  vertical: 0, zoom: 0, pan: 0, tilt: 0, roll: 0 },
+            move_up:    { horizontal: 0, vertical: 8,  zoom: 0, pan: 0, tilt: 0, roll: 0 },
+            move_down:  { horizontal: 0, vertical: -8, zoom: 0, pan: 0, tilt: 0, roll: 0 },
+          }
+          if (CAM_CONTROL[camMove]) {
+            falPayload.camera_control = { type: 'simple', config: CAM_CONTROL[camMove] }
+          }
+        }
       } else if (slug.startsWith('luma')) {
         falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
         if (body.loop) falPayload.loop = body.loop === 'true' || body.loop === true
+        if (body.resolution) falPayload.resolution = body.resolution
+        if (body.duration) falPayload.duration = body.duration
+
+        // Camera motion — append as prompt modifier for Luma
+        const lumaCamera = body.camera_motion as string | undefined
+        if (lumaCamera && lumaCamera !== 'none') {
+          const LUMA_CAM: Record<string, string> = {
+            static:      'static camera, no movement',
+            zoom_in:     'slow zoom in',
+            zoom_out:    'slow zoom out',
+            pan_left:    'camera pans left',
+            pan_right:   'camera pans right',
+            push_in:     'camera pushes forward toward subject',
+            pull_out:    'camera pulls back away from subject',
+            orbit_left:  'camera orbits left around subject',
+            orbit_right: 'camera orbits right around subject',
+            crane_up:    'camera cranes upward',
+            crane_down:  'camera cranes downward',
+            handheld:    'handheld camera, slight natural shake',
+            dolly:       'smooth dolly shot',
+          }
+          if (LUMA_CAM[lumaCamera]) {
+            falPayload.prompt = `${falPayload.prompt ?? ''}, ${LUMA_CAM[lumaCamera]}`.replace(/^, /, '')
+          }
+        }
       } else if (slug.startsWith('minimax')) {
         falPayload.prompt_optimizer = body.prompt_optimizer !== 'false'
       }
