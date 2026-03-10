@@ -201,7 +201,7 @@ export default function HomeGrid({ assets, onSelectModel, onAssetClick }: Props)
               Start generating →
             </button>
             <p className="text-slate-600 text-xs mt-4">
-              Your first 5 generations are free — no credit card required
+              15 free generations per day — no credit card required
             </p>
 
           </div>

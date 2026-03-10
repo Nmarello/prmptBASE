@@ -39,7 +39,7 @@ export default function Home() {
         {/* Tier teaser */}
         <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
           {[
-            { name: 'Newbie', price: 'Free', agents: '1 agent', prompts: '5/day' },
+            { name: 'Newbie', price: 'Free', agents: '1 agent', prompts: '15/day' },
             { name: 'Creator', price: '$12/mo', agents: '2 agents', prompts: '20/day' },
             { name: 'Studio', price: '$29/mo', agents: '5 agents', prompts: '50/day' },
             { name: 'Pro', price: '$59/mo', agents: 'Unlimited', prompts: 'Unlimited' },
