@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
+      if (session?.user) setAdminLoading(true)
       setLoading(false)
     })
 
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session)
       setUser(session?.user ?? null)
       if (!session) { setIsAdmin(false); setAdminLoading(false) }
+      else setAdminLoading(true)
       setLoading(false)
     })
 
