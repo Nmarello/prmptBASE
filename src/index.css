@@ -44,6 +44,9 @@ body {
 }
 .pv-spin { animation: pv-spin 0.65s linear infinite; }
 
+/* Unified placeholder color using design tokens */
+.pv-placeholder::placeholder { color: var(--pv-text3); }
+
 /* Hide scrollbars on horizontal scroll rows */
 .overflow-x-auto {
   scrollbar-width: none;

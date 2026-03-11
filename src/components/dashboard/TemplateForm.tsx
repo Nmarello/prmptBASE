@@ -269,7 +269,7 @@ function AddCustomForm({ fieldId, onSave, onCancel }: {
         onChange={(e) => setLabel(e.target.value)}
         placeholder="Name (e.g. Cyberpunk Neon)"
         style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
-        className="w-full border rounded-lg px-3 py-2 text-sm placeholder-[#aeaeb2] dark:placeholder-white/25 focus:outline-none focus:border-sky-500/50"
+        className="w-full border rounded-lg px-3 py-2 text-sm pv-placeholder focus:outline-none focus:border-sky-500/50"
       />
       <textarea
         value={promptText}
@@ -277,10 +277,10 @@ function AddCustomForm({ fieldId, onSave, onCancel }: {
         placeholder="Describe it for the AI (e.g. cyberpunk neon aesthetic with rain-slicked streets)"
         rows={2}
         style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
-        className="w-full border rounded-lg px-3 py-2 text-sm placeholder-[#aeaeb2] dark:placeholder-white/25 focus:outline-none focus:border-sky-500/50 resize-none"
+        className="w-full border rounded-lg px-3 py-2 text-sm pv-placeholder focus:outline-none focus:border-sky-500/50 resize-none"
       />
       <div className="flex gap-2 justify-end">
-        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-[#6e6e73] dark:text-white/50 hover:text-[#1d1d1f] dark:hover:text-white transition-colors cursor-pointer">
+        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs hover:opacity-80 transition-opacity cursor-pointer" style={{ color: 'var(--pv-text2)' }}>
           Cancel
         </button>
         <button
@@ -315,9 +315,9 @@ function FieldInput({ field, value, onChange, customOptions }: {
           placeholder={field.placeholder}
           rows={4}
           style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
-          className="w-full border rounded-xl px-4 py-3 text-sm placeholder-[#aeaeb2] dark:placeholder-white/25 focus:outline-none focus:border-sky-500/50 resize-none"
+          className="w-full border rounded-xl px-4 py-3 text-sm pv-placeholder focus:outline-none focus:border-sky-500/50 resize-none"
         />
-        {field.hint && <p className="text-xs text-[#aeaeb2] dark:text-white/35 mt-1">{field.hint}</p>}
+        {field.hint && <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
       </div>
     )
   }
@@ -344,7 +344,7 @@ function FieldInput({ field, value, onChange, customOptions }: {
             </>
           )}
         </select>
-        {field.hint && <p className="text-xs text-[#aeaeb2] dark:text-white/35 mt-1">{field.hint}</p>}
+        {field.hint && <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
       </div>
     )
   }
@@ -434,14 +434,14 @@ function FieldInput({ field, value, onChange, customOptions }: {
               </div>
             </div>
           ) : (
-            <div className="border-2 border-dashed border-[#d2d2d7] dark:border-white/10 hover:border-sky-500/50 rounded-xl p-8 text-center transition-all">
-              <svg className="w-7 h-7 text-[#aeaeb2] dark:text-white/35 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
-              <p className="text-[#6e6e73] dark:text-white/50 text-sm font-medium">Click to upload image</p>
-              <p className="text-[#aeaeb2] dark:text-white/35 text-xs mt-1">PNG, JPG, WEBP</p>
+            <div className="border-2 border-dashed hover:border-sky-500/50 rounded-xl p-8 text-center transition-all" style={{ borderColor: 'var(--pv-border)' }}>
+              <svg className="w-7 h-7 mx-auto mb-2" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
+              <p className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>Click to upload image</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>PNG, JPG, WEBP</p>
             </div>
           )}
         </label>
-        {field.hint && <p className="text-xs text-white/35 mt-1">{field.hint}</p>}
+        {field.hint && <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
       </div>
     )
   }
@@ -493,12 +493,13 @@ function LivePromptPanel({
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[#aeaeb2] dark:text-white/35">{charCount} chars</span>
+          <span className="text-xs" style={{ color: 'var(--pv-text3)' }}>{charCount} chars</span>
           {isEdited && (
             <button
               type="button"
               onClick={onReset}
-              className="text-xs text-[#6e6e73] dark:text-white/50 hover:text-[#1d1d1f] dark:hover:text-white transition-colors cursor-pointer"
+              className="text-xs hover:opacity-80 transition-opacity cursor-pointer"
+              style={{ color: 'var(--pv-text2)' }}
             >
               ↺ Reset
             </button>
@@ -512,21 +513,21 @@ function LivePromptPanel({
         onChange={(e) => onChange(e.target.value)}
         placeholder="Fill in the fields on the left to build your prompt…"
         style={isEdited ? undefined : { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
-        className={`flex-1 min-h-[220px] w-full border rounded-xl px-4 py-3 text-sm placeholder-[#aeaeb2] dark:placeholder-white/25 focus:outline-none resize-none leading-relaxed font-mono transition-colors ${
+        className={`flex-1 min-h-[220px] w-full border rounded-xl px-4 py-3 text-sm focus:outline-none resize-none leading-relaxed font-mono transition-colors ${
           isEdited
             ? 'border-amber-300 focus:border-amber-400 bg-amber-50 dark:bg-amber-50/10 text-[#1d1d1f] dark:text-white'
             : 'focus:border-sky-500/50'
         }`}
       />
 
-      <p className="text-xs text-[#aeaeb2] dark:text-white/35 mt-2 mb-4">
+      <p className="text-xs mt-2 mb-4" style={{ color: 'var(--pv-text3)' }}>
         This is the exact prompt sent to the model. Edit freely — your changes override the auto-build.
       </p>
 
       {/* API params section */}
       {(apiParams.length > 0 || isRecraftStyleParam) && (
         <div className="rounded-xl p-3" style={{ border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)' }}>
-          <p className="text-[10px] font-semibold text-[#aeaeb2] dark:text-white/35 uppercase tracking-wider mb-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: 'var(--pv-text3)' }}>
             Also sending as parameters
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -782,7 +783,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
                 >
                   Upgrade to {modelMinTier} to generate →
                 </a>
-                <p className="text-center text-xs text-[#aeaeb2] dark:text-white/35">You can still explore and fill out the template</p>
+                <p className="text-center text-xs" style={{ color: 'var(--pv-text3)' }}>You can still explore and fill out the template</p>
               </div>
             )}
           </div>
