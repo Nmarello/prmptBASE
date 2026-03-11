@@ -840,7 +840,7 @@ export default function Dashboard() {
               </div>
 
               {/* Form body */}
-              <div className="flex-1 overflow-y-auto px-7 py-5">
+              <div key={selectedModel.slug} className="flex-1 overflow-y-auto px-7 py-5">
                 {/* Gen type picker (multi-type models) */}
                 {!selectedGenType && selectedModel.supported_gen_types.length > 1 && (
                   <div>
