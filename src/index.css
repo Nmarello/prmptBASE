@@ -1,8 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
 @import "tailwindcss";
-/* prmptvault global styles */
 
-/* Class-based dark mode for Tailwind v4 */
+/* prmptvault global styles */
 @custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --pv-bg:       #e9e6df;
+  --pv-surface:  #f5f3ee;
+  --pv-surface2: #e9e6df;
+  --pv-border:   #cbc7be;
+  --pv-text:     #111009;
+  --pv-text2:    #5e574a;
+  --pv-text3:    #9e9688;
+  --pv-accent:   #0050ff;
+}
+.dark {
+  --pv-bg:       #080706;
+  --pv-surface:  #131210;
+  --pv-surface2: #1a1916;
+  --pv-border:   #272420;
+  --pv-text:     #f2ede4;
+  --pv-text2:    #7a7268;
+  --pv-text3:    #403c36;
+  --pv-accent:   #3d7fff;
+}
+
+body {
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  background: var(--pv-bg);
+  color: var(--pv-text);
+}
 
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -11,3 +38,8 @@
 .animate-fade-in {
   animation: fade-in 0.2s ease-out forwards;
 }
+
+@keyframes pv-spin {
+  to { transform: rotate(360deg); }
+}
+.pv-spin { animation: pv-spin 0.65s linear infinite; }

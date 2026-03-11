@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import type React from 'react'
 
 function friendlyFalError(raw: string): string {
   try {
@@ -41,13 +41,12 @@ async function downloadFile(url: string, isVideo?: boolean) {
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { Asset, Model, Template, GenType, UserProject } from '../types'
-import { GEN_TYPE_LABELS, tierCanAccess } from '../types'
+import { GEN_TYPE_LABELS } from '../types'
 import ModelCard from '../components/dashboard/ModelCard'
 import TemplateForm from '../components/dashboard/TemplateForm'
 import AssetGrid from '../components/dashboard/AssetGrid'
 import ProjectsView from '../components/dashboard/ProjectsView'
 import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
-import HomeGrid from '../components/dashboard/HomeGrid'
 import NotificationBell, { addNotification } from '../components/dashboard/NotificationBell'
 import SettingsPopover from '../components/dashboard/SettingsPopover'
 import GuidedTour, { markTourSeen } from '../components/dashboard/GuidedTour'
@@ -66,16 +65,29 @@ const COMING_SOON_VIDEO: Partial<Model>[] = [
   { slug: 'cs-pika', name: 'Pika', provider: 'Pika', description: 'Fast, expressive video generation built for social-first creators.', supported_gen_types: ['txt2vid', 'img2vid'] },
 ]
 
+function SbBtn({ tip, active, onClick, children }: { tip?: string; active?: boolean; onClick?: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      title={tip}
+      className="relative flex items-center justify-center rounded-[11px] transition-all cursor-pointer group"
+      style={{ width: 40, height: 40, color: active ? 'var(--pv-accent)' : 'var(--pv-text3)', background: active ? 'var(--pv-surface2)' : 'transparent' }}
+    >
+      {children}
+    </button>
+  )
+}
+
 export default function Dashboard() {
-  const { user, signOut, isAdmin } = useAuth()
+  const { user, signOut } = useAuth()
   const { mode: learningMode } = useLearningMode()
   const [view, setView] = useState<View>('models')
   const [tourActive, setTourActive] = useState(false)
   const [userTier, setUserTier] = useState('newbie')
 
   const [models, setModels] = useState<Model[]>([])
-  const [mediaTab, setMediaTab] = useState<'image' | 'video'>('image')
-  const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
+  const [_mediaTab, _setMediaTab] = useState<'image' | 'video'>('image')
+  const [_selectedProvider, setSelectedProvider] = useState<string | null>(null)
   const [selectedModel, setSelectedModel] = useState<Model | null>(null)
   const [selectedGenType, setSelectedGenType] = useState<GenType | null>(null)
   const [template, setTemplate] = useState<Template | null>(null)
@@ -119,7 +131,24 @@ export default function Dashboard() {
   const [img2imgPickerUrl, setImg2imgPickerUrl] = useState<string | null>(null)
   const [img2imgInitialValues, setImg2imgInitialValues] = useState<Record<string, unknown> | undefined>(undefined)
   const [img2vidPickerUrl, setImg2vidPickerUrl] = useState<string | null>(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [_sidebarOpen, setSidebarOpen] = useState(false)
+  const [workspaceOpen, setWorkspaceOpen] = useState(false)
+
+  const MODEL_ART_MAP = {
+    'dalle-3':            { gradient: 'linear-gradient(145deg,#c0392b,#e8570a,#f5a623)', initial: 'D3' },
+    'flux-schnell':       { gradient: 'linear-gradient(145deg,#003566,#0096c7,#48cae4)', initial: 'FS' },
+    'flux-dev':           { gradient: 'linear-gradient(145deg,#3d0066,#7b2ff7,#c084fc)', initial: 'FD' },
+    'flux-pro':           { gradient: 'linear-gradient(145deg,#00004d,#0050ff,#60a5fa)', initial: 'FP' },
+    'flux-pro-ultra':     { gradient: 'linear-gradient(145deg,#050505,#0f0f1a,#1a1a3e)', initial: 'FU' },
+    'flux-dev-img2img':   { gradient: 'linear-gradient(145deg,#004d26,#00a550,#57cc99)', initial: 'F2' },
+    'flux-kontext-pro':   { gradient: 'linear-gradient(145deg,#1a0033,#4400aa,#8855ff)', initial: 'FK' },
+    'recraft-v4-pro':     { gradient: 'linear-gradient(145deg,#3d1a00,#a05000,#e8a020)', initial: 'RV' },
+    'nano-banana':        { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NB' },
+    'kling':              { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
+    'luma':               { gradient: 'linear-gradient(145deg,#05050f,#0d1a5c,#2952e3)', initial: 'LR' },
+    'minimax-txt2vid':    { gradient: 'linear-gradient(145deg,#002b36,#007070,#00c9a7)', initial: 'MM' },
+    'sora2':              { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
+  } as const
 
   const loadAssets = useCallback(async () => {
     if (!user) return
@@ -149,18 +178,6 @@ export default function Dashboard() {
       setTourActive(true)
     }
   }, [learningMode])
-
-  function selectProviderTile(provider: string) {
-    setSidebarOpen(false)
-    setSelectedProvider(provider)
-    setSelectedModel(null)
-    setSelectedGenType(null)
-    setTemplate(null)
-    setResult(null)
-    setGenerateError(null)
-    setImg2imgInitialValues(undefined)
-    setView('builder')
-  }
 
   async function selectModel(model: Model) {
     setSidebarOpen(false)
@@ -472,434 +489,170 @@ export default function Dashboard() {
     }
   }
 
+  async function openWorkspace(model: Model) {
+    setResult(null)
+    setGenerateError(null)
+    setImg2imgInitialValues(undefined)
+    await selectModel(model)
+    setWorkspaceOpen(true)
+  }
+
+  function closeWorkspace() {
+    setWorkspaceOpen(false)
+  }
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) { if (e.key === 'Escape') setWorkspaceOpen(false) }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [])
+
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#0d1117] text-[#1d1d1f] dark:text-white flex flex-col">
-      {/* Top nav */}
-      <header className="border-b border-[#d2d2d7] dark:border-white/8 bg-white dark:bg-[#0d1117] px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 relative">
-        <div className="flex items-center gap-3 sm:gap-6">
-          <span className="text-xl font-black tracking-tight text-[#1d1d1f] dark:text-white">
-            prmpt<span className="text-[#0071e3]">VAULT</span>
-          </span>
-          <span className="absolute left-1/2 -translate-x-1/2 text-[10px] text-[#aeaeb2] dark:text-white/25 font-mono hidden md:block">
-            {/* @ts-ignore */}
-            v-0.0.{__BUILD__} · {__COMMIT__}
-          </span>
-          {(view === 'models' || view === 'builder') && (
-            <button
-              onClick={() => setSidebarOpen(v => !v)}
-              className="md:hidden p-1.5 rounded-lg text-[#6e6e73] hover:text-[#1d1d1f] transition-colors cursor-pointer"
-              aria-label="Toggle models panel"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          )}
-          <nav className="flex gap-1">
-            {(['models', 'projects', 'assets'] as View[]).map((v) => (
-              <button
-                key={v}
-                data-tour={v === 'assets' ? 'assets-nav' : undefined}
-                onClick={() => { setView(v); setSidebarOpen(false); if (v === 'assets') loadAssets() }}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                  view === v || (v === 'models' && view === 'builder')
-                    ? 'bg-[#f0f0f2] dark:bg-white/10 text-[#1d1d1f] dark:text-white'
-                    : 'text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white'
-                }`}
-              >
-                {v === 'models' ? 'Models' : v === 'projects' ? `Projects${projects.length > 0 ? ` (${projects.length})` : ''}` : `Assets${assets.length > 0 ? ` (${assets.length})` : ''}`}
-              </button>
-            ))}
-          </nav>
-          {(pendingVideo || pendingImage) && (
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[rgba(0,113,227,0.08)] border border-[rgba(0,113,227,0.25)] text-[#0071e3] text-xs font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0071e3] animate-pulse flex-shrink-0" />
-              {pendingVideo ? 'Rendering…' : `Generating…`}
-            </div>
-          )}
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--pv-bg)', color: 'var(--pv-text)', fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* ── Icon Sidebar ── */}
+      <aside className="flex flex-col items-center py-4 gap-1 flex-shrink-0 relative z-10" style={{ width: '60px', background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}>
+        {/* Logo */}
+        <div className="mb-3 flex-shrink-0 rounded-[10px] flex items-center justify-center cursor-pointer" style={{ width: 36, height: 36, background: '#18140e' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <Link
-            to="/pricing"
-            className="text-xs bg-[rgba(0,113,227,0.08)] hover:bg-[rgba(0,113,227,0.12)] text-[#0071e3] border border-[rgba(0,113,227,0.25)] px-2.5 py-1 rounded-full font-medium capitalize transition-colors"
-          >
-            {userTier}
-          </Link>
-          {isAdmin && (
-            <a href="/admin" className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-600 border border-amber-200 px-2.5 py-1 rounded-full font-medium transition-colors">
-              Admin
-            </a>
-          )}
-          <NotificationBell
-            onViewAsset={(assetId, _assetUrl, _isVideo) => {
-              const asset = assets.find((a) => a.id === assetId)
-              if (asset) {
-                setLightboxAsset(asset)
-              } else {
-                setView('assets')
-                loadAssets()
-              }
-            }}
-          />
-          <span className="text-sm text-[#6e6e73] dark:text-white/40 hidden sm:block">{user?.email}</span>
+
+        {/* Nav buttons */}
+        {([
+          { id: 'models', tip: 'Generate', icon: <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/> },
+          { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
+          { id: 'projects', tip: 'Projects', icon: <><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></> },
+        ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (
+          <SbBtn key={id} tip={tip} active={view === id} onClick={() => setView(id as View)}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+          </SbBtn>
+        ))}
+
+        <div style={{ width: 24, height: 1, background: 'var(--pv-border)', margin: '4px 0' }} />
+
+        <SbBtn tip="Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </SbBtn>
+
+        {/* Bottom actions */}
+        <div className="mt-auto flex flex-col items-center gap-1">
+          <div className="relative">
+            <SbBtn tip="Notifications">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </SbBtn>
+            <NotificationBell
+              onViewAsset={(assetId, _assetUrl, _isVideo) => {
+                const asset = assets.find((a) => a.id === assetId)
+                if (asset) {
+                  setLightboxAsset(asset)
+                } else {
+                  setView('assets')
+                  loadAssets()
+                }
+              }}
+            />
+          </div>
           <SettingsPopover onSignOut={signOut} />
         </div>
-      </header>
+      </aside>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Models / Builder view */}
-        {(view === 'models' || view === 'builder') && (
-          <>
-            {/* Mobile backdrop */}
-            {sidebarOpen && (
-              <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setSidebarOpen(false)} />
-            )}
-            {/* Left panel — model list */}
-            <aside data-tour="sidebar" className={`fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-[#0d1117] border-r border-[#d2d2d7] dark:border-white/8 flex flex-col flex-shrink-0 overflow-hidden transition-transform duration-200 md:static md:z-auto md:translate-x-0 md:min-h-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-              {/* Mobile sidebar header */}
-              <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-[#d2d2d7] dark:border-white/8 flex-shrink-0">
-                <span className="text-sm font-semibold text-[#1d1d1f] dark:text-white">Choose a model</span>
-                <button onClick={() => setSidebarOpen(false)} className="text-[#aeaeb2] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white p-1 text-lg leading-none cursor-pointer">✕</button>
+      {/* ── Main Content ── */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+
+        {/* GENERATE VIEW */}
+        {view === 'models' && (
+          <div className="flex flex-col h-full overflow-hidden">
+            {/* Header */}
+            <div className="flex items-end justify-between px-7 pt-6 pb-4 flex-shrink-0">
+              <div>
+                <h1 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em' }}>
+                  Generate
+                </h1>
+                <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 2 }}>Pick a model and start creating</p>
               </div>
-              {/* Image / Video tabs */}
-              <div className="flex border-b border-[#d2d2d7] dark:border-white/8 flex-shrink-0">
-                {(['image', 'video'] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => {
-                      setMediaTab(tab)
-                      setSelectedProvider(null)
-                      setSelectedModel(null)
-                      setSelectedGenType(null)
-                      setTemplate(null)
-                      setResult(null)
-                      setGenerateError(null)
-                    }}
-                    className={`flex-1 py-3 text-sm font-semibold tracking-wide transition-all cursor-pointer ${
-                      mediaTab === tab
-                        ? 'text-[#1d1d1f] dark:text-white border-b-2 border-[#0071e3]'
-                        : 'text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white'
-                    }`}
-                  >
-                    {tab === 'image' ? 'Image' : 'Video'}
-                  </button>
-                ))}
-              </div>
+            </div>
 
-              <div className="p-4 overflow-y-auto space-y-3 flex-1 bg-white dark:bg-[#0d1117]">
-                {models.length === 0 && (
-                  <p className="text-[#aeaeb2] dark:text-white/30 text-sm px-1">Loading…</p>
-                )}
-
-                {mediaTab === 'image' && (() => {
-                  const STANDALONE_SLUGS = ['nano-banana', 'recraft-v4-pro']
-                  const fluxImageModels = models.filter((m) =>
-                    m.provider === 'fal.ai' &&
-                    !STANDALONE_SLUGS.includes(m.slug) &&
-                    m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
-                  )
-                  const openaiImageModels = models.filter((m) =>
-                    m.provider === 'OpenAI' &&
-                    m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
-                  )
-                  const recraftImageModels = models.filter((m) => m.slug === 'recraft-v4-pro')
-                  const googleImageModels = models.filter((m) =>
-                    (m.provider === 'Google' || m.slug === 'nano-banana') &&
-                    m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
-                  )
-                  const hasFlux = fluxImageModels.length > 0
-                  return (
-                    <>
-                      {openaiImageModels.map((model) => (
+            {/* Scrollable model rows */}
+            <div className="flex-1 overflow-y-auto px-7 pb-10 space-y-8">
+              {/* Image Models row */}
+              {(() => {
+                const STANDALONE = ['nano-banana', 'recraft-v4-pro']
+                const imgModels = [
+                  ...models.filter(m => m.provider === 'OpenAI' && m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))),
+                  ...models.filter(m => m.provider === 'fal.ai' && m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))),
+                  ...models.filter(m => STANDALONE.includes(m.slug)),
+                  ...COMING_SOON_IMAGE.map(m => ({ ...m, _comingSoon: true })),
+                ]
+                if (imgModels.length === 0) return null
+                return (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                        Image Models
+                      </h2>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pv-text3)', background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', padding: '2px 8px', borderRadius: 20 }}>
+                        {imgModels.filter(m => !(m as any)._comingSoon).length} available
+                      </span>
+                    </div>
+                    <div className="flex gap-3.5 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
+                      {imgModels.map((m: any) => (
                         <ModelCard
-                          key={model.id}
-                          model={model}
-                          userTier={userTier}
-                          selected={selectedModel?.id === model.id}
-                          onClick={() => selectModel(model)}
-                        />
-                      ))}
-                      {recraftImageModels.map((model) => (
-                        <ModelCard
-                          key={model.id}
-                          model={model}
-                          userTier={userTier}
-                          selected={selectedModel?.id === model.id}
-                          onClick={() => selectModel(model)}
-                        />
-                      ))}
-                      {hasFlux && (
-                        <button
-                          onClick={() => selectProviderTile('fal.ai')}
-                          className={`relative w-full text-left rounded-xl p-4 border transition-all cursor-pointer ${
-                            selectedProvider === 'fal.ai' && !selectedModel
-                              ? 'bg-[rgba(0,113,227,0.06)] border-[rgba(0,113,227,0.35)]'
-                              : 'bg-white dark:bg-white/4 border-[#d2d2d7] dark:border-white/8 hover:border-[#aeaeb2] hover:shadow-sm'
-                          }`}
-                        >
-                          <div className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[#0071e3]">Black Forest Labs</div>
-                          <div className="text-[#1d1d1f] dark:text-white font-semibold text-sm leading-tight">Flux</div>
-                          <div className="text-[#aeaeb2] dark:text-white/30 text-xs mt-1">
-                            {fluxImageModels.length} models available
-                          </div>
-                          <div className="mt-2 text-xs text-[#6e6e73] dark:text-white/40">Select to choose model →</div>
-                        </button>
-                      )}
-                      {googleImageModels.map((model) => (
-                        <ModelCard
-                          key={model.id}
-                          model={model}
-                          userTier={userTier}
-                          selected={selectedModel?.id === model.id}
-                          onClick={() => selectModel(model)}
-                        />
-                      ))}
-                      {COMING_SOON_IMAGE.map((m) => (
-                        <ModelCard
-                          key={m.slug}
+                          key={m.id ?? m.slug}
                           model={m as Model}
                           userTier={userTier}
-                          selected={false}
-                          onClick={() => {}}
-                          comingSoon
+                          selected={selectedModel?.id === m.id}
+                          onClick={() => openWorkspace(m as Model)}
+                          comingSoon={m._comingSoon || m.comingSoon}
                         />
                       ))}
-                    </>
-                  )
-                })()}
+                    </div>
+                  </div>
+                )
+              })()}
 
-                {mediaTab === 'video' && (() => {
-                  const videoModels = models.filter((m) =>
-                    m.supported_gen_types.some((g) => g === 'txt2vid' || g === 'img2vid')
-                  )
-                  return (
-                    <>
-                      {videoModels.map((model) => (
+              {/* Video Models row */}
+              {(() => {
+                const vidModels = [
+                  ...models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid')),
+                  ...COMING_SOON_VIDEO.map(m => ({ ...m, _comingSoon: true })),
+                ]
+                if (vidModels.length === 0) return null
+                return (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                        Video Models
+                      </h2>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pv-text3)', background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', padding: '2px 8px', borderRadius: 20 }}>
+                        {vidModels.filter(m => !(m as any)._comingSoon).length} available
+                      </span>
+                    </div>
+                    <div className="flex gap-3.5 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
+                      {vidModels.map((m: any) => (
                         <ModelCard
-                          key={model.id}
-                          model={model}
-                          userTier={userTier}
-                          selected={selectedModel?.id === model.id}
-                          onClick={() => selectModel(model)}
-                        />
-                      ))}
-                      {COMING_SOON_VIDEO.map((m) => (
-                        <ModelCard
-                          key={m.slug}
+                          key={m.id ?? m.slug}
                           model={m as Model}
                           userTier={userTier}
-                          selected={false}
-                          onClick={() => {}}
-                          comingSoon
+                          selected={selectedModel?.id === m.id}
+                          onClick={() => openWorkspace(m as Model)}
+                          comingSoon={m._comingSoon || m.comingSoon}
                         />
                       ))}
-                    </>
-                  )
-                })()}
-              </div>
-            </aside>
-
-            {/* Main panel */}
-            <main data-tour="builder-area" className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#f5f5f7] dark:bg-[#0d1117]">
-              {!selectedModel && !selectedProvider && (
-                <HomeGrid
-                  assets={assets}
-                  onAssetClick={(asset) => setLightboxAsset(asset)}
-                />
-              )}
-
-              {/* Flux model picker */}
-              {selectedProvider === 'fal.ai' && !selectedModel && (
-                <div className="max-w-2xl">
-                  <h2 className="text-2xl font-bold mb-1 text-[#1d1d1f] dark:text-white">Flux Models</h2>
-                  <p className="text-[#6e6e73] dark:text-white/40 text-sm mb-8">Choose a Flux model to build your prompt</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {models.filter((m) => m.provider === 'fal.ai' && !['nano-banana', 'recraft-v4-pro'].includes(m.slug) && m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')).map((model) => {
-                      const accessible = tierCanAccess(userTier, model.min_tier)
-                      return (
-                        <button
-                          key={model.id}
-                          onClick={accessible ? () => selectModel(model) : undefined}
-                          className={`relative text-left rounded-xl p-4 border transition-all ${
-                            accessible
-                              ? 'bg-white dark:bg-white/4 border-[#d2d2d7] dark:border-white/8 hover:border-[rgba(0,113,227,0.4)] hover:bg-[rgba(0,113,227,0.04)] cursor-pointer'
-                              : 'bg-[#f5f5f7] dark:bg-white/4 border-[#d2d2d7] dark:border-white/8 opacity-50 cursor-not-allowed'
-                          }`}
-                        >
-                          {!accessible && (
-                            <span className="absolute top-3 right-3 text-xs bg-[#f0f0f2] text-[#6e6e73] border border-[#d2d2d7] px-2 py-0.5 rounded-full">
-                              {model.min_tier}
-                            </span>
-                          )}
-                          <div className="text-[#1d1d1f] dark:text-white font-semibold text-sm leading-tight mb-1">{model.name.replace(/ [—–-]+ img2img$/i, '')}</div>
-                          <div className="text-[#6e6e73] dark:text-white/40 text-xs line-clamp-2 mb-3">{model.description}</div>
-                          <div className="flex flex-wrap gap-1">
-                            {model.supported_gen_types.map((gt) => (
-                              <span key={gt} className="text-[10px] bg-[#f0f0f2] text-[#6e6e73] px-2 py-0.5 rounded-full">
-                                {gt}
-                              </span>
-                            ))}
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {selectedModel && !selectedGenType && (
-                <div className="max-w-xl">
-                  <h2 className="text-2xl font-bold mb-1 text-[#1d1d1f] dark:text-white">{selectedModel.name}</h2>
-                  <p className="text-[#6e6e73] dark:text-white/40 text-sm mb-8">{selectedModel.description}</p>
-                  <div className="text-xs font-semibold text-[#aeaeb2] dark:text-white/30 uppercase tracking-wider mb-3">
-                    Choose generation type
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {selectedModel.supported_gen_types.map((gt) => (
-                      <button
-                        key={gt}
-                        onClick={() => selectGenType(gt)}
-                        className="p-5 bg-white dark:bg-white/4 hover:bg-[#f5f5f7] dark:hover:bg-white/8 border border-[#d2d2d7] dark:border-white/8 hover:border-[#aeaeb2] rounded-xl text-left transition-all cursor-pointer"
-                      >
-                        <div className="text-[#1d1d1f] dark:text-white font-semibold mb-1">{GEN_TYPE_LABELS[gt]}</div>
-                        <div className="text-[#6e6e73] dark:text-white/40 text-xs">Generate using {selectedModel.name}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedModel && selectedGenType && template && (
-                <div className="max-w-2xl">
-                  <button
-                    onClick={() => {
-                      setSelectedGenType(null); setTemplate(null); setResult(null); setGenerateError(null)
-                      if (selectedModel.provider === 'fal.ai') setSelectedModel(null)
-                    }}
-                    className="text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white text-sm mb-8 flex items-center gap-1 transition-colors cursor-pointer"
-                  >
-                    ← {selectedModel.provider === 'fal.ai' ? 'Flux Models' : selectedModel.name}
-                  </button>
-
-                  {(pendingVideo || pendingImage) && !result && (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                      <div className="w-10 h-10 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
-                      <p className="text-[#1d1d1f] dark:text-white font-medium">{pendingVideo ? 'Rendering your video…' : 'Generating your image…'}</p>
-                      <p className="text-[#6e6e73] dark:text-white/40 text-sm">You can browse the app — we'll notify you when it's done.</p>
-                      {pendingVideo && (
-                        <button
-                          onClick={() => {
-                            if (videoPollerRef.current) clearInterval(videoPollerRef.current)
-                            setPendingVideo(null)
-                            setGenerateError(null)
-                          }}
-                          className="mt-2 text-xs text-[#aeaeb2] hover:text-[#6e6e73] transition-colors cursor-pointer"
-                        >
-                          Cancel render
-                        </button>
-                      )}
                     </div>
-                  )}
-
-                  {result ? (
-                    <div className="space-y-5">
-                      {result.isVideo ? (
-                        <video
-                          src={result.url}
-                          controls
-                          autoPlay
-                          loop
-                          className="rounded-2xl w-full max-w-lg border border-white/10"
-                        />
-                      ) : (
-                        <img
-                          src={result.url}
-                          alt={result.prompt}
-                          className="rounded-2xl w-full max-w-lg border border-[#d2d2d7] dark:border-white/10"
-                        />
-                      )}
-                      {result.revised_prompt && (
-                        <div className="bg-[#f5f5f7] dark:bg-white/4 border border-[#d2d2d7] dark:border-white/8 rounded-xl p-4">
-                          <div className="text-xs font-semibold text-[#aeaeb2] dark:text-white/30 uppercase tracking-wider mb-1">Revised prompt</div>
-                          <p className="text-[#6e6e73] dark:text-white/55 text-sm">{result.revised_prompt}</p>
-                        </div>
-                      )}
-                      <div className="flex gap-2 sm:gap-3 flex-wrap">
-                        <button
-                          onClick={() => downloadFile(result.url, result.isVideo)}
-                          className="px-5 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
-                        >
-                          Download
-                        </button>
-                        <button
-                          onClick={() => sendToImg2Img(result.url)}
-                          className="px-5 py-2.5 bg-[#f0f0f2] hover:bg-[#e5e5e7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
-                        >
-                          Send to img2img →
-                        </button>
-                        {!result.isVideo && (
-                          <button
-                            onClick={() => sendToImg2Vid(result.url)}
-                            className="px-5 py-2.5 bg-[#f0f0f2] hover:bg-[#e5e5e7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
-                          >
-                            Send to img2vid →
-                          </button>
-                        )}
-                        <button
-                          onClick={() => { setView('assets'); loadAssets() }}
-                          className="px-5 py-2.5 bg-[#f0f0f2] hover:bg-[#e5e5e7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
-                        >
-                          View in Assets →
-                        </button>
-                        <button
-                          onClick={() => { setResult(null); setGenerateError(null) }}
-                          className="px-5 py-2.5 bg-white hover:bg-[#f5f5f7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#aeaeb2] hover:text-[#6e6e73] transition-all cursor-pointer"
-                        >
-                          ← New prompt
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {generateError && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-                          {generateError}
-                        </div>
-                      )}
-                      {/* Active project selector */}
-                      {projects.length > 0 && (
-                        <div className="mb-5 flex items-center gap-2">
-                          <span className="text-xs text-[#aeaeb2] dark:text-white/30 flex-shrink-0">Save to</span>
-                          <select
-                            value={activeProjectId ?? ''}
-                            onChange={(e) => setActiveProjectId(e.target.value || null)}
-                            className="text-xs px-3 py-1.5 border border-[#d2d2d7] dark:border-white/10 rounded-xl bg-white dark:bg-white/4 text-[#1d1d1f] dark:text-white outline-none focus:border-[#0071e3] cursor-pointer transition-colors"
-                          >
-                            <option value="">No project</option>
-                            {projects.map((p) => (
-                              <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                      <TemplateForm
-                        template={template}
-                        genType={selectedGenType}
-                        onSubmit={handleGenerate}
-                        submitting={submitting}
-                        initialValues={img2imgInitialValues}
-                        userTier={userTier}
-                        modelMinTier={selectedModel?.min_tier}
-                      />
-                    </>
-                  )}
-                </div>
-              )}
-            </main>
-          </>
+                  </div>
+                )
+              })()}
+            </div>
+          </div>
         )}
 
-        {/* Assets view */}
+        {/* ASSETS VIEW */}
         {view === 'assets' && (
           <AssetGrid
             assets={assets}
@@ -914,7 +667,7 @@ export default function Dashboard() {
           />
         )}
 
-        {/* Projects view */}
+        {/* PROJECTS VIEW */}
         {view === 'projects' && (
           <ProjectsView
             projects={projects}
@@ -933,114 +686,256 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Img2Img model picker */}
+      {/* ── WORKSPACE OVERLAY ── */}
+      {workspaceOpen && selectedModel && (
+        <div
+          className="fixed inset-0 z-40 flex"
+          style={{ background: 'rgba(8,7,6,0.78)', backdropFilter: 'blur(14px)' }}
+        >
+          {/* Close on scrim click */}
+          <div className="absolute inset-0" onClick={closeWorkspace} />
+
+          <div
+            className="relative z-10 flex w-full animate-fade-in"
+            style={{ transform: 'none' }}
+          >
+            {/* Left: canvas / output */}
+            <div className="flex-1 flex flex-col p-8">
+              <div
+                className="flex-1 rounded-[20px] overflow-hidden relative flex items-center justify-center"
+                style={{ border: '1.5px solid rgba(255,255,255,0.08)' }}
+              >
+                {/* Model gradient bg */}
+                {(() => {
+                  const art = (MODEL_ART_MAP as Record<string, { gradient: string; initial: string }>)[selectedModel.slug] ?? { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: '??' }
+                  return <div className="absolute inset-0" style={{ background: art.gradient, opacity: result ? 0.15 : 1, transition: 'opacity 0.5s' }} />
+                })()}
+
+                {/* Empty state */}
+                {!result && !pendingImage && !pendingVideo && (
+                  <div className="relative z-10 flex flex-col items-center gap-3 text-center">
+                    <div className="w-14 h-14 rounded-[14px] flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', fontSize: 24 }}>
+                      {(MODEL_ART_MAP as any)[selectedModel.slug]?.initial ?? '??'}
+                    </div>
+                    <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 16, fontWeight: 700, color: 'rgba(255,255,255,0.55)' }}>
+                      {selectedModel.name}
+                    </div>
+                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', lineHeight: 1.5, maxWidth: 240 }}>
+                      Fill in the template and hit Generate
+                    </div>
+                  </div>
+                )}
+
+                {/* Generating spinner */}
+                {(pendingImage || pendingVideo) && !result && (
+                  <div className="relative z-10 flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 rounded-full pv-spin" style={{ border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'rgba(255,255,255,0.8)' }} />
+                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: 500 }}>
+                      {pendingVideo ? 'Rendering video…' : 'Generating…'}
+                    </p>
+                    <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>You can close this — we'll notify you when done</p>
+                    {pendingVideo && (
+                      <button onClick={() => { if (videoPollerRef.current) clearInterval(videoPollerRef.current); setPendingVideo(null); setGenerateError(null) }}
+                        style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', cursor: 'pointer', marginTop: 4 }}>
+                        Cancel render
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Result */}
+                {result && (
+                  <div className="absolute inset-0 flex flex-col">
+                    {result.isVideo ? (
+                      <video src={result.url} controls autoPlay loop className="w-full h-full object-contain rounded-[18px]" />
+                    ) : (
+                      <img src={result.url} alt={result.prompt} className="w-full h-full object-contain rounded-[18px]" />
+                    )}
+                  </div>
+                )}
+
+                {/* Close button */}
+                <button
+                  onClick={closeWorkspace}
+                  className="absolute top-4 right-4 flex items-center justify-center rounded-[8px] transition-all"
+                  style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+
+              {/* Post-result action buttons */}
+              {result && (
+                <div className="flex gap-2 mt-4 flex-wrap">
+                  <button onClick={() => downloadFile(result.url, result.isVideo)}
+                    className="px-4 py-2 rounded-[10px] text-sm font-semibold transition-all"
+                    style={{ background: '#18140e', color: '#f2ede4' }}>
+                    Download
+                  </button>
+                  {!result.isVideo && (
+                    <>
+                      <button onClick={() => sendToImg2Img(result.url)}
+                        className="px-4 py-2 rounded-[10px] text-sm font-semibold transition-all"
+                        style={{ background: 'var(--pv-surface)', color: 'var(--pv-text2)', border: '1px solid var(--pv-border)' }}>
+                        img2img →
+                      </button>
+                      <button onClick={() => sendToImg2Vid(result.url)}
+                        className="px-4 py-2 rounded-[10px] text-sm font-semibold transition-all"
+                        style={{ background: 'var(--pv-surface)', color: 'var(--pv-text2)', border: '1px solid var(--pv-border)' }}>
+                        img2vid →
+                      </button>
+                    </>
+                  )}
+                  <button onClick={() => { setResult(null); setGenerateError(null) }}
+                    className="px-4 py-2 rounded-[10px] text-sm font-semibold transition-all"
+                    style={{ background: 'var(--pv-surface)', color: 'var(--pv-text2)', border: '1px solid var(--pv-border)' }}>
+                    ← New prompt
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Right: form panel */}
+            <div
+              className="flex flex-col overflow-hidden flex-shrink-0"
+              style={{ width: 420, background: 'var(--pv-surface)', borderLeft: '1px solid var(--pv-border)' }}
+            >
+              {/* Model header */}
+              <div className="px-7 pt-6 pb-5 flex-shrink-0" style={{ borderBottom: '1px solid var(--pv-border)' }}>
+                <div className="flex items-center gap-3.5">
+                  <div className="rounded-[12px] overflow-hidden flex-shrink-0" style={{ width: 48, height: 48 }}>
+                    <div className="w-full h-full flex items-center justify-center text-xl" style={{ background: (MODEL_ART_MAP as any)[selectedModel.slug]?.gradient ?? 'linear-gradient(145deg,#222,#3a3a3a)' }}>
+                      {(MODEL_ART_MAP as any)[selectedModel.slug]?.initial ?? ''}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 20, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                      {selectedModel.name}
+                    </div>
+                    <div style={{ fontSize: 12.5, color: 'var(--pv-text2)', marginTop: 2 }}>
+                      {selectedModel.provider} · {selectedModel.supported_gen_types.join(' + ')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Form body */}
+              <div className="flex-1 overflow-y-auto px-7 py-5">
+                {/* Gen type picker (multi-type models) */}
+                {!selectedGenType && selectedModel.supported_gen_types.length > 1 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--pv-text3)' }}>
+                      Choose generation type
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {selectedModel.supported_gen_types.map(gt => (
+                        <button
+                          key={gt}
+                          onClick={() => selectGenType(gt)}
+                          className="p-4 rounded-[10px] text-left transition-all cursor-pointer"
+                          style={{ border: '1.5px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text2)' }}
+                        >
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--pv-text)' }}>{gt}</div>
+                          <div style={{ fontSize: 11.5, marginTop: 2 }}>Use {selectedModel.name}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Template loading */}
+                {selectedGenType && !template && (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="w-6 h-6 rounded-full pv-spin" style={{ border: '2px solid var(--pv-border)', borderTopColor: 'var(--pv-accent)' }} />
+                  </div>
+                )}
+
+                {/* Template form */}
+                {selectedGenType && template && (
+                  <>
+                    {generateError && (
+                      <div className="mb-4 p-3 rounded-[10px] text-sm" style={{ background: '#fff1f0', border: '1px solid #ffc9c9', color: '#c0392b' }}>
+                        {generateError}
+                      </div>
+                    )}
+                    {projects.length > 0 && (
+                      <div className="mb-4 flex items-center gap-2">
+                        <span className="text-xs flex-shrink-0" style={{ color: 'var(--pv-text3)' }}>Save to</span>
+                        <select
+                          value={activeProjectId ?? ''}
+                          onChange={e => setActiveProjectId(e.target.value || null)}
+                          className="text-xs px-3 py-1.5 rounded-[10px] outline-none cursor-pointer transition-all flex-1"
+                          style={{ border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text)' }}
+                        >
+                          <option value="">No project</option>
+                          {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    <TemplateForm
+                      template={template}
+                      genType={selectedGenType}
+                      onSubmit={handleGenerate}
+                      submitting={submitting}
+                      initialValues={img2imgInitialValues}
+                      userTier={userTier}
+                      modelMinTier={selectedModel?.min_tier}
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Existing overlays — keep exactly as-is */}
       {img2imgPickerUrl && (
         <Img2ImgPicker
-          models={models.filter((m) => m.supported_gen_types.includes('img2img'))}
+          models={models.filter(m => m.supported_gen_types.includes('img2img'))}
           onPick={handleImg2ImgPick}
           onClose={() => setImg2imgPickerUrl(null)}
         />
       )}
-
-      {/* Img2Vid model picker */}
       {img2vidPickerUrl && (
         <Img2ImgPicker
           title="Animate this image"
           subtitle="Choose a video model to animate your image"
           genLabel="img2vid"
-          models={models.filter((m) => m.supported_gen_types.includes('img2vid'))}
+          models={models.filter(m => m.supported_gen_types.includes('img2vid'))}
           onPick={handleImg2VidPick}
           onClose={() => setImg2vidPickerUrl(null)}
         />
       )}
-
-      {/* Asset lightbox */}
       {lightboxAsset && (() => {
         const isVideo = lightboxAsset.gen_type === 'txt2vid' || lightboxAsset.gen_type === 'img2vid'
         return (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-            onClick={() => setLightboxAsset(null)}
-          >
-            <div
-              className="relative bg-white border border-[#d2d2d7] rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setLightboxAsset(null)}
-                className="absolute top-4 right-4 text-[#aeaeb2] hover:text-[#1d1d1f] text-xl leading-none cursor-pointer transition-colors"
-              >
-                ×
-              </button>
-
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setLightboxAsset(null)}>
+            <div className="relative rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-2xl" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }} onClick={e => e.stopPropagation()}>
+              <button onClick={() => setLightboxAsset(null)} className="absolute top-4 right-4 text-xl leading-none cursor-pointer transition-colors" style={{ color: 'var(--pv-text3)' }}>×</button>
               <div className="mb-5">
-                {isVideo ? (
-                  <video
-                    src={lightboxAsset.url}
-                    controls autoPlay loop
-                    className="rounded-xl w-full border border-[#d2d2d7]"
-                  />
-                ) : (
-                  <img
-                    src={lightboxAsset.url}
-                    alt=""
-                    className="rounded-xl w-full border border-[#d2d2d7]"
-                  />
-                )}
+                {isVideo
+                  ? <video src={lightboxAsset.url} controls autoPlay loop className="rounded-xl w-full" />
+                  : <img src={lightboxAsset.url} alt="" className="rounded-xl w-full" />
+                }
               </div>
-
               <div className="flex gap-3 flex-wrap">
-                <button
-                  onClick={() => downloadFile(lightboxAsset.url, isVideo)}
-                  className="px-5 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
-                >
-                  Download
-                </button>
-                {!isVideo && (
-                  <button
-                    onClick={() => { setLightboxAsset(null); sendToImg2Img(lightboxAsset.url) }}
-                    className="px-5 py-2.5 bg-[#f0f0f2] hover:bg-[#e5e5e7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
-                  >
-                    Send to img2img →
-                  </button>
-                )}
-                {!isVideo && (
-                  <button
-                    onClick={() => { setLightboxAsset(null); sendToImg2Vid(lightboxAsset.url) }}
-                    className="px-5 py-2.5 bg-[#f0f0f2] hover:bg-[#e5e5e7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
-                  >
-                    Send to img2vid →
-                  </button>
-                )}
-                <button
-                  onClick={() => { setLightboxAsset(null); setView('assets'); loadAssets() }}
-                  className="px-5 py-2.5 bg-white hover:bg-[#f5f5f7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
-                >
-                  View in Assets →
-                </button>
+                <button onClick={() => downloadFile(lightboxAsset.url, isVideo)} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer" style={{ background: '#18140e' }}>Download</button>
+                {!isVideo && <button onClick={() => { setLightboxAsset(null); sendToImg2Img(lightboxAsset.url) }} className="px-5 py-2.5 rounded-xl text-sm font-medium cursor-pointer" style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)' }}>img2img →</button>}
+                {!isVideo && <button onClick={() => { setLightboxAsset(null); sendToImg2Vid(lightboxAsset.url) }} className="px-5 py-2.5 rounded-xl text-sm font-medium cursor-pointer" style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)' }}>img2vid →</button>}
               </div>
             </div>
           </div>
         )
       })()}
-
-      {/* Guided tour overlay */}
-      <GuidedTour
-        active={tourActive}
-        onFinish={() => { markTourSeen(); setTourActive(false) }}
-      />
-
-      {/* Render completion toast */}
+      <GuidedTour active={tourActive} onFinish={() => { markTourSeen(); setTourActive(false) }} />
       {renderToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#1c1c1e] border border-[#d2d2d7] dark:border-white/10 rounded-2xl shadow-xl text-sm font-medium text-[#1d1d1f] dark:text-white animate-fade-in">
-          <svg className="w-5 h-5 text-[#0071e3] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl text-sm font-medium animate-fade-in" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}>
+          <svg className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--pv-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
           <span>{renderToast}</span>
-          <button
-            onClick={() => setRenderToast(null)}
-            className="ml-2 text-[#aeaeb2] hover:text-[#1d1d1f] transition-colors text-base leading-none cursor-pointer"
-          >
-            ✕
-          </button>
+          <button onClick={() => setRenderToast(null)} className="ml-2 text-base leading-none cursor-pointer" style={{ color: 'var(--pv-text3)' }}>✕</button>
         </div>
       )}
     </div>
