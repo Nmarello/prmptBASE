@@ -227,23 +227,23 @@ function AddCustomForm({ fieldId, onSave, onCancel }: {
   }
 
   return (
-    <div className="mt-3 p-3 bg-[#f5f5f7] border border-[#d2d2d7] rounded-xl space-y-2">
+    <div className="mt-3 p-3 bg-[#0d1117] border border-white/10 rounded-xl space-y-2">
       <input
         type="text"
         value={label}
         onChange={(e) => setLabel(e.target.value)}
         placeholder="Name (e.g. Cyberpunk Neon)"
-        className="w-full bg-white border border-[#d2d2d7] rounded-lg px-3 py-2 text-sm text-[#1d1d1f] placeholder-[#aeaeb2] focus:outline-none focus:border-[rgba(0,113,227,0.5)]"
+        className="w-full bg-[#161b22] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-sky-500/50"
       />
       <textarea
         value={promptText}
         onChange={(e) => setPromptText(e.target.value)}
         placeholder="Describe it for the AI (e.g. cyberpunk neon aesthetic with rain-slicked streets)"
         rows={2}
-        className="w-full bg-white border border-[#d2d2d7] rounded-lg px-3 py-2 text-sm text-[#1d1d1f] placeholder-[#aeaeb2] focus:outline-none focus:border-[rgba(0,113,227,0.5)] resize-none"
+        className="w-full bg-[#161b22] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-sky-500/50 resize-none"
       />
       <div className="flex gap-2 justify-end">
-        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-[#6e6e73] hover:text-[#1d1d1f] transition-colors cursor-pointer">
+        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-white/50 hover:text-white transition-colors cursor-pointer">
           Cancel
         </button>
         <button
@@ -277,9 +277,9 @@ function FieldInput({ field, value, onChange, customOptions }: {
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
           rows={4}
-          className="w-full bg-white border border-[#d2d2d7] rounded-xl px-4 py-3 text-sm text-[#1d1d1f] placeholder-[#aeaeb2] focus:outline-none focus:border-[rgba(0,113,227,0.5)] resize-none"
+          className="w-full bg-[#161b22] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-sky-500/50 resize-none"
         />
-        {field.hint && <p className="text-xs text-[#aeaeb2] mt-1">{field.hint}</p>}
+        {field.hint && <p className="text-xs text-white/35 mt-1">{field.hint}</p>}
       </div>
     )
   }
@@ -290,7 +290,7 @@ function FieldInput({ field, value, onChange, customOptions }: {
         <select
           value={(value as string) ?? ''}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-white border border-[#d2d2d7] rounded-xl px-4 py-3 text-sm text-[#1d1d1f] focus:outline-none focus:border-[rgba(0,113,227,0.5)] cursor-pointer"
+          className="w-full bg-[#161b22] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500/50 cursor-pointer"
         >
           <option value="">Auto</option>
           {(field.options ?? []).map((opt) => (
@@ -305,7 +305,7 @@ function FieldInput({ field, value, onChange, customOptions }: {
             </>
           )}
         </select>
-        {field.hint && <p className="text-xs text-[#aeaeb2] mt-1">{field.hint}</p>}
+        {field.hint && <p className="text-xs text-white/35 mt-1">{field.hint}</p>}
       </div>
     )
   }
@@ -326,8 +326,8 @@ function FieldInput({ field, value, onChange, customOptions }: {
                 active
                   ? 'bg-[rgba(0,113,227,0.08)] border-[rgba(0,113,227,0.4)] text-[#0071e3]'
                   : isCustom
-                  ? 'bg-white border-[#d2d2d7] text-[#1d1d1f] hover:border-[rgba(0,113,227,0.3)]'
-                  : 'bg-white border-[#d2d2d7] text-[#6e6e73] hover:border-[#aeaeb2]'
+                  ? 'bg-[#161b22] border-white/10 text-white hover:border-sky-500/40'
+                  : 'bg-[#161b22] border-white/10 text-white/50 hover:border-white/25'
               }`}
             >
               {isCustom && <span className="mr-1 text-[#0071e3]">★</span>}{opt.label}
@@ -354,8 +354,8 @@ function FieldInput({ field, value, onChange, customOptions }: {
                 active
                   ? 'bg-[rgba(0,113,227,0.08)] border-[rgba(0,113,227,0.4)] text-[#0071e3]'
                   : isCustom
-                  ? 'bg-white border-[#d2d2d7] text-[#1d1d1f] hover:border-[rgba(0,113,227,0.3)]'
-                  : 'bg-white border-[#d2d2d7] text-[#6e6e73] hover:border-[#aeaeb2]'
+                  ? 'bg-[#161b22] border-white/10 text-white hover:border-sky-500/40'
+                  : 'bg-[#161b22] border-white/10 text-white/50 hover:border-white/25'
               }`}
             >
               <span className="text-sm">{isCustom ? '★' : '✦'}</span>
@@ -386,20 +386,20 @@ function FieldInput({ field, value, onChange, customOptions }: {
           />
           {preview ? (
             <div className="relative group">
-              <img src={preview} alt="Source" className="rounded-xl w-full max-h-48 object-cover border border-[#d2d2d7]" />
+              <img src={preview} alt="Source" className="rounded-xl w-full max-h-48 object-cover border border-white/10" />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
                 <span className="text-sm text-white font-medium">Click to change</span>
               </div>
             </div>
           ) : (
-            <div className="border-2 border-dashed border-[#d2d2d7] hover:border-[rgba(0,113,227,0.4)] rounded-xl p-8 text-center transition-all">
-              <svg className="w-7 h-7 text-[#aeaeb2] mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
-              <p className="text-[#6e6e73] text-sm font-medium">Click to upload image</p>
-              <p className="text-[#aeaeb2] text-xs mt-1">PNG, JPG, WEBP</p>
+            <div className="border-2 border-dashed border-white/10 hover:border-sky-500/50 rounded-xl p-8 text-center transition-all">
+              <svg className="w-7 h-7 text-white/35 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
+              <p className="text-white/50 text-sm font-medium">Click to upload image</p>
+              <p className="text-white/35 text-xs mt-1">PNG, JPG, WEBP</p>
             </div>
           )}
         </label>
-        {field.hint && <p className="text-xs text-[#aeaeb2] mt-1">{field.hint}</p>}
+        {field.hint && <p className="text-xs text-white/35 mt-1">{field.hint}</p>}
       </div>
     )
   }
@@ -443,7 +443,7 @@ function LivePromptPanel({
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-[#1d1d1f]">Live Prompt</span>
+          <span className="text-sm font-semibold text-white">Live Prompt</span>
           {isEdited && (
             <span className="text-[10px] bg-amber-50 border border-amber-200 text-amber-600 px-2 py-0.5 rounded-full font-medium">
               edited
@@ -451,12 +451,12 @@ function LivePromptPanel({
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[#aeaeb2]">{charCount} chars</span>
+          <span className="text-xs text-white/35">{charCount} chars</span>
           {isEdited && (
             <button
               type="button"
               onClick={onReset}
-              className="text-xs text-[#6e6e73] hover:text-[#1d1d1f] transition-colors cursor-pointer"
+              className="text-xs text-white/50 hover:text-white transition-colors cursor-pointer"
             >
               ↺ Reset
             </button>
@@ -469,27 +469,27 @@ function LivePromptPanel({
         value={livePrompt}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Fill in the fields on the left to build your prompt…"
-        className={`flex-1 min-h-[220px] w-full bg-[#fafafa] border rounded-xl px-4 py-3 text-sm text-[#1d1d1f] placeholder-[#aeaeb2] focus:outline-none resize-none leading-relaxed font-mono transition-colors ${
+        className={`flex-1 min-h-[220px] w-full bg-[#0d1117] border rounded-xl px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none resize-none leading-relaxed font-mono transition-colors ${
           isEdited
             ? 'border-amber-300 focus:border-amber-400 bg-amber-50/30'
-            : 'border-[#d2d2d7] focus:border-[rgba(0,113,227,0.5)]'
+            : 'border-white/10 focus:border-sky-500/50'
         }`}
       />
 
-      <p className="text-xs text-[#aeaeb2] mt-2 mb-4">
+      <p className="text-xs text-white/35 mt-2 mb-4">
         This is the exact prompt sent to the model. Edit freely — your changes override the auto-build.
       </p>
 
       {/* API params section */}
       {(apiParams.length > 0 || isRecraftStyleParam) && (
-        <div className="border border-[#e8e8ed] rounded-xl p-3 bg-[#fafafa]">
-          <p className="text-[10px] font-semibold text-[#aeaeb2] uppercase tracking-wider mb-2.5">
+        <div className="border border-[#e8e8ed] rounded-xl p-3 bg-[#0d1117]">
+          <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-2.5">
             Also sending as parameters
           </p>
           <div className="flex flex-wrap gap-1.5">
             {isRecraftStyleParam && recraftStyleLabel && (
-              <span className="inline-flex items-center gap-1 bg-white border border-[#d2d2d7] rounded-lg px-2.5 py-1 text-xs text-[#1d1d1f]">
-                <span className="text-[#aeaeb2]">style</span>
+              <span className="inline-flex items-center gap-1 bg-[#161b22] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white">
+                <span className="text-white/35">style</span>
                 <span className="text-[#d2d2d7]">·</span>
                 <span className="font-medium">{recraftStyleLabel}</span>
               </span>
@@ -498,8 +498,8 @@ function LivePromptPanel({
               const val = values[f.id]
               const label = f.options?.find((o) => o.value === String(val))?.label ?? String(val)
               return (
-                <span key={f.id} className="inline-flex items-center gap-1 bg-white border border-[#d2d2d7] rounded-lg px-2.5 py-1 text-xs text-[#1d1d1f]">
-                  <span className="text-[#aeaeb2]">{f.label.replace(/ —.*$/, '')}</span>
+                <span key={f.id} className="inline-flex items-center gap-1 bg-[#161b22] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white">
+                  <span className="text-white/35">{f.label.replace(/ —.*$/, '')}</span>
                   <span className="text-[#d2d2d7]">·</span>
                   <span className="font-medium">{label}</span>
                 </span>
@@ -603,7 +603,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
     return (
       <div key={field.id}>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-medium text-[#1d1d1f]">
+          <label className="text-sm font-medium text-white">
             {field.label}
             {field.required && <span className="text-[#0071e3] ml-1">*</span>}
           </label>
@@ -655,7 +655,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
         <span className="text-xs bg-[rgba(0,113,227,0.08)] text-[#0071e3] border border-[rgba(0,113,227,0.25)] px-2.5 py-1 rounded-full font-medium">
           {GEN_TYPE_LABELS[genType]}
         </span>
-        <span className="text-[#6e6e73] text-sm">{template.description}</span>
+        <span className="text-white/50 text-sm">{template.description}</span>
       </div>
 
       {/* Split layout */}
@@ -683,7 +683,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
                 >
                   Upgrade to {modelMinTier} to generate →
                 </a>
-                <p className="text-center text-xs text-[#aeaeb2]">You can still explore and fill out the template</p>
+                <p className="text-center text-xs text-white/35">You can still explore and fill out the template</p>
               </div>
             )}
           </div>
