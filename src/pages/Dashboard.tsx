@@ -512,6 +512,7 @@ export default function Dashboard() {
 
   function closeWorkspace() {
     setWorkspaceOpen(false)
+    setView('models')
   }
 
   useEffect(() => {
