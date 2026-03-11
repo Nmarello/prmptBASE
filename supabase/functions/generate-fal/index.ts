@@ -40,10 +40,8 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
   'minimax-txt2vid': {
     'txt2vid': 'fal-ai/minimax/video-01',
   },
-  'sora2-txt2vid': {
+  'sora2': {
     'txt2vid': 'fal-ai/sora-2/text-to-video',
-  },
-  'sora2-img2vid': {
     'img2vid': 'fal-ai/sora-2/image-to-video',
   },
 }
