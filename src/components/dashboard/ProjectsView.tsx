@@ -141,6 +141,7 @@ export default function ProjectsView({
           models={models}
           projects={projects}
           loading={assetsLoading}
+          title={`${selectedProject.name} Assets`}
           onDelete={onDeleteAsset}
           onGenerate={onGenerate}
           onSendToImg2Img={onSendToImg2Img}

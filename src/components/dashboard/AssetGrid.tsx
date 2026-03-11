@@ -6,6 +6,7 @@ interface Props {
   models: Model[]
   projects: UserProject[]
   loading: boolean
+  title?: string
   onDelete: (id: string) => void
   onGenerate: () => void
   onSendToImg2Img: (url: string) => void
@@ -27,7 +28,7 @@ const PROJECT_COLORS = [
   'bg-indigo-50 text-indigo-600 border-indigo-200',
 ]
 
-export default function AssetGrid({ assets, models, projects, loading, onDelete, onGenerate, onSendToImg2Img, onSendToImg2Vid, onMoveToProject }: Props) {
+export default function AssetGrid({ assets, models, projects, loading, title, onDelete, onGenerate, onSendToImg2Img, onSendToImg2Vid, onMoveToProject }: Props) {
   const [lightbox, setLightbox] = useState<Asset | null>(null)
   const [sort, setSort] = useState<SortKey>('newest')
   const [mediaFilter, setMediaFilter] = useState<MediaFilter>('all')
@@ -88,7 +89,7 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-[#1d1d1f]">Assets</h2>
+              <h2 className="text-2xl font-bold text-[#1d1d1f]">{title ?? 'Assets'}</h2>
               <span className="text-[#aeaeb2] text-sm">
                 {filtered.length}{filtered.length !== assets.length ? ` / ${assets.length}` : ''}
               </span>
