@@ -15,13 +15,13 @@
   --pv-accent:   #0050ff;
 }
 .dark {
-  --pv-bg:       #080706;
-  --pv-surface:  #131210;
-  --pv-surface2: #1a1916;
-  --pv-border:   #272420;
+  --pv-bg:       #131210;
+  --pv-surface:  #1e1c19;
+  --pv-surface2: #252220;
+  --pv-border:   #302d29;
   --pv-text:     #f2ede4;
   --pv-text2:    #7a7268;
-  --pv-text3:    #403c36;
+  --pv-text3:    #4a4540;
   --pv-accent:   #3d7fff;
 }
 
