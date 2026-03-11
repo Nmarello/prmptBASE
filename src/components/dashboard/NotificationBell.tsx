@@ -90,7 +90,8 @@ export default function NotificationBell({ onViewAsset }: Props) {
     <div className="relative" ref={panelRef}>
       <button
         onClick={handleOpen}
-        className={`relative p-1.5 rounded-lg transition-colors cursor-pointer ${open ? 'text-[#1d1d1f] bg-[#f0f0f2]' : 'text-[#6e6e73] hover:text-[#1d1d1f] hover:bg-[#f5f5f7]'}`}
+        className={`relative p-1.5 rounded-lg transition-colors cursor-pointer ${open ? '' : 'hover:opacity-80'}`}
+        style={{ color: open ? 'var(--pv-text)' : 'var(--pv-text2)' }}
         aria-label="Notifications"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,26 +106,26 @@ export default function NotificationBell({ onViewAsset }: Props) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-[#d2d2d7] rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-in">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#d2d2d7]">
-            <span className="text-sm font-semibold text-[#1d1d1f]">Notifications</span>
+        <div className="absolute left-full bottom-0 ml-2 w-80 rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-in" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
+          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--pv-border)' }}>
+            <span className="text-sm font-semibold" style={{ color: 'var(--pv-text)' }}>Notifications</span>
             {notifications.length > 0 && (
-              <button onClick={handleClear} className="text-xs text-[#aeaeb2] hover:text-[#6e6e73] transition-colors cursor-pointer">
+              <button onClick={handleClear} className="text-xs hover:opacity-80 transition-opacity cursor-pointer" style={{ color: 'var(--pv-text3)' }}>
                 Clear all
               </button>
             )}
           </div>
 
           {notifications.length === 0 ? (
-            <div className="px-4 py-8 text-center text-[#aeaeb2] text-sm">No notifications yet</div>
+            <div className="px-4 py-8 text-center text-sm" style={{ color: 'var(--pv-text3)' }}>No notifications yet</div>
           ) : (
-            <ul className="max-h-80 overflow-y-auto divide-y divide-[#f0f0f2]">
+            <ul className="max-h-80 overflow-y-auto divide-y" style={{ borderColor: 'var(--pv-border)' }}>
               {notifications.map((n) => (
                 <li
                   key={n.id}
                   className={`flex items-start gap-3 px-4 py-3 transition-colors ${
-                    n.assetId ? 'cursor-pointer hover:bg-[#f5f5f7]' : ''
-                  } ${!n.read ? 'bg-[rgba(0,113,227,0.04)]' : ''}`}
+                    n.assetId ? 'cursor-pointer' : ''
+                  } ${!n.read ? 'bg-[rgba(0,80,255,0.04)]' : ''}`}
                   onClick={() => {
                     if (n.assetId && n.assetUrl && onViewAsset) {
                       onViewAsset(n.assetId, n.assetUrl, n.type === 'video_ready')
@@ -132,23 +133,23 @@ export default function NotificationBell({ onViewAsset }: Props) {
                     }
                   }}
                 >
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-[#f5f5f7] border border-[#d2d2d7] flex items-center justify-center">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center" style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)' }}>
                     {n.assetUrl && n.type === 'image_ready' ? (
                       <img src={n.assetUrl} alt="" className="w-full h-full object-cover" />
                     ) : n.type === 'video_ready' ? (
-                      <svg className="w-5 h-5 text-[#6e6e73]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.277A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+                      <svg className="w-5 h-5" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.277A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
                     ) : (
-                      <svg className="w-5 h-5 text-[#6e6e73]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
+                      <svg className="w-5 h-5" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
                     )}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[#1d1d1f] leading-snug">{n.message}</p>
-                    <p className="text-xs text-[#aeaeb2] mt-0.5">{n.modelName} · {formatTime(n.createdAt)}</p>
+                    <p className="text-sm leading-snug" style={{ color: 'var(--pv-text)' }}>{n.message}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--pv-text3)' }}>{n.modelName} · {formatTime(n.createdAt)}</p>
                   </div>
 
                   {!n.read && (
-                    <span className="flex-shrink-0 w-2 h-2 rounded-full bg-[#0071e3] mt-1.5" />
+                    <span className="flex-shrink-0 w-2 h-2 rounded-full mt-1.5" style={{ background: 'var(--pv-accent)' }} />
                   )}
                 </li>
               ))}
