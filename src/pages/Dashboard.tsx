@@ -20,6 +20,7 @@ import { GEN_TYPE_LABELS, tierCanAccess } from '../types'
 import ModelCard from '../components/dashboard/ModelCard'
 import TemplateForm from '../components/dashboard/TemplateForm'
 import AssetGrid from '../components/dashboard/AssetGrid'
+import ProjectsView from '../components/dashboard/ProjectsView'
 import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
 import HomeGrid from '../components/dashboard/HomeGrid'
 import NotificationBell, { addNotification } from '../components/dashboard/NotificationBell'
@@ -27,7 +28,7 @@ import SettingsPopover from '../components/dashboard/SettingsPopover'
 import GuidedTour, { markTourSeen } from '../components/dashboard/GuidedTour'
 import { useLearningMode } from '../contexts/LearningModeContext'
 
-type View = 'models' | 'builder' | 'assets'
+type View = 'models' | 'builder' | 'assets' | 'projects'
 
 const COMING_SOON_IMAGE: Partial<Model>[] = [
   { slug: 'cs-midjourney', name: 'Midjourney', provider: 'Midjourney', description: 'The gold standard for artistic AI image generation. Unmatched aesthetic quality.', supported_gen_types: ['txt2img'] },
@@ -86,6 +87,7 @@ export default function Dashboard() {
   const [, setNotifTick] = useState(0) // forces bell re-render after addNotification
 
   const [projects, setProjects] = useState<UserProject[]>([])
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [assets, setAssets] = useState<Asset[]>([])
   const [assetsLoading, setAssetsLoading] = useState(false)
 
@@ -267,11 +269,16 @@ export default function Dashboard() {
       const imageUrl = data?.asset?.url ?? data?.image_url
       if (!imageUrl) throw new Error(`No image URL. Response: ${JSON.stringify(data)}`)
 
+      const assetId = data?.asset?.id as string | undefined
+
+      // Assign to active project if set
+      if (activeProjectId && assetId) {
+        await supabase.from('assets').update({ project_id: activeProjectId }).eq('id', assetId)
+      }
+
       setPendingImage(null)
       setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt, isVideo })
       loadAssets()
-      // Notify on image completion
-      const assetId = data?.asset?.id as string | undefined
       pushNotification({ type: 'image_ready', message: 'Your image is ready!', modelName: selectedModel.name, assetUrl: imageUrl, assetId })
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('Your image is ready!', { body: `${selectedModel.name} · prmptVAULT`, icon: '/favicon.ico' })
@@ -329,6 +336,9 @@ export default function Dashboard() {
         }
         if (data.status === 'complete' && data.video_url) {
           const vidAssetId = pendingVideo?.assetId
+          if (activeProjectId && vidAssetId) {
+            await supabase.from('assets').update({ project_id: activeProjectId }).eq('id', vidAssetId)
+          }
           setPendingVideo(null)
           setResult({ url: data.video_url, prompt: '', isVideo: true })
           loadAssets()
@@ -348,6 +358,34 @@ export default function Dashboard() {
   async function deleteAsset(id: string) {
     await supabase.from('assets').delete().eq('id', id)
     setAssets((prev) => prev.filter((a) => a.id !== id))
+  }
+
+  async function createProject(name: string, description: string) {
+    if (!user) return
+    const { data } = await supabase
+      .from('user_projects')
+      .insert({ user_id: user.id, name, description: description || null })
+      .select()
+      .single()
+    if (data) setProjects((prev) => [data as UserProject, ...prev])
+  }
+
+  async function updateProject(id: string, name: string, description: string) {
+    const { data } = await supabase
+      .from('user_projects')
+      .update({ name, description: description || null })
+      .eq('id', id)
+      .select()
+      .single()
+    if (data) setProjects((prev) => prev.map((p) => (p.id === id ? (data as UserProject) : p)))
+  }
+
+  async function deleteProject(id: string) {
+    await supabase.from('user_projects').delete().eq('id', id)
+    setProjects((prev) => prev.filter((p) => p.id !== id))
+    if (activeProjectId === id) setActiveProjectId(null)
+    // Un-assign assets from the deleted project in local state
+    setAssets((prev) => prev.map((a) => a.project_id === id ? { ...a, project_id: null } : a))
   }
 
   async function sendToImg2Img(imageUrl: string) {
@@ -428,7 +466,7 @@ export default function Dashboard() {
             </button>
           )}
           <nav className="flex gap-1">
-            {(['models', 'assets'] as View[]).map((v) => (
+            {(['models', 'projects', 'assets'] as View[]).map((v) => (
               <button
                 key={v}
                 data-tour={v === 'assets' ? 'assets-nav' : undefined}
@@ -439,7 +477,7 @@ export default function Dashboard() {
                     : 'text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white'
                 }`}
               >
-                {v === 'models' ? 'Models' : `Assets${assets.length > 0 ? ` (${assets.length})` : ''}`}
+                {v === 'models' ? 'Models' : v === 'projects' ? `Projects${projects.length > 0 ? ` (${projects.length})` : ''}` : `Assets${assets.length > 0 ? ` (${assets.length})` : ''}`}
               </button>
             ))}
           </nav>
@@ -798,6 +836,22 @@ export default function Dashboard() {
                           {generateError}
                         </div>
                       )}
+                      {/* Active project selector */}
+                      {projects.length > 0 && (
+                        <div className="mb-5 flex items-center gap-2">
+                          <span className="text-xs text-[#aeaeb2] dark:text-white/30 flex-shrink-0">Save to</span>
+                          <select
+                            value={activeProjectId ?? ''}
+                            onChange={(e) => setActiveProjectId(e.target.value || null)}
+                            className="text-xs px-3 py-1.5 border border-[#d2d2d7] dark:border-white/10 rounded-xl bg-white dark:bg-white/4 text-[#1d1d1f] dark:text-white outline-none focus:border-[#0071e3] cursor-pointer transition-colors"
+                          >
+                            <option value="">No project</option>
+                            {projects.map((p) => (
+                              <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       <TemplateForm
                         template={template}
                         genType={selectedGenType}
@@ -823,6 +877,23 @@ export default function Dashboard() {
             projects={projects}
             loading={assetsLoading}
             onDelete={deleteAsset}
+            onGenerate={() => setView('models')}
+            onSendToImg2Img={sendToImg2Img}
+            onSendToImg2Vid={sendToImg2Vid}
+          />
+        )}
+
+        {/* Projects view */}
+        {view === 'projects' && (
+          <ProjectsView
+            projects={projects}
+            assets={assets}
+            models={models}
+            assetsLoading={assetsLoading}
+            onCreateProject={createProject}
+            onUpdateProject={updateProject}
+            onDeleteProject={deleteProject}
+            onDeleteAsset={deleteAsset}
             onGenerate={() => setView('models')}
             onSendToImg2Img={sendToImg2Img}
             onSendToImg2Vid={sendToImg2Vid}
