@@ -218,7 +218,7 @@ UPDATE templates SET
     },
     {
       "id": "style",
-      "label": "Style",
+      "label": "Style — 40+ options",
       "type": "select",
       "hint": "Recraft V4 Pro has the deepest style library of any image model",
       "options": [
