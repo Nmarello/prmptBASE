@@ -62,6 +62,7 @@ const COMING_SOON_IMAGE: Partial<Model>[] = [
 ]
 
 const COMING_SOON_VIDEO: Partial<Model>[] = [
+  { slug: 'cs-veo3', name: 'Veo 3', provider: 'Google', description: "Google's flagship video model. State-of-the-art motion quality and prompt adherence.", supported_gen_types: ['txt2vid'] },
   { slug: 'cs-runway', name: 'Runway Gen-4', provider: 'Runway', description: 'The leading creative video AI. Gen-4 sets the bar for motion and cinematic quality.', supported_gen_types: ['txt2vid', 'img2vid'] },
   { slug: 'cs-pika', name: 'Pika', provider: 'Pika', description: 'Fast, expressive video generation built for social-first creators.', supported_gen_types: ['txt2vid', 'img2vid'] },
 ]
@@ -593,8 +594,8 @@ export default function Dashboard() {
               {(() => {
                 const STANDALONE = ['nano-banana', 'recraft-v4-pro']
                 const rawImgModels = [
-                  ...models.filter(m => m.provider === 'OpenAI' && m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))),
-                  ...models.filter(m => m.provider === 'fal.ai' && m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))),
+                  ...models.filter(m => m.provider === 'OpenAI' && !STANDALONE.includes(m.slug) && m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))),
+                  ...models.filter(m => m.provider === 'fal.ai' && !STANDALONE.includes(m.slug) && m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))),
                   ...models.filter(m => STANDALONE.includes(m.slug)),
                 ]
                 // Merge flux-dev-img2img into flux-dev as a single card
