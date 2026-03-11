@@ -139,41 +139,9 @@ export default function SettingsPopover({ onSignOut, onStartTour }: Props) {
             </div>
           </div>
 
-          {/* Learning Mode */}
-          <div className="px-4 py-3 border-b border-white/8">
-            <label className="text-[11px] font-semibold text-white/40 uppercase tracking-wider block mb-3">
-              Learning Mode
-            </label>
-            <div className="flex gap-1.5">
-              {LEARNING_MODE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setMode(opt.value)}
-                  className={`flex-1 py-2 px-1 rounded-xl border text-xs font-medium transition-all cursor-pointer text-center ${
-                    mode === opt.value
-                      ? 'bg-sky-500/15 border-sky-500/40 text-sky-400'
-                      : 'bg-white/4 border-white/8 text-white/40 hover:text-white/70 hover:border-white/20'
-                  }`}
-                >
-                  <div>{opt.label}</div>
-                  <div className={`text-[10px] mt-0.5 font-normal ${mode === opt.value ? 'text-sky-400/70' : 'text-white/25'}`}>
-                    {opt.desc}
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {mode === 'guided' && (
-              <button
-                type="button"
-                onClick={() => { onStartTour(); setOpen(false) }}
-                className="mt-2.5 w-full py-2 rounded-xl border border-sky-500/30 bg-sky-500/8 text-sky-400 text-xs font-medium hover:bg-sky-500/15 transition-all cursor-pointer"
-              >
-                ▶ Restart tour
-              </button>
-            )}
-          </div>
+          {/* Learning Mode — disabled until feature-complete
+          <div className="px-4 py-3 border-b border-white/8"> ... </div>
+          */}
 
           {/* Sign out */}
           <div className="px-4 py-3">
