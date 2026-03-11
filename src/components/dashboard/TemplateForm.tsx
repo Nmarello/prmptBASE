@@ -560,6 +560,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
   const [customOptions, setCustomOptions] = useState<Record<string, FieldOption[]>>({})
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [assisting, setAssisting] = useState<string | null>(null)
+  const [aiSuggestion, setAiSuggestion] = useState<{ fieldId: string; suggestion: string } | null>(null)
   const [tooltipOpen, setTooltipOpen] = useState<string | null>(null)
   const [livePromptOverride, setLivePromptOverride] = useState<string | null>(null)
 
@@ -593,7 +594,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
         }
       )
       const data = await res.json()
-      if (data.suggestion) set(fieldId, data.suggestion)
+      if (data.suggestion) setAiSuggestion({ fieldId, suggestion: data.suggestion })
     } finally {
       setAssisting(null)
     }
@@ -702,6 +703,32 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
           onChange={(v) => set(field.id, v)}
           customOptions={fieldCustomOpts}
         />
+        {aiSuggestion?.fieldId === field.id && (
+          <div className="mt-2 rounded-xl border border-sky-300 dark:border-sky-500/40 bg-sky-50 dark:bg-sky-500/8 overflow-hidden">
+            <div className="px-3 py-2 border-b border-sky-200 dark:border-sky-500/25 flex items-center gap-2">
+              <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wider">AI Suggestion</span>
+            </div>
+            <p className="px-3 py-2.5 text-sm text-[#1d1d1f] dark:text-white leading-relaxed whitespace-pre-wrap">
+              {aiSuggestion.suggestion}
+            </p>
+            <div className="px-3 py-2 border-t border-sky-200 dark:border-sky-500/25 flex gap-2">
+              <button
+                type="button"
+                onClick={() => { set(field.id, aiSuggestion.suggestion); setAiSuggestion(null) }}
+                className="px-3 py-1.5 bg-sky-500 hover:bg-sky-600 rounded-lg text-xs font-semibold text-white transition-all cursor-pointer"
+              >
+                Accept
+              </button>
+              <button
+                type="button"
+                onClick={() => setAiSuggestion(null)}
+                className="px-3 py-1.5 bg-white dark:bg-white/6 border border-[#d2d2d7] dark:border-white/10 rounded-lg text-xs font-medium text-[#6e6e73] dark:text-white/50 hover:text-[#1d1d1f] dark:hover:text-white transition-all cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
         {addingTo === field.id && (
           <AddCustomForm
             fieldId={field.id}
