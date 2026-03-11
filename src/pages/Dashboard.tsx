@@ -380,6 +380,11 @@ export default function Dashboard() {
     if (data) setProjects((prev) => prev.map((p) => (p.id === id ? (data as UserProject) : p)))
   }
 
+  async function moveAssetToProject(assetId: string, projectId: string | null) {
+    await supabase.from('assets').update({ project_id: projectId }).eq('id', assetId)
+    setAssets((prev) => prev.map((a) => a.id === assetId ? { ...a, project_id: projectId } : a))
+  }
+
   async function deleteProject(id: string) {
     await supabase.from('user_projects').delete().eq('id', id)
     setProjects((prev) => prev.filter((p) => p.id !== id))
@@ -880,6 +885,7 @@ export default function Dashboard() {
             onGenerate={() => setView('models')}
             onSendToImg2Img={sendToImg2Img}
             onSendToImg2Vid={sendToImg2Vid}
+            onMoveToProject={moveAssetToProject}
           />
         )}
 
@@ -894,6 +900,7 @@ export default function Dashboard() {
             onUpdateProject={updateProject}
             onDeleteProject={deleteProject}
             onDeleteAsset={deleteAsset}
+            onMoveToProject={moveAssetToProject}
             onGenerate={() => setView('models')}
             onSendToImg2Img={sendToImg2Img}
             onSendToImg2Vid={sendToImg2Vid}

@@ -11,6 +11,7 @@ interface Props {
   onUpdateProject: (id: string, name: string, description: string) => Promise<void>
   onDeleteProject: (id: string) => Promise<void>
   onDeleteAsset: (id: string) => void
+  onMoveToProject: (assetId: string, projectId: string | null) => Promise<void>
   onGenerate: () => void
   onSendToImg2Img: (url: string) => void
   onSendToImg2Vid: (url: string) => void
@@ -36,6 +37,7 @@ export default function ProjectsView({
   onUpdateProject,
   onDeleteProject,
   onDeleteAsset,
+  onMoveToProject,
   onGenerate,
   onSendToImg2Img,
   onSendToImg2Vid,
@@ -143,6 +145,7 @@ export default function ProjectsView({
           onGenerate={onGenerate}
           onSendToImg2Img={onSendToImg2Img}
           onSendToImg2Vid={onSendToImg2Vid}
+          onMoveToProject={onMoveToProject}
         />
 
         {/* Edit modal */}
