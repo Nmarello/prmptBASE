@@ -664,7 +664,7 @@ export default function Dashboard() {
                         {imgModels.filter(m => !(m as any)._comingSoon).length} available
                       </span>
                     </div>
-                    <div className="flex gap-3.5 overflow-x-auto pt-2 pb-4 -mt-2 px-1 -mx-1" style={{ scrollSnapType: 'x mandatory' }}>
+                    <div className="flex gap-3.5 overflow-x-auto pb-3" style={{ scrollSnapType: 'x mandatory' }}>
                       {imgModels.map((m: any) => (
                         <ModelCard
                           key={m.id ?? m.slug}
@@ -699,7 +699,7 @@ export default function Dashboard() {
                         {vidModels.filter(m => !(m as any)._comingSoon).length} available
                       </span>
                     </div>
-                    <div className="flex gap-3.5 overflow-x-auto pt-2 pb-4 -mt-2 px-1 -mx-1" style={{ scrollSnapType: 'x mandatory' }}>
+                    <div className="flex gap-3.5 overflow-x-auto pb-3" style={{ scrollSnapType: 'x mandatory' }}>
                       {vidModels.map((m: any) => (
                         <ModelCard
                           key={m.id ?? m.slug}

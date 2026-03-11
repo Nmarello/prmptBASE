@@ -66,7 +66,7 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
           ? 'opacity-40 cursor-not-allowed border-[var(--pv-border)]'
           : selected
           ? 'border-[var(--pv-accent)] shadow-lg cursor-pointer'
-          : 'border-[var(--pv-border)] hover:-translate-y-1 hover:scale-[1.01] hover:shadow-xl hover:border-transparent cursor-pointer'
+          : 'border-[var(--pv-border)] hover:-translate-y-0.5 hover:shadow-md hover:border-transparent cursor-pointer'
       }`}
     >
       {/* Art header */}
