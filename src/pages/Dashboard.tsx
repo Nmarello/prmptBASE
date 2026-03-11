@@ -71,6 +71,7 @@ export default function Dashboard() {
   }
   const videoPollerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [generateError, setGenerateError] = useState<string | null>(null)
+  const [pendingImage, setPendingImage] = useState<{ modelName: string } | null>(null)
   const [renderToast, setRenderToast] = useState<string | null>(null)
 
   const [projects, setProjects] = useState<UserProject[]>([])
@@ -159,6 +160,12 @@ export default function Dashboard() {
     setSubmitting(true)
     setResult(null)
     setGenerateError(null)
+    const isImageGen = selectedGenType !== 'txt2vid' && selectedGenType !== 'img2vid'
+    if (isImageGen) setPendingImage({ modelName: selectedModel.name })
+    // Request notification permission for all generation types
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
     try {
       const { data: promptRecord } = await supabase.from('prompts').insert({
         user_id: user!.id,
@@ -237,19 +244,26 @@ export default function Dashboard() {
         const provider = data.provider === 'fal.ai' ? 'fal.ai' : 'google'
         setPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, provider, startedAt: Date.now() })
         setSubmitting(false)
-        // Request notification permission so we can alert when done
-        if ('Notification' in window && Notification.permission === 'default') {
-          Notification.requestPermission()
-        }
         return
       }
 
       const imageUrl = data?.asset?.url ?? data?.image_url
       if (!imageUrl) throw new Error(`No image URL. Response: ${JSON.stringify(data)}`)
 
+      setPendingImage(null)
       setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt, isVideo })
       loadAssets()
+      // Notify on image completion
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Your image is ready!', {
+          body: 'Head back to prmptVAULT to view your result.',
+          icon: '/favicon.ico',
+        })
+      }
+      setRenderToast('Your image is ready!')
+      setTimeout(() => setRenderToast(null), 6000)
     } catch (err) {
+      setPendingImage(null)
       setGenerateError(err instanceof Error ? err.message : 'Generation failed')
     } finally {
       setSubmitting(false)
@@ -415,10 +429,10 @@ export default function Dashboard() {
               </button>
             ))}
           </nav>
-          {pendingVideo && (
+          {(pendingVideo || pendingImage) && (
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/25 text-sky-400 text-xs font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse flex-shrink-0" />
-              Rendering…
+              {pendingVideo ? 'Rendering…' : `Generating…`}
             </div>
           )}
         </div>
@@ -676,21 +690,23 @@ export default function Dashboard() {
                     ← {selectedModel.provider === 'fal.ai' ? 'Flux Models' : selectedModel.name}
                   </button>
 
-                  {pendingVideo && !result && (
+                  {(pendingVideo || pendingImage) && !result && (
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
                       <div className="w-10 h-10 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
-                      <p className="text-slate-400 font-medium">Rendering your video…</p>
-                      <p className="text-slate-600 text-sm">This takes 2–5 minutes. You can browse the app — we'll notify you when it's done.</p>
-                      <button
-                        onClick={() => {
-                          if (videoPollerRef.current) clearInterval(videoPollerRef.current)
-                          setPendingVideo(null)
-                          setGenerateError(null)
-                        }}
-                        className="mt-2 text-xs text-slate-600 hover:text-slate-400 transition-colors"
-                      >
-                        Cancel render
-                      </button>
+                      <p className="text-slate-400 font-medium">{pendingVideo ? 'Rendering your video…' : 'Generating your image…'}</p>
+                      <p className="text-slate-600 text-sm">You can browse the app — we'll notify you when it's done.</p>
+                      {pendingVideo && (
+                        <button
+                          onClick={() => {
+                            if (videoPollerRef.current) clearInterval(videoPollerRef.current)
+                            setPendingVideo(null)
+                            setGenerateError(null)
+                          }}
+                          className="mt-2 text-xs text-slate-600 hover:text-slate-400 transition-colors"
+                        >
+                          Cancel render
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -885,7 +901,7 @@ export default function Dashboard() {
       {/* Render completion toast */}
       {renderToast && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-[#1a2030] border border-sky-500/30 rounded-2xl shadow-xl text-sm font-medium text-white animate-fade-in">
-          <span className="text-xl">🎬</span>
+          <span className="text-xl">{renderToast.includes('video') ? '🎬' : '🖼️'}</span>
           <span>{renderToast}</span>
           <button
             onClick={() => setRenderToast(null)}
