@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { LearningModeProvider } from './contexts/LearningModeContext'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import AdminRoute from './components/auth/AdminRoute'
 import Home from './pages/Home'
@@ -11,6 +12,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+      <LearningModeProvider>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route
@@ -31,6 +33,7 @@ export default function App() {
             }
           />
         </Routes>
+      </LearningModeProvider>
       </AuthProvider>
     </BrowserRouter>
   )

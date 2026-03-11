@@ -97,7 +97,7 @@ function ShowcaseBg({ rows, numCols }: { rows: ShowcaseRow[]; numCols: number })
             return (
               <div
                 key={ii}
-                className="relative w-full flex-shrink-0 rounded-xl overflow-hidden bg-white/5"
+                className="relative w-full flex-shrink-0 rounded-xl overflow-hidden bg-[#e5e5e7]"
                 style={{ paddingBottom: `${pct}%` }}
               >
                 {item.isVideo ? (
@@ -173,41 +173,41 @@ export default function HomeGrid({ assets, onAssetClick }: Props) {
         {/* Decorative background — varied aspect ratio showcase grid */}
         <ShowcaseBg rows={showcase} numCols={numCols} />
 
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-[#0a0a0f]/80 backdrop-blur-sm" />
+        {/* Light overlay */}
+        <div className="absolute inset-0 bg-[#f5f5f7]/85 backdrop-blur-sm" />
 
         {/* Content */}
         <div className="relative h-full flex flex-col items-center justify-start pt-8 sm:pt-16 px-4 sm:px-8">
           <div className="max-w-md w-full text-center">
 
-            <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-sky-400">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#0071e3]">
               Welcome to prmptVAULT
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 leading-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#1d1d1f] mb-3 leading-tight">
               Build better AI prompts,<br />faster.
             </h2>
-            <p className="text-slate-400 text-sm mb-8 sm:mb-10 leading-relaxed">
+            <p className="text-[#6e6e73] text-sm mb-8 sm:mb-10 leading-relaxed">
               Pick any model, fill a structured template, and generate.<br className="hidden sm:block" />
               Everything you create is saved automatically in your library.
             </p>
 
             <div className="flex items-start justify-center gap-4 sm:gap-6 mb-8 sm:mb-10">
               {[
-                { icon: '⬡', label: 'Pick a model',      sub: 'Images or video' },
-                { icon: '▤', label: 'Fill the template', sub: 'No blank boxes'  },
-                { icon: '◈', label: 'Generate & save',   sub: 'Auto-organized'  },
-              ].map(({ icon, label, sub }, i) => (
+                { label: 'Pick a model',      sub: 'Images or video' },
+                { label: 'Fill the template', sub: 'No blank boxes'  },
+                { label: 'Generate & save',   sub: 'Auto-organized'  },
+              ].map(({ label, sub }, i) => (
                 <div key={i} className="flex flex-col items-center gap-2 flex-1">
-                  <div className="w-10 h-10 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-lg">
-                    {icon}
+                  <div className="w-10 h-10 rounded-xl bg-white border border-[#d2d2d7] flex items-center justify-center text-sm font-bold text-[#0071e3] shadow-sm">
+                    {i + 1}
                   </div>
-                  <div className="text-white text-xs font-semibold">{label}</div>
-                  <div className="text-slate-600 text-xs">{sub}</div>
+                  <div className="text-[#1d1d1f] text-xs font-semibold">{label}</div>
+                  <div className="text-[#aeaeb2] text-xs">{sub}</div>
                 </div>
               ))}
             </div>
 
-            <p className="text-slate-600 text-xs">
+            <p className="text-[#aeaeb2] text-xs">
               15 free generations per day — no credit card required
             </p>
 
@@ -228,7 +228,7 @@ export default function HomeGrid({ assets, onAssetClick }: Props) {
                 <div
                   key={item._key}
                   onClick={() => item._asset && onAssetClick?.(item._asset)}
-                  className={`relative w-full flex-shrink-0 rounded-xl overflow-hidden bg-white/3 border border-white/8 hover:border-white/20 transition-all group${item._asset ? ' cursor-pointer' : ''}`}
+                  className={`relative w-full flex-shrink-0 rounded-xl overflow-hidden bg-[#e5e5e7] border border-[#d2d2d7] hover:border-[#aeaeb2] transition-all group${item._asset ? ' cursor-pointer' : ''}`}
                   style={{ paddingBottom: `${pct}%` }}
                 >
                   {item.isVideo ? (

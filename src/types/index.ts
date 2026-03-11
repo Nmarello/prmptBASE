@@ -16,6 +16,7 @@ export interface TemplateField {
   ai_assist?: boolean
   placeholder?: string
   hint?: string
+  tooltip?: string
   options?: FieldOption[]
 }
 

@@ -2,6 +2,41 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Template, TemplateField, GenType, FieldOption } from '../../types'
 import { GEN_TYPE_LABELS, tierCanAccess } from '../../types'
 import { supabase } from '../../lib/supabase'
+import { useLearningMode } from '../../contexts/LearningModeContext'
+
+// ─── Tooltip content — universal fields ─────────────────────────────────────
+const FIELD_TOOLTIPS: Record<string, string> = {
+  prompt:              'The main description of what you want to generate. Be specific — include subject, setting, and mood. The more detail, the better the result.',
+  style:               'The broad visual category for the output. Each style activates a different internal rendering mode in the model.',
+  lighting:            'The dominant light source and quality in the scene. Golden hour adds warmth and drama. Volumetric adds god rays. Studio is clean and commercial.',
+  lens:                'The focal length changes perspective and depth of field. 85mm is flattering for portraits. 14mm is dramatic for landscapes. Anamorphic gives a cinematic movie look.',
+  depth_of_field:      'How much of the scene is in sharp focus. Shallow = blurry background, subject pops. Deep = everything sharp — good for landscapes and architecture.',
+  composition:         'How the subject is framed in the image. Rule of thirds feels natural. Dutch angle creates tension. Aerial gives a god\'s-eye view.',
+  mood:                'Emotional tone injected into the prompt. Select multiple to layer feelings. These become descriptive phrases like "epic, grand scale, awe-inspiring."',
+  color_palette:       'Dominant color temperature and saturation. These are injected as descriptive phrases — "warm color palette, amber and orange tones."',
+  time_of_day:         'Time of day affects light quality dramatically. Golden hour and blue hour are the most cinematic. Midday is harsh and high-contrast.',
+  weather:             'Environmental atmosphere. Fog adds mystery, storm clouds add drama, rain creates wet reflective surfaces.',
+  camera_medium:       'The physical recording medium to emulate. 35mm film adds grain and warmth. VHS gives a retro lo-fi look. Digital is clean and modern.',
+  quality:             'Technical quality descriptors appended to the prompt. "Highly detailed" pushes the model to render fine textures and crisp edges.',
+  additional_details:  'Anything extra you want added to the final prompt — appended verbatim after all other fields.',
+  aspect_ratio:        'The shape of the output. Square for social media. 16:9 for presentations and thumbnails. 9:16 for mobile Stories. 21:9 for cinematic ultra-wide.',
+  resolution:          'Output image resolution. Higher = more detail but slower. Start at 1K, go to 4K if you need to print large or crop heavily.',
+  num_images:          'How many variations to generate in one shot. More options to pick from, but costs more credits per generation.',
+  output_format:       'JPEG is smaller and loads faster. PNG is lossless — best for logos, design work, or anything with fine edges. WebP is a good middle ground.',
+  seed:                'A number that locks in the randomness. Same seed + same prompt = same result every time. Great for iterating on a composition you like.',
+  guidance_scale:      'How strictly the model follows your prompt. Low (1–3) = loose and creative. High (7+) = literal and precise. 3.5 is a solid default.',
+  steps:               'How many refinement passes the model makes. More steps = more detail and coherence, but slower. 28 is the sweet spot for most use cases.',
+  thinking_level:      'Enables Gemini\'s internal reasoning before generating. "High" is significantly better at complex scenes, text in images, and spatial relationships.',
+  enable_web_search:   'Lets the model search the web before generating. Useful for current brands, logos, real places, or anything needing up-to-date visual reference.',
+  safety_tolerance:    'How strict the content filter is. 1 = very restrictive. 6 = most permissive. Default (4) works for most creative work.',
+  duration:            'How long the generated video will be. Longer clips cost more credits and take longer to render.',
+  model:               'Pin to a specific model checkpoint. "Latest" always gives you the newest version. Pinning is useful if you need consistent results over time.',
+  camera_movement:     'The physical camera motion during the shot. Zoom in creates tension. Orbit creates a cinematic 3D feel. Static keeps the frame locked off.',
+  camera_motion:       'The physical camera motion during the shot. Zoom in creates tension. Orbit creates a cinematic 3D feel. Static keeps the frame locked off.',
+  negative_prompt:     'Describe what you do NOT want in the output. Common values: blurry, low quality, watermark, extra limbs, distorted face.',
+  source_image:        'The input image this model will use as a reference, starting point, or first frame. The closer your source is to what you want, the better.',
+  strength:            'How much the model transforms the source image. 0.1 = barely changes it. 1.0 = completely reimagines it using your prompt.',
+}
 
 interface CustomOption {
   id: string
@@ -515,10 +550,12 @@ function LivePromptPanel({
 // ─── Main form ───────────────────────────────────────────────────────────────
 
 export default function TemplateForm({ template, genType, onSubmit, submitting, initialValues, userTier, modelMinTier }: Props) {
+  const { mode: learningMode } = useLearningMode()
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
   const [customOptions, setCustomOptions] = useState<Record<string, FieldOption[]>>({})
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [assisting, setAssisting] = useState<string | null>(null)
+  const [tooltipOpen, setTooltipOpen] = useState<string | null>(null)
   const [livePromptOverride, setLivePromptOverride] = useState<string | null>(null)
 
   const autoPrompt = useMemo(() => buildLivePrompt(values), [values])
@@ -600,20 +637,45 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
   function renderField(field: TemplateField) {
     const fieldCustomOpts = customOptions[field.id] ?? []
     const showAddButton = CUSTOM_SUPPORTED.includes(field.type) && !CUSTOM_EXCLUDED_FIELDS.includes(field.id)
+    const tooltipText = FIELD_TOOLTIPS[field.id] ?? field.tooltip
+    const showTooltips = learningMode === 'tooltips'
+    const isTooltipOpen = tooltipOpen === field.id
+
     return (
       <div key={field.id}>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-medium text-white">
-            {field.label}
-            {field.required && <span className="text-[#0071e3] ml-1">*</span>}
-          </label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-white/50">
+              {field.label}
+              {field.required && <span className="text-sky-400 ml-1">*</span>}
+            </label>
+            {/* Tooltip ℹ️ icon — only in tooltips mode */}
+            {showTooltips && tooltipText && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onMouseEnter={() => setTooltipOpen(field.id)}
+                  onMouseLeave={() => setTooltipOpen(null)}
+                  className="w-4 h-4 rounded-full bg-white/10 hover:bg-sky-500/20 text-white/35 hover:text-sky-400 flex items-center justify-center transition-all cursor-default text-[10px] font-bold leading-none"
+                  tabIndex={-1}
+                >
+                  i
+                </button>
+                {isTooltipOpen && (
+                  <div className="absolute left-0 top-full mt-1.5 w-64 bg-[#1c1c1e] border border-white/10 rounded-xl p-3 shadow-2xl z-50 animate-fade-in pointer-events-none">
+                    <p className="text-xs text-white/70 leading-relaxed">{tooltipText}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-3">
             {field.ai_assist && (
               <button
                 type="button"
                 onClick={() => handleAiAssist(field.id)}
                 disabled={assisting === field.id}
-                className="text-xs text-[#0071e3] hover:text-[#0077ed] disabled:opacity-50 flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-xs text-sky-400 hover:text-sky-300 disabled:opacity-50 flex items-center gap-1 transition-colors cursor-pointer"
               >
                 {assisting === field.id ? '⏳ Thinking…' : '✨ AI assist'}
               </button>
@@ -622,7 +684,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
               <button
                 type="button"
                 onClick={() => setAddingTo(addingTo === field.id ? null : field.id)}
-                className="text-xs text-emerald-600 hover:text-emerald-500 transition-colors flex items-center gap-1 cursor-pointer"
+                className="text-xs text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1 cursor-pointer"
               >
                 + Add your own
               </button>
@@ -659,7 +721,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
       </div>
 
       {/* Split layout */}
-      <div className="grid grid-cols-2 gap-6 items-start">
+      <div data-tour="template-form" className="grid grid-cols-2 gap-6 items-start">
 
         {/* LEFT — fields */}
         <div className="space-y-5">
@@ -690,7 +752,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
         </div>
 
         {/* RIGHT — live prompt */}
-        <div className="sticky top-6">
+        <div data-tour="live-prompt" className="sticky top-6">
           <LivePromptPanel
             fields={template.fields}
             values={values}

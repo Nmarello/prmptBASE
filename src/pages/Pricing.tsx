@@ -88,65 +88,58 @@ export default function Pricing() {
   const userTierIndex = userTier ? tierOrder.indexOf(userTier) : -1
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white px-4 py-16">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-12">
+    <div style={{ minHeight: '100vh', background: '#f5f5f7', color: '#1d1d1f', fontFamily: "'Inter', -apple-system, sans-serif", padding: '80px 24px' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
           {user && (
-            <a href="/dashboard" className="inline-block text-xs text-slate-500 hover:text-slate-300 mb-6 transition-colors">
-              ← Back to dashboard
-            </a>
+            <a href="/dashboard" style={{ display: 'inline-block', fontSize: 12, color: '#aeaeb2', marginBottom: 24, textDecoration: 'none', transition: 'color 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#6e6e73')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#aeaeb2')}
+            >← Back to dashboard</a>
           )}
-          <h1 className="text-4xl font-black tracking-tight mb-3">
-            prmpt<span className="text-sky-400">VAULT</span> pricing
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#aeaeb2', marginBottom: 12 }}>Pricing</div>
+          <h1 style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 800, letterSpacing: '-2px', marginBottom: 12, color: '#1d1d1f' }}>
+            prmpt<span style={{ color: '#0071e3' }}>VAULT</span>
           </h1>
-          <p className="text-slate-400">Start free. Scale when you're ready.</p>
+          <p style={{ fontSize: 17, color: '#6e6e73' }}>Start free. Scale when you're ready.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           {tiers.map((tier) => {
             const isCurrent = userTier === tier.tier
             const tierIndex = tierOrder.indexOf(tier.tier)
             const isDowngrade = userTierIndex > tierIndex
             return (
-              <div
-                key={tier.name}
-                className={`relative rounded-2xl p-6 flex flex-col ${
-                  isCurrent
-                    ? 'bg-white/5 border border-white/20'
-                    : tier.highlight
-                    ? 'bg-sky-500/10 border border-sky-500/40'
-                    : 'bg-white/3 border border-white/8'
-                }`}
-              >
+              <div key={tier.name} style={{
+                position: 'relative', borderRadius: 20, padding: 24,
+                display: 'flex', flexDirection: 'column',
+                background: '#fff',
+                border: isCurrent ? '1px solid rgba(0,113,227,0.4)' : tier.highlight ? '1px solid rgba(0,113,227,0.3)' : '1px solid #d2d2d7',
+                boxShadow: isCurrent || tier.highlight ? '0 0 0 3px rgba(0,113,227,0.08)' : 'none',
+              }}>
                 {isCurrent && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                      Current plan
-                    </span>
+                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)' }}>
+                    <span style={{ background: '#0071e3', color: '#fff', fontSize: 11, fontWeight: 600, padding: '3px 12px', borderRadius: 100 }}>Current plan</span>
                   </div>
                 )}
                 {!isCurrent && tier.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-sky-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                      Most popular
-                    </span>
+                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)' }}>
+                    <span style={{ background: '#0071e3', color: '#fff', fontSize: 11, fontWeight: 600, padding: '3px 12px', borderRadius: 100 }}>Most popular</span>
                   </div>
                 )}
 
-                <div className="mb-4">
-                  <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: tier.highlight ? '#0071e3' : '#aeaeb2', marginBottom: 8 }}>
                     {tier.name}
                   </div>
-                  <div className="text-3xl font-black text-white">{tier.priceLabel}</div>
-                  {tier.price > 0 && (
-                    <div className="text-xs text-slate-500 mt-0.5">per month</div>
-                  )}
+                  <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-2px', color: '#1d1d1f' }}>{tier.priceLabel}</div>
+                  {tier.price > 0 && <div style={{ fontSize: 12, color: '#aeaeb2', marginTop: 2 }}>per month</div>}
                 </div>
 
-                <ul className="flex-1 space-y-2 mb-6">
+                <ul style={{ flex: 1, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                   {tier.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-slate-300">
-                      <span className="text-sky-400 text-xs">✓</span>
+                    <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#6e6e73' }}>
+                      <span style={{ color: '#34c759', fontSize: 12, fontWeight: 700 }}>✓</span>
                       {f}
                     </li>
                   ))}
@@ -155,23 +148,16 @@ export default function Pricing() {
                 <button
                   onClick={() => !isCurrent && !isDowngrade && handleSelect(tier)}
                   disabled={loading === tier.tier || isCurrent || isDowngrade}
-                  className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    isCurrent
-                      ? 'bg-white/8 text-slate-500 border border-white/10 cursor-default'
-                      : isDowngrade
-                      ? 'bg-white/5 text-slate-600 border border-white/8 cursor-default'
-                      : tier.highlight
-                      ? 'bg-sky-500 hover:bg-sky-400 text-white'
-                      : 'bg-white/8 hover:bg-white/12 text-white border border-white/10'
-                  } disabled:cursor-not-allowed`}
+                  style={{
+                    width: '100%', padding: '10px', borderRadius: 10,
+                    fontSize: 13, fontWeight: 600, cursor: isCurrent || isDowngrade ? 'default' : 'pointer',
+                    fontFamily: 'inherit', transition: 'all 0.15s',
+                    background: isCurrent ? 'transparent' : isDowngrade ? 'transparent' : tier.highlight ? '#0071e3' : 'transparent',
+                    color: isCurrent ? '#aeaeb2' : isDowngrade ? '#aeaeb2' : tier.highlight ? '#fff' : '#6e6e73',
+                    border: tier.highlight && !isCurrent && !isDowngrade ? 'none' : '1.5px solid #d2d2d7',
+                  }}
                 >
-                  {loading === tier.tier
-                    ? 'Redirecting…'
-                    : isCurrent
-                    ? 'Current plan'
-                    : isDowngrade
-                    ? 'Downgrade'
-                    : tier.cta}
+                  {loading === tier.tier ? 'Redirecting…' : isCurrent ? 'Current plan' : isDowngrade ? 'Downgrade' : tier.cta}
                 </button>
               </div>
             )

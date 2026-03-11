@@ -16,14 +16,14 @@ type SortKey = 'newest' | 'oldest' | 'model'
 type MediaFilter = 'all' | 'images' | 'videos'
 
 const PROJECT_COLORS = [
-  'bg-sky-500/20 text-sky-300 border-sky-500/30',
-  'bg-violet-500/20 text-violet-300 border-violet-500/30',
-  'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-  'bg-amber-500/20 text-amber-300 border-amber-500/30',
-  'bg-rose-500/20 text-rose-300 border-rose-500/30',
-  'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
-  'bg-pink-500/20 text-pink-300 border-pink-500/30',
-  'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
+  'bg-blue-50 text-blue-600 border-blue-200',
+  'bg-violet-50 text-violet-600 border-violet-200',
+  'bg-emerald-50 text-emerald-600 border-emerald-200',
+  'bg-amber-50 text-amber-600 border-amber-200',
+  'bg-rose-50 text-rose-600 border-rose-200',
+  'bg-cyan-50 text-cyan-600 border-cyan-200',
+  'bg-pink-50 text-pink-600 border-pink-200',
+  'bg-indigo-50 text-indigo-600 border-indigo-200',
 ]
 
 export default function AssetGrid({ assets, models, projects, loading, onDelete, onGenerate, onSendToImg2Img, onSendToImg2Vid }: Props) {
@@ -36,20 +36,17 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
   const modelMap = useMemo(() => Object.fromEntries(models.map((m) => [m.id, m])), [models])
   const projectMap = useMemo(() => Object.fromEntries(projects.map((p) => [p.id, p.name])), [projects])
 
-  // Stable color assignment per project — ordered by first appearance in projects list
   const projectColorMap = useMemo(() => {
     const map: Record<string, string> = {}
     projects.forEach((p, i) => { map[p.id] = PROJECT_COLORS[i % PROJECT_COLORS.length] })
     return map
   }, [projects])
 
-  // Models that actually appear in assets
   const usedModels = useMemo(() => {
     const ids = [...new Set(assets.map((a) => a.model_id).filter(Boolean))]
     return ids.map((id) => modelMap[id!]).filter(Boolean)
   }, [assets, modelMap])
 
-  // Projects that actually appear in assets
   const usedProjects = useMemo(() => {
     const ids = [...new Set(assets.map((a) => a.project_id).filter(Boolean))]
     return ids.map((id) => ({ id: id!, name: projectMap[id!] ?? 'Unknown' }))
@@ -77,27 +74,27 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-slate-600 text-sm animate-pulse">Loading assets…</p>
+        <p className="text-[#aeaeb2] text-sm animate-pulse">Loading assets…</p>
       </div>
     )
   }
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#f5f5f7]">
         <div className="max-w-6xl mx-auto">
 
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold">Assets</h2>
-              <span className="text-slate-600 text-sm">
+              <h2 className="text-2xl font-bold text-[#1d1d1f]">Assets</h2>
+              <span className="text-[#aeaeb2] text-sm">
                 {filtered.length}{filtered.length !== assets.length ? ` / ${assets.length}` : ''}
               </span>
             </div>
             <button
               onClick={onGenerate}
-              className="px-4 py-2 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium transition-all"
+              className="px-4 py-2 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
             >
               + Generate
             </button>
@@ -106,25 +103,23 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
           {/* Filters + Sort */}
           {assets.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6 items-center">
-              {/* Media type */}
-              <div className="flex gap-1 bg-white/5 rounded-xl p-1">
+              <div className="flex gap-1 bg-white border border-[#d2d2d7] rounded-xl p-1">
                 {(['all', 'images', 'videos'] as MediaFilter[]).map((f) => (
                   <button
                     key={f}
                     onClick={() => setMediaFilter(f)}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all ${mediaFilter === f ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer ${mediaFilter === f ? 'bg-[#f0f0f2] text-[#1d1d1f]' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
                   >
                     {f}
                   </button>
                 ))}
               </div>
 
-              {/* Model filter chips */}
               {usedModels.length > 1 && (
                 <div className="flex gap-1 flex-wrap">
                   <button
                     onClick={() => setModelFilter('all')}
-                    className={`px-3 py-1 rounded-xl text-xs font-medium transition-all border ${modelFilter === 'all' ? 'bg-white/10 border-white/20 text-white' : 'border-white/8 text-slate-500 hover:text-slate-300'}`}
+                    className={`px-3 py-1 rounded-xl text-xs font-medium transition-all border cursor-pointer ${modelFilter === 'all' ? 'bg-[#f0f0f2] border-[#d2d2d7] text-[#1d1d1f]' : 'bg-white border-[#d2d2d7] text-[#6e6e73] hover:text-[#1d1d1f]'}`}
                   >
                     All models
                   </button>
@@ -132,7 +127,7 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
                     <button
                       key={m.id}
                       onClick={() => setModelFilter(modelFilter === m.id ? 'all' : m.id)}
-                      className={`px-3 py-1 rounded-xl text-xs font-medium transition-all border ${modelFilter === m.id ? 'bg-white/10 border-white/20 text-white' : 'border-white/8 text-slate-500 hover:text-slate-300'}`}
+                      className={`px-3 py-1 rounded-xl text-xs font-medium transition-all border cursor-pointer ${modelFilter === m.id ? 'bg-[#f0f0f2] border-[#d2d2d7] text-[#1d1d1f]' : 'bg-white border-[#d2d2d7] text-[#6e6e73] hover:text-[#1d1d1f]'}`}
                     >
                       {m.name.replace(/ [—–-]+ img2img$/i, '')}
                     </button>
@@ -140,12 +135,11 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
                 </div>
               )}
 
-              {/* Project filter */}
               {usedProjects.length > 0 && (
                 <select
                   value={projectFilter}
                   onChange={(e) => setProjectFilter(e.target.value)}
-                  className="px-3 py-1 rounded-xl text-xs font-medium bg-white/5 border border-white/8 text-slate-400 hover:text-slate-300 transition-all cursor-pointer outline-none"
+                  className="px-3 py-1 rounded-xl text-xs font-medium bg-white border border-[#d2d2d7] text-[#6e6e73] hover:text-[#1d1d1f] transition-all cursor-pointer outline-none"
                 >
                   <option value="all">All projects</option>
                   <option value="__none__">No project</option>
@@ -155,13 +149,12 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
                 </select>
               )}
 
-              {/* Sort — pushed right */}
-              <div className="ml-auto flex gap-1 bg-white/5 rounded-xl p-1">
+              <div className="ml-auto flex gap-1 bg-white border border-[#d2d2d7] rounded-xl p-1">
                 {(['newest', 'oldest', 'model'] as SortKey[]).map((s) => (
                   <button
                     key={s}
                     onClick={() => setSort(s)}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all ${sort === s ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer ${sort === s ? 'bg-[#f0f0f2] text-[#1d1d1f]' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
                   >
                     {s}
                   </button>
@@ -172,27 +165,25 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
 
           {/* Empty state */}
           {assets.length === 0 && (
-            <div className="bg-white/3 border border-dashed border-white/10 rounded-2xl p-8 sm:p-20 text-center">
-              <div className="text-5xl mb-4">🎨</div>
-              <p className="text-slate-400 font-medium mb-1">No images yet</p>
-              <p className="text-slate-600 text-sm mb-6">Generate something to see it here</p>
+            <div className="bg-white border border-dashed border-[#d2d2d7] rounded-2xl p-8 sm:p-20 text-center">
+              <svg className="w-12 h-12 text-[#d2d2d7] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
+              <p className="text-[#1d1d1f] font-medium mb-1">No images yet</p>
+              <p className="text-[#6e6e73] text-sm mb-6">Generate something to see it here</p>
               <button
                 onClick={onGenerate}
-                className="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium transition-all"
+                className="px-5 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
               >
                 Generate your first image →
               </button>
             </div>
           )}
 
-          {/* No results after filter */}
           {assets.length > 0 && filtered.length === 0 && (
-            <div className="text-center py-16 text-slate-600 text-sm">
+            <div className="text-center py-16 text-[#aeaeb2] text-sm">
               No assets match the current filters.
             </div>
           )}
 
-          {/* Grid */}
           {filtered.length > 0 && (
             <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
               {filtered.map((asset) => (
@@ -210,11 +201,9 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
               ))}
             </div>
           )}
-
         </div>
       </div>
 
-      {/* Lightbox */}
       {lightbox && (
         <Lightbox
           asset={lightbox}
@@ -248,17 +237,16 @@ function AssetCard({ asset, modelName, projectName, projectColor, onClick, onDel
 
   return (
     <div
-      className="break-inside-avoid rounded-2xl overflow-hidden border border-white/8 bg-white/3 cursor-pointer relative group"
+      className="break-inside-avoid rounded-2xl overflow-hidden border border-[#d2d2d7] bg-white cursor-pointer relative group"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onClick={onClick}
     >
-      {/* Media */}
       {isVideo ? (
         <video src={asset.url} className="w-full block" muted loop autoPlay playsInline />
       ) : imgError ? (
-        <div className="w-full aspect-square flex flex-col items-center justify-center gap-2 text-slate-600 p-4">
-          <span className="text-3xl">🖼️</span>
+        <div className="w-full aspect-square flex flex-col items-center justify-center gap-2 text-[#aeaeb2] p-4">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
           <span className="text-xs text-center">Image expired</span>
         </div>
       ) : (
@@ -271,7 +259,6 @@ function AssetCard({ asset, modelName, projectName, projectColor, onClick, onDel
         />
       )}
 
-      {/* Always-visible badges — top left */}
       <div className="absolute top-2 left-2 flex flex-col gap-1 items-start pointer-events-none">
         {projectName && projectColor && (
           <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border backdrop-blur-sm ${projectColor}`}>
@@ -279,15 +266,13 @@ function AssetCard({ asset, modelName, projectName, projectColor, onClick, onDel
           </span>
         )}
         {modelName && (
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/50 border border-white/10 text-slate-300 backdrop-blur-sm">
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/80 border border-[#d2d2d7] text-[#6e6e73] backdrop-blur-sm">
             {modelName}
           </span>
         )}
       </div>
 
-      {/* Hover overlay */}
-      <div className={`absolute inset-0 bg-black/70 flex flex-col justify-between p-3 transition-opacity ${hover ? 'opacity-100' : 'opacity-0'}`}>
-        {/* Top row: spacer + action buttons */}
+      <div className={`absolute inset-0 bg-black/60 flex flex-col justify-between p-3 transition-opacity ${hover ? 'opacity-100' : 'opacity-0'}`}>
         <div className="flex justify-end gap-2">
           <a
             href={asset.url}
@@ -295,38 +280,37 @@ function AssetCard({ asset, modelName, projectName, projectColor, onClick, onDel
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white text-xs transition-all"
+            className="p-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-white text-xs transition-all"
             title="Download"
           >
             ↓
           </a>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(asset.id) }}
-            className="p-1.5 bg-white/10 hover:bg-red-500/40 rounded-lg text-white text-xs transition-all"
+            className="p-1.5 bg-white/20 hover:bg-red-500/60 rounded-lg text-white text-xs transition-all cursor-pointer"
             title="Delete"
           >
             ✕
           </button>
         </div>
 
-        {/* Bottom: send-to + prompt */}
         <div className="flex flex-col gap-1.5">
           {!isVideo && (
             <button
               onClick={(e) => { e.stopPropagation(); onSendToImg2Vid(asset.url) }}
-              className="w-full py-1.5 bg-violet-500/20 hover:bg-violet-500/40 border border-violet-500/40 rounded-lg text-violet-300 text-xs font-medium transition-all"
+              className="w-full py-1.5 bg-white/15 hover:bg-white/25 border border-white/30 rounded-lg text-white text-xs font-medium transition-all cursor-pointer"
             >
               img2vid →
             </button>
           )}
           <button
             onClick={(e) => { e.stopPropagation(); onSendToImg2Img(asset.url) }}
-            className="w-full py-1.5 bg-sky-500/20 hover:bg-sky-500/40 border border-sky-500/40 rounded-lg text-sky-300 text-xs font-medium transition-all"
+            className="w-full py-1.5 bg-white/15 hover:bg-white/25 border border-white/30 rounded-lg text-white text-xs font-medium transition-all cursor-pointer"
           >
             img2img →
           </button>
           {prompt && (
-            <p className="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{prompt}</p>
+            <p className="text-[10px] text-white/70 line-clamp-2 mt-0.5">{prompt}</p>
           )}
         </div>
       </div>
@@ -349,15 +333,14 @@ function Lightbox({ asset, projectName, projectColor, modelName, onClose, onDele
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-6"
+      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6"
       onClick={onClose}
     >
       <div
-        className="bg-[#161b22] border border-white/10 rounded-2xl overflow-hidden max-w-4xl w-full flex flex-col lg:flex-row shadow-2xl max-h-[90vh]"
+        className="bg-white border border-[#d2d2d7] rounded-2xl overflow-hidden max-w-4xl w-full flex flex-col lg:flex-row shadow-2xl max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Image / Video */}
-        <div className="flex-1 bg-black flex items-center justify-center min-h-48 max-h-[50vh] lg:max-h-none">
+        <div className="flex-1 bg-[#f5f5f7] flex items-center justify-center min-h-48 max-h-[50vh] lg:max-h-none">
           {asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid' ? (
             <video src={asset.url} controls autoPlay loop className="max-w-full max-h-[50vh] lg:max-h-[80vh]" />
           ) : (
@@ -365,14 +348,12 @@ function Lightbox({ asset, projectName, projectColor, modelName, onClose, onDele
           )}
         </div>
 
-        {/* Info panel */}
-        <div className="w-full lg:w-72 flex-shrink-0 p-4 sm:p-5 overflow-y-auto flex flex-col gap-3 sm:gap-4">
+        <div className="w-full lg:w-72 flex-shrink-0 p-4 sm:p-5 overflow-y-auto flex flex-col gap-3 sm:gap-4 border-t lg:border-t-0 lg:border-l border-[#d2d2d7]">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500">{new Date(asset.created_at).toLocaleString()}</span>
-            <button onClick={onClose} className="text-slate-500 hover:text-white text-lg">✕</button>
+            <span className="text-xs text-[#aeaeb2]">{new Date(asset.created_at).toLocaleString()}</span>
+            <button onClick={onClose} className="text-[#aeaeb2] hover:text-[#1d1d1f] text-lg cursor-pointer transition-colors">✕</button>
           </div>
 
-          {/* Project badge */}
           {projectName && projectColor && (
             <span className={`self-start px-2.5 py-1 rounded-lg text-xs font-semibold border ${projectColor}`}>
               {projectName}
@@ -380,39 +361,39 @@ function Lightbox({ asset, projectName, projectColor, modelName, onClose, onDele
           )}
 
           {modelName && (
-            <span className="text-xs text-slate-400 font-medium">{modelName} · {asset.gen_type}</span>
+            <span className="text-xs text-[#6e6e73] font-medium">{modelName} · {asset.gen_type}</span>
           )}
 
           {prompt && (
             <div>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Prompt</div>
-              <p className="text-sm text-slate-300">{prompt}</p>
+              <div className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider mb-1">Prompt</div>
+              <p className="text-sm text-[#1d1d1f]">{prompt}</p>
             </div>
           )}
 
           {revisedPrompt && revisedPrompt !== prompt && (
             <div>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Revised by DALL-E</div>
-              <p className="text-xs text-slate-500">{revisedPrompt}</p>
+              <div className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider mb-1">Revised by DALL-E</div>
+              <p className="text-xs text-[#6e6e73]">{revisedPrompt}</p>
             </div>
           )}
 
           {asset.width && asset.height && (
-            <div className="text-xs text-slate-600">{asset.width} × {asset.height}px</div>
+            <div className="text-xs text-[#aeaeb2]">{asset.width} × {asset.height}px</div>
           )}
 
           <div className="flex flex-col gap-2 mt-auto pt-2">
             {asset.gen_type !== 'txt2vid' && asset.gen_type !== 'img2vid' && (
               <button
                 onClick={() => { onSendToImg2Vid(asset.url); onClose() }}
-                className="w-full py-2.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/40 rounded-xl text-sm font-medium text-violet-300 transition-all"
+                className="w-full py-2.5 bg-[#f5f5f7] hover:bg-[#f0f0f2] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
               >
                 Send to img2vid →
               </button>
             )}
             <button
               onClick={() => { onSendToImg2Img(asset.url); onClose() }}
-              className="w-full py-2.5 bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 rounded-xl text-sm font-medium text-sky-300 transition-all"
+              className="w-full py-2.5 bg-[#f5f5f7] hover:bg-[#f0f0f2] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
             >
               Send to img2img →
             </button>
@@ -422,13 +403,13 @@ function Lightbox({ asset, projectName, projectColor, modelName, onClose, onDele
                 download
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 py-2.5 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium text-center transition-all"
+                className="flex-1 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white text-center transition-all"
               >
                 Download
               </a>
               <button
                 onClick={() => onDelete(asset.id)}
-                className="px-3 py-2.5 bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 rounded-xl text-sm text-slate-400 hover:text-red-400 transition-all"
+                className="px-3 py-2.5 bg-white hover:bg-red-50 border border-[#d2d2d7] hover:border-red-200 rounded-xl text-sm text-[#6e6e73] hover:text-red-500 transition-all cursor-pointer"
               >
                 Delete
               </button>

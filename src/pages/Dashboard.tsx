@@ -23,6 +23,9 @@ import AssetGrid from '../components/dashboard/AssetGrid'
 import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
 import HomeGrid from '../components/dashboard/HomeGrid'
 import NotificationBell, { addNotification } from '../components/dashboard/NotificationBell'
+import SettingsPopover from '../components/dashboard/SettingsPopover'
+import GuidedTour, { shouldAutoTriggerTour, markTourSeen } from '../components/dashboard/GuidedTour'
+import { useLearningMode } from '../contexts/LearningModeContext'
 
 type View = 'models' | 'builder' | 'assets'
 
@@ -39,7 +42,9 @@ const COMING_SOON_VIDEO: Partial<Model>[] = [
 
 export default function Dashboard() {
   const { user, signOut, isAdmin } = useAuth()
+  const { mode: learningMode } = useLearningMode()
   const [view, setView] = useState<View>('models')
+  const [tourActive, setTourActive] = useState(false)
   const [userTier, setUserTier] = useState('newbie')
 
   const [models, setModels] = useState<Model[]>([])
@@ -111,6 +116,12 @@ export default function Dashboard() {
       .then(({ data }) => { if (data) setProjects(data as UserProject[]) })
     loadAssets()
   }, [user, loadAssets])
+
+  useEffect(() => {
+    if (shouldAutoTriggerTour(learningMode)) {
+      setTourActive(true)
+    }
+  }, [learningMode])
 
   function selectProviderTile(provider: string) {
     setSidebarOpen(false)
@@ -394,21 +405,21 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white flex flex-col">
+    <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] flex flex-col">
       {/* Top nav */}
-      <header className="border-b border-white/8 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 relative">
+      <header className="border-b border-[#d2d2d7] bg-white px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 relative">
         <div className="flex items-center gap-3 sm:gap-6">
-          <span className="text-xl font-black tracking-tight">
-            prmpt<span className="text-sky-400">VAULT</span>
+          <span className="text-xl font-black tracking-tight text-[#1d1d1f]">
+            prmpt<span className="text-[#0071e3]">VAULT</span>
           </span>
-          <span className="absolute left-1/2 -translate-x-1/2 text-[10px] text-slate-600 font-mono hidden md:block">
+          <span className="absolute left-1/2 -translate-x-1/2 text-[10px] text-[#aeaeb2] font-mono hidden md:block">
             {/* @ts-ignore */}
             v-0.0.{__BUILD__} · {__COMMIT__}
           </span>
           {(view === 'models' || view === 'builder') && (
             <button
               onClick={() => setSidebarOpen(v => !v)}
-              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors"
+              className="md:hidden p-1.5 rounded-lg text-[#6e6e73] hover:text-[#1d1d1f] transition-colors cursor-pointer"
               aria-label="Toggle models panel"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -420,11 +431,12 @@ export default function Dashboard() {
             {(['models', 'assets'] as View[]).map((v) => (
               <button
                 key={v}
+                data-tour={v === 'assets' ? 'assets-nav' : undefined}
                 onClick={() => { setView(v); setSidebarOpen(false); if (v === 'assets') loadAssets() }}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                   view === v || (v === 'models' && view === 'builder')
-                    ? 'bg-white/10 text-white'
-                    : 'text-slate-500 hover:text-white'
+                    ? 'bg-[#f0f0f2] text-[#1d1d1f]'
+                    : 'text-[#6e6e73] hover:text-[#1d1d1f]'
                 }`}
               >
                 {v === 'models' ? 'Models' : `Assets${assets.length > 0 ? ` (${assets.length})` : ''}`}
@@ -432,8 +444,8 @@ export default function Dashboard() {
             ))}
           </nav>
           {(pendingVideo || pendingImage) && (
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/25 text-sky-400 text-xs font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse flex-shrink-0" />
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[rgba(0,113,227,0.08)] border border-[rgba(0,113,227,0.25)] text-[#0071e3] text-xs font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0071e3] animate-pulse flex-shrink-0" />
               {pendingVideo ? 'Rendering…' : `Generating…`}
             </div>
           )}
@@ -441,12 +453,12 @@ export default function Dashboard() {
         <div className="flex items-center gap-2 sm:gap-4">
           <Link
             to="/pricing"
-            className="text-xs bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/30 px-2.5 py-1 rounded-full font-medium capitalize transition-colors"
+            className="text-xs bg-[rgba(0,113,227,0.08)] hover:bg-[rgba(0,113,227,0.12)] text-[#0071e3] border border-[rgba(0,113,227,0.25)] px-2.5 py-1 rounded-full font-medium capitalize transition-colors"
           >
             {userTier}
           </Link>
           {isAdmin && (
-            <a href="/admin" className="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full font-medium transition-colors">
+            <a href="/admin" className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-600 border border-amber-200 px-2.5 py-1 rounded-full font-medium transition-colors">
               Admin
             </a>
           )}
@@ -456,16 +468,13 @@ export default function Dashboard() {
               if (asset) {
                 setLightboxAsset(asset)
               } else {
-                // Asset not loaded yet — switch to assets view
                 setView('assets')
                 loadAssets()
               }
             }}
           />
-          <span className="text-sm text-slate-400 hidden sm:block">{user?.email}</span>
-          <button onClick={signOut} className="text-xs text-slate-600 hover:text-white transition-colors">
-            Sign out
-          </button>
+          <span className="text-sm text-[#6e6e73] hidden sm:block">{user?.email}</span>
+          <SettingsPopover onSignOut={signOut} onStartTour={() => setTourActive(true)} />
         </div>
       </header>
 
@@ -475,17 +484,17 @@ export default function Dashboard() {
           <>
             {/* Mobile backdrop */}
             {sidebarOpen && (
-              <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setSidebarOpen(false)} />
+              <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setSidebarOpen(false)} />
             )}
             {/* Left panel — model list */}
-            <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#0d1117] border-r border-white/8 flex flex-col flex-shrink-0 overflow-hidden transition-transform duration-200 md:static md:z-auto md:translate-x-0 md:min-h-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside data-tour="sidebar" className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-[#d2d2d7] flex flex-col flex-shrink-0 overflow-hidden transition-transform duration-200 md:static md:z-auto md:translate-x-0 md:min-h-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
               {/* Mobile sidebar header */}
-              <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
-                <span className="text-sm font-semibold text-slate-300">Choose a model</span>
-                <button onClick={() => setSidebarOpen(false)} className="text-slate-500 hover:text-white p-1 text-lg leading-none">✕</button>
+              <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-[#d2d2d7] flex-shrink-0">
+                <span className="text-sm font-semibold text-[#1d1d1f]">Choose a model</span>
+                <button onClick={() => setSidebarOpen(false)} className="text-[#aeaeb2] hover:text-[#1d1d1f] p-1 text-lg leading-none cursor-pointer">✕</button>
               </div>
               {/* Image / Video tabs */}
-              <div className="flex border-b border-white/8 flex-shrink-0">
+              <div className="flex border-b border-[#d2d2d7] flex-shrink-0">
                 {(['image', 'video'] as const).map((tab) => (
                   <button
                     key={tab}
@@ -498,10 +507,10 @@ export default function Dashboard() {
                       setResult(null)
                       setGenerateError(null)
                     }}
-                    className={`flex-1 py-3 text-sm font-semibold tracking-wide transition-all ${
+                    className={`flex-1 py-3 text-sm font-semibold tracking-wide transition-all cursor-pointer ${
                       mediaTab === tab
-                        ? 'text-white border-b-2 border-sky-400'
-                        : 'text-slate-500 hover:text-slate-300'
+                        ? 'text-[#1d1d1f] border-b-2 border-[#0071e3]'
+                        : 'text-[#6e6e73] hover:text-[#1d1d1f]'
                     }`}
                   >
                     {tab === 'image' ? 'Image' : 'Video'}
@@ -509,9 +518,9 @@ export default function Dashboard() {
                 ))}
               </div>
 
-              <div className="p-4 overflow-y-auto space-y-3 flex-1">
+              <div className="p-4 overflow-y-auto space-y-3 flex-1 bg-white">
                 {models.length === 0 && (
-                  <p className="text-slate-600 text-sm px-1">Loading…</p>
+                  <p className="text-[#aeaeb2] text-sm px-1">Loading…</p>
                 )}
 
                 {mediaTab === 'image' && (() => {
@@ -554,18 +563,18 @@ export default function Dashboard() {
                       {hasFlux && (
                         <button
                           onClick={() => selectProviderTile('fal.ai')}
-                          className={`relative w-full text-left rounded-2xl p-5 border transition-all ${
+                          className={`relative w-full text-left rounded-xl p-4 border transition-all cursor-pointer ${
                             selectedProvider === 'fal.ai' && !selectedModel
-                              ? 'bg-sky-500/10 border-sky-500/50'
-                              : 'bg-white/3 border-white/8 hover:border-white/20 hover:bg-white/6'
+                              ? 'bg-[rgba(0,113,227,0.06)] border-[rgba(0,113,227,0.35)]'
+                              : 'bg-white border-[#d2d2d7] hover:border-[#aeaeb2] hover:shadow-sm'
                           }`}
                         >
-                          <div className="text-xs font-semibold uppercase tracking-wider mb-1 text-sky-400">Black Forest Labs</div>
-                          <div className="text-white font-bold text-lg leading-tight">Flux</div>
-                          <div className="text-slate-500 text-xs mt-1.5">
+                          <div className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[#0071e3]">Black Forest Labs</div>
+                          <div className="text-[#1d1d1f] font-semibold text-sm leading-tight">Flux</div>
+                          <div className="text-[#aeaeb2] text-xs mt-1">
                             {fluxImageModels.length} models available
                           </div>
-                          <div className="mt-3 text-xs text-slate-600">Select to choose model →</div>
+                          <div className="mt-2 text-xs text-[#6e6e73]">Select to choose model →</div>
                         </button>
                       )}
                       {googleImageModels.map((model) => (
@@ -623,7 +632,7 @@ export default function Dashboard() {
             </aside>
 
             {/* Main panel */}
-            <main className="flex-1 overflow-y-auto p-4 md:p-8">
+            <main data-tour="builder-area" className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#f5f5f7]">
               {!selectedModel && !selectedProvider && (
                 <HomeGrid
                   assets={assets}
@@ -634,8 +643,8 @@ export default function Dashboard() {
               {/* Flux model picker */}
               {selectedProvider === 'fal.ai' && !selectedModel && (
                 <div className="max-w-2xl">
-                  <h2 className="text-2xl font-bold mb-1">Flux Models</h2>
-                  <p className="text-slate-400 text-sm mb-8">Choose a Flux model to build your prompt</p>
+                  <h2 className="text-2xl font-bold mb-1 text-[#1d1d1f]">Flux Models</h2>
+                  <p className="text-[#6e6e73] text-sm mb-8">Choose a Flux model to build your prompt</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {models.filter((m) => m.provider === 'fal.ai' && !['nano-banana', 'recraft-v4-pro'].includes(m.slug) && m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')).map((model) => {
                       const accessible = tierCanAccess(userTier, model.min_tier)
@@ -643,22 +652,22 @@ export default function Dashboard() {
                         <button
                           key={model.id}
                           onClick={accessible ? () => selectModel(model) : undefined}
-                          className={`relative text-left rounded-2xl p-5 border transition-all ${
+                          className={`relative text-left rounded-xl p-4 border transition-all ${
                             accessible
-                              ? 'bg-white/3 border-white/8 hover:border-sky-500/50 hover:bg-sky-500/5'
-                              : 'bg-white/2 border-white/5 opacity-50 cursor-not-allowed'
+                              ? 'bg-white border-[#d2d2d7] hover:border-[rgba(0,113,227,0.4)] hover:bg-[rgba(0,113,227,0.04)] cursor-pointer'
+                              : 'bg-[#f5f5f7] border-[#d2d2d7] opacity-50 cursor-not-allowed'
                           }`}
                         >
                           {!accessible && (
-                            <span className="absolute top-3 right-3 text-xs bg-white/10 text-slate-400 px-2 py-0.5 rounded-full">
+                            <span className="absolute top-3 right-3 text-xs bg-[#f0f0f2] text-[#6e6e73] border border-[#d2d2d7] px-2 py-0.5 rounded-full">
                               {model.min_tier}
                             </span>
                           )}
-                          <div className="text-white font-bold text-base leading-tight mb-1">{model.name.replace(/ [—–-]+ img2img$/i, '')}</div>
-                          <div className="text-slate-500 text-xs line-clamp-2 mb-3">{model.description}</div>
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="text-[#1d1d1f] font-semibold text-sm leading-tight mb-1">{model.name.replace(/ [—–-]+ img2img$/i, '')}</div>
+                          <div className="text-[#6e6e73] text-xs line-clamp-2 mb-3">{model.description}</div>
+                          <div className="flex flex-wrap gap-1">
                             {model.supported_gen_types.map((gt) => (
-                              <span key={gt} className="text-xs bg-white/8 text-slate-400 px-2 py-0.5 rounded-full">
+                              <span key={gt} className="text-[10px] bg-[#f0f0f2] text-[#6e6e73] px-2 py-0.5 rounded-full">
                                 {gt}
                               </span>
                             ))}
@@ -672,9 +681,9 @@ export default function Dashboard() {
 
               {selectedModel && !selectedGenType && (
                 <div className="max-w-xl">
-                  <h2 className="text-2xl font-bold mb-1">{selectedModel.name}</h2>
-                  <p className="text-slate-400 text-sm mb-8">{selectedModel.description}</p>
-                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  <h2 className="text-2xl font-bold mb-1 text-[#1d1d1f]">{selectedModel.name}</h2>
+                  <p className="text-[#6e6e73] text-sm mb-8">{selectedModel.description}</p>
+                  <div className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider mb-3">
                     Choose generation type
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -682,10 +691,10 @@ export default function Dashboard() {
                       <button
                         key={gt}
                         onClick={() => selectGenType(gt)}
-                        className="p-5 bg-white/3 hover:bg-white/6 border border-white/8 hover:border-white/20 rounded-2xl text-left transition-all"
+                        className="p-5 bg-white hover:bg-[#f5f5f7] border border-[#d2d2d7] hover:border-[#aeaeb2] rounded-xl text-left transition-all cursor-pointer"
                       >
-                        <div className="text-white font-semibold mb-1">{GEN_TYPE_LABELS[gt]}</div>
-                        <div className="text-slate-500 text-xs">Generate using {selectedModel.name}</div>
+                        <div className="text-[#1d1d1f] font-semibold mb-1">{GEN_TYPE_LABELS[gt]}</div>
+                        <div className="text-[#6e6e73] text-xs">Generate using {selectedModel.name}</div>
                       </button>
                     ))}
                   </div>
@@ -699,16 +708,16 @@ export default function Dashboard() {
                       setSelectedGenType(null); setTemplate(null); setResult(null); setGenerateError(null)
                       if (selectedModel.provider === 'fal.ai') setSelectedModel(null)
                     }}
-                    className="text-slate-500 hover:text-white text-sm mb-8 flex items-center gap-1"
+                    className="text-[#6e6e73] hover:text-[#1d1d1f] text-sm mb-8 flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     ← {selectedModel.provider === 'fal.ai' ? 'Flux Models' : selectedModel.name}
                   </button>
 
                   {(pendingVideo || pendingImage) && !result && (
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
-                      <div className="w-10 h-10 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
-                      <p className="text-slate-400 font-medium">{pendingVideo ? 'Rendering your video…' : 'Generating your image…'}</p>
-                      <p className="text-slate-600 text-sm">You can browse the app — we'll notify you when it's done.</p>
+                      <div className="w-10 h-10 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+                      <p className="text-[#1d1d1f] font-medium">{pendingVideo ? 'Rendering your video…' : 'Generating your image…'}</p>
+                      <p className="text-[#6e6e73] text-sm">You can browse the app — we'll notify you when it's done.</p>
                       {pendingVideo && (
                         <button
                           onClick={() => {
@@ -716,7 +725,7 @@ export default function Dashboard() {
                             setPendingVideo(null)
                             setGenerateError(null)
                           }}
-                          className="mt-2 text-xs text-slate-600 hover:text-slate-400 transition-colors"
+                          className="mt-2 text-xs text-[#aeaeb2] hover:text-[#6e6e73] transition-colors cursor-pointer"
                         >
                           Cancel render
                         </button>
@@ -738,45 +747,45 @@ export default function Dashboard() {
                         <img
                           src={result.url}
                           alt={result.prompt}
-                          className="rounded-2xl w-full max-w-lg border border-white/10"
+                          className="rounded-2xl w-full max-w-lg border border-[#d2d2d7]"
                         />
                       )}
                       {result.revised_prompt && (
-                        <div className="bg-white/3 border border-white/8 rounded-xl p-4">
-                          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Revised prompt</div>
-                          <p className="text-slate-400 text-sm">{result.revised_prompt}</p>
+                        <div className="bg-[#f5f5f7] border border-[#d2d2d7] rounded-xl p-4">
+                          <div className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider mb-1">Revised prompt</div>
+                          <p className="text-[#6e6e73] text-sm">{result.revised_prompt}</p>
                         </div>
                       )}
                       <div className="flex gap-2 sm:gap-3 flex-wrap">
                         <button
                           onClick={() => downloadFile(result.url, result.isVideo)}
-                          className="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium transition-all"
+                          className="px-5 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
                         >
                           Download
                         </button>
                         <button
                           onClick={() => sendToImg2Img(result.url)}
-                          className="px-5 py-2.5 bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 rounded-xl text-sm font-medium text-sky-300 transition-all"
+                          className="px-5 py-2.5 bg-[#f0f0f2] hover:bg-[#e5e5e7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
                         >
                           Send to img2img →
                         </button>
                         {!result.isVideo && (
                           <button
                             onClick={() => sendToImg2Vid(result.url)}
-                            className="px-5 py-2.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/40 rounded-xl text-sm font-medium text-violet-300 transition-all"
+                            className="px-5 py-2.5 bg-[#f0f0f2] hover:bg-[#e5e5e7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
                           >
                             Send to img2vid →
                           </button>
                         )}
                         <button
                           onClick={() => { setView('assets'); loadAssets() }}
-                          className="px-5 py-2.5 bg-white/8 hover:bg-white/12 border border-white/10 rounded-xl text-sm font-medium"
+                          className="px-5 py-2.5 bg-[#f0f0f2] hover:bg-[#e5e5e7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
                         >
                           View in Assets →
                         </button>
                         <button
                           onClick={() => { setResult(null); setGenerateError(null) }}
-                          className="px-5 py-2.5 bg-white/5 hover:bg-white/8 border border-white/8 rounded-xl text-sm font-medium text-slate-400"
+                          className="px-5 py-2.5 bg-white hover:bg-[#f5f5f7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#aeaeb2] hover:text-[#6e6e73] transition-all cursor-pointer"
                         >
                           ← New prompt
                         </button>
@@ -785,7 +794,7 @@ export default function Dashboard() {
                   ) : (
                     <>
                       {generateError && (
-                        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
                           {generateError}
                         </div>
                       )}
@@ -847,16 +856,16 @@ export default function Dashboard() {
         const isVideo = lightboxAsset.gen_type === 'txt2vid' || lightboxAsset.gen_type === 'img2vid'
         return (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
             onClick={() => setLightboxAsset(null)}
           >
             <div
-              className="relative bg-[#161b22] border border-white/10 rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-2xl"
+              className="relative bg-white border border-[#d2d2d7] rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setLightboxAsset(null)}
-                className="absolute top-4 right-4 text-slate-500 hover:text-white text-xl leading-none"
+                className="absolute top-4 right-4 text-[#aeaeb2] hover:text-[#1d1d1f] text-xl leading-none cursor-pointer transition-colors"
               >
                 ×
               </button>
@@ -866,13 +875,13 @@ export default function Dashboard() {
                   <video
                     src={lightboxAsset.url}
                     controls autoPlay loop
-                    className="rounded-xl w-full border border-white/10"
+                    className="rounded-xl w-full border border-[#d2d2d7]"
                   />
                 ) : (
                   <img
                     src={lightboxAsset.url}
                     alt=""
-                    className="rounded-xl w-full border border-white/10"
+                    className="rounded-xl w-full border border-[#d2d2d7]"
                   />
                 )}
               </div>
@@ -880,14 +889,14 @@ export default function Dashboard() {
               <div className="flex gap-3 flex-wrap">
                 <button
                   onClick={() => downloadFile(lightboxAsset.url, isVideo)}
-                  className="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm font-medium transition-all"
+                  className="px-5 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
                 >
                   Download
                 </button>
                 {!isVideo && (
                   <button
                     onClick={() => { setLightboxAsset(null); sendToImg2Img(lightboxAsset.url) }}
-                    className="px-5 py-2.5 bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 rounded-xl text-sm font-medium text-sky-300 transition-all"
+                    className="px-5 py-2.5 bg-[#f0f0f2] hover:bg-[#e5e5e7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
                   >
                     Send to img2img →
                   </button>
@@ -895,14 +904,14 @@ export default function Dashboard() {
                 {!isVideo && (
                   <button
                     onClick={() => { setLightboxAsset(null); sendToImg2Vid(lightboxAsset.url) }}
-                    className="px-5 py-2.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/40 rounded-xl text-sm font-medium text-violet-300 transition-all"
+                    className="px-5 py-2.5 bg-[#f0f0f2] hover:bg-[#e5e5e7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
                   >
                     Send to img2vid →
                   </button>
                 )}
                 <button
                   onClick={() => { setLightboxAsset(null); setView('assets'); loadAssets() }}
-                  className="px-5 py-2.5 bg-white/8 hover:bg-white/12 border border-white/10 rounded-xl text-sm font-medium transition-all"
+                  className="px-5 py-2.5 bg-white hover:bg-[#f5f5f7] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
                 >
                   View in Assets →
                 </button>
@@ -912,14 +921,20 @@ export default function Dashboard() {
         )
       })()}
 
+      {/* Guided tour overlay */}
+      <GuidedTour
+        active={tourActive}
+        onFinish={() => { markTourSeen(); setTourActive(false) }}
+      />
+
       {/* Render completion toast */}
       {renderToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-[#1a2030] border border-sky-500/30 rounded-2xl shadow-xl text-sm font-medium text-white animate-fade-in">
-          <span className="text-xl">{renderToast.includes('video') ? '🎬' : '🖼️'}</span>
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-white border border-[#d2d2d7] rounded-2xl shadow-xl text-sm font-medium text-[#1d1d1f] animate-fade-in">
+          <svg className="w-5 h-5 text-[#0071e3] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
           <span>{renderToast}</span>
           <button
             onClick={() => setRenderToast(null)}
-            className="ml-2 text-slate-500 hover:text-white transition-colors text-base leading-none"
+            className="ml-2 text-[#aeaeb2] hover:text-[#1d1d1f] transition-colors text-base leading-none cursor-pointer"
           >
             ✕
           </button>
