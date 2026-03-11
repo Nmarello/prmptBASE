@@ -11,6 +11,8 @@ const FAL_ENDPOINTS: Record<string, string> = {
   'flux-pro':          'https://fal.run/fal-ai/flux-pro',
   'flux-pro-ultra':    'https://fal.run/fal-ai/flux-pro/v1.1-ultra',
   'flux-dev-img2img':  'https://fal.run/fal-ai/flux/dev/image-to-image',
+  'flux-kontext-pro':  'https://fal.run/fal-ai/flux-pro/kontext',
+  'recraft-v4-pro':    'https://fal.run/fal-ai/recraft/v4/pro/text-to-image',
   'nano-banana':       'https://fal.run/fal-ai/nano-banana-2',
   'nano-banana-edit':  'https://fal.run/fal-ai/nano-banana-2/edit',
 }
@@ -37,6 +39,12 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
   },
   'minimax-txt2vid': {
     'txt2vid': 'fal-ai/minimax/video-01',
+  },
+  'sora2-txt2vid': {
+    'txt2vid': 'fal-ai/sora-2/text-to-video',
+  },
+  'sora2-img2vid': {
+    'img2vid': 'fal-ai/sora-2/image-to-video',
   },
 }
 
@@ -283,6 +291,8 @@ Deno.serve(async (req) => {
 
     const slug = (model_slug as string) ?? 'flux-schnell'
     const isImg2Img = slug === 'flux-dev-img2img'
+    const isKontext = slug === 'flux-kontext-pro'
+    const isRecraft = slug === 'recraft-v4-pro'
 
     // --- img2img path ---
     if (isImg2Img) {
@@ -348,6 +358,80 @@ Deno.serve(async (req) => {
             width: img.width ?? 1024,
             height: img.height ?? 1024,
             metadata: { prompt, strength: strengthVal, steps: numSteps, guidance_scale: guidanceVal, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
+          }).select().single()
+          return data
+        })
+      )
+
+      const firstAsset = insertedAssets[0]
+      return new Response(
+        JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt, seed: falData.seed ?? null }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // --- flux kontext pro path ---
+    if (isKontext) {
+      const prompt = (body.prompt as string | undefined)?.trim()
+      if (!prompt) throw new Error('Prompt is required')
+      if (!source_image) throw new Error('Source image is required')
+
+      let imageUrl: string
+      const src = source_image as string
+      if (src.startsWith('http')) {
+        imageUrl = src
+      } else {
+        const base64Data = src.replace(/^data:image\/\w+;base64,/, '')
+        const mimeMatch = src.match(/^data:(image\/\w+);base64,/)
+        const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+        const ext = mimeType.split('/')[1] ?? 'jpg'
+        const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+        const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
+        const { error: srcUploadErr } = await adminClient.storage
+          .from('assets')
+          .upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
+        if (srcUploadErr) throw new Error(`Source upload failed: ${srcUploadErr.message}`)
+        const { data: { publicUrl: srcUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
+        imageUrl = srcUrl
+      }
+
+      const fmt = ['jpeg', 'png'].includes(output_format) ? output_format : 'jpeg'
+      const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
+      const numImages = Math.min(Math.max(Number(num_images) || 1, 1), 4)
+      const guidanceVal = guidance_scale != null ? Math.min(Math.max(Number(guidance_scale), 1), 20) : 3.5
+
+      const falPayload: Record<string, unknown> = {
+        image_url: imageUrl,
+        prompt,
+        num_images: numImages,
+        guidance_scale: guidanceVal,
+        output_format: fmt,
+        safety_tolerance: '2',
+        ...(seedVal !== undefined ? { seed: seedVal } : {}),
+      }
+
+      const falRes = await fetch(FAL_ENDPOINTS['flux-kontext-pro'], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
+        body: JSON.stringify(falPayload),
+      })
+      if (!falRes.ok) throw new Error(`fal.ai error: ${await falRes.text()}`)
+      const falData = await falRes.json()
+      const images: { url: string; width?: number; height?: number }[] = falData.images ?? []
+      if (images.length === 0) throw new Error(`No images in fal.ai response`)
+
+      const insertedAssets = await Promise.all(
+        images.map(async (img) => {
+          const permanentUrl = await storeImage(adminClient, img.url, userId, fmt)
+          const { data } = await adminClient.from('assets').insert({
+            user_id: userId,
+            prompt_id: prompt_id ?? null,
+            model_id: model_id ?? null,
+            gen_type: 'img2img',
+            url: permanentUrl,
+            width: img.width ?? 1024,
+            height: img.height ?? 1024,
+            metadata: { prompt, guidance_scale: guidanceVal, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
           }).select().single()
           return data
         })
@@ -490,6 +574,10 @@ Deno.serve(async (req) => {
         if (style && style !== 'none' && MINIMAX_STYLE[style]) {
           falPayload.prompt = `${falPayload.prompt ?? ''}, ${MINIMAX_STYLE[style]}`.replace(/^, /, '')
         }
+      } else if (slug.startsWith('sora2')) {
+        falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
+        if (body.resolution) falPayload.resolution = body.resolution
+        if (body.duration) falPayload.duration = Number(body.duration)
       }
 
       // Submit to fal queue
@@ -631,6 +719,60 @@ Deno.serve(async (req) => {
         }).select().single()
         return data
       }))
+
+      const firstAsset = insertedAssets[0]
+      return new Response(
+        JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt, seed: falData.seed ?? null }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // --- recraft path ---
+    if (isRecraft) {
+      const builtPrompt = buildPrompt(body)
+      if (!builtPrompt.trim()) throw new Error('Prompt is empty')
+
+      const fmt = ['jpeg', 'png'].includes(output_format) ? output_format : 'jpeg'
+      const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
+      const numImages = Math.min(Math.max(Number(num_images) || 1, 1), 4)
+      const falSize = (aspect_ratio && FAL_SIZE_DIMS[aspect_ratio]) ? aspect_ratio : 'square_hd'
+      const [w, h] = FAL_SIZE_DIMS[falSize]
+
+      const falPayload: Record<string, unknown> = {
+        prompt: builtPrompt,
+        image_size: falSize,
+        n: numImages,
+        output_format: fmt,
+        ...(body.style ? { style: body.style } : {}),
+        ...(seedVal !== undefined ? { seed: seedVal } : {}),
+      }
+
+      const falRes = await fetch(FAL_ENDPOINTS['recraft-v4-pro'], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
+        body: JSON.stringify(falPayload),
+      })
+      if (!falRes.ok) throw new Error(`fal.ai error: ${await falRes.text()}`)
+      const falData = await falRes.json()
+      const images: { url: string; width?: number; height?: number }[] = falData.images ?? []
+      if (images.length === 0) throw new Error(`No images in fal.ai response`)
+
+      const insertedAssets = await Promise.all(
+        images.map(async (img) => {
+          const permanentUrl = await storeImage(adminClient, img.url, userId, fmt)
+          const { data } = await adminClient.from('assets').insert({
+            user_id: userId,
+            prompt_id: prompt_id ?? null,
+            model_id: model_id ?? null,
+            gen_type: 'txt2img',
+            url: permanentUrl,
+            width: img.width ?? w,
+            height: img.height ?? h,
+            metadata: { prompt: builtPrompt, style: body.style ?? null, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
+          }).select().single()
+          return data
+        })
+      )
 
       const firstAsset = insertedAssets[0]
       return new Response(

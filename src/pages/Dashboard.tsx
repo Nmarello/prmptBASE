@@ -32,7 +32,6 @@ const COMING_SOON_IMAGE: Partial<Model>[] = [
 ]
 
 const COMING_SOON_VIDEO: Partial<Model>[] = [
-  { slug: 'cs-sora', name: 'Sora', provider: 'OpenAI', description: 'OpenAI\'s flagship video model. Photorealistic scenes with deep world understanding.', supported_gen_types: ['txt2vid'] },
   { slug: 'cs-runway', name: 'Runway Gen-4', provider: 'Runway', description: 'The leading creative video AI. Gen-4 sets the bar for motion and cinematic quality.', supported_gen_types: ['txt2vid', 'img2vid'] },
   { slug: 'cs-pika', name: 'Pika', provider: 'Pika', description: 'Fast, expressive video generation built for social-first creators.', supported_gen_types: ['txt2vid', 'img2vid'] },
 ]
@@ -467,15 +466,17 @@ export default function Dashboard() {
                 )}
 
                 {mediaTab === 'image' && (() => {
+                  const STANDALONE_SLUGS = ['nano-banana', 'recraft-v4-pro']
                   const fluxImageModels = models.filter((m) =>
                     m.provider === 'fal.ai' &&
-                    m.slug !== 'nano-banana' &&
+                    !STANDALONE_SLUGS.includes(m.slug) &&
                     m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
                   )
                   const openaiImageModels = models.filter((m) =>
                     m.provider === 'OpenAI' &&
                     m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
                   )
+                  const recraftImageModels = models.filter((m) => m.slug === 'recraft-v4-pro')
                   const googleImageModels = models.filter((m) =>
                     (m.provider === 'Google' || m.slug === 'nano-banana') &&
                     m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')
@@ -484,6 +485,15 @@ export default function Dashboard() {
                   return (
                     <>
                       {openaiImageModels.map((model) => (
+                        <ModelCard
+                          key={model.id}
+                          model={model}
+                          userTier={userTier}
+                          selected={selectedModel?.id === model.id}
+                          onClick={() => selectModel(model)}
+                        />
+                      ))}
+                      {recraftImageModels.map((model) => (
                         <ModelCard
                           key={model.id}
                           model={model}
@@ -578,7 +588,7 @@ export default function Dashboard() {
                   <h2 className="text-2xl font-bold mb-1">Flux Models</h2>
                   <p className="text-slate-400 text-sm mb-8">Choose a Flux model to build your prompt</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {models.filter((m) => m.provider === 'fal.ai' && m.slug !== 'nano-banana' && m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')).map((model) => {
+                    {models.filter((m) => m.provider === 'fal.ai' && !['nano-banana', 'recraft-v4-pro'].includes(m.slug) && m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')).map((model) => {
                       const accessible = tierCanAccess(userTier, model.min_tier)
                       return (
                         <button

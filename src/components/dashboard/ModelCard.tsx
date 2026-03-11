@@ -31,10 +31,13 @@ const providerDisplayNames: Record<string, string> = {
 
 // Brand overrides for models where provider ≠ display brand (e.g. fal.ai-hosted models)
 const slugBrandLabels: Record<string, { label: string; color: string }> = {
-  'kling':           { label: 'Kuaishou',  color: 'text-cyan-400' },
-  'luma':            { label: 'Luma AI',   color: 'text-lime-400' },
-  'minimax-txt2vid': { label: 'MiniMax',   color: 'text-fuchsia-400' },
-  'nano-banana':     { label: 'Google',    color: 'text-blue-400' },
+  'kling':           { label: 'Kuaishou',        color: 'text-cyan-400' },
+  'luma':            { label: 'Luma AI',         color: 'text-lime-400' },
+  'minimax-txt2vid': { label: 'MiniMax',         color: 'text-fuchsia-400' },
+  'nano-banana':     { label: 'Google',          color: 'text-blue-400' },
+  'recraft-v4-pro':  { label: 'Recraft',         color: 'text-orange-400' },
+  'sora2-txt2vid':   { label: 'OpenAI',          color: 'text-emerald-400' },
+  'sora2-img2vid':   { label: 'OpenAI',          color: 'text-emerald-400' },
 }
 
 export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp }: Props) {
