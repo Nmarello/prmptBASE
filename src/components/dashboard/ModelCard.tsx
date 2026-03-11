@@ -54,30 +54,43 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
   return (
     <button
       onClick={!comingSoon && accessible ? onClick : undefined}
-      style={{ width: '220px', flexShrink: 0, scrollSnapAlign: 'start', background: 'var(--pv-surface)' }}
+      style={{ width: '230px', flexShrink: 0, scrollSnapAlign: 'start', background: 'var(--pv-surface)' }}
       className={`relative text-left rounded-[18px] border overflow-hidden flex flex-col transition-all duration-200 ${
         comingSoon
           ? 'opacity-40 cursor-not-allowed border-[var(--pv-border)]'
           : selected
           ? 'border-[var(--pv-accent)] shadow-lg cursor-pointer'
-          : 'border-[var(--pv-border)] hover:-translate-y-1 hover:shadow-xl cursor-pointer'
+          : 'border-[var(--pv-border)] hover:-translate-y-1 hover:scale-[1.01] hover:shadow-xl hover:border-transparent cursor-pointer'
       }`}
     >
       {/* Art header */}
-      <div className="relative overflow-hidden" style={{ height: '120px' }}>
+      <div className="relative overflow-hidden" style={{ height: '148px' }}>
         <div
           className="absolute inset-0 transition-transform duration-500 group-hover:scale-105"
           style={{ background: art.gradient }}
         />
+        {/* Noise texture */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E\")",
+            opacity: 0.5, mixBlendMode: 'overlay',
+          }}
+        />
+        {/* Decorative circles */}
+        <div className="absolute inset-0 pointer-events-none">
+          <span className="absolute rounded-full" style={{ width: 120, height: 120, top: -30, right: -20, background: 'rgba(255,255,255,0.12)' }} />
+          <span className="absolute rounded-full" style={{ width: 60, height: 60, bottom: -10, left: 20, background: 'rgba(255,255,255,0.08)' }} />
+        </div>
         {/* Watermark initial */}
         <div
           className="absolute select-none pointer-events-none"
           style={{
-            bottom: '-10px', right: '-2px',
+            bottom: '-12px', right: '-2px',
             fontFamily: "'Bricolage Grotesque', sans-serif",
-            fontSize: '80px', fontWeight: 800,
-            color: 'rgba(255,255,255,0.1)',
-            lineHeight: 1, letterSpacing: '-0.05em',
+            fontSize: '88px', fontWeight: 800,
+            color: 'rgba(255,255,255,0.11)',
+            lineHeight: 1, letterSpacing: '-0.06em',
           }}
         >
           {art.initial}
