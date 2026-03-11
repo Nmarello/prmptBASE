@@ -207,10 +207,19 @@ export default function Dashboard() {
   async function selectGenType(gt: GenType) {
     setSelectedGenType(gt)
     setResult(null)
+    // When flux-dev card is used for img2img, swap to the flux-dev-img2img model
+    let modelId = selectedModel!.id
+    if (selectedModel!.slug === 'flux-dev' && gt === 'img2img') {
+      const img2imgModel = models.find(m => m.slug === 'flux-dev-img2img')
+      if (img2imgModel) {
+        setSelectedModel(img2imgModel)
+        modelId = img2imgModel.id
+      }
+    }
     const { data } = await supabase
       .from('templates')
       .select('*')
-      .eq('model_id', selectedModel!.id)
+      .eq('model_id', modelId)
       .eq('gen_type', gt)
       .single()
     if (data) setTemplate(data as Template)
@@ -530,35 +539,28 @@ export default function Dashboard() {
           </SbBtn>
         ))}
 
-        <div style={{ width: 24, height: 1, background: 'var(--pv-border)', margin: '4px 0' }} />
-
-        <SbBtn tip="Settings">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-          </svg>
-        </SbBtn>
-
         {/* Bottom actions */}
         <div className="mt-auto flex flex-col items-center gap-1">
-          <div className="relative">
-            <SbBtn tip="Notifications">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-            </SbBtn>
-            <NotificationBell
-              onViewAsset={(assetId, _assetUrl, _isVideo) => {
-                const asset = assets.find((a) => a.id === assetId)
-                if (asset) {
-                  setLightboxAsset(asset)
-                } else {
-                  setView('assets')
-                  loadAssets()
-                }
-              }}
-            />
-          </div>
+          <NotificationBell
+            onViewAsset={(assetId, _assetUrl, _isVideo) => {
+              const asset = assets.find((a) => a.id === assetId)
+              if (asset) {
+                setLightboxAsset(asset)
+              } else {
+                setView('assets')
+                loadAssets()
+              }
+            }}
+          />
           <SettingsPopover onSignOut={signOut} />
+          {/* User avatar */}
+          <div
+            title={user?.email ?? ''}
+            className="flex items-center justify-center rounded-full flex-shrink-0 mt-1"
+            style={{ width: 30, height: 30, background: 'var(--pv-accent)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'default', userSelect: 'none' }}
+          >
+            {(user?.user_metadata?.full_name ?? user?.email ?? '?')[0].toUpperCase()}
+          </div>
         </div>
       </aside>
 
@@ -583,12 +585,19 @@ export default function Dashboard() {
               {/* Image Models row */}
               {(() => {
                 const STANDALONE = ['nano-banana', 'recraft-v4-pro']
-                const imgModels = [
+                const rawImgModels = [
                   ...models.filter(m => m.provider === 'OpenAI' && m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))),
                   ...models.filter(m => m.provider === 'fal.ai' && m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))),
                   ...models.filter(m => STANDALONE.includes(m.slug)),
-                  ...COMING_SOON_IMAGE.map(m => ({ ...m, _comingSoon: true })),
                 ]
+                // Merge flux-dev-img2img into flux-dev as a single card
+                const imgModels: any[] = rawImgModels
+                  .filter(m => m.slug !== 'flux-dev-img2img')
+                  .map(m => m.slug === 'flux-dev'
+                    ? { ...m, supported_gen_types: [...new Set([...m.supported_gen_types, 'img2img'])] }
+                    : m
+                  )
+                imgModels.push(...COMING_SOON_IMAGE.map(m => ({ ...m, _comingSoon: true })))
                 if (imgModels.length === 0) return null
                 return (
                   <div>
