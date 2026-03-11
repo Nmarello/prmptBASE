@@ -97,27 +97,40 @@ input[type='range']::-moz-range-track {
   display: none;
 }
 
-/* Custom scrollbars — thin track + blue accent thumb */
+/* Custom scrollbars — thin center-line track + accent ball thumb */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--pv-accent) var(--pv-border);
+  scrollbar-color: var(--pv-accent) transparent;
 }
 *::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 18px;
+  height: 18px;
 }
 *::-webkit-scrollbar-track {
-  background: var(--pv-border);
-  border-radius: 99px;
+  /* 2px line centered in the 18px gutter — matches range slider track */
+  background: linear-gradient(
+    90deg,
+    transparent 8px,
+    var(--pv-border) 8px,
+    var(--pv-border) 10px,
+    transparent 10px
+  );
+  margin-bottom: 8px; /* don't clip card shadows at bottom */
 }
 *::-webkit-scrollbar-thumb {
   background: var(--pv-accent);
   border-radius: 99px;
+  /* 4px transparent border shrinks the thumb inside the 18px gutter */
+  border: 4px solid transparent;
+  background-clip: padding-box;
 }
-*::-webkit-scrollbar-thumb:hover {
-  opacity: 0.8;
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 /* Keep horizontal rows hidden */
+.overflow-x-auto {
+  scrollbar-width: none;
+}
 .overflow-x-auto::-webkit-scrollbar {
   display: none;
 }

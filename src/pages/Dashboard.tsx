@@ -90,6 +90,8 @@ export default function Dashboard() {
   const [userTier, setUserTier] = useState('newbie')
 
   const [models, setModels] = useState<Model[]>([])
+  const [modelFilter, setModelFilter] = useState<'all' | 'images' | 'videos'>('all')
+  const [modelSearch, setModelSearch] = useState('')
   const [_mediaTab, _setMediaTab] = useState<'image' | 'video'>('image')
   const [_selectedProvider, setSelectedProvider] = useState<string | null>(null)
   const [selectedModel, setSelectedModel] = useState<Model | null>(null)
@@ -580,12 +582,49 @@ export default function Dashboard() {
         {view === 'models' && (
           <div className="flex flex-col h-full overflow-hidden">
             {/* Header */}
-            <div className="flex items-end justify-between px-7 pt-6 pb-4 flex-shrink-0">
-              <div>
-                <h1 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em' }}>
-                  Generate
-                </h1>
-                <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 2 }}>Pick a model and start creating</p>
+            <div className="px-7 pt-6 pb-4 flex-shrink-0">
+              <div className="flex items-end justify-between mb-4">
+                <div>
+                  <h1 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em' }}>
+                    Generate
+                  </h1>
+                  <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 2 }}>Pick a model and start creating</p>
+                </div>
+              </div>
+              {/* Filter pills + search */}
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1.5">
+                  {(['all', 'images', 'videos'] as const).map(f => {
+                    const counts = {
+                      all: models.length,
+                      images: models.filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))).length,
+                      videos: models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid')).length,
+                    }
+                    const active = modelFilter === f
+                    return (
+                      <button
+                        key={f}
+                        onClick={() => setModelFilter(f)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer"
+                        style={active
+                          ? { background: 'var(--pv-accent)', color: '#fff' }
+                          : { background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)' }
+                        }
+                      >
+                        {f.charAt(0).toUpperCase() + f.slice(1)}
+                        <span className="text-xs opacity-70">{counts[f]}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <input
+                  type="text"
+                  value={modelSearch}
+                  onChange={e => setModelSearch(e.target.value)}
+                  placeholder="Search models…"
+                  className="flex-1 text-sm px-3 py-1.5 rounded-full pv-placeholder outline-none"
+                  style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}
+                />
               </div>
             </div>
 
@@ -593,6 +632,7 @@ export default function Dashboard() {
             <div className="flex-1 overflow-y-auto px-7 pb-10 space-y-8">
               {/* Image Models row */}
               {(() => {
+                if (modelFilter === 'videos') return null
                 const STANDALONE = ['nano-banana', 'recraft-v4-pro']
                 const rawImgModels = [
                   ...models.filter(m => m.provider === 'OpenAI' && !STANDALONE.includes(m.slug) && m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))),
@@ -600,13 +640,14 @@ export default function Dashboard() {
                   ...models.filter(m => STANDALONE.includes(m.slug)),
                 ]
                 // Merge flux-dev-img2img into flux-dev as a single card
-                const imgModels: any[] = rawImgModels
+                let imgModels: any[] = rawImgModels
                   .filter(m => m.slug !== 'flux-dev-img2img')
                   .map(m => m.slug === 'flux-dev'
                     ? { ...m, supported_gen_types: [...new Set([...m.supported_gen_types, 'img2img'])] }
                     : m
                   )
                 imgModels.push(...COMING_SOON_IMAGE.map(m => ({ ...m, _comingSoon: true })))
+                if (modelSearch) imgModels = imgModels.filter(m => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
                 if (imgModels.length === 0) return null
                 return (
                   <div>
@@ -636,10 +677,12 @@ export default function Dashboard() {
 
               {/* Video Models row */}
               {(() => {
-                const vidModels = [
+                if (modelFilter === 'images') return null
+                let vidModels: any[] = [
                   ...models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid')),
                   ...COMING_SOON_VIDEO.map(m => ({ ...m, _comingSoon: true })),
                 ]
+                if (modelSearch) vidModels = vidModels.filter(m => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
                 if (vidModels.length === 0) return null
                 return (
                   <div>

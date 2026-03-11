@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Template, TemplateField, GenType, FieldOption } from '../../types'
-import { GEN_TYPE_LABELS, tierCanAccess } from '../../types'
+import { tierCanAccess } from '../../types'
 import { supabase } from '../../lib/supabase'
 import { useLearningMode } from '../../contexts/LearningModeContext'
 
@@ -298,11 +298,12 @@ function AddCustomForm({ fieldId, onSave, onCancel }: {
 
 // ─── Single field renderer ───────────────────────────────────────────────────
 
-function FieldInput({ field, value, onChange, customOptions }: {
+function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
   field: TemplateField
   value: unknown
   onChange: (val: unknown) => void
   customOptions: FieldOption[]
+  onAddOwn?: () => void
 }) {
   const allOptions = [...(field.options ?? []), ...customOptions]
 
@@ -430,7 +431,6 @@ function FieldInput({ field, value, onChange, customOptions }: {
         {allOptions.map((opt) => {
           const active = selected === opt.value
           const isCustom = customOptions.some((c) => c.value === opt.value)
-          // Split leading emoji from label text
           const chars = [...opt.label]
           const hasEmoji = chars[0] && chars[0].codePointAt(0)! > 255
           const emoji = hasEmoji ? chars[0] : (isCustom ? '★' : null)
@@ -441,9 +441,7 @@ function FieldInput({ field, value, onChange, customOptions }: {
               type="button"
               onClick={() => onChange(active ? '' : opt.value)}
               className={`flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border text-center transition-all cursor-pointer ${
-                active
-                  ? 'bg-[rgba(0,113,227,0.08)] border-[rgba(0,113,227,0.4)] text-[#0071e3]'
-                  : ''
+                active ? 'bg-[rgba(0,113,227,0.08)] border-[rgba(0,113,227,0.4)] text-[#0071e3]' : ''
               }`}
               style={active ? undefined : { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: isCustom ? 'var(--pv-text)' : 'var(--pv-text2)' }}
             >
@@ -452,6 +450,17 @@ function FieldInput({ field, value, onChange, customOptions }: {
             </button>
           )
         })}
+        {onAddOwn && (
+          <button
+            type="button"
+            onClick={onAddOwn}
+            className="flex flex-col items-center justify-center gap-1 px-2 py-3 rounded-xl border transition-all cursor-pointer hover:opacity-80"
+            style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', borderStyle: 'dashed', color: 'var(--pv-text3)' }}
+          >
+            <span className="text-lg leading-none">+</span>
+            <span className="text-[11px] font-medium leading-tight">Add your own</span>
+          </button>
+        )}
       </div>
     )
   }
@@ -700,7 +709,7 @@ function LivePromptPanel({
 
 // ─── Main form ───────────────────────────────────────────────────────────────
 
-export default function TemplateForm({ template, genType, onSubmit, submitting, initialValues, userTier, modelMinTier }: Props) {
+export default function TemplateForm({ template, genType: _genType, onSubmit, submitting, initialValues, userTier, modelMinTier }: Props) {
   const { mode: learningMode } = useLearningMode()
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
   const [customOptions, setCustomOptions] = useState<Record<string, FieldOption[]>>({})
@@ -834,7 +843,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
                 {assisting === field.id ? 'Thinking…' : 'AI assist'}
               </button>
             )}
-            {showAddButton && (
+            {showAddButton && field.type !== 'style_picker' && (
               <button
                 type="button"
                 onClick={() => setAddingTo(addingTo === field.id ? null : field.id)}
@@ -851,6 +860,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
           value={values[field.id]}
           onChange={(v) => set(field.id, v)}
           customOptions={fieldCustomOpts}
+          onAddOwn={showAddButton && field.type === 'style_picker' ? () => setAddingTo(addingTo === field.id ? null : field.id) : undefined}
         />
         {aiSuggestion?.fieldId === field.id && (
           <div className="mt-2 rounded-xl border border-sky-300 dark:border-sky-500/40 bg-sky-50 dark:bg-sky-500/8 overflow-hidden">
@@ -894,14 +904,6 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
 
   return (
     <form onSubmit={handleSubmit}>
-      {/* Gen type badge + description */}
-      <div className="flex items-center gap-2 mb-5">
-        <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-md flex-shrink-0" style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)' }}>
-          {GEN_TYPE_LABELS[genType]}
-        </span>
-        <span className="text-sm truncate" style={{ color: 'var(--pv-text2)' }}>{template.description}</span>
-      </div>
-
       {/* Single column layout */}
       <div data-tour="template-form" className="space-y-5">
         {template.fields.map((field) => renderField(field))}

@@ -1,5 +1,5 @@
-import type { Model } from '../../types'
-import { tierCanAccess } from '../../types'
+import type { Model, GenType } from '../../types'
+import { tierCanAccess, GEN_TYPE_LABELS } from '../../types'
 
 interface Props {
   model: Model
@@ -145,7 +145,7 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
         <div className="flex flex-wrap gap-1 mt-1">
           {model.supported_gen_types.map(gt => (
             <span key={gt} style={{ fontSize: '10.5px', fontWeight: 600, padding: '2px 7px', borderRadius: '5px', background: 'var(--pv-surface2)', color: 'var(--pv-text2)', border: '1px solid var(--pv-border)' }}>
-              {gt}
+              {GEN_TYPE_LABELS[gt as GenType] ?? gt}
             </span>
           ))}
         </div>
