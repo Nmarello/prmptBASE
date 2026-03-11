@@ -33,14 +33,20 @@ const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: '??' }
 
 const slugBrandLabels: Record<string, string> = {
-  'kling':           'Kuaishou',
-  'luma':            'Luma AI',
-  'minimax-txt2vid': 'MiniMax',
-  'nano-banana':     'Google',
-  'nano-banana-2':   'Google',
-  'recraft-v4-pro':  'Recraft',
-  'sora2':           'OpenAI',
-  'flux-kontext-pro':'Black Forest Labs',
+  'dalle-3':          'OpenAI',
+  'flux-schnell':     'Black Forest Labs',
+  'flux-dev':         'Black Forest Labs',
+  'flux-pro':         'Black Forest Labs',
+  'flux-pro-ultra':   'Black Forest Labs',
+  'flux-dev-img2img': 'Black Forest Labs',
+  'flux-kontext-pro': 'Black Forest Labs',
+  'recraft-v4-pro':   'Recraft',
+  'nano-banana':      'Google',
+  'nano-banana-2':    'Google',
+  'kling':            'Kuaishou',
+  'luma':             'Luma AI',
+  'minimax-txt2vid':  'MiniMax',
+  'sora2':            'OpenAI',
 }
 
 export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp }: Props) {

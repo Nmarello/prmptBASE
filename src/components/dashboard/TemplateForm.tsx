@@ -345,22 +345,25 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
       const differentRatios = new Set(ratios).size > 1
       if (differentRatios) {
         const selected = (value as string) ?? ''
+        const gcd2 = (a: number, b: number): number => b === 0 ? a : gcd2(b, a % b)
         return (
           <div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex gap-2">
               {opts.map((opt, i) => {
                 const active = selected === opt.value
                 const [w, h] = parsedDims[i]!
-                const scale = 44 / Math.max(w, h)
+                const scale = 30 / Math.max(w, h)
                 const pw = Math.round(w * scale)
                 const ph = Math.round(h * scale)
+                const g = gcd2(w, h)
+                const ratioLabel = `${w/g}:${h/g}`
                 return (
-                  <button key={opt.value} type="button" onClick={() => onChange(active ? '' : opt.value)} className="flex flex-col items-center gap-1.5 cursor-pointer">
+                  <button key={opt.value} type="button" onClick={() => onChange(active ? '' : opt.value)} className="flex flex-col items-center gap-1.5 cursor-pointer flex-1">
                     <div
                       className={`rounded-[4px] transition-all ${active ? 'border-2' : 'border'}`}
-                      style={{ width: pw + 8, height: ph + 8, borderColor: active ? 'var(--pv-accent)' : 'var(--pv-border)', background: active ? 'rgba(0,80,255,0.08)' : 'var(--pv-surface2)' }}
+                      style={{ width: pw + 6, height: ph + 6, borderColor: active ? 'var(--pv-accent)' : 'var(--pv-border)', background: active ? 'rgba(0,80,255,0.08)' : 'var(--pv-surface2)' }}
                     />
-                    <span className="text-[11px] font-medium" style={{ color: active ? 'var(--pv-accent)' : 'var(--pv-text3)' }}>{opt.label}</span>
+                    <span className="text-[11px] font-medium" style={{ color: active ? 'var(--pv-accent)' : 'var(--pv-text3)' }}>{ratioLabel}</span>
                   </button>
                 )
               })}
@@ -410,16 +413,24 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
               type="button"
               onClick={() => onChange(active ? selected.filter((v) => v !== opt.value) : [...selected, opt.value])}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
-                active
-                  ? 'bg-[rgba(0,113,227,0.08)] border-[rgba(0,113,227,0.4)] text-[#0071e3]'
-                  : ''
+                active ? 'bg-[rgba(0,113,227,0.08)] border-[rgba(0,113,227,0.4)] text-[#0071e3]' : ''
               }`}
               style={active ? undefined : { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: isCustom ? 'var(--pv-text)' : 'var(--pv-text2)' }}
             >
-              {isCustom && <span className="mr-1 text-[#0071e3]">★</span>}{opt.label}
+              {isCustom && <span className="mr-1" style={{ color: 'var(--pv-accent)' }}>★</span>}{opt.label}
             </button>
           )
         })}
+        {onAddOwn && (
+          <button
+            type="button"
+            onClick={onAddOwn}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer hover:opacity-80"
+            style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', borderStyle: 'dashed', color: 'var(--pv-text3)' }}
+          >
+            + Add your own
+          </button>
+        )}
       </div>
     )
   }
@@ -843,14 +854,14 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
                 {assisting === field.id ? 'Thinking…' : 'AI assist'}
               </button>
             )}
-            {showAddButton && field.type !== 'style_picker' && (
+            {showAddButton && field.type === 'select' && (
               <button
                 type="button"
                 onClick={() => setAddingTo(addingTo === field.id ? null : field.id)}
                 className="text-xs transition-opacity hover:opacity-70 flex items-center gap-1 cursor-pointer"
                 style={{ color: 'var(--pv-text3)' }}
               >
-                + Add your own
+                + Add option
               </button>
             )}
           </div>
@@ -860,7 +871,9 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
           value={values[field.id]}
           onChange={(v) => set(field.id, v)}
           customOptions={fieldCustomOpts}
-          onAddOwn={showAddButton && field.type === 'style_picker' ? () => setAddingTo(addingTo === field.id ? null : field.id) : undefined}
+          onAddOwn={showAddButton && (field.type === 'style_picker' || field.type === 'multi_select')
+            ? () => setAddingTo(addingTo === field.id ? null : field.id)
+            : undefined}
         />
         {aiSuggestion?.fieldId === field.id && (
           <div className="mt-2 rounded-xl border border-sky-300 dark:border-sky-500/40 bg-sky-50 dark:bg-sky-500/8 overflow-hidden">
