@@ -24,7 +24,7 @@ import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
 import HomeGrid from '../components/dashboard/HomeGrid'
 import NotificationBell, { addNotification } from '../components/dashboard/NotificationBell'
 import SettingsPopover from '../components/dashboard/SettingsPopover'
-import GuidedTour, { shouldAutoTriggerTour, markTourSeen } from '../components/dashboard/GuidedTour'
+import GuidedTour, { markTourSeen } from '../components/dashboard/GuidedTour'
 import { useLearningMode } from '../contexts/LearningModeContext'
 
 type View = 'models' | 'builder' | 'assets'
@@ -118,7 +118,7 @@ export default function Dashboard() {
   }, [user, loadAssets])
 
   useEffect(() => {
-    if (shouldAutoTriggerTour(learningMode)) {
+    if (learningMode === 'guided') {
       setTourActive(true)
     }
   }, [learningMode])
