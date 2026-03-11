@@ -216,7 +216,11 @@ export default function AssetGrid({ assets, models, projects, loading, onDelete,
           onDelete={(id) => { onDelete(id); setLightbox(null) }}
           onSendToImg2Img={onSendToImg2Img}
           onSendToImg2Vid={onSendToImg2Vid}
-          onMoveToProject={onMoveToProject}
+          onMoveToProject={onMoveToProject ? async (assetId, projectId) => {
+            await onMoveToProject(assetId, projectId)
+            // Keep lightbox snapshot in sync so selectedProjectId doesn't drift
+            setLightbox((prev) => prev ? { ...prev, project_id: projectId } : prev)
+          } : undefined}
         />
       )}
     </>
@@ -336,17 +340,14 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
   const prompt = (asset.metadata as Record<string, unknown>)?.prompt as string | undefined
   const revisedPrompt = (asset.metadata as Record<string, unknown>)?.revised_prompt as string | undefined
   const [selectedProjectId, setSelectedProjectId] = useState<string>(asset.project_id ?? '')
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const projectChanged = selectedProjectId !== (asset.project_id ?? '')
+  const [savedToast, setSavedToast] = useState(false)
 
-  async function handleSaveProject() {
+  async function handleProjectChange(newId: string) {
+    setSelectedProjectId(newId)
     if (!onMoveToProject) return
-    setSaving(true)
-    await onMoveToProject(asset.id, selectedProjectId || null)
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    await onMoveToProject(asset.id, newId || null)
+    setSavedToast(true)
+    setTimeout(() => setSavedToast(false), 2000)
   }
 
   return (
@@ -374,10 +375,15 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
 
           {onMoveToProject && projects.length > 0 && (
             <div>
-              <div className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider mb-1.5">Project</div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider">Project</span>
+                {savedToast && (
+                  <span className="text-xs font-semibold text-emerald-500 animate-fade-in">Saved!</span>
+                )}
+              </div>
               <select
                 value={selectedProjectId}
-                onChange={(e) => { setSelectedProjectId(e.target.value); setSaved(false) }}
+                onChange={(e) => handleProjectChange(e.target.value)}
                 className="w-full text-xs px-3 py-2 border border-[#d2d2d7] rounded-xl bg-[#f5f5f7] text-[#1d1d1f] outline-none focus:border-[#0071e3] cursor-pointer transition-colors"
               >
                 <option value="">No project</option>
@@ -385,19 +391,6 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
-              {(projectChanged || saved) && (
-                <button
-                  onClick={handleSaveProject}
-                  disabled={saving || saved}
-                  className={`mt-2 w-full py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    saved
-                      ? 'bg-emerald-50 border border-emerald-200 text-emerald-600'
-                      : 'bg-[#0071e3] hover:bg-[#0077ed] text-white'
-                  }`}
-                >
-                  {saved ? '✓ Saved' : saving ? 'Saving…' : 'Save'}
-                </button>
-              )}
             </div>
           )}
 
