@@ -618,34 +618,17 @@ export default function Dashboard() {
                   })}
                 </div>
                 <div className="relative flex items-center">
-                  {modelSearch ? (
-                    <input
-                      autoFocus
-                      type="text"
-                      value={modelSearch}
-                      onChange={e => setModelSearch(e.target.value)}
-                      onBlur={() => { if (!modelSearch) setModelSearch('') }}
-                      placeholder="Search…"
-                      className="text-sm pl-8 pr-3 py-1.5 rounded-full pv-placeholder outline-none w-40 transition-all"
-                      style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}
-                    />
-                  ) : (
-                    <button
-                      onClick={() => setModelSearch(' ')}
-                      className="p-1.5 rounded-full cursor-pointer transition-opacity hover:opacity-70"
-                      style={{ color: 'var(--pv-text3)' }}
-                      aria-label="Search models"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-                      </svg>
-                    </button>
-                  )}
-                  {modelSearch && (
-                    <svg className="absolute left-2.5 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-                    </svg>
-                  )}
+                  <svg className="absolute left-2.5 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+                  </svg>
+                  <input
+                    type="text"
+                    value={modelSearch}
+                    onChange={e => setModelSearch(e.target.value)}
+                    placeholder="Search…"
+                    className="text-sm pl-7 pr-3 py-1.5 rounded-full pv-placeholder outline-none w-36"
+                    style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}
+                  />
                 </div>
               </div>
             </div>
