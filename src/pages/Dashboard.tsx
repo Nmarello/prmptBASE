@@ -71,6 +71,7 @@ export default function Dashboard() {
   }
   const videoPollerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [generateError, setGenerateError] = useState<string | null>(null)
+  const [renderToast, setRenderToast] = useState<string | null>(null)
 
   const [projects, setProjects] = useState<UserProject[]>([])
   const [assets, setAssets] = useState<Asset[]>([])
@@ -236,6 +237,10 @@ export default function Dashboard() {
         const provider = data.provider === 'fal.ai' ? 'fal.ai' : 'google'
         setPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, provider, startedAt: Date.now() })
         setSubmitting(false)
+        // Request notification permission so we can alert when done
+        if ('Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission()
+        }
         return
       }
 
@@ -296,6 +301,16 @@ export default function Dashboard() {
           setPendingVideo(null)
           setResult({ url: data.video_url, prompt: '', isVideo: true })
           loadAssets()
+          // Browser notification (works when tab is backgrounded)
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Your video is ready!', {
+              body: 'Head back to prmptVAULT to view your render.',
+              icon: '/favicon.ico',
+            })
+          }
+          // In-app toast (if user navigated away from builder)
+          setRenderToast('Your video is ready!')
+          setTimeout(() => setRenderToast(null), 6000)
         }
       } catch (_) { /* network hiccup — keep polling */ }
     }
@@ -400,6 +415,12 @@ export default function Dashboard() {
               </button>
             ))}
           </nav>
+          {pendingVideo && (
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/25 text-sky-400 text-xs font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse flex-shrink-0" />
+              Rendering…
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
           <Link
@@ -659,7 +680,7 @@ export default function Dashboard() {
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
                       <div className="w-10 h-10 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
                       <p className="text-slate-400 font-medium">Rendering your video…</p>
-                      <p className="text-slate-600 text-sm">This usually takes 2–5 minutes. Hang tight.</p>
+                      <p className="text-slate-600 text-sm">This takes 2–5 minutes. You can browse the app — we'll notify you when it's done.</p>
                       <button
                         onClick={() => {
                           if (videoPollerRef.current) clearInterval(videoPollerRef.current)
@@ -668,7 +689,7 @@ export default function Dashboard() {
                         }}
                         className="mt-2 text-xs text-slate-600 hover:text-slate-400 transition-colors"
                       >
-                        Cancel
+                        Cancel render
                       </button>
                     </div>
                   )}
@@ -860,6 +881,20 @@ export default function Dashboard() {
           </div>
         )
       })()}
+
+      {/* Render completion toast */}
+      {renderToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-[#1a2030] border border-sky-500/30 rounded-2xl shadow-xl text-sm font-medium text-white animate-fade-in">
+          <span className="text-xl">🎬</span>
+          <span>{renderToast}</span>
+          <button
+            onClick={() => setRenderToast(null)}
+            className="ml-2 text-slate-500 hover:text-white transition-colors text-base leading-none"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   )
 }
