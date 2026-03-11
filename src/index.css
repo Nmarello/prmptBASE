@@ -43,3 +43,12 @@ body {
   to { transform: rotate(360deg); }
 }
 .pv-spin { animation: pv-spin 0.65s linear infinite; }
+
+/* Hide scrollbars on horizontal scroll rows */
+.overflow-x-auto {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
