@@ -22,6 +22,7 @@ import TemplateForm from '../components/dashboard/TemplateForm'
 import AssetGrid from '../components/dashboard/AssetGrid'
 import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
 import HomeGrid from '../components/dashboard/HomeGrid'
+import NotificationBell, { addNotification } from '../components/dashboard/NotificationBell'
 
 type View = 'models' | 'builder' | 'assets'
 
@@ -70,9 +71,14 @@ export default function Dashboard() {
     else localStorage.removeItem(PENDING_VIDEO_KEY)
   }
   const videoPollerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  function pushNotification(n: Parameters<typeof addNotification>[0]) {
+    addNotification(n)
+    setNotifTick((t) => t + 1)
+  }
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [pendingImage, setPendingImage] = useState<{ modelName: string } | null>(null)
   const [renderToast, setRenderToast] = useState<string | null>(null)
+  const [, setNotifTick] = useState(0) // forces bell re-render after addNotification
 
   const [projects, setProjects] = useState<UserProject[]>([])
   const [assets, setAssets] = useState<Asset[]>([])
@@ -254,11 +260,10 @@ export default function Dashboard() {
       setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt, isVideo })
       loadAssets()
       // Notify on image completion
+      const assetId = data?.asset?.id as string | undefined
+      pushNotification({ type: 'image_ready', message: 'Your image is ready!', modelName: selectedModel.name, assetUrl: imageUrl, assetId })
       if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('Your image is ready!', {
-          body: 'Head back to prmptVAULT to view your result.',
-          icon: '/favicon.ico',
-        })
+        new Notification('Your image is ready!', { body: `${selectedModel.name} · prmptVAULT`, icon: '/favicon.ico' })
       }
       setRenderToast('Your image is ready!')
       setTimeout(() => setRenderToast(null), 6000)
@@ -312,17 +317,14 @@ export default function Dashboard() {
           return
         }
         if (data.status === 'complete' && data.video_url) {
+          const vidAssetId = pendingVideo?.assetId
           setPendingVideo(null)
           setResult({ url: data.video_url, prompt: '', isVideo: true })
           loadAssets()
-          // Browser notification (works when tab is backgrounded)
+          pushNotification({ type: 'video_ready', message: 'Your video is ready!', modelName: selectedModel?.name ?? 'Video', assetUrl: data.video_url, assetId: vidAssetId })
           if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Your video is ready!', {
-              body: 'Head back to prmptVAULT to view your render.',
-              icon: '/favicon.ico',
-            })
+            new Notification('Your video is ready!', { body: `${selectedModel?.name ?? 'Video'} · prmptVAULT`, icon: '/favicon.ico' })
           }
-          // In-app toast (if user navigated away from builder)
           setRenderToast('Your video is ready!')
           setTimeout(() => setRenderToast(null), 6000)
         }
@@ -448,6 +450,18 @@ export default function Dashboard() {
               Admin
             </a>
           )}
+          <NotificationBell
+            onViewAsset={(assetId, _assetUrl, _isVideo) => {
+              const asset = assets.find((a) => a.id === assetId)
+              if (asset) {
+                setLightboxAsset(asset)
+              } else {
+                // Asset not loaded yet — switch to assets view
+                setView('assets')
+                loadAssets()
+              }
+            }}
+          />
           <span className="text-sm text-slate-400 hidden sm:block">{user?.email}</span>
           <button onClick={signOut} className="text-xs text-slate-600 hover:text-white transition-colors">
             Sign out
