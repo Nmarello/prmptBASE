@@ -10,7 +10,7 @@ interface Props {
 }
 
 const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
-  'dalle-3':            { gradient: 'linear-gradient(145deg,#c0392b,#e8570a,#f5a623)', initial: 'D3' },
+  'dalle':              { gradient: 'linear-gradient(145deg,#c0392b,#e8570a,#f5a623)', initial: 'D3' },
   'flux-schnell':       { gradient: 'linear-gradient(145deg,#003566,#0096c7,#48cae4)', initial: 'FS' },
   'flux-dev':           { gradient: 'linear-gradient(145deg,#3d0066,#7b2ff7,#c084fc)', initial: 'FD' },
   'flux-pro':           { gradient: 'linear-gradient(145deg,#00004d,#0050ff,#60a5fa)', initial: 'FP' },
@@ -19,10 +19,15 @@ const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
   'flux-kontext-pro':   { gradient: 'linear-gradient(145deg,#1a0033,#4400aa,#8855ff)', initial: 'FK' },
   'recraft-v4-pro':     { gradient: 'linear-gradient(145deg,#3d1a00,#a05000,#e8a020)', initial: 'RV' },
   'nano-banana':        { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NB' },
-  'nano-banana-2':      { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NB' },
+  'nano-banana-edit':   { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NE' },
   'kling':              { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
+  'kling-txt2vid':      { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
+  'kling-img2vid':      { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
   'luma':               { gradient: 'linear-gradient(145deg,#05050f,#0d1a5c,#2952e3)', initial: 'LR' },
+  'luma-txt2vid':       { gradient: 'linear-gradient(145deg,#05050f,#0d1a5c,#2952e3)', initial: 'LR' },
+  'luma-img2vid':       { gradient: 'linear-gradient(145deg,#05050f,#0d1a5c,#2952e3)', initial: 'LR' },
   'minimax-txt2vid':    { gradient: 'linear-gradient(145deg,#002b36,#007070,#00c9a7)', initial: 'MM' },
+  'sora':               { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
   'sora2':              { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
   'cs-midjourney':      { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: 'MJ' },
   'cs-ideogram':        { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: 'ID' },
@@ -33,7 +38,9 @@ const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: '??' }
 
 const slugBrandLabels: Record<string, string> = {
-  'dalle-3':          'OpenAI',
+  'dalle':            'OpenAI',
+  'sora':             'OpenAI',
+  'sora2':            'OpenAI',
   'flux-schnell':     'Black Forest Labs',
   'flux-dev':         'Black Forest Labs',
   'flux-pro':         'Black Forest Labs',
@@ -42,11 +49,14 @@ const slugBrandLabels: Record<string, string> = {
   'flux-kontext-pro': 'Black Forest Labs',
   'recraft-v4-pro':   'Recraft',
   'nano-banana':      'Google',
-  'nano-banana-2':    'Google',
+  'nano-banana-edit': 'Google',
   'kling':            'Kuaishou',
+  'kling-txt2vid':    'Kuaishou',
+  'kling-img2vid':    'Kuaishou',
   'luma':             'Luma AI',
+  'luma-txt2vid':     'Luma AI',
+  'luma-img2vid':     'Luma AI',
   'minimax-txt2vid':  'MiniMax',
-  'sora2':            'OpenAI',
 }
 
 export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp }: Props) {
@@ -60,7 +70,7 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
   return (
     <button
       onClick={!comingSoon && accessible ? onClick : undefined}
-      style={{ width: '230px', flexShrink: 0, scrollSnapAlign: 'start', background: 'var(--pv-surface)' }}
+      style={{ width: '230px', flexShrink: 0, background: 'var(--pv-surface)' }}
       className={`relative text-left rounded-[18px] border overflow-hidden flex flex-col transition-all duration-200 ${
         comingSoon
           ? 'opacity-40 cursor-not-allowed border-[var(--pv-border)]'

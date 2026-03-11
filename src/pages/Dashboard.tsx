@@ -141,7 +141,7 @@ export default function Dashboard() {
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
 
   const MODEL_ART_MAP = {
-    'dalle-3':            { gradient: 'linear-gradient(145deg,#c0392b,#e8570a,#f5a623)', initial: 'D3' },
+    'dalle':              { gradient: 'linear-gradient(145deg,#c0392b,#e8570a,#f5a623)', initial: 'D3' },
     'flux-schnell':       { gradient: 'linear-gradient(145deg,#003566,#0096c7,#48cae4)', initial: 'FS' },
     'flux-dev':           { gradient: 'linear-gradient(145deg,#3d0066,#7b2ff7,#c084fc)', initial: 'FD' },
     'flux-pro':           { gradient: 'linear-gradient(145deg,#00004d,#0050ff,#60a5fa)', initial: 'FP' },
@@ -150,9 +150,15 @@ export default function Dashboard() {
     'flux-kontext-pro':   { gradient: 'linear-gradient(145deg,#1a0033,#4400aa,#8855ff)', initial: 'FK' },
     'recraft-v4-pro':     { gradient: 'linear-gradient(145deg,#3d1a00,#a05000,#e8a020)', initial: 'RV' },
     'nano-banana':        { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NB' },
+    'nano-banana-edit':   { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NE' },
     'kling':              { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
+    'kling-txt2vid':      { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
+    'kling-img2vid':      { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
     'luma':               { gradient: 'linear-gradient(145deg,#05050f,#0d1a5c,#2952e3)', initial: 'LR' },
+    'luma-txt2vid':       { gradient: 'linear-gradient(145deg,#05050f,#0d1a5c,#2952e3)', initial: 'LR' },
+    'luma-img2vid':       { gradient: 'linear-gradient(145deg,#05050f,#0d1a5c,#2952e3)', initial: 'LR' },
     'minimax-txt2vid':    { gradient: 'linear-gradient(145deg,#002b36,#007070,#00c9a7)', initial: 'MM' },
+    'sora':               { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
     'sora2':              { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
   } as const
 
@@ -664,7 +670,7 @@ export default function Dashboard() {
                         {imgModels.filter(m => !(m as any)._comingSoon).length} available
                       </span>
                     </div>
-                    <div className="flex gap-3.5 overflow-x-auto pb-3" style={{ scrollSnapType: 'x mandatory' }}>
+                    <div className="flex gap-3.5 overflow-x-auto pb-3">
                       {imgModels.map((m: any) => (
                         <ModelCard
                           key={m.id ?? m.slug}
@@ -699,7 +705,7 @@ export default function Dashboard() {
                         {vidModels.filter(m => !(m as any)._comingSoon).length} available
                       </span>
                     </div>
-                    <div className="flex gap-3.5 overflow-x-auto pb-3" style={{ scrollSnapType: 'x mandatory' }}>
+                    <div className="flex gap-3.5 overflow-x-auto pb-3">
                       {vidModels.map((m: any) => (
                         <ModelCard
                           key={m.id ?? m.slug}
