@@ -409,6 +409,102 @@ function FieldInput({ field, value, onChange, customOptions }: {
     )
   }
 
+  if (field.type === 'text') {
+    return (
+      <div>
+        <input
+          type="text"
+          value={(value as string) ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+          className="w-full border rounded-xl px-4 py-3 text-sm pv-placeholder focus:outline-none focus:border-sky-500/50"
+        />
+        {field.hint && <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
+      </div>
+    )
+  }
+
+  if (field.type === 'number') {
+    return (
+      <div>
+        <input
+          type="number"
+          value={(value as string) ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+          className="w-full border rounded-xl px-4 py-3 text-sm pv-placeholder focus:outline-none focus:border-sky-500/50"
+        />
+        {field.hint && <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
+      </div>
+    )
+  }
+
+  if (field.type === 'range') {
+    const min = field.options?.find(o => o.value === 'min')?.label ? Number(field.options.find(o => o.value === 'min')!.label) : 1
+    const max = field.options?.find(o => o.value === 'max')?.label ? Number(field.options.find(o => o.value === 'max')!.label) : 10
+    const step = field.options?.find(o => o.value === 'step')?.label ? Number(field.options.find(o => o.value === 'step')!.label) : 0.5
+    const numVal = value != null && value !== '' ? Number(value) : (min + max) / 2
+    return (
+      <div>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min={min}
+            max={max}
+            step={step}
+            value={numVal}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className="flex-1 accent-[var(--pv-accent)]"
+            style={{ accentColor: 'var(--pv-accent)' }}
+          />
+          <span className="text-sm font-semibold w-10 text-right" style={{ color: 'var(--pv-accent)' }}>
+            {numVal}
+          </span>
+        </div>
+        {field.hint && <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
+      </div>
+    )
+  }
+
+  if (field.type === 'pill_select') {
+    const selected = (value as string) ?? ''
+    const ASPECT_SHAPES: Record<string, { w: number; h: number }> = {
+      '1:1': { w: 28, h: 28 }, '16:9': { w: 36, h: 20 }, '9:16': { w: 20, h: 36 },
+      '4:3': { w: 32, h: 24 }, '3:4': { w: 24, h: 32 }, '3:2': { w: 33, h: 22 },
+      '2:3': { w: 22, h: 33 }, '21:9': { w: 40, h: 17 },
+    }
+    return (
+      <div className="flex flex-wrap gap-3">
+        {(field.options ?? []).map((opt) => {
+          const active = selected === opt.value
+          const shape = ASPECT_SHAPES[opt.value] ?? { w: 28, h: 28 }
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onChange(active ? '' : opt.value)}
+              className="flex flex-col items-center gap-1.5 cursor-pointer"
+            >
+              <div
+                className={`rounded-[4px] transition-all ${active ? 'border-2' : 'border'}`}
+                style={{
+                  width: shape.w + 8, height: shape.h + 8,
+                  borderColor: active ? 'var(--pv-accent)' : 'var(--pv-border)',
+                  background: active ? 'rgba(0,80,255,0.08)' : 'var(--pv-surface2)',
+                }}
+              />
+              <span className="text-[11px] font-medium" style={{ color: active ? 'var(--pv-accent)' : 'var(--pv-text3)' }}>
+                {opt.label}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
   if (field.type === 'image_upload') {
     const preview = value as string | undefined
     return (
@@ -513,7 +609,7 @@ function LivePromptPanel({
         onChange={(e) => onChange(e.target.value)}
         placeholder="Fill in the fields on the left to build your prompt…"
         style={isEdited ? undefined : { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
-        className={`flex-1 min-h-[220px] w-full border rounded-xl px-4 py-3 text-sm focus:outline-none resize-none leading-relaxed font-mono transition-colors ${
+        className={`flex-1 min-h-[120px] w-full border rounded-xl px-4 py-3 text-sm focus:outline-none resize-none leading-relaxed font-mono transition-colors ${
           isEdited
             ? 'border-amber-300 focus:border-amber-400 bg-amber-50 dark:bg-amber-50/10 text-[#1d1d1f] dark:text-white'
             : 'focus:border-sky-500/50'
@@ -758,39 +854,12 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
         <span className="text-sm" style={{ color: 'var(--pv-text2)' }}>{template.description}</span>
       </div>
 
-      {/* Split layout */}
-      <div data-tour="template-form" className="grid grid-cols-2 gap-6 items-start">
+      {/* Single column layout */}
+      <div data-tour="template-form" className="space-y-5">
+        {template.fields.map((field) => renderField(field))}
 
-        {/* LEFT — fields */}
-        <div className="space-y-5">
-          {template.fields.map((field) => renderField(field))}
-
-          {/* Generate button */}
-          <div className="pt-1">
-            {canGenerate ? (
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-3.5 bg-[#0071e3] hover:bg-[#0077ed] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-semibold text-sm text-white transition-all cursor-pointer"
-              >
-                {submitting ? 'Generating…' : 'Generate →'}
-              </button>
-            ) : (
-              <div className="space-y-2">
-                <a
-                  href="/pricing"
-                  className="block w-full py-3.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 rounded-xl font-semibold text-sm text-center transition-all"
-                >
-                  Upgrade to {modelMinTier} to generate →
-                </a>
-                <p className="text-center text-xs" style={{ color: 'var(--pv-text3)' }}>You can still explore and fill out the template</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT — live prompt */}
-        <div data-tour="live-prompt" className="sticky top-6">
+        {/* Live prompt below fields */}
+        <div data-tour="live-prompt">
           <LivePromptPanel
             fields={template.fields}
             values={values}
@@ -801,6 +870,29 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
           />
         </div>
 
+        {/* Generate button at bottom */}
+        <div className="pt-1">
+          {canGenerate ? (
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-3.5 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-semibold text-sm transition-all cursor-pointer"
+              style={{ background: 'var(--pv-text)', color: 'var(--pv-bg)' }}
+            >
+              {submitting ? 'Generating…' : 'Generate →'}
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <a
+                href="/pricing"
+                className="block w-full py-3.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 rounded-xl font-semibold text-sm text-center transition-all"
+              >
+                Upgrade to {modelMinTier} to generate →
+              </a>
+              <p className="text-center text-xs" style={{ color: 'var(--pv-text3)' }}>You can still explore and fill out the template</p>
+            </div>
+          )}
+        </div>
       </div>
     </form>
   )

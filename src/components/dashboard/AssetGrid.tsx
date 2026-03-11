@@ -76,7 +76,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-[#aeaeb2] text-sm animate-pulse">Loading assets…</p>
+        <p className="text-sm animate-pulse" style={{ color: 'var(--pv-text3)' }}>Loading assets…</p>
       </div>
     )
   }
@@ -90,7 +90,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <h2 className="text-2xl font-bold" style={{ color: 'var(--pv-text)' }}>{title ?? 'Gallery'}</h2>
-              <span className="text-[#aeaeb2] text-sm">
+              <span className="text-sm" style={{ color: 'var(--pv-text3)' }}>
                 {filtered.length}{filtered.length !== assets.length ? ` / ${assets.length}` : ''}
               </span>
             </div>
@@ -173,7 +173,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
           {/* Empty state */}
           {assets.length === 0 && (
             <div className="border border-dashed rounded-2xl p-8 sm:p-20 text-center" style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }}>
-              <svg className="w-12 h-12 text-[#d2d2d7] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
+              <svg className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--pv-border)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
               <p className="font-medium mb-1" style={{ color: 'var(--pv-text)' }}>No images yet</p>
               <p className="text-sm mb-6" style={{ color: 'var(--pv-text2)' }}>Generate something to see it here</p>
               <button
@@ -186,7 +186,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
           )}
 
           {assets.length > 0 && filtered.length === 0 && (
-            <div className="text-center py-16 text-[#aeaeb2] text-sm">
+            <div className="text-center py-16 text-sm" style={{ color: 'var(--pv-text3)' }}>
               No assets match the current filters.
             </div>
           )}
@@ -259,7 +259,7 @@ function AssetCard({ asset, modelName, projectName, projectColor, onClick, onDel
       {isVideo ? (
         <video src={asset.url} className="w-full block" muted loop autoPlay playsInline />
       ) : imgError ? (
-        <div className="w-full aspect-square flex flex-col items-center justify-center gap-2 text-[#aeaeb2] p-4">
+        <div className="w-full aspect-square flex flex-col items-center justify-center gap-2 p-4" style={{ color: 'var(--pv-text3)' }}>
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
           <span className="text-xs text-center">Image expired</span>
         </div>
@@ -280,7 +280,7 @@ function AssetCard({ asset, modelName, projectName, projectColor, onClick, onDel
           </span>
         )}
         {modelName && (
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/80 border border-[#d2d2d7] text-[#6e6e73] backdrop-blur-sm">
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/80 border backdrop-blur-sm" style={{ borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}>
             {modelName}
           </span>
         )}
@@ -377,14 +377,14 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
 
         <div className="w-full lg:w-72 flex-shrink-0 p-4 sm:p-5 overflow-y-auto flex flex-col gap-3 sm:gap-4 border-t lg:border-t-0 lg:border-l" style={{ borderColor: 'var(--pv-border)' }}>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-[#aeaeb2]">{new Date(asset.created_at).toLocaleString()}</span>
+            <span className="text-xs" style={{ color: 'var(--pv-text3)' }}>{new Date(asset.created_at).toLocaleString()}</span>
             <button onClick={onClose} style={{ color: 'var(--pv-text3)' }} className="text-lg cursor-pointer transition-colors hover:opacity-70">✕</button>
           </div>
 
           {onMoveToProject && projects.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider">Project</span>
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--pv-text3)' }}>Project</span>
                 {savedToast && (
                   <span className="text-xs font-semibold text-emerald-500 animate-fade-in">Saved!</span>
                 )}
@@ -415,20 +415,20 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
 
           {prompt && (
             <div>
-              <div className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider mb-1">Prompt</div>
+              <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--pv-text3)' }}>Prompt</div>
               <p className="text-sm" style={{ color: 'var(--pv-text)' }}>{prompt}</p>
             </div>
           )}
 
           {revisedPrompt && revisedPrompt !== prompt && (
             <div>
-              <div className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider mb-1">Revised by DALL-E</div>
+              <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--pv-text3)' }}>Revised by DALL-E</div>
               <p className="text-xs" style={{ color: 'var(--pv-text2)' }}>{revisedPrompt}</p>
             </div>
           )}
 
           {asset.width && asset.height && (
-            <div className="text-xs text-[#aeaeb2]">{asset.width} × {asset.height}px</div>
+            <div className="text-xs" style={{ color: 'var(--pv-text3)' }}>{asset.width} × {asset.height}px</div>
           )}
 
           <div className="flex flex-col gap-2 mt-auto pt-2">
