@@ -578,7 +578,7 @@ export default function Dashboard() {
                   <h2 className="text-2xl font-bold mb-1">Flux Models</h2>
                   <p className="text-slate-400 text-sm mb-8">Choose a Flux model to build your prompt</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {models.filter((m) => m.provider === 'fal.ai' && m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')).map((model) => {
+                    {models.filter((m) => m.provider === 'fal.ai' && m.slug !== 'nano-banana' && m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')).map((model) => {
                       const accessible = tierCanAccess(userTier, model.min_tier)
                       return (
                         <button
