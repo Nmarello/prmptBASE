@@ -218,7 +218,7 @@ UPDATE templates SET
     },
     {
       "id": "style",
-      "label": "Style — 40+ options",
+      "label": "Style",
       "type": "select",
       "hint": "Select a broad style category. Recraft renders each with its own internal substyle engine.",
       "options": [
