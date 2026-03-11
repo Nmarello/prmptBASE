@@ -47,6 +47,47 @@ body {
 /* Unified placeholder color using design tokens */
 .pv-placeholder::placeholder { color: var(--pv-text3); }
 
+/* Custom range slider — thin track, large blue thumb */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  background: var(--pv-border);
+  border-radius: 99px;
+  outline: none;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--pv-accent);
+  border: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+}
+input[type='range']::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--pv-accent);
+  border: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  cursor: pointer;
+}
+input[type='range']::-moz-range-track {
+  height: 2px;
+  background: var(--pv-border);
+  border-radius: 99px;
+}
+
 /* Hide scrollbars on horizontal scroll rows */
 .overflow-x-auto {
   scrollbar-width: none;

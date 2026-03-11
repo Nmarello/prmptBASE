@@ -503,8 +503,7 @@ function FieldInput({ field, value, onChange, customOptions }: {
             step={step}
             value={numVal}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="flex-1 accent-[var(--pv-accent)]"
-            style={{ accentColor: 'var(--pv-accent)' }}
+            className="flex-1"
           />
           <span className="text-sm font-semibold w-10 text-right" style={{ color: 'var(--pv-accent)' }}>
             {numVal}
