@@ -128,6 +128,16 @@ export default function SettingsPopover({ onSignOut, userInitial = '?' }: Props)
           <div className="px-4 py-3 border-b border-white/8"> ... </div>
           */}
 
+          {/* Admin link */}
+          <div className="px-4 pb-3 border-t border-white/8 pt-3">
+            <a
+              href="/admin"
+              className="w-full text-left text-sm text-white/40 hover:text-white/70 transition-colors cursor-pointer block"
+            >
+              Admin panel →
+            </a>
+          </div>
+
           {/* Sign out */}
           <div className="px-4 py-3">
             <button

@@ -108,29 +108,32 @@ export default function ProjectsView({
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Detail header */}
-        <div className="flex-shrink-0 px-4 sm:px-8 py-3 bg-white dark:bg-[#0d1117] border-b border-[#d2d2d7] dark:border-white/8 flex items-center gap-3">
+        <div className="flex-shrink-0 px-4 sm:px-8 py-3 border-b flex items-center gap-3" style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }}>
           <button
             onClick={() => setSelectedProjectId(null)}
-            className="text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white text-sm transition-colors cursor-pointer flex items-center gap-1 flex-shrink-0"
+            style={{ color: 'var(--pv-text2)' }}
+            className="text-sm transition-colors cursor-pointer flex items-center gap-1 flex-shrink-0 hover:opacity-80"
           >
             ← Projects
           </button>
-          <div className="w-px h-4 bg-[#d2d2d7] dark:bg-white/10 flex-shrink-0" />
+          <div className="w-px h-4 flex-shrink-0" style={{ background: 'var(--pv-border)' }} />
           <div className="flex-1 min-w-0">
-            <span className="font-semibold text-[#1d1d1f] dark:text-white text-sm">{selectedProject.name}</span>
+            <span className="font-semibold text-sm" style={{ color: 'var(--pv-text)' }}>{selectedProject.name}</span>
             {selectedProject.description && (
-              <span className="text-xs text-[#6e6e73] dark:text-white/40 ml-2 truncate">{selectedProject.description}</span>
+              <span className="text-xs ml-2 truncate" style={{ color: 'var(--pv-text2)' }}>{selectedProject.description}</span>
             )}
           </div>
           <button
             onClick={() => { setEditingProject(selectedProject); setEditName(selectedProject.name); setEditDesc(selectedProject.description ?? '') }}
-            className="px-3 py-1.5 text-xs bg-white dark:bg-white/6 border border-[#d2d2d7] dark:border-white/10 rounded-lg text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white transition-all cursor-pointer flex-shrink-0"
+            style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+            className="px-3 py-1.5 text-xs border rounded-lg hover:opacity-80 transition-all cursor-pointer flex-shrink-0"
           >
             Edit
           </button>
           <button
             onClick={() => setDeleteConfirm(selectedProject.id)}
-            className="px-3 py-1.5 text-xs bg-white dark:bg-white/6 border border-[#d2d2d7] dark:border-white/10 rounded-lg text-[#6e6e73] dark:text-white/40 hover:text-red-500 hover:border-red-200 transition-all cursor-pointer flex-shrink-0"
+            style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+            className="px-3 py-1.5 text-xs border rounded-lg hover:text-red-500 hover:border-red-200 transition-all cursor-pointer flex-shrink-0"
           >
             Delete
           </button>
@@ -152,15 +155,16 @@ export default function ProjectsView({
         {/* Edit modal */}
         {editingProject && (
           <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setEditingProject(null)}>
-            <div className="bg-white dark:bg-[#1c1c1e] border border-[#d2d2d7] dark:border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <h3 className="font-bold text-[#1d1d1f] dark:text-white mb-4">Edit Project</h3>
+            <div style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }} className="border rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <h3 className="font-bold mb-4" style={{ color: 'var(--pv-text)' }}>Edit Project</h3>
               <div className="flex flex-col gap-3">
                 <input
                   autoFocus
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder="Project name"
-                  className="w-full text-sm px-3 py-2.5 border border-[#d2d2d7] dark:border-white/10 rounded-xl outline-none focus:border-[#0071e3] text-[#1d1d1f] dark:text-white bg-white dark:bg-white/4"
+                  style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+                  className="w-full text-sm px-3 py-2.5 border rounded-xl outline-none focus:border-[#0071e3]"
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditingProject(null) }}
                 />
                 <textarea
@@ -168,7 +172,8 @@ export default function ProjectsView({
                   onChange={(e) => setEditDesc(e.target.value)}
                   placeholder="Description (optional)"
                   rows={2}
-                  className="w-full text-sm px-3 py-2.5 border border-[#d2d2d7] dark:border-white/10 rounded-xl outline-none focus:border-[#0071e3] text-[#1d1d1f] dark:text-white bg-white dark:bg-white/4 resize-none"
+                  style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+                  className="w-full text-sm px-3 py-2.5 border rounded-xl outline-none focus:border-[#0071e3] resize-none"
                 />
                 <div className="flex gap-2 pt-1">
                   <button
@@ -180,7 +185,8 @@ export default function ProjectsView({
                   </button>
                   <button
                     onClick={() => setEditingProject(null)}
-                    className="px-4 py-2.5 bg-white dark:bg-white/6 border border-[#d2d2d7] dark:border-white/10 rounded-xl text-sm text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white transition-all cursor-pointer"
+                    style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                    className="px-4 py-2.5 border rounded-xl text-sm hover:opacity-80 transition-all cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -193,9 +199,9 @@ export default function ProjectsView({
         {/* Delete confirm */}
         {deleteConfirm === selectedProject.id && (
           <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setDeleteConfirm(null)}>
-            <div className="bg-white dark:bg-[#1c1c1e] border border-[#d2d2d7] dark:border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <h3 className="font-bold text-[#1d1d1f] dark:text-white mb-1">Delete "{selectedProject.name}"?</h3>
-              <p className="text-sm text-[#6e6e73] dark:text-white/40 mb-5">
+            <div style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }} className="border rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <h3 className="font-bold mb-1" style={{ color: 'var(--pv-text)' }}>Delete "{selectedProject.name}"?</h3>
+              <p className="text-sm mb-5" style={{ color: 'var(--pv-text2)' }}>
                 Assets in this project will not be deleted — they'll become uncategorized.
               </p>
               <div className="flex gap-2">
@@ -208,7 +214,8 @@ export default function ProjectsView({
                 </button>
                 <button
                   onClick={() => setDeleteConfirm(null)}
-                  className="px-4 py-2.5 bg-white dark:bg-white/6 border border-[#d2d2d7] dark:border-white/10 rounded-xl text-sm text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white transition-all cursor-pointer"
+                  style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                  className="px-4 py-2.5 border rounded-xl text-sm hover:opacity-80 transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -222,14 +229,14 @@ export default function ProjectsView({
 
   // Projects list
   return (
-    <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#f5f5f7] dark:bg-[#0d1117]">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-8" style={{ background: 'var(--pv-bg)' }}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold text-[#1d1d1f] dark:text-white">Projects</h2>
+            <h2 className="text-2xl font-bold" style={{ color: 'var(--pv-text)' }}>Projects</h2>
             {projects.length > 0 && (
-              <span className="text-[#aeaeb2] dark:text-white/30 text-sm">{projects.length}</span>
+              <span className="text-sm" style={{ color: 'var(--pv-text3)' }}>{projects.length}</span>
             )}
           </div>
           <button
@@ -242,12 +249,12 @@ export default function ProjectsView({
 
         {/* Empty state */}
         {projects.length === 0 && !showCreate && (
-          <div className="bg-white dark:bg-white/4 border border-dashed border-[#d2d2d7] dark:border-white/10 rounded-2xl p-16 text-center">
-            <svg className="w-12 h-12 text-[#d2d2d7] dark:text-white/15 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="border border-dashed rounded-2xl p-16 text-center" style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }}>
+            <svg className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--pv-border)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
             </svg>
-            <p className="text-[#1d1d1f] dark:text-white font-medium mb-1">No projects yet</p>
-            <p className="text-[#6e6e73] dark:text-white/40 text-sm mb-6">Organize your generated assets into projects</p>
+            <p className="font-medium mb-1" style={{ color: 'var(--pv-text)' }}>No projects yet</p>
+            <p className="text-sm mb-6" style={{ color: 'var(--pv-text2)' }}>Organize your generated assets into projects</p>
             <button
               onClick={() => setShowCreate(true)}
               className="px-5 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
@@ -260,14 +267,15 @@ export default function ProjectsView({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {/* Inline create card */}
           {showCreate && (
-            <div className="bg-white dark:bg-white/4 border-2 border-[#0071e3] rounded-2xl p-4 flex flex-col gap-3">
+            <div className="border-2 border-[#0071e3] rounded-2xl p-4 flex flex-col gap-3" style={{ background: 'var(--pv-surface)' }}>
               <p className="text-xs font-semibold text-[#0071e3] uppercase tracking-wider">New Project</p>
               <input
                 autoFocus
                 value={createName}
                 onChange={(e) => setCreateName(e.target.value)}
                 placeholder="Project name"
-                className="w-full text-sm px-3 py-2.5 border border-[#d2d2d7] dark:border-white/10 rounded-xl outline-none focus:border-[#0071e3] text-[#1d1d1f] dark:text-white bg-white dark:bg-white/4"
+                style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+                className="w-full text-sm px-3 py-2.5 border rounded-xl outline-none focus:border-[#0071e3]"
                 onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setShowCreate(false); setCreateName(''); setCreateDesc('') } }}
               />
               <textarea
@@ -275,7 +283,8 @@ export default function ProjectsView({
                 onChange={(e) => setCreateDesc(e.target.value)}
                 placeholder="Description (optional)"
                 rows={2}
-                className="w-full text-sm px-3 py-2.5 border border-[#d2d2d7] dark:border-white/10 rounded-xl outline-none focus:border-[#0071e3] text-[#1d1d1f] dark:text-white bg-white dark:bg-white/4 resize-none"
+                style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+                className="w-full text-sm px-3 py-2.5 border rounded-xl outline-none focus:border-[#0071e3] resize-none"
               />
               <div className="flex gap-2">
                 <button
@@ -287,7 +296,8 @@ export default function ProjectsView({
                 </button>
                 <button
                   onClick={() => { setShowCreate(false); setCreateName(''); setCreateDesc('') }}
-                  className="px-3 py-2 bg-white dark:bg-white/6 border border-[#d2d2d7] dark:border-white/10 rounded-xl text-sm text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white transition-all cursor-pointer"
+                  style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                  className="px-3 py-2 border rounded-xl text-sm hover:opacity-80 transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -304,10 +314,11 @@ export default function ProjectsView({
               <button
                 key={p.id}
                 onClick={() => setSelectedProjectId(p.id)}
-                className="group bg-white dark:bg-white/4 border border-[#d2d2d7] dark:border-white/8 hover:border-[#aeaeb2] dark:hover:border-white/20 hover:shadow-md rounded-2xl overflow-hidden text-left transition-all cursor-pointer"
+                style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }}
+                className="group border hover:shadow-md rounded-2xl overflow-hidden text-left transition-all cursor-pointer hover:opacity-90"
               >
                 {/* Cover image */}
-                <div className="aspect-video bg-[#f5f5f7] dark:bg-white/4 overflow-hidden">
+                <div className="aspect-video overflow-hidden" style={{ background: 'var(--pv-surface2)' }}>
                   {cover ? (
                     <img
                       src={cover}
@@ -316,7 +327,7 @@ export default function ProjectsView({
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <svg className="w-10 h-10 text-[#d2d2d7] dark:text-white/15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-10 h-10" style={{ color: 'var(--pv-border)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5} />
                         <circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5} />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21" />
@@ -326,9 +337,9 @@ export default function ProjectsView({
                 </div>
                 {/* Info */}
                 <div className="p-3 sm:p-4">
-                  <div className="font-semibold text-sm text-[#1d1d1f] dark:text-white mb-0.5 truncate">{p.name}</div>
+                  <div className="font-semibold text-sm mb-0.5 truncate" style={{ color: 'var(--pv-text)' }}>{p.name}</div>
                   {p.description && (
-                    <div className="text-xs text-[#6e6e73] dark:text-white/40 line-clamp-1 mb-2">{p.description}</div>
+                    <div className="text-xs line-clamp-1 mb-2" style={{ color: 'var(--pv-text2)' }}>{p.description}</div>
                   )}
                   <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border ${colorClass}`}>
                     {count} {count === 1 ? 'asset' : 'assets'}
@@ -343,15 +354,16 @@ export default function ProjectsView({
       {/* Edit modal (from list) */}
       {editingProject && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setEditingProject(null)}>
-          <div className="bg-white dark:bg-[#1c1c1e] border border-[#d2d2d7] dark:border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-bold text-[#1d1d1f] dark:text-white mb-4">Edit Project</h3>
+          <div style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }} className="border rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold mb-4" style={{ color: 'var(--pv-text)' }}>Edit Project</h3>
             <div className="flex flex-col gap-3">
               <input
                 autoFocus
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 placeholder="Project name"
-                className="w-full text-sm px-3 py-2.5 border border-[#d2d2d7] dark:border-white/10 rounded-xl outline-none focus:border-[#0071e3] text-[#1d1d1f] dark:text-white bg-white dark:bg-white/4"
+                style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+                className="w-full text-sm px-3 py-2.5 border rounded-xl outline-none focus:border-[#0071e3]"
                 onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditingProject(null) }}
               />
               <textarea
@@ -359,7 +371,8 @@ export default function ProjectsView({
                 onChange={(e) => setEditDesc(e.target.value)}
                 placeholder="Description (optional)"
                 rows={2}
-                className="w-full text-sm px-3 py-2.5 border border-[#d2d2d7] dark:border-white/10 rounded-xl outline-none focus:border-[#0071e3] text-[#1d1d1f] dark:text-white bg-white dark:bg-white/4 resize-none"
+                style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+                className="w-full text-sm px-3 py-2.5 border rounded-xl outline-none focus:border-[#0071e3] resize-none"
               />
               <div className="flex gap-2 pt-1">
                 <button
@@ -371,7 +384,8 @@ export default function ProjectsView({
                 </button>
                 <button
                   onClick={() => setEditingProject(null)}
-                  className="px-4 py-2.5 bg-white dark:bg-white/6 border border-[#d2d2d7] dark:border-white/10 rounded-xl text-sm text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white transition-all cursor-pointer"
+                  style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                  className="px-4 py-2.5 border rounded-xl text-sm hover:opacity-80 transition-all cursor-pointer"
                 >
                   Cancel
                 </button>

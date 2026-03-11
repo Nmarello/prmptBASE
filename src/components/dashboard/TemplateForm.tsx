@@ -262,20 +262,22 @@ function AddCustomForm({ fieldId, onSave, onCancel }: {
   }
 
   return (
-    <div className="mt-3 p-3 bg-[#f5f5f7] dark:bg-[#0d1117] border border-[#d2d2d7] dark:border-white/10 rounded-xl space-y-2">
+    <div className="mt-3 p-3 rounded-xl space-y-2" style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)' }}>
       <input
         type="text"
         value={label}
         onChange={(e) => setLabel(e.target.value)}
         placeholder="Name (e.g. Cyberpunk Neon)"
-        className="w-full bg-white dark:bg-[#161b22] border border-[#d2d2d7] dark:border-white/10 rounded-lg px-3 py-2 text-sm text-[#1d1d1f] dark:text-white placeholder-[#aeaeb2] dark:placeholder-white/25 focus:outline-none focus:border-sky-500/50"
+        style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+        className="w-full border rounded-lg px-3 py-2 text-sm placeholder-[#aeaeb2] dark:placeholder-white/25 focus:outline-none focus:border-sky-500/50"
       />
       <textarea
         value={promptText}
         onChange={(e) => setPromptText(e.target.value)}
         placeholder="Describe it for the AI (e.g. cyberpunk neon aesthetic with rain-slicked streets)"
         rows={2}
-        className="w-full bg-white dark:bg-[#161b22] border border-[#d2d2d7] dark:border-white/10 rounded-lg px-3 py-2 text-sm text-[#1d1d1f] dark:text-white placeholder-[#aeaeb2] dark:placeholder-white/25 focus:outline-none focus:border-sky-500/50 resize-none"
+        style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+        className="w-full border rounded-lg px-3 py-2 text-sm placeholder-[#aeaeb2] dark:placeholder-white/25 focus:outline-none focus:border-sky-500/50 resize-none"
       />
       <div className="flex gap-2 justify-end">
         <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-[#6e6e73] dark:text-white/50 hover:text-[#1d1d1f] dark:hover:text-white transition-colors cursor-pointer">
@@ -312,7 +314,8 @@ function FieldInput({ field, value, onChange, customOptions }: {
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
           rows={4}
-          className="w-full bg-[#f5f5f7] dark:bg-[#161b22] border border-[#d2d2d7] dark:border-white/10 rounded-xl px-4 py-3 text-sm text-[#1d1d1f] dark:text-white placeholder-[#aeaeb2] dark:placeholder-white/25 focus:outline-none focus:border-sky-500/50 resize-none"
+          style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+          className="w-full border rounded-xl px-4 py-3 text-sm placeholder-[#aeaeb2] dark:placeholder-white/25 focus:outline-none focus:border-sky-500/50 resize-none"
         />
         {field.hint && <p className="text-xs text-[#aeaeb2] dark:text-white/35 mt-1">{field.hint}</p>}
       </div>
@@ -325,7 +328,8 @@ function FieldInput({ field, value, onChange, customOptions }: {
         <select
           value={(value as string) ?? ''}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-[#f5f5f7] dark:bg-[#161b22] border border-[#d2d2d7] dark:border-white/10 rounded-xl px-4 py-3 text-sm text-[#1d1d1f] dark:text-white focus:outline-none focus:border-sky-500/50 cursor-pointer"
+          style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+          className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-sky-500/50 cursor-pointer"
         >
           <option value="">Auto</option>
           {(field.options ?? []).map((opt) => (
@@ -360,10 +364,9 @@ function FieldInput({ field, value, onChange, customOptions }: {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
                 active
                   ? 'bg-[rgba(0,113,227,0.08)] border-[rgba(0,113,227,0.4)] text-[#0071e3]'
-                  : isCustom
-                  ? 'bg-[#f5f5f7] dark:bg-[#161b22] border-[#d2d2d7] dark:border-white/10 text-[#1d1d1f] dark:text-white hover:border-sky-500/40'
-                  : 'bg-[#f5f5f7] dark:bg-[#161b22] border-[#d2d2d7] dark:border-white/10 text-[#6e6e73] dark:text-white/50 hover:border-[#aeaeb2] dark:hover:border-white/25'
+                  : ''
               }`}
+              style={active ? undefined : { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: isCustom ? 'var(--pv-text)' : 'var(--pv-text2)' }}
             >
               {isCustom && <span className="mr-1 text-[#0071e3]">★</span>}{opt.label}
             </button>
@@ -393,10 +396,9 @@ function FieldInput({ field, value, onChange, customOptions }: {
               className={`flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border text-center transition-all cursor-pointer ${
                 active
                   ? 'bg-[rgba(0,113,227,0.08)] border-[rgba(0,113,227,0.4)] text-[#0071e3]'
-                  : isCustom
-                  ? 'bg-[#f5f5f7] dark:bg-[#161b22] border-[#d2d2d7] dark:border-white/10 text-[#1d1d1f] dark:text-white hover:border-sky-500/40'
-                  : 'bg-[#f5f5f7] dark:bg-[#161b22] border-[#d2d2d7] dark:border-white/10 text-[#6e6e73] dark:text-white/55 hover:border-[#aeaeb2] dark:hover:border-white/25 hover:text-[#1d1d1f] dark:hover:text-white'
+                  : ''
               }`}
+              style={active ? undefined : { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: isCustom ? 'var(--pv-text)' : 'var(--pv-text2)' }}
             >
               {emoji && <span className="text-xl leading-none">{emoji}</span>}
               <span className="text-[11px] font-medium leading-tight">{text}</span>
@@ -483,7 +485,7 @@ function LivePromptPanel({
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-[#1d1d1f] dark:text-white">Live Prompt</span>
+          <span className="text-sm font-semibold" style={{ color: 'var(--pv-text)' }}>Live Prompt</span>
           {isEdited && (
             <span className="text-[10px] bg-amber-50 border border-amber-200 text-amber-600 px-2 py-0.5 rounded-full font-medium">
               edited
@@ -509,10 +511,11 @@ function LivePromptPanel({
         value={livePrompt}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Fill in the fields on the left to build your prompt…"
-        className={`flex-1 min-h-[220px] w-full border rounded-xl px-4 py-3 text-sm text-[#1d1d1f] dark:text-white placeholder-[#aeaeb2] dark:placeholder-white/25 focus:outline-none resize-none leading-relaxed font-mono transition-colors ${
+        style={isEdited ? undefined : { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+        className={`flex-1 min-h-[220px] w-full border rounded-xl px-4 py-3 text-sm placeholder-[#aeaeb2] dark:placeholder-white/25 focus:outline-none resize-none leading-relaxed font-mono transition-colors ${
           isEdited
-            ? 'border-amber-300 focus:border-amber-400 bg-amber-50 dark:bg-amber-50/10'
-            : 'bg-[#f5f5f7] dark:bg-[#0d1117] border-[#d2d2d7] dark:border-white/10 focus:border-sky-500/50'
+            ? 'border-amber-300 focus:border-amber-400 bg-amber-50 dark:bg-amber-50/10 text-[#1d1d1f] dark:text-white'
+            : 'focus:border-sky-500/50'
         }`}
       />
 
@@ -522,15 +525,15 @@ function LivePromptPanel({
 
       {/* API params section */}
       {(apiParams.length > 0 || isRecraftStyleParam) && (
-        <div className="border border-[#d2d2d7] dark:border-white/10 rounded-xl p-3 bg-[#f5f5f7] dark:bg-[#0d1117]">
+        <div className="rounded-xl p-3" style={{ border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)' }}>
           <p className="text-[10px] font-semibold text-[#aeaeb2] dark:text-white/35 uppercase tracking-wider mb-2.5">
             Also sending as parameters
           </p>
           <div className="flex flex-wrap gap-1.5">
             {isRecraftStyleParam && recraftStyleLabel && (
-              <span className="inline-flex items-center gap-1 bg-white dark:bg-[#161b22] border border-[#d2d2d7] dark:border-white/10 rounded-lg px-2.5 py-1 text-xs text-[#1d1d1f] dark:text-white">
-                <span className="text-[#aeaeb2] dark:text-white/35">style</span>
-                <span className="text-[#aeaeb2] dark:text-[#d2d2d7]">·</span>
+              <span style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }} className="inline-flex items-center gap-1 border rounded-lg px-2.5 py-1 text-xs">
+                <span style={{ color: 'var(--pv-text3)' }}>style</span>
+                <span style={{ color: 'var(--pv-text3)' }}>·</span>
                 <span className="font-medium">{recraftStyleLabel}</span>
               </span>
             )}
@@ -538,9 +541,9 @@ function LivePromptPanel({
               const val = values[f.id]
               const label = f.options?.find((o) => o.value === String(val))?.label ?? String(val)
               return (
-                <span key={f.id} className="inline-flex items-center gap-1 bg-white dark:bg-[#161b22] border border-[#d2d2d7] dark:border-white/10 rounded-lg px-2.5 py-1 text-xs text-[#1d1d1f] dark:text-white">
-                  <span className="text-[#aeaeb2] dark:text-white/35">{f.label.replace(/ —.*$/, '')}</span>
-                  <span className="text-[#aeaeb2] dark:text-[#d2d2d7]">·</span>
+                <span key={f.id} style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }} className="inline-flex items-center gap-1 border rounded-lg px-2.5 py-1 text-xs">
+                  <span style={{ color: 'var(--pv-text3)' }}>{f.label.replace(/ —.*$/, '')}</span>
+                  <span style={{ color: 'var(--pv-text3)' }}>·</span>
                   <span className="font-medium">{label}</span>
                 </span>
               )
@@ -651,7 +654,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
       <div key={field.id}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
-            <label className="text-sm font-medium text-[#6e6e73] dark:text-white/50">
+            <label className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>
               {field.label}
               {field.required && <span className="text-sky-400 ml-1">*</span>}
             </label>
@@ -662,14 +665,15 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
                   type="button"
                   onMouseEnter={() => setTooltipOpen(field.id)}
                   onMouseLeave={() => setTooltipOpen(null)}
-                  className="w-4 h-4 rounded-full bg-[#f0f0f2] dark:bg-white/10 hover:bg-sky-500/20 text-[#6e6e73] dark:text-white/35 hover:text-sky-400 flex items-center justify-center transition-all cursor-default text-[10px] font-bold leading-none"
+                  style={{ background: 'var(--pv-surface2)', color: 'var(--pv-text2)' }}
+                  className="w-4 h-4 rounded-full hover:bg-sky-500/20 hover:text-sky-400 flex items-center justify-center transition-all cursor-default text-[10px] font-bold leading-none"
                   tabIndex={-1}
                 >
                   i
                 </button>
                 {isTooltipOpen && (
-                  <div className="absolute left-0 top-full mt-1.5 w-64 bg-white dark:bg-[#1c1c1e] border border-[#d2d2d7] dark:border-white/10 rounded-xl p-3 shadow-2xl z-50 animate-fade-in pointer-events-none">
-                    <p className="text-xs text-[#4e4e52] dark:text-white/70 leading-relaxed">{tooltipText}</p>
+                  <div style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }} className="absolute left-0 top-full mt-1.5 w-64 border rounded-xl p-3 shadow-2xl z-50 animate-fade-in pointer-events-none">
+                    <p className="text-xs leading-relaxed" style={{ color: 'var(--pv-text2)' }}>{tooltipText}</p>
                   </div>
                 )}
               </div>
@@ -722,7 +726,8 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
               <button
                 type="button"
                 onClick={() => setAiSuggestion(null)}
-                className="px-3 py-1.5 bg-white dark:bg-white/6 border border-[#d2d2d7] dark:border-white/10 rounded-lg text-xs font-medium text-[#6e6e73] dark:text-white/50 hover:text-[#1d1d1f] dark:hover:text-white transition-all cursor-pointer"
+                style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                className="px-3 py-1.5 border rounded-lg text-xs font-medium hover:opacity-80 transition-all cursor-pointer"
               >
                 Dismiss
               </button>
@@ -749,7 +754,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
         <span className="text-xs bg-[rgba(0,113,227,0.08)] text-[#0071e3] border border-[rgba(0,113,227,0.25)] px-2.5 py-1 rounded-full font-medium">
           {GEN_TYPE_LABELS[genType]}
         </span>
-        <span className="text-[#6e6e73] dark:text-white/50 text-sm">{template.description}</span>
+        <span className="text-sm" style={{ color: 'var(--pv-text2)' }}>{template.description}</span>
       </div>
 
       {/* Split layout */}

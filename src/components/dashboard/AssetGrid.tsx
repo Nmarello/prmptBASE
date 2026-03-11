@@ -83,13 +83,13 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#f5f5f7]">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-8" style={{ background: 'var(--pv-bg)' }}>
         <div className="max-w-6xl mx-auto">
 
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-[#1d1d1f]">{title ?? 'Assets'}</h2>
+              <h2 className="text-2xl font-bold" style={{ color: 'var(--pv-text)' }}>{title ?? 'Assets'}</h2>
               <span className="text-[#aeaeb2] text-sm">
                 {filtered.length}{filtered.length !== assets.length ? ` / ${assets.length}` : ''}
               </span>
@@ -105,12 +105,13 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
           {/* Filters + Sort */}
           {assets.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6 items-center">
-              <div className="flex gap-1 bg-white border border-[#d2d2d7] rounded-xl p-1">
+              <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
                 {(['all', 'images', 'videos'] as MediaFilter[]).map((f) => (
                   <button
                     key={f}
                     onClick={() => setMediaFilter(f)}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer ${mediaFilter === f ? 'bg-[#f0f0f2] text-[#1d1d1f]' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
+                    style={mediaFilter === f ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)' } : { color: 'var(--pv-text2)' }}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer`}
                   >
                     {f}
                   </button>
@@ -121,7 +122,8 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
                 <div className="flex gap-1 flex-wrap">
                   <button
                     onClick={() => setModelFilter('all')}
-                    className={`px-3 py-1 rounded-xl text-xs font-medium transition-all border cursor-pointer ${modelFilter === 'all' ? 'bg-[#f0f0f2] border-[#d2d2d7] text-[#1d1d1f]' : 'bg-white border-[#d2d2d7] text-[#6e6e73] hover:text-[#1d1d1f]'}`}
+                    style={modelFilter === 'all' ? { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' } : { background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                    className={`px-3 py-1 rounded-xl text-xs font-medium transition-all border cursor-pointer`}
                   >
                     All models
                   </button>
@@ -129,7 +131,8 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
                     <button
                       key={m.id}
                       onClick={() => setModelFilter(modelFilter === m.id ? 'all' : m.id)}
-                      className={`px-3 py-1 rounded-xl text-xs font-medium transition-all border cursor-pointer ${modelFilter === m.id ? 'bg-[#f0f0f2] border-[#d2d2d7] text-[#1d1d1f]' : 'bg-white border-[#d2d2d7] text-[#6e6e73] hover:text-[#1d1d1f]'}`}
+                      style={modelFilter === m.id ? { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' } : { background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                      className={`px-3 py-1 rounded-xl text-xs font-medium transition-all border cursor-pointer`}
                     >
                       {m.name.replace(/ [—–-]+ img2img$/i, '')}
                     </button>
@@ -141,7 +144,8 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
                 <select
                   value={projectFilter}
                   onChange={(e) => setProjectFilter(e.target.value)}
-                  className="px-3 py-1 rounded-xl text-xs font-medium bg-white border border-[#d2d2d7] text-[#6e6e73] hover:text-[#1d1d1f] transition-all cursor-pointer outline-none"
+                  style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                  className="px-3 py-1 rounded-xl text-xs font-medium border transition-all cursor-pointer outline-none"
                 >
                   <option value="all">All projects</option>
                   <option value="__none__">No project</option>
@@ -151,12 +155,13 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
                 </select>
               )}
 
-              <div className="ml-auto flex gap-1 bg-white border border-[#d2d2d7] rounded-xl p-1">
+              <div className="ml-auto flex gap-1 rounded-xl p-1" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
                 {(['newest', 'oldest', 'model'] as SortKey[]).map((s) => (
                   <button
                     key={s}
                     onClick={() => setSort(s)}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer ${sort === s ? 'bg-[#f0f0f2] text-[#1d1d1f]' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
+                    style={sort === s ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)' } : { color: 'var(--pv-text2)' }}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer`}
                   >
                     {s}
                   </button>
@@ -167,10 +172,10 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
 
           {/* Empty state */}
           {assets.length === 0 && (
-            <div className="bg-white border border-dashed border-[#d2d2d7] rounded-2xl p-8 sm:p-20 text-center">
+            <div className="border border-dashed rounded-2xl p-8 sm:p-20 text-center" style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }}>
               <svg className="w-12 h-12 text-[#d2d2d7] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
-              <p className="text-[#1d1d1f] font-medium mb-1">No images yet</p>
-              <p className="text-[#6e6e73] text-sm mb-6">Generate something to see it here</p>
+              <p className="font-medium mb-1" style={{ color: 'var(--pv-text)' }}>No images yet</p>
+              <p className="text-sm mb-6" style={{ color: 'var(--pv-text2)' }}>Generate something to see it here</p>
               <button
                 onClick={onGenerate}
                 className="px-5 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
@@ -245,7 +250,8 @@ function AssetCard({ asset, modelName, projectName, projectColor, onClick, onDel
 
   return (
     <div
-      className="break-inside-avoid rounded-2xl overflow-hidden border border-[#d2d2d7] bg-white cursor-pointer relative group"
+      style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }}
+      className="break-inside-avoid rounded-2xl overflow-hidden border cursor-pointer relative group"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onClick={onClick}
@@ -357,10 +363,11 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
       onClick={onClose}
     >
       <div
-        className="bg-white border border-[#d2d2d7] rounded-2xl overflow-hidden max-w-4xl w-full flex flex-col lg:flex-row shadow-2xl max-h-[90vh]"
+        style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }}
+        className="border rounded-2xl overflow-hidden max-w-4xl w-full flex flex-col lg:flex-row shadow-2xl max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex-1 bg-[#f5f5f7] flex items-center justify-center min-h-48 max-h-[50vh] lg:max-h-none">
+        <div className="flex-1 flex items-center justify-center min-h-48 max-h-[50vh] lg:max-h-none" style={{ background: 'var(--pv-surface2)' }}>
           {asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid' ? (
             <video src={asset.url} controls autoPlay loop className="max-w-full max-h-[50vh] lg:max-h-[80vh]" />
           ) : (
@@ -368,10 +375,10 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
           )}
         </div>
 
-        <div className="w-full lg:w-72 flex-shrink-0 p-4 sm:p-5 overflow-y-auto flex flex-col gap-3 sm:gap-4 border-t lg:border-t-0 lg:border-l border-[#d2d2d7]">
+        <div className="w-full lg:w-72 flex-shrink-0 p-4 sm:p-5 overflow-y-auto flex flex-col gap-3 sm:gap-4 border-t lg:border-t-0 lg:border-l" style={{ borderColor: 'var(--pv-border)' }}>
           <div className="flex items-center justify-between">
             <span className="text-xs text-[#aeaeb2]">{new Date(asset.created_at).toLocaleString()}</span>
-            <button onClick={onClose} className="text-[#aeaeb2] hover:text-[#1d1d1f] text-lg cursor-pointer transition-colors">✕</button>
+            <button onClick={onClose} style={{ color: 'var(--pv-text3)' }} className="text-lg cursor-pointer transition-colors hover:opacity-70">✕</button>
           </div>
 
           {onMoveToProject && projects.length > 0 && (
@@ -385,7 +392,8 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
               <select
                 value={selectedProjectId}
                 onChange={(e) => handleProjectChange(e.target.value)}
-                className="w-full text-xs px-3 py-2 border border-[#d2d2d7] rounded-xl bg-[#f5f5f7] text-[#1d1d1f] outline-none focus:border-[#0071e3] cursor-pointer transition-colors"
+                style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
+                className="w-full text-xs px-3 py-2 border rounded-xl outline-none focus:border-[#0071e3] cursor-pointer transition-colors"
               >
                 <option value="">No project</option>
                 {projects.map((p) => (
@@ -402,20 +410,20 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
           )}
 
           {modelName && (
-            <span className="text-xs text-[#6e6e73] font-medium">{modelName} · {asset.gen_type}</span>
+            <span className="text-xs font-medium" style={{ color: 'var(--pv-text2)' }}>{modelName} · {asset.gen_type}</span>
           )}
 
           {prompt && (
             <div>
               <div className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider mb-1">Prompt</div>
-              <p className="text-sm text-[#1d1d1f]">{prompt}</p>
+              <p className="text-sm" style={{ color: 'var(--pv-text)' }}>{prompt}</p>
             </div>
           )}
 
           {revisedPrompt && revisedPrompt !== prompt && (
             <div>
               <div className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider mb-1">Revised by DALL-E</div>
-              <p className="text-xs text-[#6e6e73]">{revisedPrompt}</p>
+              <p className="text-xs" style={{ color: 'var(--pv-text2)' }}>{revisedPrompt}</p>
             </div>
           )}
 
@@ -427,14 +435,16 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
             {asset.gen_type !== 'txt2vid' && asset.gen_type !== 'img2vid' && (
               <button
                 onClick={() => { onSendToImg2Vid(asset.url); onClose() }}
-                className="w-full py-2.5 bg-[#f5f5f7] hover:bg-[#f0f0f2] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
+                style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+              className="w-full py-2.5 border rounded-xl text-sm font-medium transition-all cursor-pointer"
               >
                 Send to img2vid →
               </button>
             )}
             <button
               onClick={() => { onSendToImg2Img(asset.url); onClose() }}
-              className="w-full py-2.5 bg-[#f5f5f7] hover:bg-[#f0f0f2] border border-[#d2d2d7] rounded-xl text-sm font-medium text-[#6e6e73] transition-all cursor-pointer"
+              style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+              className="w-full py-2.5 border rounded-xl text-sm font-medium transition-all cursor-pointer"
             >
               Send to img2img →
             </button>
@@ -450,7 +460,8 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
               </a>
               <button
                 onClick={() => onDelete(asset.id)}
-                className="px-3 py-2.5 bg-white hover:bg-red-50 border border-[#d2d2d7] hover:border-red-200 rounded-xl text-sm text-[#6e6e73] hover:text-red-500 transition-all cursor-pointer"
+                style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                className="px-3 py-2.5 border rounded-xl text-sm hover:text-red-500 hover:border-red-200 transition-all cursor-pointer"
               >
                 Delete
               </button>
