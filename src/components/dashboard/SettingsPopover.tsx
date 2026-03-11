@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLearningMode, type LearningMode } from '../../contexts/LearningModeContext'
+import { useTheme } from '../../contexts/ThemeContext'
 
 const TIMEZONES = [
   'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
@@ -59,6 +60,7 @@ export default function SettingsPopover({ onSignOut, onStartTour }: Props) {
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const { mode, setMode } = useLearningMode()
+  const { theme, setTheme } = useTheme()
 
   const [timezone, setTimezone] = useState<string>(() => {
     try { return localStorage.getItem(TZ_STORAGE_KEY) || Intl.DateTimeFormat().resolvedOptions().timeZone } catch { return 'America/New_York' }
@@ -84,7 +86,9 @@ export default function SettingsPopover({ onSignOut, onStartTour }: Props) {
       <button
         onClick={() => setOpen((v) => !v)}
         className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-          open ? 'text-white bg-white/10' : 'text-white/50 hover:text-white hover:bg-white/8'
+          open
+            ? 'text-[#1d1d1f] dark:text-white bg-[#f0f0f2] dark:bg-white/10'
+            : 'text-[#6e6e73] dark:text-white/50 hover:text-[#1d1d1f] dark:hover:text-white hover:bg-[#f0f0f2] dark:hover:bg-white/8'
         }`}
         aria-label="Settings"
         data-tour="settings-btn"
@@ -115,20 +119,23 @@ export default function SettingsPopover({ onSignOut, onStartTour }: Props) {
             </select>
           </div>
 
-          {/* Theme toggle — inactive */}
+          {/* Theme toggle */}
           <div className="px-4 py-3 border-b border-white/8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/40">Theme</p>
-                <p className="text-[11px] text-white/25">Dark / Light</p>
+                <p className="text-sm text-white/70">Theme</p>
+                <p className="text-[11px] text-white/35">Dark / Light</p>
               </div>
-              <div className="flex items-center gap-2 opacity-40 cursor-not-allowed">
-                <span className="text-xs text-white/50">Dark</span>
-                <div className="w-10 h-5 bg-white/10 rounded-full relative border border-white/10">
-                  <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white/30 rounded-full" />
+              <button
+                type="button"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <span className="text-xs text-white/50">{theme === 'dark' ? 'Dark' : 'Light'}</span>
+                <div className={`w-10 h-5 rounded-full relative border transition-colors ${theme === 'dark' ? 'bg-sky-500 border-sky-400' : 'bg-white/10 border-white/10'}`}>
+                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all duration-200 ${theme === 'dark' ? 'left-5' : 'left-0.5'}`} />
                 </div>
-                <span className="text-[10px] text-white/30 bg-white/8 px-1.5 py-0.5 rounded-full">soon</span>
-              </div>
+              </button>
             </div>
           </div>
 

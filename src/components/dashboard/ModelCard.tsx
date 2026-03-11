@@ -34,19 +34,19 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
       onClick={!comingSoon ? onClick : undefined}
       className={`relative w-full text-left rounded-xl p-4 border transition-all ${
         comingSoon
-          ? 'bg-[#f5f5f7] border-[#d2d2d7] opacity-40 cursor-not-allowed'
+          ? 'bg-[#f5f5f7] dark:bg-white/4 border-[#d2d2d7] dark:border-white/8 opacity-40 cursor-not-allowed'
           : selected
           ? 'bg-[rgba(0,113,227,0.06)] border-[rgba(0,113,227,0.35)]'
-          : 'bg-white border-[#d2d2d7] hover:border-[#aeaeb2] hover:shadow-sm cursor-pointer'
+          : 'bg-white dark:bg-white/4 border-[#d2d2d7] dark:border-white/8 hover:border-[#aeaeb2] dark:hover:border-white/20 hover:shadow-sm cursor-pointer'
       }`}
     >
       {comingSoon && (
-        <span className="absolute top-3 right-3 text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
+        <span className="absolute top-3 right-3 text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-700/50 px-2 py-0.5 rounded-full font-medium">
           soon
         </span>
       )}
       {!comingSoon && !accessible && (
-        <span className="absolute top-3 right-3 text-[10px] bg-[#f0f0f2] text-[#6e6e73] border border-[#d2d2d7] px-2 py-0.5 rounded-full font-medium capitalize">
+        <span className="absolute top-3 right-3 text-[10px] bg-[#f0f0f2] dark:bg-white/8 text-[#6e6e73] dark:text-white/40 border border-[#d2d2d7] dark:border-white/10 px-2 py-0.5 rounded-full font-medium capitalize">
           {model.min_tier}
         </span>
       )}
@@ -56,12 +56,12 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
           {brandLabel}
         </div>
       )}
-      <div className="text-[#1d1d1f] font-semibold text-sm leading-tight">{model.name}</div>
-      <div className="text-[#aeaeb2] text-xs mt-1 line-clamp-2 leading-relaxed">{model.description}</div>
+      <div className="text-[#1d1d1f] dark:text-white font-semibold text-sm leading-tight">{model.name}</div>
+      <div className="text-[#aeaeb2] dark:text-white/35 text-xs mt-1 line-clamp-2 leading-relaxed">{model.description}</div>
 
       <div className="flex flex-wrap gap-1 mt-2.5">
         {model.supported_gen_types.map((gt) => (
-          <span key={gt} className="text-[10px] bg-[#f0f0f2] text-[#6e6e73] px-2 py-0.5 rounded-full font-medium">
+          <span key={gt} className="text-[10px] bg-[#f0f0f2] dark:bg-white/8 text-[#6e6e73] dark:text-white/40 px-2 py-0.5 rounded-full font-medium">
             {gt}
           </span>
         ))}

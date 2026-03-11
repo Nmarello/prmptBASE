@@ -405,14 +405,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] flex flex-col">
+    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#0d1117] text-[#1d1d1f] dark:text-white flex flex-col">
       {/* Top nav */}
-      <header className="border-b border-[#d2d2d7] bg-white px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 relative">
+      <header className="border-b border-[#d2d2d7] dark:border-white/8 bg-white dark:bg-[#0d1117] px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 relative">
         <div className="flex items-center gap-3 sm:gap-6">
-          <span className="text-xl font-black tracking-tight text-[#1d1d1f]">
+          <span className="text-xl font-black tracking-tight text-[#1d1d1f] dark:text-white">
             prmpt<span className="text-[#0071e3]">VAULT</span>
           </span>
-          <span className="absolute left-1/2 -translate-x-1/2 text-[10px] text-[#aeaeb2] font-mono hidden md:block">
+          <span className="absolute left-1/2 -translate-x-1/2 text-[10px] text-[#aeaeb2] dark:text-white/25 font-mono hidden md:block">
             {/* @ts-ignore */}
             v-0.0.{__BUILD__} · {__COMMIT__}
           </span>
@@ -435,8 +435,8 @@ export default function Dashboard() {
                 onClick={() => { setView(v); setSidebarOpen(false); if (v === 'assets') loadAssets() }}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                   view === v || (v === 'models' && view === 'builder')
-                    ? 'bg-[#f0f0f2] text-[#1d1d1f]'
-                    : 'text-[#6e6e73] hover:text-[#1d1d1f]'
+                    ? 'bg-[#f0f0f2] dark:bg-white/10 text-[#1d1d1f] dark:text-white'
+                    : 'text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white'
                 }`}
               >
                 {v === 'models' ? 'Models' : `Assets${assets.length > 0 ? ` (${assets.length})` : ''}`}
@@ -473,7 +473,7 @@ export default function Dashboard() {
               }
             }}
           />
-          <span className="text-sm text-[#6e6e73] hidden sm:block">{user?.email}</span>
+          <span className="text-sm text-[#6e6e73] dark:text-white/40 hidden sm:block">{user?.email}</span>
           <SettingsPopover onSignOut={signOut} onStartTour={() => setTourActive(true)} />
         </div>
       </header>
@@ -487,14 +487,14 @@ export default function Dashboard() {
               <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setSidebarOpen(false)} />
             )}
             {/* Left panel — model list */}
-            <aside data-tour="sidebar" className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-[#d2d2d7] flex flex-col flex-shrink-0 overflow-hidden transition-transform duration-200 md:static md:z-auto md:translate-x-0 md:min-h-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside data-tour="sidebar" className={`fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-[#0d1117] border-r border-[#d2d2d7] dark:border-white/8 flex flex-col flex-shrink-0 overflow-hidden transition-transform duration-200 md:static md:z-auto md:translate-x-0 md:min-h-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
               {/* Mobile sidebar header */}
-              <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-[#d2d2d7] flex-shrink-0">
-                <span className="text-sm font-semibold text-[#1d1d1f]">Choose a model</span>
-                <button onClick={() => setSidebarOpen(false)} className="text-[#aeaeb2] hover:text-[#1d1d1f] p-1 text-lg leading-none cursor-pointer">✕</button>
+              <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-[#d2d2d7] dark:border-white/8 flex-shrink-0">
+                <span className="text-sm font-semibold text-[#1d1d1f] dark:text-white">Choose a model</span>
+                <button onClick={() => setSidebarOpen(false)} className="text-[#aeaeb2] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white p-1 text-lg leading-none cursor-pointer">✕</button>
               </div>
               {/* Image / Video tabs */}
-              <div className="flex border-b border-[#d2d2d7] flex-shrink-0">
+              <div className="flex border-b border-[#d2d2d7] dark:border-white/8 flex-shrink-0">
                 {(['image', 'video'] as const).map((tab) => (
                   <button
                     key={tab}
@@ -509,8 +509,8 @@ export default function Dashboard() {
                     }}
                     className={`flex-1 py-3 text-sm font-semibold tracking-wide transition-all cursor-pointer ${
                       mediaTab === tab
-                        ? 'text-[#1d1d1f] border-b-2 border-[#0071e3]'
-                        : 'text-[#6e6e73] hover:text-[#1d1d1f]'
+                        ? 'text-[#1d1d1f] dark:text-white border-b-2 border-[#0071e3]'
+                        : 'text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white'
                     }`}
                   >
                     {tab === 'image' ? 'Image' : 'Video'}
@@ -518,9 +518,9 @@ export default function Dashboard() {
                 ))}
               </div>
 
-              <div className="p-4 overflow-y-auto space-y-3 flex-1 bg-white">
+              <div className="p-4 overflow-y-auto space-y-3 flex-1 bg-white dark:bg-[#0d1117]">
                 {models.length === 0 && (
-                  <p className="text-[#aeaeb2] text-sm px-1">Loading…</p>
+                  <p className="text-[#aeaeb2] dark:text-white/30 text-sm px-1">Loading…</p>
                 )}
 
                 {mediaTab === 'image' && (() => {
@@ -566,15 +566,15 @@ export default function Dashboard() {
                           className={`relative w-full text-left rounded-xl p-4 border transition-all cursor-pointer ${
                             selectedProvider === 'fal.ai' && !selectedModel
                               ? 'bg-[rgba(0,113,227,0.06)] border-[rgba(0,113,227,0.35)]'
-                              : 'bg-white border-[#d2d2d7] hover:border-[#aeaeb2] hover:shadow-sm'
+                              : 'bg-white dark:bg-white/4 border-[#d2d2d7] dark:border-white/8 hover:border-[#aeaeb2] hover:shadow-sm'
                           }`}
                         >
                           <div className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[#0071e3]">Black Forest Labs</div>
-                          <div className="text-[#1d1d1f] font-semibold text-sm leading-tight">Flux</div>
-                          <div className="text-[#aeaeb2] text-xs mt-1">
+                          <div className="text-[#1d1d1f] dark:text-white font-semibold text-sm leading-tight">Flux</div>
+                          <div className="text-[#aeaeb2] dark:text-white/30 text-xs mt-1">
                             {fluxImageModels.length} models available
                           </div>
-                          <div className="mt-2 text-xs text-[#6e6e73]">Select to choose model →</div>
+                          <div className="mt-2 text-xs text-[#6e6e73] dark:text-white/40">Select to choose model →</div>
                         </button>
                       )}
                       {googleImageModels.map((model) => (
@@ -632,7 +632,7 @@ export default function Dashboard() {
             </aside>
 
             {/* Main panel */}
-            <main data-tour="builder-area" className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#f5f5f7]">
+            <main data-tour="builder-area" className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#f5f5f7] dark:bg-[#0d1117]">
               {!selectedModel && !selectedProvider && (
                 <HomeGrid
                   assets={assets}
@@ -643,8 +643,8 @@ export default function Dashboard() {
               {/* Flux model picker */}
               {selectedProvider === 'fal.ai' && !selectedModel && (
                 <div className="max-w-2xl">
-                  <h2 className="text-2xl font-bold mb-1 text-[#1d1d1f]">Flux Models</h2>
-                  <p className="text-[#6e6e73] text-sm mb-8">Choose a Flux model to build your prompt</p>
+                  <h2 className="text-2xl font-bold mb-1 text-[#1d1d1f] dark:text-white">Flux Models</h2>
+                  <p className="text-[#6e6e73] dark:text-white/40 text-sm mb-8">Choose a Flux model to build your prompt</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {models.filter((m) => m.provider === 'fal.ai' && !['nano-banana', 'recraft-v4-pro'].includes(m.slug) && m.supported_gen_types.some((g) => g === 'txt2img' || g === 'img2img' || g === 'multi_img2img')).map((model) => {
                       const accessible = tierCanAccess(userTier, model.min_tier)
@@ -654,8 +654,8 @@ export default function Dashboard() {
                           onClick={accessible ? () => selectModel(model) : undefined}
                           className={`relative text-left rounded-xl p-4 border transition-all ${
                             accessible
-                              ? 'bg-white border-[#d2d2d7] hover:border-[rgba(0,113,227,0.4)] hover:bg-[rgba(0,113,227,0.04)] cursor-pointer'
-                              : 'bg-[#f5f5f7] border-[#d2d2d7] opacity-50 cursor-not-allowed'
+                              ? 'bg-white dark:bg-white/4 border-[#d2d2d7] dark:border-white/8 hover:border-[rgba(0,113,227,0.4)] hover:bg-[rgba(0,113,227,0.04)] cursor-pointer'
+                              : 'bg-[#f5f5f7] dark:bg-white/4 border-[#d2d2d7] dark:border-white/8 opacity-50 cursor-not-allowed'
                           }`}
                         >
                           {!accessible && (
@@ -663,8 +663,8 @@ export default function Dashboard() {
                               {model.min_tier}
                             </span>
                           )}
-                          <div className="text-[#1d1d1f] font-semibold text-sm leading-tight mb-1">{model.name.replace(/ [—–-]+ img2img$/i, '')}</div>
-                          <div className="text-[#6e6e73] text-xs line-clamp-2 mb-3">{model.description}</div>
+                          <div className="text-[#1d1d1f] dark:text-white font-semibold text-sm leading-tight mb-1">{model.name.replace(/ [—–-]+ img2img$/i, '')}</div>
+                          <div className="text-[#6e6e73] dark:text-white/40 text-xs line-clamp-2 mb-3">{model.description}</div>
                           <div className="flex flex-wrap gap-1">
                             {model.supported_gen_types.map((gt) => (
                               <span key={gt} className="text-[10px] bg-[#f0f0f2] text-[#6e6e73] px-2 py-0.5 rounded-full">
@@ -681,9 +681,9 @@ export default function Dashboard() {
 
               {selectedModel && !selectedGenType && (
                 <div className="max-w-xl">
-                  <h2 className="text-2xl font-bold mb-1 text-[#1d1d1f]">{selectedModel.name}</h2>
-                  <p className="text-[#6e6e73] text-sm mb-8">{selectedModel.description}</p>
-                  <div className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider mb-3">
+                  <h2 className="text-2xl font-bold mb-1 text-[#1d1d1f] dark:text-white">{selectedModel.name}</h2>
+                  <p className="text-[#6e6e73] dark:text-white/40 text-sm mb-8">{selectedModel.description}</p>
+                  <div className="text-xs font-semibold text-[#aeaeb2] dark:text-white/30 uppercase tracking-wider mb-3">
                     Choose generation type
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -691,10 +691,10 @@ export default function Dashboard() {
                       <button
                         key={gt}
                         onClick={() => selectGenType(gt)}
-                        className="p-5 bg-white hover:bg-[#f5f5f7] border border-[#d2d2d7] hover:border-[#aeaeb2] rounded-xl text-left transition-all cursor-pointer"
+                        className="p-5 bg-white dark:bg-white/4 hover:bg-[#f5f5f7] dark:hover:bg-white/8 border border-[#d2d2d7] dark:border-white/8 hover:border-[#aeaeb2] rounded-xl text-left transition-all cursor-pointer"
                       >
-                        <div className="text-[#1d1d1f] font-semibold mb-1">{GEN_TYPE_LABELS[gt]}</div>
-                        <div className="text-[#6e6e73] text-xs">Generate using {selectedModel.name}</div>
+                        <div className="text-[#1d1d1f] dark:text-white font-semibold mb-1">{GEN_TYPE_LABELS[gt]}</div>
+                        <div className="text-[#6e6e73] dark:text-white/40 text-xs">Generate using {selectedModel.name}</div>
                       </button>
                     ))}
                   </div>
@@ -708,7 +708,7 @@ export default function Dashboard() {
                       setSelectedGenType(null); setTemplate(null); setResult(null); setGenerateError(null)
                       if (selectedModel.provider === 'fal.ai') setSelectedModel(null)
                     }}
-                    className="text-[#6e6e73] hover:text-[#1d1d1f] text-sm mb-8 flex items-center gap-1 transition-colors cursor-pointer"
+                    className="text-[#6e6e73] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white text-sm mb-8 flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     ← {selectedModel.provider === 'fal.ai' ? 'Flux Models' : selectedModel.name}
                   </button>
@@ -716,8 +716,8 @@ export default function Dashboard() {
                   {(pendingVideo || pendingImage) && !result && (
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
                       <div className="w-10 h-10 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
-                      <p className="text-[#1d1d1f] font-medium">{pendingVideo ? 'Rendering your video…' : 'Generating your image…'}</p>
-                      <p className="text-[#6e6e73] text-sm">You can browse the app — we'll notify you when it's done.</p>
+                      <p className="text-[#1d1d1f] dark:text-white font-medium">{pendingVideo ? 'Rendering your video…' : 'Generating your image…'}</p>
+                      <p className="text-[#6e6e73] dark:text-white/40 text-sm">You can browse the app — we'll notify you when it's done.</p>
                       {pendingVideo && (
                         <button
                           onClick={() => {
@@ -747,13 +747,13 @@ export default function Dashboard() {
                         <img
                           src={result.url}
                           alt={result.prompt}
-                          className="rounded-2xl w-full max-w-lg border border-[#d2d2d7]"
+                          className="rounded-2xl w-full max-w-lg border border-[#d2d2d7] dark:border-white/10"
                         />
                       )}
                       {result.revised_prompt && (
-                        <div className="bg-[#f5f5f7] border border-[#d2d2d7] rounded-xl p-4">
-                          <div className="text-xs font-semibold text-[#aeaeb2] uppercase tracking-wider mb-1">Revised prompt</div>
-                          <p className="text-[#6e6e73] text-sm">{result.revised_prompt}</p>
+                        <div className="bg-[#f5f5f7] dark:bg-white/4 border border-[#d2d2d7] dark:border-white/8 rounded-xl p-4">
+                          <div className="text-xs font-semibold text-[#aeaeb2] dark:text-white/30 uppercase tracking-wider mb-1">Revised prompt</div>
+                          <p className="text-[#6e6e73] dark:text-white/55 text-sm">{result.revised_prompt}</p>
                         </div>
                       )}
                       <div className="flex gap-2 sm:gap-3 flex-wrap">
@@ -929,7 +929,7 @@ export default function Dashboard() {
 
       {/* Render completion toast */}
       {renderToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-white border border-[#d2d2d7] rounded-2xl shadow-xl text-sm font-medium text-[#1d1d1f] animate-fade-in">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#1c1c1e] border border-[#d2d2d7] dark:border-white/10 rounded-2xl shadow-xl text-sm font-medium text-[#1d1d1f] dark:text-white animate-fade-in">
           <svg className="w-5 h-5 text-[#0071e3] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
           <span>{renderToast}</span>
           <button
