@@ -376,16 +376,21 @@ function FieldInput({ field, value, onChange, customOptions }: {
   if (field.type === 'style_picker') {
     const selected = (value as string) ?? ''
     return (
-      <div className="flex flex-wrap gap-1.5">
+      <div className="grid grid-cols-3 gap-2">
         {allOptions.map((opt) => {
           const active = selected === opt.value
           const isCustom = customOptions.some((c) => c.value === opt.value)
+          // Split leading emoji from label text
+          const chars = [...opt.label]
+          const hasEmoji = chars[0] && chars[0].codePointAt(0)! > 255
+          const emoji = hasEmoji ? chars[0] : (isCustom ? '★' : null)
+          const text = hasEmoji ? opt.label.slice(chars[0].length).trim() : opt.label
           return (
             <button
               key={opt.value}
               type="button"
               onClick={() => onChange(active ? '' : opt.value)}
-              className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border text-center transition-all cursor-pointer ${
                 active
                   ? 'bg-[rgba(0,113,227,0.08)] border-[rgba(0,113,227,0.4)] text-[#0071e3]'
                   : isCustom
@@ -393,7 +398,8 @@ function FieldInput({ field, value, onChange, customOptions }: {
                   : 'bg-[#f5f5f7] dark:bg-[#161b22] border-[#d2d2d7] dark:border-white/10 text-[#6e6e73] dark:text-white/55 hover:border-[#aeaeb2] dark:hover:border-white/25 hover:text-[#1d1d1f] dark:hover:text-white'
               }`}
             >
-              {isCustom ? '★ ' : ''}{opt.label}
+              {emoji && <span className="text-xl leading-none">{emoji}</span>}
+              <span className="text-[11px] font-medium leading-tight">{text}</span>
             </button>
           )
         })}
