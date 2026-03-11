@@ -55,3 +55,28 @@ body {
 .overflow-x-auto::-webkit-scrollbar {
   display: none;
 }
+
+/* Custom scrollbars — thin track + blue accent thumb */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--pv-accent) var(--pv-border);
+}
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--pv-border);
+  border-radius: 99px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--pv-accent);
+  border-radius: 99px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  opacity: 0.8;
+}
+/* Keep horizontal rows hidden */
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
