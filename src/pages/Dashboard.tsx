@@ -844,19 +844,18 @@ export default function Dashboard() {
                 {/* Gen type picker (multi-type models) */}
                 {!selectedGenType && selectedModel.supported_gen_types.length > 1 && (
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--pv-text3)' }}>
+                    <p className="text-xs font-medium mb-3" style={{ color: 'var(--pv-text3)' }}>
                       Choose generation type
                     </p>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {selectedModel.supported_gen_types.map(gt => (
                         <button
                           key={gt}
                           onClick={() => selectGenType(gt)}
-                          className="p-4 rounded-[10px] text-left transition-all cursor-pointer"
-                          style={{ border: '1.5px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text2)' }}
+                          className="px-4 py-2 rounded-[8px] text-sm font-medium transition-all cursor-pointer hover:opacity-90"
+                          style={{ border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text)' }}
                         >
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--pv-text)' }}>{gt}</div>
-                          <div style={{ fontSize: 11.5, marginTop: 2 }}>Use {selectedModel.name}</div>
+                          {GEN_TYPE_LABELS[gt as GenType] ?? gt}
                         </button>
                       ))}
                     </div>

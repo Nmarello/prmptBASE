@@ -829,16 +829,18 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
                 type="button"
                 onClick={() => handleAiAssist(field.id)}
                 disabled={assisting === field.id}
-                className="text-xs text-sky-400 hover:text-sky-300 disabled:opacity-50 flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-xs disabled:opacity-40 flex items-center gap-1 transition-opacity hover:opacity-70 cursor-pointer"
+                style={{ color: 'var(--pv-accent)' }}
               >
-                {assisting === field.id ? '⏳ Thinking…' : '✨ AI assist'}
+                {assisting === field.id ? 'Thinking…' : 'AI assist'}
               </button>
             )}
             {showAddButton && (
               <button
                 type="button"
                 onClick={() => setAddingTo(addingTo === field.id ? null : field.id)}
-                className="text-xs text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1 cursor-pointer"
+                className="text-xs transition-opacity hover:opacity-70 flex items-center gap-1 cursor-pointer"
+                style={{ color: 'var(--pv-text3)' }}
               >
                 + Add your own
               </button>
@@ -894,11 +896,11 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
   return (
     <form onSubmit={handleSubmit}>
       {/* Gen type badge + description */}
-      <div className="flex items-center gap-3 mb-5">
-        <span className="text-xs bg-[rgba(0,113,227,0.08)] text-[#0071e3] border border-[rgba(0,113,227,0.25)] px-2.5 py-1 rounded-full font-medium">
+      <div className="flex items-center gap-2 mb-5">
+        <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-md flex-shrink-0" style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)' }}>
           {GEN_TYPE_LABELS[genType]}
         </span>
-        <span className="text-sm" style={{ color: 'var(--pv-text2)' }}>{template.description}</span>
+        <span className="text-sm truncate" style={{ color: 'var(--pv-text2)' }}>{template.description}</span>
       </div>
 
       {/* Single column layout */}
