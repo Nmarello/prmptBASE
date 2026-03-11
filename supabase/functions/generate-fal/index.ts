@@ -245,18 +245,26 @@ function buildPrompt(body: Record<string, unknown>): string {
 async function storeImage(adminClient: ReturnType<typeof createClient>, tempUrl: string, userId: string | null, fmt = 'jpeg'): Promise<string> {
   try {
     const imgRes = await fetch(tempUrl)
+    if (!imgRes.ok) throw new Error(`Fetch failed: ${imgRes.status}`)
     const imgBlob = await imgRes.arrayBuffer()
-    const ext = fmt === 'png' ? 'png' : 'jpg'
+    // Use actual content-type from response (handles WebP, PNG, etc.)
+    const actualContentType = imgRes.headers.get('content-type')?.split(';')[0].trim() ?? `image/${fmt}`
+    const extMap: Record<string, string> = { 'image/png': 'png', 'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/gif': 'gif' }
+    const ext = extMap[actualContentType] ?? (fmt === 'png' ? 'png' : 'jpg')
     const fileName = `${userId ?? 'anon'}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     const { error: uploadErr } = await adminClient.storage
       .from('assets')
-      .upload(fileName, imgBlob, { contentType: `image/${fmt === 'png' ? 'png' : 'jpeg'}`, upsert: false })
-    if (!uploadErr) {
-      const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(fileName)
-      return publicUrl
+      .upload(fileName, imgBlob, { contentType: actualContentType, upsert: false })
+    if (uploadErr) {
+      console.error('[storeImage] upload error:', uploadErr.message, '| file:', fileName, '| contentType:', actualContentType)
+      return tempUrl
     }
-  } catch (_) { /* fall back */ }
-  return tempUrl
+    const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(fileName)
+    return publicUrl
+  } catch (err) {
+    console.error('[storeImage] error:', err)
+    return tempUrl
+  }
 }
 
 Deno.serve(async (req) => {
@@ -397,6 +405,8 @@ Deno.serve(async (req) => {
       const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
       const numImages = Math.min(Math.max(Number(num_images) || 1, 1), 4)
       const guidanceVal = guidance_scale != null ? Math.min(Math.max(Number(guidance_scale), 1), 20) : 3.5
+      const numSteps = steps != null ? Math.min(Math.max(Number(steps), 1), 50) : undefined
+      const safetyTol = body.safety_tolerance ?? '2'
 
       const falPayload: Record<string, unknown> = {
         image_url: imageUrl,
@@ -404,7 +414,8 @@ Deno.serve(async (req) => {
         num_images: numImages,
         guidance_scale: guidanceVal,
         output_format: fmt,
-        safety_tolerance: '2',
+        safety_tolerance: safetyTol,
+        ...(numSteps !== undefined ? { num_inference_steps: numSteps } : {}),
         ...(seedVal !== undefined ? { seed: seedVal } : {}),
       }
 
@@ -576,6 +587,9 @@ Deno.serve(async (req) => {
         falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
         if (body.resolution) falPayload.resolution = body.resolution
         if (body.duration) falPayload.duration = Number(body.duration)
+        if (body.model) falPayload.model = body.model
+        // Always keep the video — API default is delete_video=true (auto-deletes after generation)
+        falPayload.delete_video = false
       }
 
       // Submit to fal queue
@@ -651,10 +665,14 @@ Deno.serve(async (req) => {
           prompt: builtPrompt,
           image_urls: [imageUrl],
           num_images: numImages,
+          // limit_generations=true (default) caps output to 1 regardless of num_images
+          limit_generations: false,
           output_format: fmt,
           aspect_ratio: aspectRatio,
           ...(body.resolution ? { resolution: body.resolution } : { resolution: '1K' }),
           ...(body.thinking_level ? { thinking_level: body.thinking_level } : {}),
+          ...(body.enable_web_search === 'true' ? { enable_web_search: true } : {}),
+          ...(body.safety_tolerance ? { safety_tolerance: body.safety_tolerance } : {}),
           ...(seedVal !== undefined ? { seed: seedVal } : {}),
         }
 
@@ -690,10 +708,14 @@ Deno.serve(async (req) => {
       const falPayload: Record<string, unknown> = {
         prompt: builtPrompt,
         num_images: numImages,
+        // limit_generations=true (default) caps output to 1 regardless of num_images
+        limit_generations: false,
         output_format: fmt,
         aspect_ratio: aspectRatio,
         ...(body.resolution ? { resolution: body.resolution } : { resolution: '1K' }),
         ...(body.thinking_level ? { thinking_level: body.thinking_level } : {}),
+        ...(body.enable_web_search === 'true' ? { enable_web_search: true } : {}),
+        ...(body.safety_tolerance ? { safety_tolerance: body.safety_tolerance } : {}),
         ...(seedVal !== undefined ? { seed: seedVal } : {}),
       }
 
