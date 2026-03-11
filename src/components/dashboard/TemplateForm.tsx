@@ -323,6 +323,53 @@ function FieldInput({ field, value, onChange, customOptions }: {
   }
 
   if (field.type === 'select') {
+    // Auto-convert dimension options with different aspect ratios to visual pill picker
+    const opts = field.options ?? []
+    const DIM_PATTERN = /^(\d+)x(\d+)$/i
+    const KNOWN_DIMS: Record<string, [number, number]> = {
+      square_hd: [1024, 1024], square: [512, 512],
+      portrait_4_3: [768, 1024], portrait_16_9: [576, 1024],
+      landscape_4_3: [1024, 768], landscape_16_9: [1024, 576],
+    }
+    const parsedDims = opts.map(o => {
+      const m = o.value.match(DIM_PATTERN)
+      if (m) return [Number(m[1]), Number(m[2])] as [number, number]
+      if (KNOWN_DIMS[o.value]) return KNOWN_DIMS[o.value]
+      return null
+    })
+    const allDims = parsedDims.every(d => d !== null) && opts.length > 0
+    if (allDims) {
+      const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b)
+      const ratios = parsedDims.map(d => { const g = gcd(d![0], d![1]); return `${d![0]/g}:${d![1]/g}` })
+      const differentRatios = new Set(ratios).size > 1
+      if (differentRatios) {
+        const selected = (value as string) ?? ''
+        return (
+          <div>
+            <div className="flex flex-wrap gap-3">
+              {opts.map((opt, i) => {
+                const active = selected === opt.value
+                const [w, h] = parsedDims[i]!
+                const scale = 44 / Math.max(w, h)
+                const pw = Math.round(w * scale)
+                const ph = Math.round(h * scale)
+                return (
+                  <button key={opt.value} type="button" onClick={() => onChange(active ? '' : opt.value)} className="flex flex-col items-center gap-1.5 cursor-pointer">
+                    <div
+                      className={`rounded-[4px] transition-all ${active ? 'border-2' : 'border'}`}
+                      style={{ width: pw + 8, height: ph + 8, borderColor: active ? 'var(--pv-accent)' : 'var(--pv-border)', background: active ? 'rgba(0,80,255,0.08)' : 'var(--pv-surface2)' }}
+                    />
+                    <span className="text-[11px] font-medium" style={{ color: active ? 'var(--pv-accent)' : 'var(--pv-text3)' }}>{opt.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+            {field.hint && <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
+          </div>
+        )
+      }
+    }
+
     return (
       <div>
         <select
