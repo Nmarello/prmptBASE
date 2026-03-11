@@ -474,7 +474,7 @@ export default function Dashboard() {
             }}
           />
           <span className="text-sm text-[#6e6e73] dark:text-white/40 hidden sm:block">{user?.email}</span>
-          <SettingsPopover onSignOut={signOut} onStartTour={() => setTourActive(true)} />
+          <SettingsPopover onSignOut={signOut} />
         </div>
       </header>
 

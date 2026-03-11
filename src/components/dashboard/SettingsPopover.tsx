@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { useLearningMode, type LearningMode } from '../../contexts/LearningModeContext'
 import { useTheme } from '../../contexts/ThemeContext'
 
 const TIMEZONES = [
@@ -45,21 +44,13 @@ const TZ_LABELS: Record<string, string> = {
 
 const TZ_STORAGE_KEY = 'prmptVAULT_timezone'
 
-const LEARNING_MODE_OPTIONS: { value: LearningMode; label: string; desc: string }[] = [
-  { value: 'none',     label: 'None',    desc: 'No guidance' },
-  { value: 'tooltips', label: 'Tooltips', desc: 'ℹ️ on each field' },
-  { value: 'guided',   label: 'Guided',  desc: 'Full site tour' },
-]
-
 interface Props {
   onSignOut: () => void
-  onStartTour: () => void
 }
 
-export default function SettingsPopover({ onSignOut, onStartTour }: Props) {
+export default function SettingsPopover({ onSignOut }: Props) {
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
-  const { mode, setMode } = useLearningMode()
   const { theme, setTheme } = useTheme()
 
   const [timezone, setTimezone] = useState<string>(() => {
