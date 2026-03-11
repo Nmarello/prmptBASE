@@ -29,18 +29,37 @@ Deno.serve(async (req) => {
       .from('profiles').select('is_admin').eq('id', caller.id).single()
     if (!callerProfile?.is_admin) throw new Error('Forbidden')
 
-    const { target_user_id, tier } = await req.json()
-    if (!target_user_id || !tier) throw new Error('Missing target_user_id or tier')
+    const { target_user_id, tier, email, display_name, password } = await req.json()
+    if (!target_user_id) throw new Error('Missing target_user_id')
 
-    const VALID_TIERS = ['newbie', 'creator', 'studio', 'pro']
-    if (!VALID_TIERS.includes(tier)) throw new Error('Invalid tier')
+    // Update auth (email and/or password) via admin API
+    if (email || password) {
+      const authUpdate: Record<string, string> = {}
+      if (email) authUpdate.email = email
+      if (password) authUpdate.password = password
+      const { error: authErr } = await adminClient.auth.admin.updateUserById(target_user_id, authUpdate)
+      if (authErr) throw new Error(`Auth update failed: ${authErr.message}`)
+    }
 
-    // Update profiles + subscriptions
-    await adminClient.from('profiles').update({ tier }).eq('id', target_user_id)
-    await adminClient.from('subscriptions').upsert(
-      { user_id: target_user_id, tier, status: 'active', updated_at: new Date().toISOString() },
-      { onConflict: 'user_id' }
-    )
+    // Update profile
+    const profileUpdate: Record<string, unknown> = {}
+    if (display_name !== undefined) profileUpdate.display_name = display_name
+    if (tier) {
+      const VALID_TIERS = ['newbie', 'creator', 'studio', 'pro']
+      if (!VALID_TIERS.includes(tier)) throw new Error('Invalid tier')
+      profileUpdate.tier = tier
+    }
+    if (Object.keys(profileUpdate).length > 0) {
+      await adminClient.from('profiles').update(profileUpdate).eq('id', target_user_id)
+    }
+
+    // Sync subscriptions if tier changed
+    if (tier) {
+      await adminClient.from('subscriptions').upsert(
+        { user_id: target_user_id, tier, status: 'active', updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      )
+    }
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

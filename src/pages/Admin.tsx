@@ -45,6 +45,13 @@ export default function Admin() {
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
 
+  const [editUser, setEditUser] = useState<UserRow | null>(null)
+  const [editEmail, setEditEmail] = useState('')
+  const [editName, setEditName] = useState('')
+  const [editPassword, setEditPassword] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+
   useEffect(() => { loadAll() }, [])
 
   async function loadAll() {
@@ -161,6 +168,51 @@ export default function Admin() {
     }
   }
 
+  function openEdit(u: UserRow) {
+    setEditUser(u)
+    setEditEmail(u.email)
+    setEditName(u.display_name ?? '')
+    setEditPassword('')
+    setEditError(null)
+  }
+
+  async function saveEdit() {
+    if (!editUser) return
+    setSaving(true)
+    setEditError(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            target_user_id: editUser.id,
+            ...(editEmail.trim() !== editUser.email ? { email: editEmail.trim() } : {}),
+            ...(editName.trim() !== (editUser.display_name ?? '') ? { display_name: editName.trim() } : {}),
+            ...(editPassword.trim() ? { password: editPassword.trim() } : {}),
+          }),
+        }
+      )
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`)
+      setUsers(prev => prev.map(u => u.id === editUser.id
+        ? { ...u, email: editEmail.trim(), display_name: editName.trim() || null }
+        : u
+      ))
+      setEditUser(null)
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const filtered = users.filter(u => {
     const matchTier = tierFilter === 'all' || u.tier === tierFilter
     const q = search.toLowerCase()
@@ -265,6 +317,7 @@ export default function Admin() {
                   <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Assets</th>
                   <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Joined</th>
                   <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Change Tier</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Edit</th>
                 </tr>
               </thead>
               <tbody>
@@ -317,6 +370,14 @@ export default function Admin() {
                           </button>
                         ))}
                       </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <button
+                        onClick={() => openEdit(u)}
+                        className="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-500 hover:bg-white/8 hover:text-white transition-all"
+                      >
+                        Edit
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -397,6 +458,62 @@ export default function Admin() {
               className="w-full py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm font-semibold transition-all mt-1"
             >
               {creating ? 'Creating…' : 'Create user'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    {/* Edit user modal */}
+    {editUser && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" onClick={() => setEditUser(null)}>
+        <div className="bg-[#161b22] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-base font-semibold">Edit user</h3>
+            <button onClick={() => setEditUser(null)} className="text-slate-500 hover:text-white text-lg leading-none">✕</button>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-slate-400 mb-1 block">Email</label>
+              <input
+                type="email"
+                value={editEmail}
+                onChange={e => setEditEmail(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 mb-1 block">Display name</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 mb-1 block">
+                New password <span className="text-slate-600">(leave blank to keep current)</span>
+              </label>
+              <input
+                type="text"
+                value={editPassword}
+                onChange={e => setEditPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
+              />
+            </div>
+
+            {editError && (
+              <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{editError}</p>
+            )}
+
+            <button
+              onClick={saveEdit}
+              disabled={saving}
+              className="w-full py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm font-semibold transition-all mt-1"
+            >
+              {saving ? 'Saving…' : 'Save changes'}
             </button>
           </div>
         </div>
