@@ -713,10 +713,101 @@ export default function Dashboard() {
           <div className="absolute inset-0" onClick={closeWorkspace} />
 
           <div
-            className="relative z-10 flex flex-row-reverse w-full animate-fade-in"
+            className="relative z-10 flex w-full animate-fade-in"
             style={{ transform: 'none' }}
           >
-            {/* Left: canvas / output */}
+            {/* Left: form panel */}
+            <div
+              className="flex flex-col overflow-hidden flex-shrink-0"
+              style={{ width: 420, background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}
+            >
+              {/* Model header */}
+              <div className="px-7 pt-6 pb-5 flex-shrink-0" style={{ borderBottom: '1px solid var(--pv-border)' }}>
+                <div className="flex items-center gap-3.5">
+                  <div className="rounded-[12px] overflow-hidden flex-shrink-0" style={{ width: 48, height: 48 }}>
+                    <div className="w-full h-full flex items-center justify-center text-xl" style={{ background: (MODEL_ART_MAP as any)[selectedModel.slug]?.gradient ?? 'linear-gradient(145deg,#222,#3a3a3a)' }}>
+                      {(MODEL_ART_MAP as any)[selectedModel.slug]?.initial ?? ''}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 20, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                      {selectedModel.name}
+                    </div>
+                    <div style={{ fontSize: 12.5, color: 'var(--pv-text2)', marginTop: 2 }}>
+                      {selectedModel.provider} · {selectedModel.supported_gen_types.join(' + ')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Form body */}
+              <div className="flex-1 overflow-y-auto px-7 py-5">
+                {/* Gen type picker (multi-type models) */}
+                {!selectedGenType && selectedModel.supported_gen_types.length > 1 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--pv-text3)' }}>
+                      Choose generation type
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {selectedModel.supported_gen_types.map(gt => (
+                        <button
+                          key={gt}
+                          onClick={() => selectGenType(gt)}
+                          className="p-4 rounded-[10px] text-left transition-all cursor-pointer"
+                          style={{ border: '1.5px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text2)' }}
+                        >
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--pv-text)' }}>{gt}</div>
+                          <div style={{ fontSize: 11.5, marginTop: 2 }}>Use {selectedModel.name}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Template loading */}
+                {selectedGenType && !template && (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="w-6 h-6 rounded-full pv-spin" style={{ border: '2px solid var(--pv-border)', borderTopColor: 'var(--pv-accent)' }} />
+                  </div>
+                )}
+
+                {/* Template form */}
+                {selectedGenType && template && (
+                  <>
+                    {generateError && (
+                      <div className="mb-4 p-3 rounded-[10px] text-sm" style={{ background: '#fff1f0', border: '1px solid #ffc9c9', color: '#c0392b' }}>
+                        {generateError}
+                      </div>
+                    )}
+                    {projects.length > 0 && (
+                      <div className="mb-4 flex items-center gap-2">
+                        <span className="text-xs flex-shrink-0" style={{ color: 'var(--pv-text3)' }}>Save to</span>
+                        <select
+                          value={activeProjectId ?? ''}
+                          onChange={e => setActiveProjectId(e.target.value || null)}
+                          className="text-xs px-3 py-1.5 rounded-[10px] outline-none cursor-pointer transition-all flex-1"
+                          style={{ border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text)' }}
+                        >
+                          <option value="">No project</option>
+                          {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    <TemplateForm
+                      template={template}
+                      genType={selectedGenType}
+                      onSubmit={handleGenerate}
+                      submitting={submitting}
+                      initialValues={img2imgInitialValues}
+                      userTier={userTier}
+                      modelMinTier={selectedModel?.min_tier}
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Right: canvas / output */}
             <div className="flex-1 flex flex-col p-8">
               <div
                 className="flex-1 rounded-[20px] overflow-hidden relative flex items-center justify-center"
@@ -812,97 +903,6 @@ export default function Dashboard() {
                   </button>
                 </div>
               )}
-            </div>
-
-            {/* Right: form panel */}
-            <div
-              className="flex flex-col overflow-hidden flex-shrink-0"
-              style={{ width: 420, background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}
-            >
-              {/* Model header */}
-              <div className="px-7 pt-6 pb-5 flex-shrink-0" style={{ borderBottom: '1px solid var(--pv-border)' }}>
-                <div className="flex items-center gap-3.5">
-                  <div className="rounded-[12px] overflow-hidden flex-shrink-0" style={{ width: 48, height: 48 }}>
-                    <div className="w-full h-full flex items-center justify-center text-xl" style={{ background: (MODEL_ART_MAP as any)[selectedModel.slug]?.gradient ?? 'linear-gradient(145deg,#222,#3a3a3a)' }}>
-                      {(MODEL_ART_MAP as any)[selectedModel.slug]?.initial ?? ''}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 20, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
-                      {selectedModel.name}
-                    </div>
-                    <div style={{ fontSize: 12.5, color: 'var(--pv-text2)', marginTop: 2 }}>
-                      {selectedModel.provider} · {selectedModel.supported_gen_types.join(' + ')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Form body */}
-              <div className="flex-1 overflow-y-auto px-7 py-5">
-                {/* Gen type picker (multi-type models) */}
-                {!selectedGenType && selectedModel.supported_gen_types.length > 1 && (
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--pv-text3)' }}>
-                      Choose generation type
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {selectedModel.supported_gen_types.map(gt => (
-                        <button
-                          key={gt}
-                          onClick={() => selectGenType(gt)}
-                          className="p-4 rounded-[10px] text-left transition-all cursor-pointer"
-                          style={{ border: '1.5px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text2)' }}
-                        >
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--pv-text)' }}>{gt}</div>
-                          <div style={{ fontSize: 11.5, marginTop: 2 }}>Use {selectedModel.name}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Template loading */}
-                {selectedGenType && !template && (
-                  <div className="flex items-center justify-center py-16">
-                    <div className="w-6 h-6 rounded-full pv-spin" style={{ border: '2px solid var(--pv-border)', borderTopColor: 'var(--pv-accent)' }} />
-                  </div>
-                )}
-
-                {/* Template form */}
-                {selectedGenType && template && (
-                  <>
-                    {generateError && (
-                      <div className="mb-4 p-3 rounded-[10px] text-sm" style={{ background: '#fff1f0', border: '1px solid #ffc9c9', color: '#c0392b' }}>
-                        {generateError}
-                      </div>
-                    )}
-                    {projects.length > 0 && (
-                      <div className="mb-4 flex items-center gap-2">
-                        <span className="text-xs flex-shrink-0" style={{ color: 'var(--pv-text3)' }}>Save to</span>
-                        <select
-                          value={activeProjectId ?? ''}
-                          onChange={e => setActiveProjectId(e.target.value || null)}
-                          className="text-xs px-3 py-1.5 rounded-[10px] outline-none cursor-pointer transition-all flex-1"
-                          style={{ border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text)' }}
-                        >
-                          <option value="">No project</option>
-                          {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                        </select>
-                      </div>
-                    )}
-                    <TemplateForm
-                      template={template}
-                      genType={selectedGenType}
-                      onSubmit={handleGenerate}
-                      submitting={submitting}
-                      initialValues={img2imgInitialValues}
-                      userTier={userTier}
-                      modelMinTier={selectedModel?.min_tier}
-                    />
-                  </>
-                )}
-              </div>
             </div>
           </div>
         </div>
