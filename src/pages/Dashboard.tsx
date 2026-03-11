@@ -162,6 +162,28 @@ export default function Dashboard() {
     'sora2':              { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
   } as const
 
+  const SLUG_BRAND_MAP: Record<string, string> = {
+    'dalle':              'OpenAI',
+    'flux-schnell':       'Black Forest Labs',
+    'flux-dev':           'Black Forest Labs',
+    'flux-pro':           'Black Forest Labs',
+    'flux-pro-ultra':     'Black Forest Labs',
+    'flux-dev-img2img':   'Black Forest Labs',
+    'flux-kontext-pro':   'Black Forest Labs',
+    'recraft-v4-pro':     'Recraft',
+    'nano-banana':        'Google',
+    'nano-banana-edit':   'Google',
+    'kling':              'Kuaishou',
+    'kling-txt2vid':      'Kuaishou',
+    'kling-img2vid':      'Kuaishou',
+    'luma':               'Luma AI',
+    'luma-txt2vid':       'Luma AI',
+    'luma-img2vid':       'Luma AI',
+    'minimax-txt2vid':    'MiniMax',
+    'sora':               'OpenAI',
+    'sora2':              'OpenAI',
+  }
+
   const loadAssets = useCallback(async () => {
     if (!user) return
     setAssetsLoading(true)
@@ -829,8 +851,8 @@ export default function Dashboard() {
                 {/* Close button */}
                 <button
                   onClick={closeWorkspace}
-                  className="absolute top-4 right-4 flex items-center justify-center rounded-[8px] transition-all"
-                  style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)' }}
+                  className="absolute top-4 right-4 z-10 flex items-center justify-center rounded-[8px] transition-all hover:opacity-90"
+                  style={{ width: 32, height: 32, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.85)' }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -887,7 +909,7 @@ export default function Dashboard() {
                       {selectedModel.name}
                     </div>
                     <div style={{ fontSize: 12.5, color: 'var(--pv-text2)', marginTop: 2 }}>
-                      {selectedModel.provider} · {selectedModel.supported_gen_types.join(' + ')}
+                      {SLUG_BRAND_MAP[selectedModel.slug] ?? selectedModel.provider} · {selectedModel.supported_gen_types.join(' + ')}
                     </div>
                   </div>
                 </div>

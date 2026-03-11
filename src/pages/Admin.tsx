@@ -6,10 +6,10 @@ const TIERS = ['newbie', 'creator', 'studio', 'pro'] as const
 type Tier = typeof TIERS[number]
 
 const TIER_COLORS: Record<Tier, string> = {
-  newbie:  'bg-slate-500/20 text-slate-400 border-slate-500/30',
-  creator: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
-  studio:  'bg-violet-500/20 text-violet-400 border-violet-500/30',
-  pro:     'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  newbie:  'bg-[#252220] text-[#9e9688] border-[#302d29]',
+  creator: 'bg-[#0050ff]/10 text-[#6699ff] border-[#0050ff]/20',
+  studio:  'bg-violet-500/10 text-violet-400 border-violet-500/20',
+  pro:     'bg-amber-500/10 text-amber-400 border-amber-500/20',
 }
 
 interface UserRow {
@@ -222,23 +222,23 @@ export default function Admin() {
 
   return (
     <>
-    <div className="min-h-screen bg-[#0d1117] text-white">
+    <div className="min-h-screen" style={{ background: '#0d0c0b', color: '#f2ede4', fontFamily: "'DM Sans', sans-serif" }}>
       {/* Header */}
-      <header className="border-b border-white/8 px-6 py-4 flex items-center justify-between">
+      <header style={{ borderBottom: '1px solid #302d29' }} className="px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span className="text-lg font-black tracking-tight">
-            prmpt<span className="text-sky-400">VAULT</span>
+          <span style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: '17px', fontWeight: 800, letterSpacing: '-0.03em' }}>
+            prmpt<span style={{ color: '#3d7fff' }}>VAULT</span>
           </span>
-          <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium">
+          <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '99px', background: 'rgba(255,200,50,0.08)', color: '#f5c842', border: '1px solid rgba(255,200,50,0.15)' }}>
             Admin
           </span>
-          <a href="/dashboard" className="text-xs text-slate-500 hover:text-white transition-colors">
+          <a href="/dashboard" style={{ fontSize: '12px', color: '#4a4540' }} className="hover:text-white transition-colors">
             ← Dashboard
           </a>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-slate-500">{user?.email}</span>
-          <button onClick={signOut} className="text-xs text-slate-600 hover:text-white transition-colors">
+          <span style={{ fontSize: '13px', color: '#4a4540' }}>{user?.email}</span>
+          <button onClick={signOut} style={{ fontSize: '12px', color: '#4a4540' }} className="hover:text-white transition-colors">
             Sign out
           </button>
         </div>
@@ -250,16 +250,16 @@ export default function Admin() {
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
             {[
-              { label: 'Total Users',    value: stats.total_users,       color: 'text-white' },
-              { label: 'New Today',      value: stats.new_users_today,   color: 'text-sky-400' },
-              { label: 'Total Assets',   value: stats.total_assets,      color: 'text-white' },
-              { label: 'Newbie',         value: stats.by_tier.newbie,    color: 'text-slate-400' },
-              { label: 'Creator',        value: stats.by_tier.creator,   color: 'text-sky-400' },
-              { label: 'Studio / Pro',   value: stats.by_tier.studio + stats.by_tier.pro, color: 'text-violet-400' },
+              { label: 'Total Users',   value: stats.total_users,                          accent: '#f2ede4' },
+              { label: 'New Today',     value: stats.new_users_today,                      accent: '#3d7fff' },
+              { label: 'Total Assets',  value: stats.total_assets,                         accent: '#f2ede4' },
+              { label: 'Newbie',        value: stats.by_tier.newbie,                       accent: '#7a7268' },
+              { label: 'Creator',       value: stats.by_tier.creator,                      accent: '#6699ff' },
+              { label: 'Studio / Pro',  value: stats.by_tier.studio + stats.by_tier.pro,   accent: '#c084fc' },
             ].map(s => (
-              <div key={s.label} className="bg-white/3 border border-white/8 rounded-xl p-4">
-                <div className="text-xs text-slate-500 mb-1">{s.label}</div>
-                <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
+              <div key={s.label} style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '14px', padding: '16px' }}>
+                <div style={{ fontSize: '11px', color: '#4a4540', marginBottom: '6px', fontWeight: 500, letterSpacing: '0.02em' }}>{s.label}</div>
+                <div style={{ fontSize: '26px', fontWeight: 700, color: s.accent, fontFamily: "'Bricolage Grotesque', sans-serif", letterSpacing: '-0.03em' }}>{s.value}</div>
               </div>
             ))}
           </div>
@@ -272,75 +272,73 @@ export default function Admin() {
             placeholder="Search email or name…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50 w-full sm:w-64"
+            style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '12px', padding: '8px 14px', fontSize: '13px', color: '#f2ede4', outline: 'none', width: '100%', maxWidth: '260px' }}
+            className="pv-placeholder focus:border-[#3d7fff] transition-colors"
           />
-          <div className="flex gap-1">
+          <div className="flex gap-1" style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '12px', padding: '4px' }}>
             {(['all', ...TIERS] as const).map(t => (
               <button
                 key={t}
                 onClick={() => setTierFilter(t)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
-                  tierFilter === t
-                    ? 'bg-white/10 text-white'
-                    : 'text-slate-500 hover:text-white'
-                }`}
+                style={tierFilter === t
+                  ? { background: '#252220', color: '#f2ede4', borderRadius: '8px', padding: '4px 10px', fontSize: '12px', fontWeight: 600 }
+                  : { color: '#4a4540', borderRadius: '8px', padding: '4px 10px', fontSize: '12px', fontWeight: 500 }
+                }
+                className="capitalize transition-colors hover:text-[#f2ede4] cursor-pointer"
               >
                 {t}
               </button>
             ))}
           </div>
-          <span className="text-xs text-slate-600 ml-auto">{filtered.length} users</span>
+          <span style={{ fontSize: '12px', color: '#4a4540', marginLeft: 'auto' }}>{filtered.length} users</span>
           <button
             onClick={() => { setShowCreate(true); setCreateError(null) }}
-            className="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 rounded-lg text-xs font-medium transition-all"
+            style={{ background: '#0050ff', borderRadius: '10px', padding: '6px 14px', fontSize: '12px', fontWeight: 600, color: '#fff' }}
+            className="hover:opacity-90 transition-opacity cursor-pointer"
           >
             + Add user
           </button>
         </div>
 
         {/* User table */}
-        <div className="bg-white/2 border border-white/8 rounded-2xl overflow-hidden overflow-x-auto">
+        <div style={{ background: '#1a1814', border: '1px solid #302d29', borderRadius: '18px', overflow: 'hidden' }} className="overflow-x-auto">
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-slate-500 text-sm animate-pulse">
+            <div className="flex items-center justify-center py-20 text-sm animate-pulse" style={{ color: '#4a4540' }}>
               Loading users…
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex items-center justify-center py-20 text-slate-600 text-sm">
+            <div className="flex items-center justify-center py-20 text-sm" style={{ color: '#4a4540' }}>
               No users found
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/8 text-left">
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">User</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tier</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Assets</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Joined</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Change Tier</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Edit</th>
+                <tr style={{ borderBottom: '1px solid #302d29' }}>
+                  {['User', 'Tier', 'Assets', 'Joined', 'Change Tier', 'Edit'].map(h => (
+                    <th key={h} className="px-5 py-3 text-left" style={{ fontSize: '11px', fontWeight: 600, color: '#4a4540', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((u) => (
                   <tr
                     key={u.id}
-                    className={`border-b border-white/5 hover:bg-white/2 transition-colors ${
-                      u.email === user?.email ? 'bg-amber-500/5' : ''
-                    }`}
+                    style={{ borderBottom: '1px solid #252220' }}
+                    className={`transition-colors hover:bg-white/[0.02] ${u.email === user?.email ? 'bg-amber-500/[0.04]' : ''}`}
                   >
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-white/8 flex items-center justify-center text-xs font-semibold text-slate-400 flex-shrink-0">
+                      <div className="flex items-center gap-2.5">
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#252220', border: '1px solid #302d29', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#7a7268', flexShrink: 0 }}>
                           {(u.display_name ?? u.email)[0].toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-white font-medium leading-tight">
+                          <div style={{ color: '#f2ede4', fontWeight: 500, fontSize: '13px', lineHeight: 1.3 }}>
                             {u.display_name ?? '—'}
                             {u.email === user?.email && (
-                              <span className="ml-2 text-[10px] text-amber-400 font-semibold">YOU</span>
+                              <span style={{ marginLeft: 6, fontSize: '10px', color: '#f5c842', fontWeight: 700 }}>YOU</span>
                             )}
                           </div>
-                          <div className="text-slate-500 text-xs">{u.email}</div>
+                          <div style={{ color: '#4a4540', fontSize: '11.5px' }}>{u.email}</div>
                         </div>
                       </div>
                     </td>
@@ -349,8 +347,8 @@ export default function Admin() {
                         {u.tier}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-400">{u.asset_count}</td>
-                    <td className="px-5 py-3.5 text-slate-500 text-xs">
+                    <td className="px-5 py-3.5" style={{ color: '#7a7268', fontSize: '13px' }}>{u.asset_count}</td>
+                    <td className="px-5 py-3.5" style={{ color: '#4a4540', fontSize: '12px' }}>
                       {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td className="px-5 py-3.5">
@@ -360,11 +358,11 @@ export default function Admin() {
                             key={t}
                             onClick={() => changeTier(u.id, t)}
                             disabled={u.tier === t || updatingTier === u.id}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all capitalize ${
-                              u.tier === t
-                                ? 'bg-white/8 text-white cursor-default'
-                                : 'text-slate-500 hover:bg-white/8 hover:text-white disabled:opacity-40'
-                            }`}
+                            style={u.tier === t
+                              ? { background: '#252220', color: '#f2ede4', borderRadius: '8px', padding: '4px 8px', fontSize: '11px', fontWeight: 600 }
+                              : { color: '#4a4540', borderRadius: '8px', padding: '4px 8px', fontSize: '11px', fontWeight: 500 }
+                            }
+                            className="capitalize transition-colors hover:text-[#f2ede4] hover:bg-white/5 disabled:opacity-40 cursor-pointer"
                           >
                             {updatingTier === u.id && u.tier !== t ? '…' : t}
                           </button>
@@ -374,7 +372,8 @@ export default function Admin() {
                     <td className="px-5 py-3.5">
                       <button
                         onClick={() => openEdit(u)}
-                        className="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-500 hover:bg-white/8 hover:text-white transition-all"
+                        style={{ color: '#4a4540', borderRadius: '8px', padding: '4px 10px', fontSize: '12px', fontWeight: 500 }}
+                        className="hover:bg-white/5 hover:text-[#f2ede4] transition-colors cursor-pointer"
                       >
                         Edit
                       </button>
@@ -392,55 +391,45 @@ export default function Admin() {
     {/* Create user modal */}
     {showCreate && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" onClick={() => setShowCreate(false)}>
-        <div className="bg-[#161b22] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '360px' }} onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-base font-semibold">Add test user</h3>
-            <button onClick={() => setShowCreate(false)} className="text-slate-500 hover:text-white text-lg leading-none">✕</button>
+            <h3 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 700, fontSize: '16px', color: '#f2ede4' }}>Add test user</h3>
+            <button onClick={() => setShowCreate(false)} style={{ color: '#4a4540', fontSize: '18px' }} className="hover:text-white transition-colors cursor-pointer">✕</button>
           </div>
 
           <div className="space-y-3">
+            {[
+              { label: 'Email *', value: createEmail, setter: setCreateEmail, type: 'email', placeholder: 'test@example.com' },
+              { label: 'Password', sub: 'leave blank to send magic link', value: createPassword, setter: setCreatePassword, type: 'text', placeholder: 'Set a password' },
+              { label: 'Display name', sub: 'optional', value: createName, setter: setCreateName, type: 'text', placeholder: 'First Last' },
+            ].map(({ label, sub, value, setter, type, placeholder }) => (
+              <div key={label}>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: '#7a7268', display: 'block', marginBottom: '5px' }}>
+                  {label}{sub && <span style={{ color: '#4a4540', fontWeight: 400 }}> ({sub})</span>}
+                </label>
+                <input
+                  type={type}
+                  value={value}
+                  onChange={e => setter(e.target.value)}
+                  placeholder={placeholder}
+                  style={{ width: '100%', background: '#252220', border: '1px solid #302d29', borderRadius: '12px', padding: '10px 12px', fontSize: '13px', color: '#f2ede4', outline: 'none' }}
+                  className="pv-placeholder focus:border-[#3d7fff] transition-colors"
+                />
+              </div>
+            ))}
             <div>
-              <label className="text-xs font-medium text-slate-400 mb-1 block">Email *</label>
-              <input
-                type="email"
-                value={createEmail}
-                onChange={e => setCreateEmail(e.target.value)}
-                placeholder="test@example.com"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-400 mb-1 block">Password <span className="text-slate-600">(leave blank to send magic link)</span></label>
-              <input
-                type="text"
-                value={createPassword}
-                onChange={e => setCreatePassword(e.target.value)}
-                placeholder="Set a password"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-400 mb-1 block">Display name <span className="text-slate-600">(optional)</span></label>
-              <input
-                type="text"
-                value={createName}
-                onChange={e => setCreateName(e.target.value)}
-                placeholder="First Last"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-400 mb-1 block">Tier</label>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#7a7268', display: 'block', marginBottom: '5px' }}>Tier</label>
               <div className="flex gap-2">
                 {TIERS.map(t => (
                   <button
                     key={t}
                     onClick={() => setCreateTier(t)}
-                    className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-all capitalize ${
+                    className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-all capitalize cursor-pointer ${
                       createTier === t
                         ? TIER_COLORS[t] + ' ring-1 ring-current'
-                        : 'bg-white/5 border-white/10 text-slate-500 hover:text-white'
+                        : 'border-[#302d29] text-[#4a4540] hover:text-[#f2ede4]'
                     }`}
+                    style={{ background: createTier === t ? undefined : '#252220' }}
                   >
                     {t}
                   </button>
@@ -449,13 +438,14 @@ export default function Admin() {
             </div>
 
             {createError && (
-              <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{createError}</p>
+              <p style={{ fontSize: '12px', color: '#f87171', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)', borderRadius: '10px', padding: '8px 12px' }}>{createError}</p>
             )}
 
             <button
               onClick={createUser}
               disabled={creating || !createEmail.trim()}
-              className="w-full py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm font-semibold transition-all mt-1"
+              style={{ width: '100%', padding: '10px', background: '#0050ff', borderRadius: '12px', fontSize: '14px', fontWeight: 600, color: '#fff', marginTop: '4px' }}
+              className="hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
             >
               {creating ? 'Creating…' : 'Create user'}
             </button>
@@ -463,55 +453,46 @@ export default function Admin() {
         </div>
       </div>
     )}
+
     {/* Edit user modal */}
     {editUser && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" onClick={() => setEditUser(null)}>
-        <div className="bg-[#161b22] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '360px' }} onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-base font-semibold">Edit user</h3>
-            <button onClick={() => setEditUser(null)} className="text-slate-500 hover:text-white text-lg leading-none">✕</button>
+            <h3 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 700, fontSize: '16px', color: '#f2ede4' }}>Edit user</h3>
+            <button onClick={() => setEditUser(null)} style={{ color: '#4a4540', fontSize: '18px' }} className="hover:text-white transition-colors cursor-pointer">✕</button>
           </div>
 
           <div className="space-y-3">
-            <div>
-              <label className="text-xs font-medium text-slate-400 mb-1 block">Email</label>
-              <input
-                type="email"
-                value={editEmail}
-                onChange={e => setEditEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-400 mb-1 block">Display name</label>
-              <input
-                type="text"
-                value={editName}
-                onChange={e => setEditName(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-400 mb-1 block">
-                New password <span className="text-slate-600">(leave blank to keep current)</span>
-              </label>
-              <input
-                type="text"
-                value={editPassword}
-                onChange={e => setEditPassword(e.target.value)}
-                placeholder="Enter new password"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50"
-              />
-            </div>
+            {[
+              { label: 'Email', value: editEmail, setter: setEditEmail, type: 'email', placeholder: '' },
+              { label: 'Display name', value: editName, setter: setEditName, type: 'text', placeholder: '' },
+              { label: 'New password', sub: 'leave blank to keep current', value: editPassword, setter: setEditPassword, type: 'text', placeholder: 'Enter new password' },
+            ].map(({ label, sub, value, setter, type, placeholder }) => (
+              <div key={label}>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: '#7a7268', display: 'block', marginBottom: '5px' }}>
+                  {label}{sub && <span style={{ color: '#4a4540', fontWeight: 400 }}> ({sub})</span>}
+                </label>
+                <input
+                  type={type}
+                  value={value}
+                  onChange={e => setter(e.target.value)}
+                  placeholder={placeholder}
+                  style={{ width: '100%', background: '#252220', border: '1px solid #302d29', borderRadius: '12px', padding: '10px 12px', fontSize: '13px', color: '#f2ede4', outline: 'none' }}
+                  className="pv-placeholder focus:border-[#3d7fff] transition-colors"
+                />
+              </div>
+            ))}
 
             {editError && (
-              <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{editError}</p>
+              <p style={{ fontSize: '12px', color: '#f87171', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)', borderRadius: '10px', padding: '8px 12px' }}>{editError}</p>
             )}
 
             <button
               onClick={saveEdit}
               disabled={saving}
-              className="w-full py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm font-semibold transition-all mt-1"
+              style={{ width: '100%', padding: '10px', background: '#0050ff', borderRadius: '12px', fontSize: '14px', fontWeight: 600, color: '#fff', marginTop: '4px' }}
+              className="hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
             >
               {saving ? 'Saving…' : 'Save changes'}
             </button>

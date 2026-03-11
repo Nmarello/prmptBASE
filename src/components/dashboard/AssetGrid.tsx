@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { Asset, Model, UserProject } from '../../types'
 
 interface Props {
@@ -28,12 +28,58 @@ const PROJECT_COLORS = [
   'bg-indigo-50 text-indigo-600 border-indigo-200',
 ]
 
+// Gallery tile formats: standard + half-height variants for texture
+const GALLERY_FORMATS: [number, number][] = [
+  [1, 1],    // Square
+  [16, 9],   // Landscape
+  [9, 16],   // Portrait
+  [2, 1],    // Half-square (landscape strip)
+  [32, 9],   // Half 16:9 (wide cinematic strip)
+  [9, 8],    // Half 9:16 (squarish portrait)
+]
+
+function pickFormat(): [number, number] {
+  return GALLERY_FORMATS[Math.floor(Math.random() * GALLERY_FORMATS.length)]
+}
+
+// Slightly varied durations per column for organic feel
+const COL_DURATIONS = [62, 74, 54, 68, 50, 78]
+
+// Liquid column count — more columns as viewport widens
+function useNumCols() {
+  const get = () => {
+    if (typeof window === 'undefined') return 4
+    if (window.innerWidth < 480) return 2
+    if (window.innerWidth < 768) return 3
+    if (window.innerWidth < 1100) return 4
+    if (window.innerWidth < 1400) return 5
+    return 6
+  }
+  const [n, setN] = useState(get)
+  useEffect(() => {
+    const h = () => setN(get())
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return n
+}
+
+interface GridItem {
+  asset: Asset
+  aspectW: number
+  aspectH: number
+}
+
 export default function AssetGrid({ assets, models, projects, loading, title, onDelete, onGenerate, onSendToImg2Img, onSendToImg2Vid, onMoveToProject }: Props) {
   const [lightbox, setLightbox] = useState<Asset | null>(null)
   const [sort, setSort] = useState<SortKey>('newest')
   const [mediaFilter, setMediaFilter] = useState<MediaFilter>('all')
   const [modelFilter, setModelFilter] = useState<string>('all')
   const [projectFilter, setProjectFilter] = useState<string>('all')
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [pausedCol, setPausedCol] = useState<number | null>(null)
+
+  const numCols = useNumCols()
 
   const modelMap = useMemo(() => Object.fromEntries(models.map((m) => [m.id, m])), [models])
   const projectMap = useMemo(() => Object.fromEntries(projects.map((p) => [p.id, p.name])), [projects])
@@ -73,6 +119,24 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
     return out
   }, [assets, mediaFilter, modelFilter, projectFilter, sort, modelMap])
 
+  // Assign random formats and distribute round-robin to columns
+  const columns = useMemo<GridItem[][]>(() => {
+    if (filtered.length === 0) return Array.from({ length: numCols }, () => [])
+    const items: GridItem[] = filtered.map((asset) => {
+      const [aspectW, aspectH] = pickFormat()
+      return { asset, aspectW, aspectH }
+    })
+    const cols: GridItem[][] = Array.from({ length: numCols }, () => [])
+    items.forEach((item, i) => cols[i % numCols].push(item))
+    return cols
+  }, [filtered, numCols])
+
+  const activeFilterCount = [
+    mediaFilter !== 'all',
+    modelFilter !== 'all',
+    projectFilter !== 'all',
+  ].filter(Boolean).length
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -83,96 +147,118 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto p-4 sm:p-8" style={{ background: 'var(--pv-bg)' }}>
-        <div className="max-w-6xl mx-auto">
+      <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--pv-bg)' }}>
 
-          {/* Header */}
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold" style={{ color: 'var(--pv-text)' }}>{title ?? 'Gallery'}</h2>
-              <span className="text-sm" style={{ color: 'var(--pv-text3)' }}>
-                {filtered.length}{filtered.length !== assets.length ? ` / ${assets.length}` : ''}
-              </span>
-            </div>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-6 pb-3 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold" style={{ color: 'var(--pv-text)', fontFamily: "'Bricolage Grotesque', sans-serif" }}>{title ?? 'Gallery'}</h2>
+            <span className="text-sm" style={{ color: 'var(--pv-text3)' }}>
+              {filtered.length}{filtered.length !== assets.length ? ` / ${assets.length}` : ''}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {assets.length > 0 && (
+              <button
+                onClick={() => setFiltersOpen(!filtersOpen)}
+                style={filtersOpen || activeFilterCount > 0
+                  ? { background: 'var(--pv-accent)', color: '#fff', borderColor: 'var(--pv-accent)' }
+                  : { background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }
+                }
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 8h10M11 12h2M9 16h6" />
+                </svg>
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-white/30 text-[10px] font-bold flex items-center justify-center leading-none">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            )}
             <button
               onClick={onGenerate}
-              className="px-4 py-2 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
+              className="px-4 py-1.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
             >
               + Generate
             </button>
           </div>
+        </div>
 
-          {/* Filters + Sort */}
-          {assets.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6 items-center">
-              <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
-                {(['all', 'images', 'videos'] as MediaFilter[]).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setMediaFilter(f)}
-                    style={mediaFilter === f ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)' } : { color: 'var(--pv-text2)' }}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer`}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-
-              {usedModels.length > 1 && (
-                <div className="flex gap-1 flex-wrap">
-                  <button
-                    onClick={() => setModelFilter('all')}
-                    style={modelFilter === 'all' ? { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' } : { background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
-                    className={`px-3 py-1 rounded-xl text-xs font-medium transition-all border cursor-pointer`}
-                  >
-                    All models
-                  </button>
-                  {usedModels.map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => setModelFilter(modelFilter === m.id ? 'all' : m.id)}
-                      style={modelFilter === m.id ? { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' } : { background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
-                      className={`px-3 py-1 rounded-xl text-xs font-medium transition-all border cursor-pointer`}
-                    >
-                      {m.name.replace(/ [—–-]+ img2img$/i, '')}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {usedProjects.length > 0 && (
-                <select
-                  value={projectFilter}
-                  onChange={(e) => setProjectFilter(e.target.value)}
-                  style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
-                  className="px-3 py-1 rounded-xl text-xs font-medium border transition-all cursor-pointer outline-none"
+        {/* Collapsible filters */}
+        {filtersOpen && assets.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-4 sm:px-6 pb-3 items-center flex-shrink-0 border-b" style={{ borderColor: 'var(--pv-border)' }}>
+            <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
+              {(['all', 'images', 'videos'] as MediaFilter[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setMediaFilter(f)}
+                  style={mediaFilter === f ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)' } : { color: 'var(--pv-text2)' }}
+                  className="px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer"
                 >
-                  <option value="all">All projects</option>
-                  <option value="__none__">No project</option>
-                  {usedProjects.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              )}
+                  {f}
+                </button>
+              ))}
+            </div>
 
-              <div className="ml-auto flex gap-1 rounded-xl p-1" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
-                {(['newest', 'oldest', 'model'] as SortKey[]).map((s) => (
+            {usedModels.length > 1 && (
+              <div className="flex gap-1 flex-wrap">
+                <button
+                  onClick={() => setModelFilter('all')}
+                  style={modelFilter === 'all' ? { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' } : { background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                  className="px-3 py-1 rounded-xl text-xs font-medium transition-all border cursor-pointer"
+                >
+                  All models
+                </button>
+                {usedModels.map((m) => (
                   <button
-                    key={s}
-                    onClick={() => setSort(s)}
-                    style={sort === s ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)' } : { color: 'var(--pv-text2)' }}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer`}
+                    key={m.id}
+                    onClick={() => setModelFilter(modelFilter === m.id ? 'all' : m.id)}
+                    style={modelFilter === m.id ? { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' } : { background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                    className="px-3 py-1 rounded-xl text-xs font-medium transition-all border cursor-pointer"
                   >
-                    {s}
+                    {m.name.replace(/ [—–-]+ img2img$/i, '')}
                   </button>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Empty state */}
-          {assets.length === 0 && (
-            <div className="border border-dashed rounded-2xl p-8 sm:p-20 text-center" style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }}>
+            {usedProjects.length > 0 && (
+              <select
+                value={projectFilter}
+                onChange={(e) => setProjectFilter(e.target.value)}
+                style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                className="px-3 py-1 rounded-xl text-xs font-medium border transition-all cursor-pointer outline-none"
+              >
+                <option value="all">All projects</option>
+                <option value="__none__">No project</option>
+                {usedProjects.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            )}
+
+            <div className="ml-auto flex gap-1 rounded-xl p-1" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
+              {(['newest', 'oldest', 'model'] as SortKey[]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setSort(s)}
+                  style={sort === s ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)' } : { color: 'var(--pv-text2)' }}
+                  className="px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {assets.length === 0 && (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="border border-dashed rounded-2xl p-8 sm:p-20 text-center w-full max-w-md" style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }}>
               <svg className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--pv-border)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
               <p className="font-medium mb-1" style={{ color: 'var(--pv-text)' }}>No images yet</p>
               <p className="text-sm mb-6" style={{ color: 'var(--pv-text2)' }}>Generate something to see it here</p>
@@ -183,32 +269,114 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
                 Generate your first image →
               </button>
             </div>
-          )}
+          </div>
+        )}
 
-          {assets.length > 0 && filtered.length === 0 && (
-            <div className="text-center py-16 text-sm" style={{ color: 'var(--pv-text3)' }}>
-              No assets match the current filters.
-            </div>
-          )}
+        {assets.length > 0 && filtered.length === 0 && (
+          <div className="flex-1 flex items-center justify-center text-sm" style={{ color: 'var(--pv-text3)' }}>
+            No assets match the current filters.
+          </div>
+        )}
 
-          {filtered.length > 0 && (
-            <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
-              {filtered.map((asset) => (
-                <AssetCard
-                  key={asset.id}
-                  asset={asset}
-                  modelName={asset.model_id ? (modelMap[asset.model_id]?.name ?? null) : null}
-                  projectName={asset.project_id ? (projectMap[asset.project_id] ?? null) : null}
-                  projectColor={asset.project_id ? (projectColorMap[asset.project_id] ?? PROJECT_COLORS[0]) : null}
-                  onClick={() => setLightbox(asset)}
-                  onDelete={onDelete}
-                  onSendToImg2Img={onSendToImg2Img}
-                  onSendToImg2Vid={onSendToImg2Vid}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Animated column grid */}
+        {filtered.length > 0 && (
+          <div className="flex gap-2 flex-1 min-h-0 overflow-hidden px-4 sm:px-6 pb-4 sm:pb-6 pt-3">
+            {columns.map((colItems, ci) => (
+              <div
+                key={ci}
+                className="flex-1 overflow-hidden relative"
+                onMouseEnter={() => setPausedCol(ci)}
+                onMouseLeave={() => setPausedCol(null)}
+              >
+                {/* Duplicated strip for seamless loop */}
+                <div
+                  className="flex flex-col gap-2"
+                  style={{
+                    animationName: ci % 2 === 0 ? 'galleryScrollUp' : 'galleryScrollDown',
+                    animationDuration: `${COL_DURATIONS[ci % COL_DURATIONS.length]}s`,
+                    animationTimingFunction: 'linear',
+                    animationIterationCount: 'infinite',
+                    animationPlayState: pausedCol === ci ? 'paused' : 'running',
+                  }}
+                >
+                  {/* Items × 2 for seamless loop (translateY -50% = exact 1 copy height) */}
+                  {[...colItems, ...colItems].map((item, ii) => {
+                    const pct = (item.aspectH / item.aspectW) * 100
+                    const isVideo = item.asset.gen_type === 'txt2vid' || item.asset.gen_type === 'img2vid'
+                    const modelName = item.asset.model_id ? (modelMap[item.asset.model_id]?.name ?? null) : null
+                    const projectName = item.asset.project_id ? (projectMap[item.asset.project_id] ?? null) : null
+                    const projectColor = item.asset.project_id ? (projectColorMap[item.asset.project_id] ?? PROJECT_COLORS[0]) : null
+                    return (
+                      <div
+                        key={`${item.asset.id}-${ii}`}
+                        onClick={() => setLightbox(item.asset)}
+                        className="relative w-full flex-shrink-0 rounded-xl overflow-hidden cursor-pointer group"
+                        style={{
+                          paddingBottom: `${pct}%`,
+                          background: 'var(--pv-surface)',
+                          border: '1px solid var(--pv-border)',
+                        }}
+                      >
+                        {isVideo ? (
+                          <video
+                            src={item.asset.url}
+                            autoPlay muted loop playsInline
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        ) : (
+                          <img
+                            src={item.asset.url}
+                            alt=""
+                            loading="lazy"
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        )}
+                        {/* Labels */}
+                        <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start pointer-events-none">
+                          {projectName && projectColor && (
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold border backdrop-blur-sm ${projectColor}`}>
+                              {projectName}
+                            </span>
+                          )}
+                          {modelName && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-black/40 backdrop-blur-sm text-white/80">
+                              {modelName.replace(/ [—–-]+ img2img$/i, '')}
+                            </span>
+                          )}
+                        </div>
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end justify-end p-2 gap-1.5">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onSendToImg2Img(item.asset.url) }}
+                            className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm"
+                          >
+                            img2img
+                          </button>
+                          <a
+                            href={item.asset.url}
+                            download
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[10px] font-medium transition-all backdrop-blur-sm"
+                          >
+                            ↓
+                          </a>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDelete(item.asset.id) }}
+                            className="px-2 py-1 bg-white/20 hover:bg-red-500/60 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {lightbox && (
@@ -224,111 +392,11 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
           onSendToImg2Vid={onSendToImg2Vid}
           onMoveToProject={onMoveToProject ? async (assetId, projectId) => {
             await onMoveToProject(assetId, projectId)
-            // Keep lightbox snapshot in sync so selectedProjectId doesn't drift
             setLightbox((prev) => prev ? { ...prev, project_id: projectId } : prev)
           } : undefined}
         />
       )}
     </>
-  )
-}
-
-function AssetCard({ asset, modelName, projectName, projectColor, onClick, onDelete, onSendToImg2Img, onSendToImg2Vid }: {
-  asset: Asset
-  modelName: string | null
-  projectName: string | null
-  projectColor: string | null
-  onClick: () => void
-  onDelete: (id: string) => void
-  onSendToImg2Img: (url: string) => void
-  onSendToImg2Vid: (url: string) => void
-}) {
-  const [hover, setHover] = useState(false)
-  const [imgError, setImgError] = useState(false)
-  const prompt = (asset.metadata as Record<string, unknown>)?.prompt as string | undefined
-  const isVideo = asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid'
-
-  return (
-    <div
-      style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }}
-      className="break-inside-avoid rounded-2xl overflow-hidden border cursor-pointer relative group"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onClick={onClick}
-    >
-      {isVideo ? (
-        <video src={asset.url} className="w-full block" muted loop autoPlay playsInline />
-      ) : imgError ? (
-        <div className="w-full aspect-square flex flex-col items-center justify-center gap-2 p-4" style={{ color: 'var(--pv-text3)' }}>
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
-          <span className="text-xs text-center">Image expired</span>
-        </div>
-      ) : (
-        <img
-          src={asset.url}
-          alt={prompt ?? 'Generated image'}
-          className="w-full block"
-          loading="lazy"
-          onError={() => setImgError(true)}
-        />
-      )}
-
-      <div className="absolute top-2 left-2 flex flex-col gap-1 items-start pointer-events-none">
-        {projectName && projectColor && (
-          <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border backdrop-blur-sm ${projectColor}`}>
-            {projectName}
-          </span>
-        )}
-        {modelName && (
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/80 border backdrop-blur-sm" style={{ borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}>
-            {modelName}
-          </span>
-        )}
-      </div>
-
-      <div className={`absolute inset-0 bg-black/60 flex flex-col justify-between p-3 transition-opacity ${hover ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="flex justify-end gap-2">
-          <a
-            href={asset.url}
-            download
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="p-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-white text-xs transition-all"
-            title="Download"
-          >
-            ↓
-          </a>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(asset.id) }}
-            className="p-1.5 bg-white/20 hover:bg-red-500/60 rounded-lg text-white text-xs transition-all cursor-pointer"
-            title="Delete"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          {!isVideo && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onSendToImg2Vid(asset.url) }}
-              className="w-full py-1.5 bg-white/15 hover:bg-white/25 border border-white/30 rounded-lg text-white text-xs font-medium transition-all cursor-pointer"
-            >
-              img2vid →
-            </button>
-          )}
-          <button
-            onClick={(e) => { e.stopPropagation(); onSendToImg2Img(asset.url) }}
-            className="w-full py-1.5 bg-white/15 hover:bg-white/25 border border-white/30 rounded-lg text-white text-xs font-medium transition-all cursor-pointer"
-          >
-            img2img →
-          </button>
-          {prompt && (
-            <p className="text-[10px] text-white/70 line-clamp-2 mt-0.5">{prompt}</p>
-          )}
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -436,7 +504,7 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
               <button
                 onClick={() => { onSendToImg2Vid(asset.url); onClose() }}
                 style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
-              className="w-full py-2.5 border rounded-xl text-sm font-medium transition-all cursor-pointer"
+                className="w-full py-2.5 border rounded-xl text-sm font-medium transition-all cursor-pointer"
               >
                 Send to img2vid →
               </button>
