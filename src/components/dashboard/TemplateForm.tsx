@@ -145,10 +145,10 @@ const QUALITY_MAP: Record<string, string> = {
 }
 
 // Recraft style values are sent as API params, not injected into the prompt
+const RECRAFT_STYLES = new Set(['realistic_image', 'digital_illustration', 'vector_illustration', 'icon', 'any'])
 function isRecraftStyle(val: string) {
   if (!val) return false
-  return val.startsWith('realistic_image') || val.startsWith('digital_illustration') ||
-    val.startsWith('vector_illustration') || val === 'any' || val === 'icon'
+  return RECRAFT_STYLES.has(val)
 }
 
 function buildLivePrompt(values: Record<string, unknown>): string {
