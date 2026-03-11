@@ -1,6 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+function friendlyFalError(raw: string): string {
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+    const detail = parsed?.detail?.[0] ?? parsed?.detail ?? parsed
+    const type = detail?.type ?? parsed?.type ?? ''
+    const msg  = detail?.msg  ?? parsed?.msg  ?? ''
+    if (type === 'downstream_service_error' || msg.toLowerCase().includes('overloaded') || msg.toLowerCase().includes('try again')) {
+      return 'The model is temporarily overloaded. Please try again in a moment.'
+    }
+    if (type === 'rate_limit' || msg.toLowerCase().includes('rate limit')) {
+      return 'Rate limit reached. Please wait a moment before generating again.'
+    }
+    if (msg) return msg
+  } catch {
+    // raw isn't JSON — fall through
+  }
+  if (typeof raw === 'string') {
+    if (raw.toLowerCase().includes('overload') || raw.toLowerCase().includes('try again later')) {
+      return 'The model is temporarily overloaded. Please try again in a moment.'
+    }
+    if (raw.length > 200) return 'Generation failed. Please try again.'
+  }
+  return typeof raw === 'string' ? raw : 'Generation failed. Please try again.'
+}
+
 async function downloadFile(url: string, isVideo?: boolean) {
   const res = await fetch(url)
   const blob = await res.blob()
@@ -256,7 +281,7 @@ export default function Dashboard() {
       )
 
       const data = await res.json()
-      if (!res.ok || data?.error) throw new Error(data?.error ?? data?.message ?? `HTTP ${res.status}: ${JSON.stringify(data)}`)
+      if (!res.ok || data?.error) throw new Error(friendlyFalError(data?.error ?? data?.message ?? `HTTP ${res.status}`))
 
       // Async video pending — start polling
       if (isVideo && data.status === 'pending') {
@@ -331,7 +356,7 @@ export default function Dashboard() {
         if (data.error) {
           if (videoPollerRef.current) clearInterval(videoPollerRef.current)
           setPendingVideo(null)
-          setGenerateError(`Video generation failed: ${data.error}`)
+          setGenerateError(`Video generation failed: ${friendlyFalError(data.error)}`)
           return
         }
         if (data.status === 'complete' && data.video_url) {
