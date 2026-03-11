@@ -141,27 +141,27 @@ export default function GuidedTour({ active, onFinish }: Props) {
       )}
 
       {/* Step card */}
-      <div style={cardStyle()} className="w-80 bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-2xl p-5 animate-fade-in">
+      <div style={cardStyle()} className="w-80 bg-white border border-[#d2d2d7] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5 animate-fade-in">
         {/* Progress dots */}
         <div className="flex gap-1 mb-4">
           {STEPS.map((_, i) => (
             <div
               key={i}
               className={`h-1 rounded-full transition-all duration-200 ${
-                i === step ? 'bg-sky-400 w-4' : i < step ? 'bg-sky-400/40 w-2' : 'bg-white/15 w-2'
+                i === step ? 'bg-sky-500 w-4' : i < step ? 'bg-sky-500/40 w-2' : 'bg-[#d2d2d7] w-2'
               }`}
             />
           ))}
         </div>
 
-        <h3 className="text-white font-semibold text-base mb-2">{current.title}</h3>
-        <p className="text-white/55 text-sm leading-relaxed mb-5">{current.body}</p>
+        <h3 className="text-[#1d1d1f] font-semibold text-base mb-2">{current.title}</h3>
+        <p className="text-[#6e6e73] text-sm leading-relaxed mb-5">{current.body}</p>
 
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={skip}
-            className="text-xs text-white/30 hover:text-white/50 transition-colors cursor-pointer"
+            className="text-xs text-[#aeaeb2] hover:text-[#6e6e73] transition-colors cursor-pointer"
           >
             {isLast ? '' : 'Skip tour'}
           </button>
@@ -170,7 +170,7 @@ export default function GuidedTour({ active, onFinish }: Props) {
               <button
                 type="button"
                 onClick={back}
-                className="px-3 py-1.5 text-xs text-white/50 hover:text-white border border-white/10 hover:border-white/25 rounded-lg transition-all cursor-pointer"
+                className="px-3 py-1.5 text-xs text-[#6e6e73] hover:text-[#1d1d1f] border border-[#d2d2d7] hover:border-[#aeaeb2] rounded-lg transition-all cursor-pointer"
               >
                 ← Back
               </button>
