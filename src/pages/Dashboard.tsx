@@ -535,7 +535,7 @@ export default function Dashboard() {
         {/* Nav buttons */}
         {([
           { id: 'models', tip: 'Generate', icon: <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/> },
-          { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
+          { id: 'assets', tip: 'Gallery', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
           { id: 'projects', tip: 'Projects', icon: <><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></> },
         ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (
           <SbBtn key={id} tip={tip} active={view === id} onClick={() => setView(id as View)}>
@@ -713,7 +713,7 @@ export default function Dashboard() {
           <div className="absolute inset-0" onClick={closeWorkspace} />
 
           <div
-            className="relative z-10 flex w-full animate-fade-in"
+            className="relative z-10 flex flex-row-reverse w-full animate-fade-in"
             style={{ transform: 'none' }}
           >
             {/* Left: canvas / output */}
@@ -817,7 +817,7 @@ export default function Dashboard() {
             {/* Right: form panel */}
             <div
               className="flex flex-col overflow-hidden flex-shrink-0"
-              style={{ width: 420, background: 'var(--pv-surface)', borderLeft: '1px solid var(--pv-border)' }}
+              style={{ width: 420, background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}
             >
               {/* Model header */}
               <div className="px-7 pt-6 pb-5 flex-shrink-0" style={{ borderBottom: '1px solid var(--pv-border)' }}>
