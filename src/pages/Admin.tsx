@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
 
 const TIERS = ['newbie', 'creator', 'studio', 'pro'] as const
@@ -64,10 +65,11 @@ interface Stats {
 
 // ─── tiny shared primitives ──────────────────────────────────────────────────
 
-function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+function Card({ children, className = '', onClick }: { children: React.ReactNode; className?: string; onClick?: (e: React.MouseEvent) => void }) {
   return (
     <div
       className={className}
+      onClick={onClick}
       style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14 }}
     >
       {children}
@@ -137,10 +139,26 @@ function BarChart({
   )
 }
 
+function SbBtn({ tip, onClick, children }: { tip?: string; onClick?: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      title={tip}
+      className="relative flex items-center justify-center rounded-[11px] transition-all cursor-pointer"
+      style={{ width: 40, height: 40, color: 'var(--pv-text3)', background: 'transparent', border: 'none', flexShrink: 0 }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--pv-text)'; (e.currentTarget as HTMLButtonElement).style.background = 'var(--pv-surface2)' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--pv-text3)'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+    >
+      {children}
+    </button>
+  )
+}
+
 // ─── main component ───────────────────────────────────────────────────────────
 
 export default function Admin() {
   const { user, signOut } = useAuth()
+  const { theme, setTheme } = useTheme()
   const [users, setUsers] = useState<UserRow[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [search, setSearch] = useState('')
@@ -269,255 +287,294 @@ export default function Admin() {
   // ── render ──────────────────────────────────────────────────────────────────
   return (
     <>
-    <div className="min-h-screen" style={{ background: 'var(--pv-bg)', color: 'var(--pv-text)' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--pv-bg)', color: 'var(--pv-text)', fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* ── Nav ── */}
-      <header style={{ background: 'var(--pv-surface)', borderBottom: '1px solid var(--pv-border)', position: 'sticky', top: 0, zIndex: 30 }}>
-        <div className="max-w-7xl mx-auto px-5 sm:px-6 flex items-center justify-between" style={{ height: 52 }}>
-          <div className="flex items-center gap-3">
-            {/* Logo */}
-            <a href="/dashboard" style={{ textDecoration: 'none' }}>
-              <span style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--pv-text)' }}>
-                prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
-              </span>
-            </a>
-            {/* Divider */}
-            <span style={{ width: 1, height: 16, background: 'var(--pv-border)', display: 'inline-block' }} />
-            {/* Admin badge */}
-            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: 'rgba(245,200,66,0.1)', color: '#f5c842', border: '1px solid rgba(245,200,66,0.2)', letterSpacing: '0.02em' }}>
-              Admin
+      {/* ── Icon Sidebar (desktop) ── */}
+      <aside className="hidden sm:flex flex-col items-center py-4 gap-1 flex-shrink-0" style={{ width: 60, background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}>
+        {/* Logo */}
+        <a href="/dashboard" style={{ textDecoration: 'none', marginBottom: 4 }}>
+          <div className="rounded-[10px] flex items-center justify-center" style={{ width: 36, height: 36, background: '#18140e' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+        </a>
+
+        {/* Admin badge */}
+        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 99, background: 'rgba(245,200,66,0.12)', color: '#f5c842', border: '1px solid rgba(245,200,66,0.2)', letterSpacing: '0.04em', marginBottom: 4 }}>
+          ADMIN
+        </span>
+
+        {/* Bottom actions */}
+        <div className="mt-auto flex flex-col items-center gap-1">
+          {/* Theme toggle */}
+          <SbBtn tip={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+            {theme === 'dark' ? (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+            ) : (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            )}
+          </SbBtn>
+          {/* Back to dashboard */}
+          <SbBtn tip="Dashboard" onClick={() => window.location.href = '/dashboard'}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+          </SbBtn>
+          {/* Sign out */}
+          <SbBtn tip="Sign out" onClick={signOut}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </SbBtn>
+        </div>
+      </aside>
+
+      {/* ── Main Content ── */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+
+        {/* Mobile top bar */}
+        <div className="sm:hidden flex items-center justify-between px-4 flex-shrink-0" style={{ height: 52, background: 'var(--pv-surface)', borderBottom: '1px solid var(--pv-border)' }}>
+          <div className="flex items-center gap-2">
+            <span style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--pv-text)' }}>
+              prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
             </span>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 99, background: 'rgba(245,200,66,0.12)', color: '#f5c842', border: '1px solid rgba(245,200,66,0.2)' }}>ADMIN</span>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="hidden sm:block" style={{ fontSize: 12, color: 'var(--pv-text3)' }}>{user?.email}</span>
-            <a href="/dashboard" style={{ fontSize: 12, color: 'var(--pv-text3)', textDecoration: 'none' }} className="hover:text-[var(--pv-text)] transition-colors">
-              ← Dashboard
-            </a>
-            <button
-              onClick={signOut}
-              style={{ fontSize: 12, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 10px', borderRadius: 8 }}
-              className="hover:bg-white/5 hover:text-[var(--pv-text)] transition-all"
-            >
-              Sign out
-            </button>
+          <div className="flex items-center gap-3">
+            <a href="/dashboard" style={{ fontSize: 12, color: 'var(--pv-text3)', textDecoration: 'none' }}>← Dashboard</a>
+            <button onClick={signOut} style={{ fontSize: 12, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
-        {/* ── Stats ── */}
-        {stats && (
-          <>
-          {/* Row 1 — 8 count cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-3">
-            <StatCard label="Total Users"  value={stats.total_users}                            accent="var(--pv-text)" />
-            <StatCard label="New Today"    value={stats.new_users_today}                        accent="var(--pv-accent)" />
-            <StatCard label="Assets Today" value={stats.assets_today}                           accent="var(--pv-accent)" />
-            <StatCard label="Total Assets" value={stats.total_assets}                           accent="var(--pv-text)" />
-            <StatCard label="txt2img"      value={stats.gen_type_totals['txt2img'] ?? 0}        accent="var(--pv-text2)" />
-            <StatCard label="img2img"      value={stats.gen_type_totals['img2img'] ?? 0}        accent="var(--pv-text2)" />
-            <StatCard label="txt2vid"      value={stats.gen_type_totals['txt2vid'] ?? 0}        accent="#a78bfa" />
-            <StatCard label="img2vid"      value={stats.gen_type_totals['img2vid'] ?? 0}        accent="#c084fc" />
-          </div>
-
-          {/* Row 2 — tier cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-            <StatCard label="Newbie"  value={stats.by_tier.newbie}  accent="var(--pv-text2)" />
-            <StatCard label="Creator" value={stats.by_tier.creator} accent="#6699ff" />
-            <StatCard label="Studio"  value={stats.by_tier.studio}  accent="#c084fc" />
-            <StatCard label="Pro"     value={stats.by_tier.pro}     accent="#f5c842" />
-          </div>
-
-          {/* Row 3 — image + video charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-6">
-            {([
-              { title: 'Image Assets · by Model & Type', data: stats.image_by_model, keyA: 'txt2img', keyB: 'img2img', labelA: 'txt2img', labelB: 'img2img', colorA: 'var(--pv-accent)', colorB: '#7aabff' },
-              { title: 'Video Assets · by Model & Type', data: stats.video_by_model, keyA: 'txt2vid', keyB: 'img2vid', labelA: 'txt2vid', labelB: 'img2vid', colorA: '#a78bfa', colorB: '#c084fc' },
-            ]).map(chart => (
-              <Card key={chart.title} className="p-4 sm:p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <SectionLabel>{chart.title}</SectionLabel>
-                  <div className="flex gap-3 text-[10px]" style={{ color: 'var(--pv-text3)', marginBottom: 12 }}>
-                    <span style={{ color: chart.colorA }}>■ {chart.labelA}</span>
-                    <span style={{ color: chart.colorB }}>■ {chart.labelB}</span>
-                  </div>
-                </div>
-                {chart.data.length === 0
-                  ? <div style={{ fontSize: 12, color: 'var(--pv-text3)' }}>No data yet</div>
-                  : <BarChart rows={chart.data} colorA={chart.colorA} colorB={chart.colorB} labelA={chart.labelA} labelB={chart.labelB} keyA={chart.keyA} keyB={chart.keyB} />
-                }
-              </Card>
-            ))}
-          </div>
-
-          {/* Row 4 — spend + cost table */}
-          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-3 mb-8">
-
-            {/* Spend tracker */}
-            <Card className="p-5">
-              <SectionLabel>Spend — This Month</SectionLabel>
-              <div style={{ fontSize: 34, fontWeight: 700, color: 'var(--pv-text)', letterSpacing: '-0.04em', fontFamily: "'Bricolage Grotesque', sans-serif", marginBottom: 2 }}>
-                ${stats.period_spend.toFixed(4)}
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--pv-text3)', marginBottom: 16 }}>${stats.total_spend.toFixed(4)} all time</div>
-              <div style={{ height: 3, background: 'var(--pv-surface2)', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', borderRadius: 99,
-                  background: 'linear-gradient(90deg, var(--pv-accent), #7aabff)',
-                  width: stats.total_spend > 0 ? `${Math.min((stats.period_spend / stats.total_spend) * 100, 100)}%` : '0%',
-                  transition: 'width 0.4s ease',
-                }} />
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--pv-text3)', marginTop: 6 }}>
-                {stats.total_spend > 0 ? `${((stats.period_spend / stats.total_spend) * 100).toFixed(0)}% of all-time` : 'No cost data yet'}
-              </div>
-            </Card>
-
-            {/* Cost table */}
-            <Card className="p-5">
-              <div className="flex items-center justify-between mb-4">
-                <SectionLabel>Cost per Generation · Predicted vs Actual</SectionLabel>
-                <div className="flex gap-4 text-[10px]" style={{ color: 'var(--pv-text3)', marginBottom: 12 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 7, height: 7, borderRadius: 2, background: 'var(--pv-text3)', display: 'inline-block' }} />Predicted</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 7, height: 7, borderRadius: 2, background: '#7aabff', display: 'inline-block' }} />Actual</span>
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--pv-border)' }}>
-                      {['Model', 'Provider', 'Predicted', 'Actual Avg', 'Δ', 'Runs', 'Total', 'Unit'].map(h => (
-                        <th key={h} className="pb-2 text-left pr-4" style={{ fontSize: 10, fontWeight: 600, color: 'var(--pv-text3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.cost_by_model.map(m => {
-                      const delta = (m.avg_actual_cost != null && m.predicted_cost != null) ? m.avg_actual_cost - m.predicted_cost : null
-                      const deltaColor = delta == null ? 'var(--pv-text3)' : delta > 0.001 ? '#f87171' : delta < -0.001 ? '#34c759' : 'var(--pv-text2)'
-                      return (
-                        <tr key={m.slug} style={{ borderBottom: '1px solid var(--pv-border)' }}>
-                          <td className="py-2 pr-4" style={{ color: 'var(--pv-text)', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>{m.name}</td>
-                          <td className="py-2 pr-4" style={{ color: 'var(--pv-text3)', fontSize: 11 }}>{m.provider}</td>
-                          <td className="py-2 pr-4" style={{ color: 'var(--pv-text2)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{m.predicted_cost != null ? `$${m.predicted_cost.toFixed(4)}` : '—'}</td>
-                          <td className="py-2 pr-4" style={{ color: m.avg_actual_cost != null ? '#7aabff' : 'var(--pv-text3)', fontSize: 12, fontWeight: m.avg_actual_cost != null ? 600 : 400, fontVariantNumeric: 'tabular-nums' }}>{m.avg_actual_cost != null ? `$${m.avg_actual_cost.toFixed(4)}` : '—'}</td>
-                          <td className="py-2 pr-4" style={{ color: deltaColor, fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{delta != null ? `${delta >= 0 ? '+' : ''}$${delta.toFixed(4)}` : '—'}</td>
-                          <td className="py-2 pr-4" style={{ color: 'var(--pv-text2)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{m.count > 0 ? m.count.toLocaleString() : '—'}</td>
-                          <td className="py-2 pr-4" style={{ color: 'var(--pv-text2)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{m.total_cost > 0 ? `$${m.total_cost.toFixed(4)}` : '—'}</td>
-                          <td className="py-2" style={{ color: 'var(--pv-text3)', fontSize: 11, whiteSpace: 'nowrap' }}>{m.cost_notes ?? '—'}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          </div>
-          </>
-        )}
-
-        {/* ── Users ── */}
-        <div className="flex gap-3 mb-4 flex-wrap items-center">
-          <input
-            type="text"
-            placeholder="Search email or name…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 12, padding: '8px 14px', fontSize: 13, color: 'var(--pv-text)', outline: 'none', width: '100%', maxWidth: 260 }}
-            className="pv-placeholder focus:border-[var(--pv-accent)] transition-colors"
-          />
-          <div className="flex gap-1" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 12, padding: 4 }}>
-            {(['all', ...TIERS] as const).map(t => (
-              <button
-                key={t}
-                onClick={() => setTierFilter(t)}
-                style={tierFilter === t
-                  ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-                  : { color: 'var(--pv-text3)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-                }
-                className="capitalize transition-colors hover:text-[var(--pv-text)]"
-              >{t}</button>
-            ))}
-          </div>
-          <span style={{ fontSize: 12, color: 'var(--pv-text3)', marginLeft: 'auto' }}>{filtered.length} users</span>
-          <button
-            onClick={() => { setShowCreate(true); setCreateError(null) }}
-            style={{ background: 'var(--pv-accent)', borderRadius: 10, padding: '6px 14px', fontSize: 12, fontWeight: 600, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-            className="hover:opacity-90 transition-opacity"
-          >+ Add user</button>
-        </div>
-
-        <Card>
-          {loading ? (
-            <div className="flex items-center justify-center py-20 text-sm animate-pulse" style={{ color: 'var(--pv-text3)' }}>Loading users…</div>
-          ) : filtered.length === 0 ? (
-            <div className="flex items-center justify-center py-20 text-sm" style={{ color: 'var(--pv-text3)' }}>No users found</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--pv-border)' }}>
-                    {['User', 'Tier', 'Assets', 'Joined', 'Change Tier', 'Edit'].map(h => (
-                      <th key={h} className="px-5 py-3 text-left" style={{ fontSize: 11, fontWeight: 600, color: 'var(--pv-text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(u => (
-                    <tr key={u.id} style={{ borderBottom: '1px solid var(--pv-border)' }} className={`transition-colors hover:bg-white/[0.02] ${u.email === user?.email ? 'bg-amber-500/[0.03]' : ''}`}>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--pv-text2)', flexShrink: 0 }}>
-                            {(u.display_name ?? u.email)[0].toUpperCase()}
-                          </div>
-                          <div>
-                            <div style={{ color: 'var(--pv-text)', fontWeight: 500, fontSize: 13, lineHeight: 1.3 }}>
-                              {u.display_name ?? '—'}
-                              {u.email === user?.email && <span style={{ marginLeft: 6, fontSize: 10, color: '#f5c842', fontWeight: 700 }}>YOU</span>}
-                            </div>
-                            <div style={{ color: 'var(--pv-text3)', fontSize: 11.5 }}>{u.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${TIER_COLORS[u.tier]}`}>{u.tier}</span>
-                      </td>
-                      <td className="px-5 py-3.5" style={{ color: 'var(--pv-text2)', fontSize: 13 }}>{u.asset_count}</td>
-                      <td className="px-5 py-3.5" style={{ color: 'var(--pv-text3)', fontSize: 12 }}>
-                        {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex gap-1">
-                          {TIERS.map(t => (
-                            <button
-                              key={t}
-                              onClick={() => changeTier(u.id, t)}
-                              disabled={u.tier === t || updatingTier === u.id}
-                              style={u.tier === t
-                                ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontWeight: 600, border: 'none', cursor: 'default', fontFamily: 'inherit' }
-                                : { color: 'var(--pv-text3)', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
-                              }
-                              className="capitalize transition-colors hover:text-[var(--pv-text)] hover:bg-white/5 disabled:opacity-40"
-                            >{updatingTier === u.id && u.tier !== t ? '…' : t}</button>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <button
-                          onClick={() => openEdit(u)}
-                          style={{ color: 'var(--pv-text3)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-                          className="hover:bg-white/5 hover:text-[var(--pv-text)] transition-colors"
-                        >Edit</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Page header */}
+            <div className="mb-6">
+              <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em', lineHeight: 1.1 }}>Admin</h1>
+              <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 3 }}>{user?.email}</p>
             </div>
-          )}
-        </Card>
 
+            {/* ── Stats ── */}
+            {stats && (
+              <>
+              {/* Row 1 — 8 count cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-3">
+                <StatCard label="Total Users"  value={stats.total_users}                            accent="var(--pv-text)" />
+                <StatCard label="New Today"    value={stats.new_users_today}                        accent="var(--pv-accent)" />
+                <StatCard label="Assets Today" value={stats.assets_today}                           accent="var(--pv-accent)" />
+                <StatCard label="Total Assets" value={stats.total_assets}                           accent="var(--pv-text)" />
+                <StatCard label="txt2img"      value={stats.gen_type_totals['txt2img'] ?? 0}        accent="var(--pv-text2)" />
+                <StatCard label="img2img"      value={stats.gen_type_totals['img2img'] ?? 0}        accent="var(--pv-text2)" />
+                <StatCard label="txt2vid"      value={stats.gen_type_totals['txt2vid'] ?? 0}        accent="#a78bfa" />
+                <StatCard label="img2vid"      value={stats.gen_type_totals['img2vid'] ?? 0}        accent="#c084fc" />
+              </div>
+
+              {/* Row 2 — tier cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                <StatCard label="Newbie"  value={stats.by_tier.newbie}  accent="var(--pv-text2)" />
+                <StatCard label="Creator" value={stats.by_tier.creator} accent="#6699ff" />
+                <StatCard label="Studio"  value={stats.by_tier.studio}  accent="#c084fc" />
+                <StatCard label="Pro"     value={stats.by_tier.pro}     accent="#f5c842" />
+              </div>
+
+              {/* Row 3 — image + video charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-6">
+                {([
+                  { title: 'Image Assets · by Model & Type', data: stats.image_by_model, keyA: 'txt2img', keyB: 'img2img', labelA: 'txt2img', labelB: 'img2img', colorA: 'var(--pv-accent)', colorB: '#7aabff' },
+                  { title: 'Video Assets · by Model & Type', data: stats.video_by_model, keyA: 'txt2vid', keyB: 'img2vid', labelA: 'txt2vid', labelB: 'img2vid', colorA: '#a78bfa', colorB: '#c084fc' },
+                ]).map(chart => (
+                  <Card key={chart.title} className="p-4 sm:p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <SectionLabel>{chart.title}</SectionLabel>
+                      <div className="flex gap-3 text-[10px]" style={{ color: 'var(--pv-text3)', marginBottom: 12 }}>
+                        <span style={{ color: chart.colorA }}>■ {chart.labelA}</span>
+                        <span style={{ color: chart.colorB }}>■ {chart.labelB}</span>
+                      </div>
+                    </div>
+                    {chart.data.length === 0
+                      ? <div style={{ fontSize: 12, color: 'var(--pv-text3)' }}>No data yet</div>
+                      : <BarChart rows={chart.data} colorA={chart.colorA} colorB={chart.colorB} labelA={chart.labelA} labelB={chart.labelB} keyA={chart.keyA} keyB={chart.keyB} />
+                    }
+                  </Card>
+                ))}
+              </div>
+
+              {/* Row 4 — spend + cost table */}
+              <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-3 mb-8">
+
+                {/* Spend tracker */}
+                <Card className="p-5">
+                  <SectionLabel>Spend — This Month</SectionLabel>
+                  <div style={{ fontSize: 34, fontWeight: 700, color: 'var(--pv-text)', letterSpacing: '-0.04em', fontFamily: "'Bricolage Grotesque', sans-serif", marginBottom: 2 }}>
+                    ${stats.period_spend.toFixed(4)}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--pv-text3)', marginBottom: 16 }}>${stats.total_spend.toFixed(4)} all time</div>
+                  <div style={{ height: 3, background: 'var(--pv-surface2)', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: 99,
+                      background: 'linear-gradient(90deg, var(--pv-accent), #7aabff)',
+                      width: stats.total_spend > 0 ? `${Math.min((stats.period_spend / stats.total_spend) * 100, 100)}%` : '0%',
+                      transition: 'width 0.4s ease',
+                    }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--pv-text3)', marginTop: 6 }}>
+                    {stats.total_spend > 0 ? `${((stats.period_spend / stats.total_spend) * 100).toFixed(0)}% of all-time` : 'No cost data yet'}
+                  </div>
+                </Card>
+
+                {/* Cost table */}
+                <Card className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <SectionLabel>Cost per Generation · Predicted vs Actual</SectionLabel>
+                    <div className="flex gap-4 text-[10px]" style={{ color: 'var(--pv-text3)', marginBottom: 12 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 7, height: 7, borderRadius: 2, background: 'var(--pv-text3)', display: 'inline-block' }} />Predicted</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 7, height: 7, borderRadius: 2, background: '#7aabff', display: 'inline-block' }} />Actual</span>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--pv-border)' }}>
+                          {['Model', 'Provider', 'Predicted', 'Actual Avg', 'Δ', 'Runs', 'Total', 'Unit'].map(h => (
+                            <th key={h} className="pb-2 text-left pr-4" style={{ fontSize: 10, fontWeight: 600, color: 'var(--pv-text3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stats.cost_by_model.map(m => {
+                          const delta = (m.avg_actual_cost != null && m.predicted_cost != null) ? m.avg_actual_cost - m.predicted_cost : null
+                          const deltaColor = delta == null ? 'var(--pv-text3)' : delta > 0.001 ? '#f87171' : delta < -0.001 ? '#34c759' : 'var(--pv-text2)'
+                          return (
+                            <tr key={m.slug} style={{ borderBottom: '1px solid var(--pv-border)' }}>
+                              <td className="py-2 pr-4" style={{ color: 'var(--pv-text)', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>{m.name}</td>
+                              <td className="py-2 pr-4" style={{ color: 'var(--pv-text3)', fontSize: 11 }}>{m.provider}</td>
+                              <td className="py-2 pr-4" style={{ color: 'var(--pv-text2)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{m.predicted_cost != null ? `$${m.predicted_cost.toFixed(4)}` : '—'}</td>
+                              <td className="py-2 pr-4" style={{ color: m.avg_actual_cost != null ? '#7aabff' : 'var(--pv-text3)', fontSize: 12, fontWeight: m.avg_actual_cost != null ? 600 : 400, fontVariantNumeric: 'tabular-nums' }}>{m.avg_actual_cost != null ? `$${m.avg_actual_cost.toFixed(4)}` : '—'}</td>
+                              <td className="py-2 pr-4" style={{ color: deltaColor, fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{delta != null ? `${delta >= 0 ? '+' : ''}$${delta.toFixed(4)}` : '—'}</td>
+                              <td className="py-2 pr-4" style={{ color: 'var(--pv-text2)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{m.count > 0 ? m.count.toLocaleString() : '—'}</td>
+                              <td className="py-2 pr-4" style={{ color: 'var(--pv-text2)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{m.total_cost > 0 ? `$${m.total_cost.toFixed(4)}` : '—'}</td>
+                              <td className="py-2" style={{ color: 'var(--pv-text3)', fontSize: 11, whiteSpace: 'nowrap' }}>{m.cost_notes ?? '—'}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              </div>
+              </>
+            )}
+
+            {/* ── Users ── */}
+            <div className="flex gap-3 mb-4 flex-wrap items-center">
+              <input
+                type="text"
+                placeholder="Search email or name…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 12, padding: '8px 14px', fontSize: 13, color: 'var(--pv-text)', outline: 'none', width: '100%', maxWidth: 260 }}
+                className="pv-placeholder focus:border-[var(--pv-accent)] transition-colors"
+              />
+              <div className="flex gap-1" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 12, padding: 4 }}>
+                {(['all', ...TIERS] as const).map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setTierFilter(t)}
+                    style={tierFilter === t
+                      ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+                      : { color: 'var(--pv-text3)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+                    }
+                    className="capitalize transition-colors hover:text-[var(--pv-text)]"
+                  >{t}</button>
+                ))}
+              </div>
+              <span style={{ fontSize: 12, color: 'var(--pv-text3)', marginLeft: 'auto' }}>{filtered.length} users</span>
+              <button
+                onClick={() => { setShowCreate(true); setCreateError(null) }}
+                style={{ background: 'var(--pv-accent)', borderRadius: 10, padding: '6px 14px', fontSize: 12, fontWeight: 600, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                className="hover:opacity-90 transition-opacity"
+              >+ Add user</button>
+            </div>
+
+            <Card>
+              {loading ? (
+                <div className="flex items-center justify-center py-20 text-sm animate-pulse" style={{ color: 'var(--pv-text3)' }}>Loading users…</div>
+              ) : filtered.length === 0 ? (
+                <div className="flex items-center justify-center py-20 text-sm" style={{ color: 'var(--pv-text3)' }}>No users found</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--pv-border)' }}>
+                        {['User', 'Tier', 'Assets', 'Joined', 'Change Tier', 'Edit'].map(h => (
+                          <th key={h} className="px-5 py-3 text-left" style={{ fontSize: 11, fontWeight: 600, color: 'var(--pv-text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map(u => (
+                        <tr key={u.id} style={{ borderBottom: '1px solid var(--pv-border)' }} className={`transition-colors hover:bg-white/[0.02] ${u.email === user?.email ? 'bg-amber-500/[0.03]' : ''}`}>
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-2.5">
+                              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--pv-text2)', flexShrink: 0 }}>
+                                {(u.display_name ?? u.email)[0].toUpperCase()}
+                              </div>
+                              <div>
+                                <div style={{ color: 'var(--pv-text)', fontWeight: 500, fontSize: 13, lineHeight: 1.3 }}>
+                                  {u.display_name ?? '—'}
+                                  {u.email === user?.email && <span style={{ marginLeft: 6, fontSize: 10, color: '#f5c842', fontWeight: 700 }}>YOU</span>}
+                                </div>
+                                <div style={{ color: 'var(--pv-text3)', fontSize: 11.5 }}>{u.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${TIER_COLORS[u.tier]}`}>{u.tier}</span>
+                          </td>
+                          <td className="px-5 py-3.5" style={{ color: 'var(--pv-text2)', fontSize: 13 }}>{u.asset_count}</td>
+                          <td className="px-5 py-3.5" style={{ color: 'var(--pv-text3)', fontSize: 12 }}>
+                            {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <div className="flex gap-1">
+                              {TIERS.map(t => (
+                                <button
+                                  key={t}
+                                  onClick={() => changeTier(u.id, t)}
+                                  disabled={u.tier === t || updatingTier === u.id}
+                                  style={u.tier === t
+                                    ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontWeight: 600, border: 'none', cursor: 'default', fontFamily: 'inherit' }
+                                    : { color: 'var(--pv-text3)', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }
+                                  }
+                                  className="capitalize transition-colors hover:text-[var(--pv-text)] hover:bg-white/5 disabled:opacity-40"
+                                >{updatingTier === u.id && u.tier !== t ? '…' : t}</button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <button
+                              onClick={() => openEdit(u)}
+                              style={{ color: 'var(--pv-text3)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                              className="hover:bg-white/5 hover:text-[var(--pv-text)] transition-colors"
+                            >Edit</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+
+          </div>
+        </div>
       </div>
     </div>
 
