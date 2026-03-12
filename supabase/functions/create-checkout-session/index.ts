@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) throw new Error('Unauthorized')
 
-    const { priceId, tier } = await req.json()
+    const { priceId, tier, billing } = await req.json()
     if (!priceId || !tier) throw new Error('Missing priceId or tier')
 
     const origin = req.headers.get('origin') || 'https://prmptvault.ai'
@@ -58,8 +58,11 @@ Deno.serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${origin}/dashboard?checkout=success&tier=${tier}`,
       cancel_url: `${origin}/pricing?checkout=cancelled`,
-      metadata: { supabase_user_id: user.id, tier },
-      subscription_data: { metadata: { supabase_user_id: user.id, tier } },
+      metadata: { supabase_user_id: user.id, tier, billing: billing || 'monthly' },
+      subscription_data: {
+        trial_period_days: 3,
+        metadata: { supabase_user_id: user.id, tier, billing: billing || 'monthly' },
+      },
     })
 
     return new Response(JSON.stringify({ url: session.url }), {

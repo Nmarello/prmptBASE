@@ -119,7 +119,7 @@ export default function Pricing() {
     }
     setLoading(tier.tier)
     try {
-      await createCheckoutSession(tier.tier as 'creator' | 'studio' | 'pro')
+      await createCheckoutSession(tier.tier as 'creator' | 'studio' | 'pro', billing)
     } catch (err) {
       console.error(err)
       setLoading(null)
