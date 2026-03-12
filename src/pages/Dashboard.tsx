@@ -818,7 +818,7 @@ export default function Dashboard() {
                 })()}
 
                 {/* Empty state */}
-                {!result && !pendingImage && !pendingVideo && (
+                {!result && !(selectedModel?.slug === renderingModelSlug && (pendingImage || pendingVideo)) && (
                   <div className="relative z-10 flex flex-col items-center gap-3 text-center">
                     <div className="w-14 h-14 rounded-[14px] flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', fontSize: 24 }}>
                       {(MODEL_ART_MAP as any)[selectedModel.slug]?.initial ?? '??'}
@@ -832,8 +832,8 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {/* Generating spinner */}
-                {(pendingImage || pendingVideo) && !result && (
+                {/* Generating spinner — only for the model that is actually rendering */}
+                {(pendingImage || pendingVideo) && !result && selectedModel?.slug === renderingModelSlug && (
                   <div className="relative z-10 flex flex-col items-center gap-4">
                     <div className="w-10 h-10 rounded-full pv-spin" style={{ border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'rgba(255,255,255,0.8)' }} />
                     <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: 500 }}>
