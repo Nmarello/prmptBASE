@@ -54,6 +54,7 @@ import NotificationBell, { addNotification } from '../components/dashboard/Notif
 import SettingsDrawer from '../components/dashboard/SettingsDrawer'
 import GuidedTour, { markTourSeen } from '../components/dashboard/GuidedTour'
 import FirstRunTour, { hasSeenFirstRun, markFirstRunSeen, clearFirstRun } from '../components/dashboard/FirstRunTour'
+import OnboardingModal from '../components/dashboard/OnboardingModal'
 import { useLearningMode } from '../contexts/LearningModeContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
@@ -113,6 +114,7 @@ export default function Dashboard() {
   const [tourActive, setTourActive] = useState(false)
   const [firstRunStep, setFirstRunStep] = useState<number>(-1)
   const [userTier, setUserTier] = useState('newbie')
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   const [models, setModels] = useState<Model[]>([])
   const [modelFilter, setModelFilter] = useState<'all' | 'images' | 'videos'>('all')
@@ -263,6 +265,16 @@ export default function Dashboard() {
       .then(({ data }) => { if (data) setProjects(data as UserProject[]) })
     loadAssets()
   }, [user, loadAssets])
+
+  useEffect(() => {
+    if (!user) return
+    supabase.from('profiles').select('display_name').eq('id', user.id).single()
+      .then(({ data }) => {
+        if (!data?.display_name || !localStorage.getItem('prmptVAULT_tos_accepted')) {
+          setShowOnboarding(true)
+        }
+      })
+  }, [user?.id])
 
   useEffect(() => {
     if (learningMode === 'guided') {
@@ -1298,6 +1310,9 @@ export default function Dashboard() {
         )
       })()}
       <GuidedTour active={tourActive} onFinish={() => { markTourSeen(); setTourActive(false) }} />
+      {showOnboarding && (
+        <OnboardingModal onDone={() => setShowOnboarding(false)} />
+      )}
       {firstRunStep >= 0 && (
         <FirstRunTour
           step={firstRunStep}

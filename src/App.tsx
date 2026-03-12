@@ -9,6 +9,8 @@ import Dashboard from './pages/Dashboard'
 import Pricing from './pages/Pricing'
 import Admin from './pages/Admin'
 import Settings from './pages/Settings'
+import Tos from './pages/Tos'
+import Privacy from './pages/Privacy'
 
 export default function App() {
   return (
@@ -27,6 +29,8 @@ export default function App() {
             }
           />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/tos" element={<Tos />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route
             path="/settings"
             element={

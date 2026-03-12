@@ -682,68 +682,101 @@ export default function Home() {
       </section>
 
       {/* ── PRICING ───────────────────────────────────── */}
-      <section className="px-5 sm:px-10 py-16 sm:py-20" style={{ maxWidth: 960, margin: '0 auto' }}>
+      <section className="px-5 sm:px-10 py-16 sm:py-20" style={{ maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.text3, marginBottom: 12 }}>Pricing</div>
         <h2 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 36, color: T.text }}>Start free.<br />Scale when ready.</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {[
             {
-              name: 'Free', price: '$0', period: '/mo', desc: 'Try it out, no card needed', featured: false,
+              name: 'Free', price: '$0', period: '', desc: 'Try it out — no card needed', featured: false, trial: false,
               features: [
-                { text: '20 images / month', inc: true }, { text: '5 video renders', inc: true },
-                { text: 'Core models', inc: true }, { text: 'Pro models', inc: false },
-                { text: 'Priority queue', inc: false }, { text: 'Unlimited storage', inc: false },
+                { text: '15 images / month', inc: true }, { text: 'DALL-E 3 + Flux Schnell', inc: true },
+                { text: 'Core models only', inc: true }, { text: 'No video models', inc: false },
+                { text: 'Assets saved to vault', inc: true },
               ],
               cta: 'Get started', ctaFilled: false,
             },
             {
-              name: 'Studio', price: '$19', period: '/mo', desc: 'For serious creators', featured: true,
+              name: 'Creator', price: '$12', period: '/mo', desc: 'For growing creators', featured: false, trial: true,
               features: [
-                { text: '500 images / month', inc: true }, { text: '50 video renders', inc: true },
-                { text: 'All models', inc: true }, { text: 'Priority queue', inc: true },
-                { text: 'Unlimited storage', inc: true }, { text: 'Team sharing', inc: false },
+                { text: '500 images / month', inc: true }, { text: 'All image models', inc: true },
+                { text: 'No video models', inc: false }, { text: 'Priority queue', inc: true },
+                { text: 'AI Assist', inc: true },
               ],
-              cta: 'Start Studio trial →', ctaFilled: true,
+              cta: 'Start free trial', ctaFilled: false,
             },
             {
-              name: 'Pro', price: '$49', period: '/mo', desc: 'Teams and agencies', featured: false,
+              name: 'Studio', price: '$29', period: '/mo', desc: 'For serious creators', featured: true, trial: true,
               features: [
-                { text: 'Unlimited images', inc: true }, { text: '200 video renders', inc: true },
-                { text: 'All models', inc: true }, { text: 'Priority queue', inc: true },
-                { text: 'Unlimited storage', inc: true }, { text: 'Team sharing', inc: true },
+                { text: '2,000 images / month', inc: true }, { text: 'All image models', inc: true },
+                { text: 'All video models', inc: true }, { text: 'Priority queue', inc: true },
+                { text: 'AI Assist + Export', inc: true },
               ],
-              cta: 'Contact us', ctaFilled: false,
+              cta: 'Start free trial', ctaFilled: true,
             },
-          ].map(tier => (
+            {
+              name: 'Pro', price: '$59', period: '/mo', desc: 'Teams and power users', featured: false, trial: true,
+              features: [
+                { text: 'Unlimited images', inc: true }, { text: 'All image models', inc: true },
+                { text: 'All video models', inc: true }, { text: 'Unlimited storage', inc: true },
+                { text: 'API access', inc: true },
+              ],
+              cta: 'Start free trial', ctaFilled: false,
+            },
+            {
+              name: 'Teams', price: 'Soon', period: '', desc: 'Shared vaults, team billing', featured: false, trial: false, comingSoon: true,
+              features: [
+                { text: 'Everything in Pro', inc: true }, { text: 'Shared vault', inc: true },
+                { text: 'Role-based access', inc: true }, { text: 'Team analytics', inc: true },
+                { text: 'Dedicated support', inc: true },
+              ],
+              cta: 'Notify me', ctaFilled: false,
+            },
+          ].map((tier: { name: string; price: string; period: string; desc: string; featured: boolean; trial: boolean; comingSoon?: boolean; features: { text: string; inc: boolean }[]; cta: string; ctaFilled: boolean }) => (
             <div key={tier.name} style={{
+              position: 'relative',
               background: tier.featured ? T.pricingFeatured : T.cardBg,
-              border: `1px solid ${tier.featured ? 'rgba(61,127,255,0.35)' : T.border}`,
-              borderRadius: 18, padding: 26,
+              border: `1px solid ${tier.featured ? 'rgba(61,127,255,0.35)' : tier.comingSoon ? 'rgba(255,255,255,0.06)' : T.border}`,
+              borderRadius: 18, padding: 22,
               boxShadow: tier.featured ? '0 0 40px rgba(61,127,255,0.08)' : 'none',
+              opacity: tier.comingSoon ? 0.7 : 1,
+              display: 'flex', flexDirection: 'column',
             }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: tier.featured ? '#7aabff' : T.text3, marginBottom: 12 }}>
-                {tier.name}
+              {tier.trial && (
+                <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>
+                  <span style={{ background: '#ff9500', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 100 }}>3-day free trial</span>
+                </div>
+              )}
+              {tier.featured && (
+                <div style={{ position: 'absolute', top: tier.trial ? 8 : -11, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>
+                  <span style={{ background: '#3d7fff', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 100 }}>Most popular</span>
+                </div>
+              )}
+              <div style={{ marginTop: (tier.trial || tier.featured) ? 10 : 0, marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: tier.featured ? '#7aabff' : T.text3, marginBottom: 8 }}>
+                  {tier.name}
+                </div>
+                <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 2, color: T.text, lineHeight: 1 }}>
+                  {tier.price}{tier.period && <span style={{ fontSize: 13, fontWeight: 500, color: T.text3 }}>{tier.period}</span>}
+                </div>
+                <div style={{ fontSize: 11, color: T.text2 }}>{tier.desc}</div>
               </div>
-              <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-2px', marginBottom: 4, color: T.text }}>
-                {tier.price} <span style={{ fontSize: 14, fontWeight: 500, color: T.text3 }}>{tier.period}</span>
-              </div>
-              <div style={{ fontSize: 13, color: T.text2, marginBottom: 20 }}>{tier.desc}</div>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 22 }}>
+              <ul style={{ flex: 1, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
                 {tier.features.map(f => (
-                  <li key={f.text} style={{ fontSize: 13, color: T.text2, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ color: f.inc ? '#34c759' : T.text3, fontSize: f.inc ? 11 : 13, fontWeight: 700, width: 16 }}>{f.inc ? '✓' : '–'}</span>
+                  <li key={f.text} style={{ fontSize: 12, color: T.text2, display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+                    <span style={{ color: f.inc ? '#34c759' : T.text3, fontSize: f.inc ? 10 : 12, fontWeight: 700, marginTop: 1, flexShrink: 0 }}>{f.inc ? '✓' : '–'}</span>
                     {f.text}
                   </li>
                 ))}
               </ul>
-              <button onClick={() => setShowAuth(true)} style={{
-                width: '100%', padding: '10px', borderRadius: 10, fontSize: 14, fontWeight: 600,
-                cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
+              <button onClick={() => !tier.comingSoon && setShowAuth(true)} style={{
+                width: '100%', padding: '9px', borderRadius: 10, fontSize: 12, fontWeight: 600,
+                cursor: tier.comingSoon ? 'default' : 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
                 background: tier.ctaFilled ? '#3d7fff' : 'transparent',
                 color: tier.ctaFilled ? '#fff' : 'rgba(240,237,232,0.45)',
                 border: tier.ctaFilled ? 'none' : '1px solid rgba(255,255,255,0.1)',
               }}
-                onMouseEnter={e => { if (tier.ctaFilled) e.currentTarget.style.background = '#5590ff'; else { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; e.currentTarget.style.color = '#f0ede8' } }}
+                onMouseEnter={e => { if (tier.ctaFilled) e.currentTarget.style.background = '#5590ff'; else if (!tier.comingSoon) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; e.currentTarget.style.color = '#f0ede8' } }}
                 onMouseLeave={e => { if (tier.ctaFilled) e.currentTarget.style.background = '#3d7fff'; else { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'rgba(240,237,232,0.45)' } }}
               >{tier.cta}</button>
             </div>
