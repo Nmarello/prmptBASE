@@ -66,7 +66,7 @@ export default function OnboardingModal({ onDone }: OnboardingModalProps) {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 9998,
+        zIndex: 10000,
         background: 'rgba(0,0,0,0.8)',
         backdropFilter: 'blur(4px)',
         display: 'flex',

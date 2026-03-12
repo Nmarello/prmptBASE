@@ -115,6 +115,7 @@ export default function Dashboard() {
   const [firstRunStep, setFirstRunStep] = useState<number>(-1)
   const [userTier, setUserTier] = useState('newbie')
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [onboardingChecked, setOnboardingChecked] = useState(false)
 
   const [models, setModels] = useState<Model[]>([])
   const [modelFilter, setModelFilter] = useState<'all' | 'images' | 'videos'>('all')
@@ -270,9 +271,9 @@ export default function Dashboard() {
     if (!user) return
     supabase.from('profiles').select('display_name').eq('id', user.id).single()
       .then(({ data }) => {
-        if (!data?.display_name || !localStorage.getItem('prmptVAULT_tos_accepted')) {
-          setShowOnboarding(true)
-        }
+        const needs = !data?.display_name || !localStorage.getItem('prmptVAULT_tos_accepted')
+        setShowOnboarding(needs)
+        setOnboardingChecked(true)
       })
   }, [user?.id])
 
@@ -282,15 +283,16 @@ export default function Dashboard() {
     }
   }, [learningMode])
 
-  // ── First-run tour auto-trigger ──────────────────────────────────────────
+  // ── First-run tour auto-trigger — only after onboarding check resolves ───
   useEffect(() => {
+    if (!onboardingChecked || showOnboarding) return
     const params = new URLSearchParams(window.location.search)
     if (params.get('tour') === 'restart') {
       clearFirstRun()
       window.history.replaceState({}, '', '/dashboard')
     }
     if (!hasSeenFirstRun()) setFirstRunStep(0)
-  }, [])
+  }, [onboardingChecked, showOnboarding])
 
   // Step 1 → 2: DALL-E drawer opened
   useEffect(() => {
