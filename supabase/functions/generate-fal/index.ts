@@ -246,12 +246,12 @@ async function storeImage(adminClient: ReturnType<typeof createClient>, tempUrl:
   try {
     const imgRes = await fetch(tempUrl)
     if (!imgRes.ok) throw new Error(`Fetch failed: ${imgRes.status}`)
-    const imgBlob = await imgRes.arrayBuffer()
     // Use actual content-type from response (handles WebP, PNG, etc.)
     const actualContentType = imgRes.headers.get('content-type')?.split(';')[0].trim() ?? `image/${fmt}`
     const extMap: Record<string, string> = { 'image/png': 'png', 'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/gif': 'gif' }
     const ext = extMap[actualContentType] ?? (fmt === 'png' ? 'png' : 'jpg')
     const fileName = `${userId ?? 'anon'}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const imgBlob = await imgRes.arrayBuffer()
     const { error: uploadErr } = await adminClient.storage
       .from('assets')
       .upload(fileName, imgBlob, { contentType: actualContentType, upsert: false })

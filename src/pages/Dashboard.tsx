@@ -21,6 +21,9 @@ function friendlyFalError(raw: string): string {
     if (raw.toLowerCase().includes('overload') || raw.toLowerCase().includes('try again later')) {
       return 'The model is temporarily overloaded. Please try again in a moment.'
     }
+    if (raw.toLowerCase().includes('compute resources') || raw.toLowerCase().includes('not enough compute')) {
+      return 'The model ran out of resources. Please try again in a moment.'
+    }
     if (raw.length > 200) return 'Generation failed. Please try again.'
   }
   return typeof raw === 'string' ? raw : 'Generation failed. Please try again.'
