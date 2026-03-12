@@ -53,6 +53,11 @@ interface Props {
   initialValues?: Record<string, unknown>
   userTier?: string
   modelMinTier?: string
+  // First-run tour callbacks
+  onTourSubjectTyped?: () => void
+  onTourAiAssistClicked?: () => void
+  onTourAiSuggestionReceived?: () => void
+  onTourAiSuggestionAccepted?: () => void
 }
 
 const CUSTOM_SUPPORTED = ['select', 'multi_select', 'style_picker']
@@ -720,7 +725,7 @@ function LivePromptPanel({
 
 // ─── Main form ───────────────────────────────────────────────────────────────
 
-export default function TemplateForm({ template, genType: _genType, onSubmit, submitting, initialValues, userTier, modelMinTier }: Props) {
+export default function TemplateForm({ template, genType: _genType, onSubmit, submitting, initialValues, userTier, modelMinTier, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted }: Props) {
   const { mode: learningMode } = useLearningMode()
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
   const [customOptions, setCustomOptions] = useState<Record<string, FieldOption[]>>({})
@@ -760,7 +765,10 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
         }
       )
       const data = await res.json()
-      if (data.suggestion) setAiSuggestion({ fieldId, suggestion: data.suggestion })
+      if (data.suggestion) {
+        setAiSuggestion({ fieldId, suggestion: data.suggestion })
+        if (fieldId === 'subject') onTourAiSuggestionReceived?.()
+      }
     } finally {
       setAssisting(null)
     }
@@ -787,6 +795,7 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
 
   function set(id: string, val: unknown) {
     setValues((prev) => ({ ...prev, [id]: val }))
+    if (id === 'subject' && val && String(val).trim().length > 0) onTourSubjectTyped?.()
   }
 
   function handleCustomSaved(fieldId: string, opt: CustomOption) {
@@ -814,7 +823,7 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
     const isTooltipOpen = tooltipOpen === field.id
 
     return (
-      <div key={field.id}>
+      <div key={field.id} data-tour={field.id === 'subject' ? 'field-subject' : undefined}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
             <label className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>
@@ -845,7 +854,8 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
             {field.ai_assist && (
               <button
                 type="button"
-                onClick={() => handleAiAssist(field.id)}
+                data-tour={field.id === 'subject' ? 'ai-assist-subject' : undefined}
+                onClick={() => { handleAiAssist(field.id); if (field.id === 'subject') onTourAiAssistClicked?.() }}
                 disabled={assisting === field.id}
                 className="text-xs disabled:opacity-40 flex items-center gap-1 transition-opacity hover:opacity-70 cursor-pointer"
                 style={{ color: 'var(--pv-accent)' }}
@@ -875,7 +885,7 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
             : undefined}
         />
         {aiSuggestion?.fieldId === field.id && (
-          <div className="mt-2 rounded-xl border border-sky-300 dark:border-sky-500/40 bg-sky-50 dark:bg-sky-500/8 overflow-hidden">
+          <div data-tour={field.id === 'subject' ? 'ai-suggestion-subject' : undefined} className="mt-2 rounded-xl border border-sky-300 dark:border-sky-500/40 bg-sky-50 dark:bg-sky-500/8 overflow-hidden">
             <div className="px-3 py-2 border-b border-sky-200 dark:border-sky-500/25 flex items-center gap-2">
               <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wider">AI Suggestion</span>
             </div>
@@ -885,7 +895,7 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
             <div className="px-3 py-2 border-t border-sky-200 dark:border-sky-500/25 flex gap-2">
               <button
                 type="button"
-                onClick={() => { set(field.id, aiSuggestion.suggestion); setAiSuggestion(null) }}
+                onClick={() => { set(field.id, aiSuggestion.suggestion); setAiSuggestion(null); if (field.id === 'subject') onTourAiSuggestionAccepted?.() }}
                 className="px-3 py-1.5 bg-sky-500 hover:bg-sky-600 rounded-lg text-xs font-semibold text-white transition-all cursor-pointer"
               >
                 Accept
@@ -937,6 +947,7 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
           {canGenerate ? (
             <button
               type="submit"
+              data-tour="generate-btn"
               disabled={submitting}
               className="w-full py-3.5 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-semibold text-sm transition-all cursor-pointer"
               style={{ background: 'var(--pv-text)', color: 'var(--pv-bg)' }}

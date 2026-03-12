@@ -10,6 +10,7 @@ interface Props {
   rendering?: boolean
   latestRenderUrl?: string
   latestRenderIsVideo?: boolean
+  dataTour?: string
 }
 
 const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
@@ -64,7 +65,7 @@ const slugBrandLabels: Record<string, string> = {
 
 // Provider logo mark — SVG or styled wordmark
 
-export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering, latestRenderUrl, latestRenderIsVideo }: Props) {
+export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering, latestRenderUrl, latestRenderIsVideo, dataTour }: Props) {
   const accessible = tierCanAccess(userTier, model.min_tier)
   const comingSoon = comingSoonProp || false
   const art = MODEL_ART[model.slug] ?? DEFAULT_ART
@@ -76,6 +77,7 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
   return (
     <button
       onClick={!comingSoon && accessible ? onClick : undefined}
+      data-tour={dataTour}
       style={{ width: '230px', flexShrink: 0, background: 'var(--pv-surface)' }}
       className={`group relative text-left rounded-[18px] border overflow-hidden flex flex-col transition-all duration-200 ${
         comingSoon

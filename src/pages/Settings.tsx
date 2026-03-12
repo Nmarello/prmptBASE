@@ -694,6 +694,22 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
               </div>
             )}
 
+            {/* Restart onboarding */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--pv-border)' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Onboarding tour</div>
+                <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Replay the first-generation walkthrough</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { try { localStorage.removeItem('prmptVAULT_firstRunSeen') } catch {} window.location.href = '/dashboard?tour=restart' }}
+                style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-text)] transition-colors"
+              >
+                Restart →
+              </button>
+            </div>
+
             {/* Sign out */}
             <div style={{ padding: '14px 18px' }}>
               <button

@@ -53,6 +53,7 @@ import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
 import NotificationBell, { addNotification } from '../components/dashboard/NotificationBell'
 import SettingsDrawer from '../components/dashboard/SettingsDrawer'
 import GuidedTour, { markTourSeen } from '../components/dashboard/GuidedTour'
+import FirstRunTour, { hasSeenFirstRun, markFirstRunSeen, clearFirstRun } from '../components/dashboard/FirstRunTour'
 import { useLearningMode } from '../contexts/LearningModeContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
@@ -110,6 +111,7 @@ export default function Dashboard() {
   const userInitial = (user?.user_metadata?.full_name ?? user?.email ?? '?')[0].toUpperCase()
   const [view, setView] = useState<View>('models')
   const [tourActive, setTourActive] = useState(false)
+  const [firstRunStep, setFirstRunStep] = useState<number>(-1)
   const [userTier, setUserTier] = useState('newbie')
 
   const [models, setModels] = useState<Model[]>([])
@@ -267,6 +269,36 @@ export default function Dashboard() {
       setTourActive(true)
     }
   }, [learningMode])
+
+  // ── First-run tour auto-trigger ──────────────────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('tour') === 'restart') {
+      clearFirstRun()
+      window.history.replaceState({}, '', '/dashboard')
+    }
+    if (!hasSeenFirstRun()) setFirstRunStep(0)
+  }, [])
+
+  // Step 1 → 2: DALL-E drawer opened
+  useEffect(() => {
+    if (firstRunStep === 1 && drawerModel?.slug === 'dalle') setFirstRunStep(2)
+  }, [drawerModel, firstRunStep])
+
+  // Step 2 → 3: workspace opened
+  useEffect(() => {
+    if (firstRunStep === 2 && workspaceOpen) setFirstRunStep(3)
+  }, [workspaceOpen, firstRunStep])
+
+  // Step 6 → 7: generation started
+  useEffect(() => {
+    if (firstRunStep === 6 && submitting) setFirstRunStep(7)
+  }, [submitting, firstRunStep])
+
+  // Step 7 → 8: result arrived
+  useEffect(() => {
+    if (firstRunStep === 7 && result) setFirstRunStep(8)
+  }, [result, firstRunStep])
 
   async function selectModel(model: Model) {
     setSidebarOpen(false)
@@ -775,6 +807,7 @@ export default function Dashboard() {
                           rendering={renderingModelSlug === m.slug}
                           latestRenderUrl={latestRenderBySlug[m.slug]?.url}
                           latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
+                          dataTour={m.slug === 'dalle' ? 'dalle-card' : undefined}
                         />
                       ))}
                     </div>
@@ -1207,6 +1240,10 @@ export default function Dashboard() {
                       initialValues={img2imgInitialValues}
                       userTier={userTier}
                       modelMinTier={selectedModel?.min_tier}
+                      onTourSubjectTyped={() => { if (firstRunStep === 3) setFirstRunStep(4) }}
+                      onTourAiAssistClicked={() => { if (firstRunStep === 4) setFirstRunStep(5) }}
+                      onTourAiSuggestionReceived={() => {}}
+                      onTourAiSuggestionAccepted={() => { if (firstRunStep === 5) setFirstRunStep(6) }}
                     />
                   </>
                 )}
@@ -1256,6 +1293,14 @@ export default function Dashboard() {
         )
       })()}
       <GuidedTour active={tourActive} onFinish={() => { markTourSeen(); setTourActive(false) }} />
+      {firstRunStep >= 0 && (
+        <FirstRunTour
+          step={firstRunStep}
+          onNext={() => setFirstRunStep(s => s + 1)}
+          onSkip={() => { markFirstRunSeen(); setFirstRunStep(-1) }}
+          onDone={() => { markFirstRunSeen(); setFirstRunStep(-1) }}
+        />
+      )}
       {renderToast && (
         <div className="fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl text-sm font-medium animate-fade-in" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}>
           <svg className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--pv-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>

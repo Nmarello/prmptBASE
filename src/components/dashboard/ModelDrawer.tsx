@@ -84,6 +84,7 @@ export default function ModelDrawer({
           {/* Generate button */}
           <button
             onClick={onGenerate}
+            data-tour="model-drawer-generate"
             className="flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-sm font-semibold transition-all cursor-pointer flex-shrink-0"
             style={{ background: 'var(--pv-accent)', color: '#fff' }}
             onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
