@@ -40,6 +40,14 @@ interface VideoByModel {
   img2vid: number
 }
 
+interface ImageByModel {
+  name: string
+  slug: string
+  provider: string
+  txt2img: number
+  img2img: number
+}
+
 interface Stats {
   total_users: number
   by_tier: Record<Tier, number>
@@ -51,6 +59,7 @@ interface Stats {
   cost_by_model: CostByModel[]
   gen_type_totals: Record<string, number>
   video_by_model: VideoByModel[]
+  image_by_model: ImageByModel[]
 }
 
 export default function Admin() {
@@ -117,6 +126,7 @@ export default function Admin() {
       cost_by_model: data.cost_by_model ?? [],
       gen_type_totals: data.gen_type_totals ?? {},
       video_by_model: data.video_by_model ?? [],
+      image_by_model: data.image_by_model ?? [],
     })
     setLoading(false)
   }
@@ -297,22 +307,69 @@ export default function Admin() {
             ))}
           </div>
 
-          {/* Row 2 — users by tier + video by model */}
-          <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-3 mb-8">
+          {/* Row 2 — tier cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+            {([
+              { label: 'Newbie',  value: stats.by_tier.newbie,  accent: '#7a7268' },
+              { label: 'Creator', value: stats.by_tier.creator, accent: '#6699ff' },
+              { label: 'Studio',  value: stats.by_tier.studio,  accent: '#c084fc' },
+              { label: 'Pro',     value: stats.by_tier.pro,     accent: '#f5c842' },
+            ] as const).map(s => (
+              <div key={s.label} style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '14px', padding: '14px 16px' }}>
+                <div style={{ fontSize: '10px', color: '#4a4540', marginBottom: '5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.label}</div>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: s.accent, fontFamily: "'Bricolage Grotesque', sans-serif", letterSpacing: '-0.03em' }}>{s.value}</div>
+              </div>
+            ))}
+          </div>
 
-            {/* Tier breakdown */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3">
-              {([
-                { label: 'Newbie',       value: stats.by_tier.newbie,                     accent: '#7a7268' },
-                { label: 'Creator',      value: stats.by_tier.creator,                    accent: '#6699ff' },
-                { label: 'Studio',       value: stats.by_tier.studio,                     accent: '#c084fc' },
-                { label: 'Pro',          value: stats.by_tier.pro,                        accent: '#f5c842' },
-              ] as const).map(s => (
-                <div key={s.label} style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '14px', padding: '14px 16px' }}>
-                  <div style={{ fontSize: '10px', color: '#4a4540', marginBottom: '5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.label}</div>
-                  <div style={{ fontSize: '24px', fontWeight: 700, color: s.accent, fontFamily: "'Bricolage Grotesque', sans-serif", letterSpacing: '-0.03em' }}>{s.value}</div>
+          {/* Row 3 — image + video model charts side by side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-8">
+
+            {/* Image by model */}
+            <div style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '14px', padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ fontSize: '10px', color: '#4a4540', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Image Assets · by Model &amp; Type</div>
+                <div style={{ display: 'flex', gap: 12, fontSize: '10px' }}>
+                  <span style={{ color: '#3d7fff' }}>■ txt2img</span>
+                  <span style={{ color: '#7aabff' }}>■ img2img</span>
                 </div>
-              ))}
+              </div>
+              {stats.image_by_model.length === 0 ? (
+                <div style={{ fontSize: '12px', color: '#4a4540' }}>No image assets yet</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {stats.image_by_model.map(m => {
+                    const total = m.txt2img + m.img2img
+                    const maxTotal = Math.max(...stats.image_by_model.map(x => x.txt2img + x.img2img))
+                    return (
+                      <div key={m.slug} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 130, fontSize: '12px', color: '#f2ede4', fontWeight: 500, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
+                        <div style={{ flex: 1, display: 'flex', gap: 2, height: 20, alignItems: 'center' }}>
+                          {m.txt2img > 0 && (
+                            <div style={{
+                              height: '100%', borderRadius: m.img2img > 0 ? '4px 2px 2px 4px' : '4px',
+                              background: '#3d7fff',
+                              width: `${(m.txt2img / maxTotal) * 80}%`, minWidth: 20,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '10px', fontWeight: 700, color: '#fff',
+                            }}>{m.txt2img}</div>
+                          )}
+                          {m.img2img > 0 && (
+                            <div style={{
+                              height: '100%', borderRadius: m.txt2img > 0 ? '2px 4px 4px 2px' : '4px',
+                              background: '#7aabff',
+                              width: `${(m.img2img / maxTotal) * 80}%`, minWidth: 20,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '10px', fontWeight: 700, color: 'rgba(0,0,0,0.65)',
+                            }}>{m.img2img}</div>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#4a4540', width: 24, textAlign: 'right', flexShrink: 0 }}>{total}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Video by model */}
@@ -333,26 +390,22 @@ export default function Admin() {
                     const maxTotal = Math.max(...stats.video_by_model.map(x => x.txt2vid + x.img2vid))
                     return (
                       <div key={m.slug} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 120, fontSize: '12px', color: '#f2ede4', fontWeight: 500, flexShrink: 0 }}>{m.name}</div>
+                        <div style={{ width: 130, fontSize: '12px', color: '#f2ede4', fontWeight: 500, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
                         <div style={{ flex: 1, display: 'flex', gap: 2, height: 20, alignItems: 'center' }}>
-                          {/* txt2vid bar */}
                           {m.txt2vid > 0 && (
                             <div style={{
-                              height: '100%', borderRadius: '4px 2px 2px 4px',
+                              height: '100%', borderRadius: m.img2vid > 0 ? '4px 2px 2px 4px' : '4px',
                               background: '#a78bfa',
-                              width: `${(m.txt2vid / maxTotal) * 70}%`,
-                              minWidth: 20,
+                              width: `${(m.txt2vid / maxTotal) * 80}%`, minWidth: 20,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: '10px', fontWeight: 700, color: 'rgba(0,0,0,0.7)',
                             }}>{m.txt2vid}</div>
                           )}
-                          {/* img2vid bar */}
                           {m.img2vid > 0 && (
                             <div style={{
                               height: '100%', borderRadius: m.txt2vid > 0 ? '2px 4px 4px 2px' : '4px',
                               background: '#c084fc',
-                              width: `${(m.img2vid / maxTotal) * 70}%`,
-                              minWidth: 20,
+                              width: `${(m.img2vid / maxTotal) * 80}%`, minWidth: 20,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: '10px', fontWeight: 700, color: 'rgba(0,0,0,0.7)',
                             }}>{m.img2vid}</div>

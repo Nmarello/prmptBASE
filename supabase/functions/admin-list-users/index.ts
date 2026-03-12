@@ -93,13 +93,24 @@ Deno.serve(async (req) => {
     const video_by_model = Object.values(videoModelMap)
       .sort((a, b) => (b.txt2vid + b.img2vid) - (a.txt2vid + a.img2vid))
 
+    // Image breakdown by model+type (txt2img, img2img)
+    const imageModelMap: Record<string, { name: string; slug: string; provider: string; txt2img: number; img2img: number }> = {}
+    assetRows?.forEach((a: any) => {
+      if (a.gen_type !== 'txt2img' && a.gen_type !== 'img2img') return
+      const key = a.model_id ?? 'unknown'
+      if (!imageModelMap[key]) imageModelMap[key] = { name: a.models?.name ?? key, slug: a.models?.slug ?? '', provider: a.models?.provider ?? '', txt2img: 0, img2img: 0 }
+      imageModelMap[key][a.gen_type as 'txt2img' | 'img2img'] += 1
+    })
+    const image_by_model = Object.values(imageModelMap)
+      .sort((a, b) => (b.txt2img + b.img2img) - (a.txt2img + a.img2img))
+
     // Assets created today
     const today = new Date().toISOString().slice(0, 10)
     const assets_today = assetRows?.filter((a: any) => a.created_at?.startsWith(today)).length ?? 0
 
     const users = (profiles ?? []).map(p => ({ ...p, asset_count: countMap[p.id] ?? 0 }))
 
-    return new Response(JSON.stringify({ users, cost_by_model, period_spend, total_spend, gen_type_totals: genTypeTotals, video_by_model, assets_today }), {
+    return new Response(JSON.stringify({ users, cost_by_model, period_spend, total_spend, gen_type_totals: genTypeTotals, video_by_model, image_by_model, assets_today }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {
