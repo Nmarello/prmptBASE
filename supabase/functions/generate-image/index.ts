@@ -146,6 +146,13 @@ Deno.serve(async (req) => {
     const body = await req.json()
     const { user_token, values, model_id, prompt_id, size, quality } = body
 
+    // DALL-E 3 exact pricing per image
+    const DALLE_PRICES: Record<string, Record<string, number>> = {
+      standard: { '1024x1024': 0.040, '1024x1792': 0.080, '1792x1024': 0.080 },
+      hd:       { '1024x1024': 0.080, '1024x1792': 0.120, '1792x1024': 0.120 },
+    }
+    const cost_usd = DALLE_PRICES[quality ?? 'standard']?.[size ?? '1024x1024'] ?? 0.040
+
     // Use service role to verify user token and do DB ops
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -216,6 +223,7 @@ Deno.serve(async (req) => {
         url: permanentUrl,
         width: w,
         height: h,
+        cost_usd,
         metadata: { prompt, revised_prompt: revisedPrompt, size, quality },
       })
       .select()

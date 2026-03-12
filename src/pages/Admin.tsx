@@ -21,12 +21,23 @@ interface UserRow {
   asset_count: number
 }
 
+interface CostByModel {
+  name: string
+  slug: string
+  avg_cost: number
+  total_cost: number
+  count: number
+}
+
 interface Stats {
   total_users: number
   by_tier: Record<Tier, number>
   total_assets: number
   assets_today: number
   new_users_today: number
+  period_spend: number
+  total_spend: number
+  cost_by_model: CostByModel[]
 }
 
 export default function Admin() {
@@ -88,6 +99,9 @@ export default function Admin() {
       total_assets: totalAssets,
       assets_today: 0,
       new_users_today: rows.filter(r => r.created_at.startsWith(today)).length,
+      period_spend: data.period_spend ?? 0,
+      total_spend: data.total_spend ?? 0,
+      cost_by_model: data.cost_by_model ?? [],
     })
     setLoading(false)
   }
@@ -262,6 +276,65 @@ export default function Admin() {
                 <div style={{ fontSize: '26px', fontWeight: 700, color: s.accent, fontFamily: "'Bricolage Grotesque', sans-serif", letterSpacing: '-0.03em' }}>{s.value}</div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Cost section */}
+        {stats && (
+          <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 mb-8">
+
+            {/* Spend tracker */}
+            <div style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '14px', padding: '20px' }}>
+              <div style={{ fontSize: '11px', color: '#4a4540', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '14px' }}>Spend — This Month</div>
+              <div style={{ fontSize: '36px', fontWeight: 700, color: '#f2ede4', letterSpacing: '-0.04em', marginBottom: '4px' }}>
+                ${stats.period_spend.toFixed(4)}
+              </div>
+              <div style={{ fontSize: '12px', color: '#4a4540', marginBottom: '16px' }}>
+                ${stats.total_spend.toFixed(4)} all time
+              </div>
+              {/* Progress bar — show month spend vs all-time as context */}
+              <div style={{ height: 4, background: '#252220', borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 99,
+                  background: 'linear-gradient(90deg, #3d7fff, #7aabff)',
+                  width: stats.total_spend > 0 ? `${Math.min((stats.period_spend / stats.total_spend) * 100, 100)}%` : '0%',
+                  transition: 'width 0.4s ease',
+                }} />
+              </div>
+              <div style={{ fontSize: '11px', color: '#4a4540', marginTop: '6px' }}>
+                {stats.total_spend > 0 ? `${((stats.period_spend / stats.total_spend) * 100).toFixed(0)}% of all-time` : 'No cost data yet'}
+              </div>
+            </div>
+
+            {/* Avg cost per model */}
+            <div style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '14px', padding: '20px' }}>
+              <div style={{ fontSize: '11px', color: '#4a4540', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '14px' }}>Avg Cost per Generation · by Model</div>
+              {stats.cost_by_model.length === 0 ? (
+                <div style={{ fontSize: '13px', color: '#4a4540' }}>No cost data yet — generates after your next run</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #302d29' }}>
+                        {['Model', 'Avg Cost', 'Runs', 'Total Spent'].map(h => (
+                          <th key={h} className="pb-2 text-left pr-6" style={{ fontSize: '10px', fontWeight: 600, color: '#4a4540', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.cost_by_model.map(m => (
+                        <tr key={m.slug} style={{ borderBottom: '1px solid #1a1814' }}>
+                          <td className="py-2 pr-6" style={{ color: '#f2ede4', fontSize: '13px', fontWeight: 500 }}>{m.name}</td>
+                          <td className="py-2 pr-6" style={{ color: '#7aabff', fontSize: '13px', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>${m.avg_cost.toFixed(4)}</td>
+                          <td className="py-2 pr-6" style={{ color: '#7a7268', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>{m.count.toLocaleString()}</td>
+                          <td className="py-2" style={{ color: '#7a7268', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>${m.total_cost.toFixed(4)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

@@ -61,6 +61,8 @@ Deno.serve(async (req) => {
       throw new Error(`Result fetch error ${resultRes.status}: ${err}`)
     }
     const resultData = await resultRes.json()
+    const videoCostRaw = resultRes.headers.get('x-fal-billing-cost')
+    const videoCost = videoCostRaw ? parseFloat(videoCostRaw) : (resultData.billing?.cost ?? null)
 
     const videoUrl: string =
       resultData.video?.url ??
@@ -102,7 +104,7 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal',
         },
-        body: JSON.stringify({ url: permanentUrl }),
+        body: JSON.stringify({ url: permanentUrl, ...(videoCost != null ? { cost_usd: videoCost } : {}) }),
       },
     )
 

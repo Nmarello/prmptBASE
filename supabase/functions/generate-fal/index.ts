@@ -350,6 +350,9 @@ Deno.serve(async (req) => {
       }
 
       const falData = await falRes.json()
+      const falCostRaw = falRes.headers.get('x-fal-billing-cost')
+      const falCost = falCostRaw ? parseFloat(falCostRaw) : (falData.billing?.cost ?? null)
+      const costPerAsset = (falCost != null && numImages > 0) ? falCost / numImages : null
       const images: { url: string; width?: number; height?: number }[] = falData.images ?? []
       if (images.length === 0) throw new Error(`No images in fal.ai response: ${JSON.stringify(falData)}`)
 
@@ -364,6 +367,7 @@ Deno.serve(async (req) => {
             url: permanentUrl,
             width: img.width ?? 1024,
             height: img.height ?? 1024,
+            cost_usd: costPerAsset,
             metadata: { prompt, strength: strengthVal, steps: numSteps, guidance_scale: guidanceVal, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
           }).select().single()
           return data
@@ -427,6 +431,9 @@ Deno.serve(async (req) => {
       })
       if (!falRes.ok) throw new Error(`fal.ai error: ${await falRes.text()}`)
       const falData = await falRes.json()
+      const falCostRaw = falRes.headers.get('x-fal-billing-cost')
+      const falCost = falCostRaw ? parseFloat(falCostRaw) : (falData.billing?.cost ?? null)
+      const costPerAsset = (falCost != null && numImages > 0) ? falCost / numImages : null
       const images: { url: string; width?: number; height?: number }[] = falData.images ?? []
       if (images.length === 0) throw new Error(`No images in fal.ai response`)
 
@@ -441,6 +448,7 @@ Deno.serve(async (req) => {
             url: permanentUrl,
             width: img.width ?? 1024,
             height: img.height ?? 1024,
+            cost_usd: costPerAsset,
             metadata: { prompt, guidance_scale: guidanceVal, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
           }).select().single()
           return data
@@ -684,6 +692,9 @@ Deno.serve(async (req) => {
         })
         if (!falRes.ok) throw new Error(`fal.ai error: ${await falRes.text()}`)
         const falData = await falRes.json()
+        const falCostRaw = falRes.headers.get('x-fal-billing-cost')
+        const falCost = falCostRaw ? parseFloat(falCostRaw) : (falData.billing?.cost ?? null)
+        const costPerAsset = (falCost != null && numImages > 0) ? falCost / numImages : null
         const images: { url: string; width?: number; height?: number }[] = falData.images ?? []
         if (images.length === 0) throw new Error(`No images in fal.ai response`)
 
@@ -693,6 +704,7 @@ Deno.serve(async (req) => {
             user_id: userId, prompt_id: prompt_id ?? null, model_id: model_id ?? null,
             gen_type: 'img2img', url: permanentUrl,
             width: img.width ?? nbW, height: img.height ?? nbH,
+            cost_usd: costPerAsset,
             metadata: { prompt: builtPrompt, model_slug: slug, aspect_ratio: aspectRatio, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
           }).select().single()
           return data
@@ -727,6 +739,9 @@ Deno.serve(async (req) => {
       })
       if (!falRes.ok) throw new Error(`fal.ai error: ${await falRes.text()}`)
       const falData = await falRes.json()
+      const falCostRaw = falRes.headers.get('x-fal-billing-cost')
+      const falCost = falCostRaw ? parseFloat(falCostRaw) : (falData.billing?.cost ?? null)
+      const costPerAsset = (falCost != null && numImages > 0) ? falCost / numImages : null
       const images: { url: string; width?: number; height?: number }[] = falData.images ?? []
       if (images.length === 0) throw new Error(`No images in fal.ai response`)
 
@@ -736,6 +751,7 @@ Deno.serve(async (req) => {
           user_id: userId, prompt_id: prompt_id ?? null, model_id: model_id ?? null,
           gen_type: 'txt2img', url: permanentUrl,
           width: img.width ?? nbW, height: img.height ?? nbH,
+          cost_usd: costPerAsset,
           metadata: { prompt: builtPrompt, model_slug: slug, aspect_ratio: aspectRatio, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
         }).select().single()
         return data
@@ -775,6 +791,9 @@ Deno.serve(async (req) => {
       })
       if (!falRes.ok) throw new Error(`fal.ai error: ${await falRes.text()}`)
       const falData = await falRes.json()
+      const falCostRaw = falRes.headers.get('x-fal-billing-cost')
+      const falCost = falCostRaw ? parseFloat(falCostRaw) : (falData.billing?.cost ?? null)
+      const costPerAsset = (falCost != null && numImages > 0) ? falCost / numImages : null
       const images: { url: string; width?: number; height?: number }[] = falData.images ?? []
       if (images.length === 0) throw new Error(`No images in fal.ai response`)
 
@@ -789,6 +808,7 @@ Deno.serve(async (req) => {
             url: permanentUrl,
             width: img.width ?? w,
             height: img.height ?? h,
+            cost_usd: costPerAsset,
             metadata: { prompt: builtPrompt, style: body.style ?? null, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
           }).select().single()
           return data
@@ -882,6 +902,9 @@ Deno.serve(async (req) => {
     }
 
     const falData = await falRes.json()
+    const falCostRaw = falRes.headers.get('x-fal-billing-cost')
+    const falTotalCost = falCostRaw ? parseFloat(falCostRaw) : (falData.billing?.cost ?? null)
+    const costPerAsset = (falTotalCost != null && numImages > 0) ? falTotalCost / numImages : null
     const images: { url: string }[] = falData.images ?? []
     if (images.length === 0) throw new Error(`No images in fal.ai response: ${JSON.stringify(falData)}`)
 
@@ -911,6 +934,7 @@ Deno.serve(async (req) => {
           url: permanentUrl,
           width: w,
           height: h,
+          cost_usd: costPerAsset,
           metadata,
         }).select().single()
         return data
