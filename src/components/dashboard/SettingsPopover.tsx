@@ -47,9 +47,10 @@ const TZ_STORAGE_KEY = 'prmptVAULT_timezone'
 interface Props {
   onSignOut: () => void
   userInitial?: string
+  inBottomNav?: boolean
 }
 
-export default function SettingsPopover({ onSignOut, userInitial = '?' }: Props) {
+export default function SettingsPopover({ onSignOut, userInitial = '?', inBottomNav }: Props) {
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const { theme, setTheme } = useTheme()
@@ -75,15 +76,30 @@ export default function SettingsPopover({ onSignOut, userInitial = '?' }: Props)
   return (
     <div className="relative" ref={panelRef}>
       {/* Avatar button */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Settings"
-        data-tour="settings-btn"
-        className="flex items-center justify-center rounded-full cursor-pointer transition-opacity hover:opacity-80 flex-shrink-0"
-        style={{ width: 30, height: 30, background: 'var(--pv-accent)', color: '#fff', fontSize: 12, fontWeight: 700, userSelect: 'none' }}
-      >
-        {userInitial}
-      </button>
+      {inBottomNav ? (
+        <button
+          onClick={() => setOpen((v) => !v)}
+          aria-label="Settings"
+          data-tour="settings-btn"
+          className="flex flex-col items-center gap-0.5 py-1 px-4 cursor-pointer transition-opacity"
+          style={{ color: open ? 'var(--pv-accent)' : 'var(--pv-text3)' }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+          <span className="text-[10px] font-medium">Account</span>
+        </button>
+      ) : (
+        <button
+          onClick={() => setOpen((v) => !v)}
+          aria-label="Settings"
+          data-tour="settings-btn"
+          className="flex items-center justify-center rounded-full cursor-pointer transition-opacity hover:opacity-80 flex-shrink-0"
+          style={{ width: 30, height: 30, background: 'var(--pv-accent)', color: '#fff', fontSize: 12, fontWeight: 700, userSelect: 'none' }}
+        >
+          {userInitial}
+        </button>
+      )}
 
       {open && (
         <div className="absolute bottom-full right-0 mb-2 sm:bottom-0 sm:left-full sm:right-auto sm:mb-0 sm:ml-2 w-72 max-w-[calc(100vw-16px)] bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden animate-fade-in">

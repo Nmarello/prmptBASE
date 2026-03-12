@@ -870,12 +870,13 @@ export default function Dashboard() {
           </button>
         ))}
         <NotificationBell
+          inBottomNav
           onViewAsset={(assetId, _assetUrl, _isVideo) => {
             const asset = assets.find((a) => a.id === assetId)
             if (asset) { setLightboxAsset(asset) } else { setView('assets'); loadAssets() }
           }}
         />
-        <SettingsPopover onSignOut={signOut} userInitial={userInitial} />
+        <SettingsPopover onSignOut={signOut} userInitial={userInitial} inBottomNav />
       </nav>
 
       {/* ── WORKSPACE OVERLAY ── */}
