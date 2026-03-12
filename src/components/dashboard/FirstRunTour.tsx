@@ -64,6 +64,8 @@ const STEPS: Step[] = [
     position: 'left',
     title: 'Start with the Subject',
     special: 'subject',
+    hasButton: true,
+    buttonLabel: 'Next →',
   },
   // 5 – click AI Assist
   {

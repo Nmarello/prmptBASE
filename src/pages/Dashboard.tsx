@@ -1245,7 +1245,7 @@ export default function Dashboard() {
                       initialValues={img2imgInitialValues}
                       userTier={userTier}
                       modelMinTier={selectedModel?.min_tier}
-                      onTourSubjectTyped={() => { setFirstRunStep(s => s === 4 ? 5 : s) }}
+                      onTourSubjectTyped={() => {}}
                       onTourAiAssistClicked={() => { setFirstRunStep(s => s === 5 ? 6 : s) }}
                       onTourAiSuggestionReceived={() => { setFirstRunStep(s => (s === 5 || s === 6) ? 7 : s) }}
                       onTourAiSuggestionAccepted={() => { setFirstRunStep(s => s === 7 ? 8 : s) }}
