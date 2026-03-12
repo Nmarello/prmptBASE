@@ -7,7 +7,7 @@ interface Props {
   assets: Asset[]
   models: Model[]
   assetsLoading: boolean
-  onCreateProject: (name: string, description: string) => Promise<void>
+  onCreateProject: (name: string, description: string) => Promise<unknown>
   onUpdateProject: (id: string, name: string, description: string) => Promise<void>
   onDeleteProject: (id: string) => Promise<void>
   onDeleteAsset: (id: string) => void
