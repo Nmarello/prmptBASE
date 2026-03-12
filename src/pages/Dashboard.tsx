@@ -55,6 +55,7 @@ import SettingsPopover from '../components/dashboard/SettingsPopover'
 import GuidedTour, { markTourSeen } from '../components/dashboard/GuidedTour'
 import { useLearningMode } from '../contexts/LearningModeContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
 
 type View = 'models' | 'builder' | 'assets' | 'projects'
 
@@ -69,6 +70,24 @@ const COMING_SOON_VIDEO: Partial<Model>[] = [
   { slug: 'cs-runway', name: 'Runway Gen-4', provider: 'Runway', description: 'The leading creative video AI. Gen-4 sets the bar for motion and cinematic quality.', supported_gen_types: ['txt2vid', 'img2vid'] },
   { slug: 'cs-pika', name: 'Pika', provider: 'Pika', description: 'Fast, expressive video generation built for social-first creators.', supported_gen_types: ['txt2vid', 'img2vid'] },
 ]
+
+function PullIndicator({ distance, refreshing }: { distance: number; refreshing: boolean }) {
+  if (distance === 0 && !refreshing) return null
+  return (
+    <div className="flex items-center justify-center flex-shrink-0 overflow-hidden" style={{
+      height: refreshing ? 48 : distance,
+      transition: (!refreshing && distance === 0) ? 'height 0.25s ease' : 'none',
+    }}>
+      <div className={refreshing ? 'pv-spin' : ''} style={{
+        width: 20, height: 20, borderRadius: '50%',
+        border: '2.5px solid var(--pv-accent)',
+        borderTopColor: refreshing ? 'transparent' : 'var(--pv-accent)',
+        opacity: refreshing ? 1 : Math.min(distance / 72, 1),
+        transform: refreshing ? undefined : `rotate(${distance * 3}deg)`,
+      }} />
+    </div>
+  )
+}
 
 function SbBtn({ tip, active, onClick, children }: { tip?: string; active?: boolean; onClick?: () => void; children: React.ReactNode }) {
   return (
@@ -205,6 +224,15 @@ export default function Dashboard() {
     }
     return map
   }, [assets, models, showcase])
+
+  const refreshModels = useCallback(async () => {
+    if (!user) return
+    const { data } = await supabase.from('models').select('*').eq('is_active', true).order('sort_order')
+    if (data) setModels(data as Model[])
+  }, [user])
+
+  // Pull-to-refresh for generate view (declared after refreshModels)
+  const { scrollRef: generateScrollRef, distance: generatePullDist, refreshing: generateRefreshing } = usePullToRefresh(refreshModels)
 
   const loadAssets = useCallback(async () => {
     if (!user) return
@@ -693,7 +721,8 @@ export default function Dashboard() {
             </div>
 
             {/* Scrollable model rows */}
-            <div className="flex-1 overflow-y-auto px-4 sm:px-7 pb-24 sm:pb-10 space-y-8">
+            <div ref={generateScrollRef} className="flex-1 overflow-y-auto px-4 sm:px-7 pb-24 sm:pb-10 space-y-8">
+              <PullIndicator distance={generatePullDist} refreshing={generateRefreshing} />
               {/* Image Models row */}
               {(() => {
                 if (modelFilter === 'videos') return null
@@ -827,6 +856,7 @@ export default function Dashboard() {
             showcaseAssets={showcase}
             onDelete={deleteAsset}
             onGenerate={() => setView('models')}
+            onRefresh={loadAssets}
             onSendToImg2Img={sendToImg2Img}
             onSendToImg2Vid={sendToImg2Vid}
             onMoveToProject={moveAssetToProject}
@@ -846,6 +876,7 @@ export default function Dashboard() {
             onDeleteAsset={deleteAsset}
             onMoveToProject={moveAssetToProject}
             onGenerate={() => setView('models')}
+            onRefresh={loadAssets}
             onSendToImg2Img={sendToImg2Img}
             onSendToImg2Vid={sendToImg2Vid}
           />

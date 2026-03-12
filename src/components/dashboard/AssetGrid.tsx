@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import type { Asset, Model, UserProject } from '../../types'
+import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 
 interface Props {
   assets: Asset[]
@@ -10,6 +11,7 @@ interface Props {
   showcaseAssets?: { url: string; gen_type: string | null }[]
   onDelete: (id: string) => void
   onGenerate: () => void
+  onRefresh?: () => Promise<void> | void
   onSendToImg2Img: (url: string) => void
   onSendToImg2Vid: (url: string) => void
   onMoveToProject?: (assetId: string, projectId: string | null) => void
@@ -60,13 +62,14 @@ function useNumCols() {
   return n
 }
 
-export default function AssetGrid({ assets, models, projects, loading, title, onDelete, onGenerate, onSendToImg2Img, onSendToImg2Vid, onMoveToProject }: Props) {
+export default function AssetGrid({ assets, models, projects, loading, title, onDelete, onGenerate, onRefresh, onSendToImg2Img, onSendToImg2Vid, onMoveToProject }: Props) {
   const [lightbox, setLightbox] = useState<Asset | null>(null)
   const [sort, setSort] = useState<SortKey>('newest')
   const [mediaFilter, setMediaFilter] = useState<MediaFilter>('all')
   const [modelFilter, setModelFilter] = useState<string>('all')
   const [projectFilter, setProjectFilter] = useState<string>('all')
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const { scrollRef: gridScrollRef, distance: pullDist, refreshing: pullRefreshing } = usePullToRefresh(onRefresh ?? (() => {}))
 
   const numCols = useNumCols()
 
@@ -134,7 +137,23 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
 
   return (
     <>
-      <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--pv-bg)' }}>
+      <div className="flex-1 flex flex-col min-h-0 relative" style={{ background: 'var(--pv-bg)' }}>
+        {/* Pull-to-refresh indicator */}
+        {(pullDist > 0 || pullRefreshing) && (
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-center z-10 pointer-events-none" style={{
+            height: pullRefreshing ? 48 : pullDist,
+            transition: (!pullRefreshing && pullDist === 0) ? 'height 0.25s ease' : 'none',
+            background: 'var(--pv-bg)',
+          }}>
+            <div className={pullRefreshing ? 'pv-spin' : ''} style={{
+              width: 20, height: 20, borderRadius: '50%',
+              border: '2.5px solid var(--pv-accent)',
+              borderTopColor: pullRefreshing ? 'transparent' : 'var(--pv-accent)',
+              opacity: pullRefreshing ? 1 : Math.min(pullDist / 72, 1),
+              transform: pullRefreshing ? undefined : `rotate(${pullDist * 3}deg)`,
+            }} />
+          </div>
+        )}
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-6 pb-3 flex-shrink-0">
@@ -273,7 +292,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
 
         {/* Column grid — scrollable, no animation */}
         {filtered.length > 0 && (
-          <div className="flex gap-2 flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-20 sm:pb-6 pt-3 items-start">
+          <div ref={gridScrollRef} className="flex gap-2 flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-20 sm:pb-6 pt-3 items-start">
             {columns.map((colItems, ci) => (
               <div key={ci} className="flex-1 flex flex-col gap-2">
                 {colItems.map(({ asset, aspectW, aspectH }) => {

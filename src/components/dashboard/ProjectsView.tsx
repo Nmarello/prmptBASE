@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import type { UserProject, Asset, Model } from '../../types'
 import AssetGrid from './AssetGrid'
+import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 
 interface Props {
   projects: UserProject[]
@@ -13,6 +14,7 @@ interface Props {
   onDeleteAsset: (id: string) => void
   onMoveToProject: (assetId: string, projectId: string | null) => Promise<void>
   onGenerate: () => void
+  onRefresh?: () => Promise<void> | void
   onSendToImg2Img: (url: string) => void
   onSendToImg2Vid: (url: string) => void
 }
@@ -41,7 +43,9 @@ export default function ProjectsView({
   onGenerate,
   onSendToImg2Img,
   onSendToImg2Vid,
+  onRefresh,
 }: Props) {
+  const { scrollRef: projectsScrollRef, distance: pullDist, refreshing: pullRefreshing } = usePullToRefresh(onRefresh ?? (() => {}))
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [createName, setCreateName] = useState('')
@@ -229,7 +233,22 @@ export default function ProjectsView({
 
   // Projects list
   return (
-    <div className="flex-1 overflow-y-auto p-4 sm:p-8 pb-20 sm:pb-8" style={{ background: 'var(--pv-bg)' }}>
+    <div ref={projectsScrollRef} className="flex-1 overflow-y-auto p-4 sm:p-8 pb-20 sm:pb-8 relative" style={{ background: 'var(--pv-bg)' }}>
+      {(pullDist > 0 || pullRefreshing) && (
+        <div className="sticky top-0 left-0 right-0 flex items-center justify-center z-10 -mx-4 sm:-mx-8" style={{
+          height: pullRefreshing ? 48 : pullDist,
+          transition: (!pullRefreshing && pullDist === 0) ? 'height 0.25s ease' : 'none',
+          background: 'var(--pv-bg)',
+        }}>
+          <div className={pullRefreshing ? 'pv-spin' : ''} style={{
+            width: 20, height: 20, borderRadius: '50%',
+            border: '2.5px solid var(--pv-accent)',
+            borderTopColor: pullRefreshing ? 'transparent' : 'var(--pv-accent)',
+            opacity: pullRefreshing ? 1 : Math.min(pullDist / 72, 1),
+            transform: pullRefreshing ? undefined : `rotate(${pullDist * 3}deg)`,
+          }} />
+        </div>
+      )}
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
