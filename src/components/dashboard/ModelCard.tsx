@@ -107,7 +107,7 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             )}
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg,rgba(0,0,0,0.22) 0%,rgba(0,0,0,0.55) 100%)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom,rgba(0,0,0,0) 50%,rgba(0,0,0,0.28) 100%)' }} />
           </>
         ) : (
           <>
