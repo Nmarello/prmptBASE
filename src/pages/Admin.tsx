@@ -95,18 +95,18 @@ function StatCard({ label, value, accent }: { label: string; value: number | str
 }
 
 function BarChart({
-  rows, colorA, colorB, labelA, labelB, keyA, keyB,
+  rows, colorA, colorB, keyA, keyB,
 }: {
-  rows: Array<{ name: string; slug: string } & Record<string, number>>
+  rows: Array<{ name: string; slug: string; [key: string]: string | number }>
   colorA: string; colorB: string; labelA: string; labelB: string
   keyA: string; keyB: string
 }) {
-  const maxTotal = Math.max(...rows.map(r => (r[keyA] ?? 0) + (r[keyB] ?? 0)), 1)
+  const maxTotal = Math.max(...rows.map(r => ((r[keyA] as number) ?? 0) + ((r[keyB] as number) ?? 0)), 1)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {rows.map(m => {
-        const a = m[keyA] ?? 0
-        const b = m[keyB] ?? 0
+        const a = (m[keyA] as number) ?? 0
+        const b = (m[keyB] as number) ?? 0
         const total = a + b
         return (
           <div key={m.slug} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -387,8 +387,8 @@ export default function Admin() {
               {/* Row 3 — image + video charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-6">
                 {([
-                  { title: 'Image Assets · by Model & Type', data: stats.image_by_model, keyA: 'txt2img', keyB: 'img2img', labelA: 'txt2img', labelB: 'img2img', colorA: 'var(--pv-accent)', colorB: '#7aabff' },
-                  { title: 'Video Assets · by Model & Type', data: stats.video_by_model, keyA: 'txt2vid', keyB: 'img2vid', labelA: 'txt2vid', labelB: 'img2vid', colorA: '#a78bfa', colorB: '#c084fc' },
+                  { title: 'Image Assets · by Model & Type', data: stats.image_by_model as unknown as Array<{ name: string; slug: string; [key: string]: string | number }>, keyA: 'txt2img', keyB: 'img2img', labelA: 'txt2img', labelB: 'img2img', colorA: 'var(--pv-accent)', colorB: '#7aabff' },
+                  { title: 'Video Assets · by Model & Type', data: stats.video_by_model as unknown as Array<{ name: string; slug: string; [key: string]: string | number }>, keyA: 'txt2vid', keyB: 'img2vid', labelA: 'txt2vid', labelB: 'img2vid', colorA: '#a78bfa', colorB: '#c084fc' },
                 ]).map(chart => (
                   <Card key={chart.title} className="p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
