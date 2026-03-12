@@ -8,6 +8,7 @@ interface Props {
   onClick: () => void
   comingSoon?: boolean
   rendering?: boolean
+  latestRenderUrl?: string
 }
 
 const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
@@ -60,7 +61,7 @@ const slugBrandLabels: Record<string, string> = {
   'minimax-txt2vid':  'MiniMax',
 }
 
-export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering }: Props) {
+export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering, latestRenderUrl }: Props) {
   const accessible = tierCanAccess(userTier, model.min_tier)
   const comingSoon = comingSoonProp || false
   const art = MODEL_ART[model.slug] ?? DEFAULT_ART
@@ -82,10 +83,23 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
     >
       {/* Art header */}
       <div className="relative overflow-hidden" style={{ height: '148px' }}>
-        <div
-          className="absolute inset-0 transition-transform duration-500 group-hover:scale-105"
-          style={{ background: art.gradient }}
-        />
+        {/* Background: user's last render or gradient */}
+        {latestRenderUrl ? (
+          <>
+            <img
+              src={latestRenderUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            {/* Dark overlay so badges/text stay readable */}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.52) 100%)' }} />
+          </>
+        ) : (
+          <div
+            className="absolute inset-0 transition-transform duration-500 group-hover:scale-105"
+            style={{ background: art.gradient }}
+          />
+        )}
         {/* Rendering LED */}
         {rendering && (
           <div

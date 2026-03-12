@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
 
 function friendlyFalError(raw: string): string {
@@ -186,6 +186,18 @@ export default function Dashboard() {
     'sora':               'OpenAI',
     'sora2':              'OpenAI',
   }
+
+  // Latest image render per model slug (for model card art)
+  const latestRenderBySlug = useMemo(() => {
+    const slugById = Object.fromEntries(models.map(m => [m.id, m.slug]))
+    const map: Record<string, string> = {}
+    for (const asset of assets) {
+      if (!asset.model_id || asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid') continue
+      const slug = slugById[asset.model_id]
+      if (slug && !map[slug]) map[slug] = asset.url
+    }
+    return map
+  }, [assets, models])
 
   const loadAssets = useCallback(async () => {
     if (!user) return
@@ -712,6 +724,7 @@ export default function Dashboard() {
                           onClick={() => openWorkspace(m as Model)}
                           comingSoon={m._comingSoon || m.comingSoon}
                           rendering={renderingModelSlug === m.slug}
+                          latestRenderUrl={latestRenderBySlug[m.slug]}
                         />
                       ))}
                     </div>
@@ -748,6 +761,7 @@ export default function Dashboard() {
                           onClick={() => openWorkspace(m as Model)}
                           comingSoon={m._comingSoon || m.comingSoon}
                           rendering={renderingModelSlug === m.slug}
+                          latestRenderUrl={latestRenderBySlug[m.slug]}
                         />
                       ))}
                     </div>
@@ -780,6 +794,7 @@ export default function Dashboard() {
                           selected={selectedModel?.id === m.id}
                           onClick={() => openWorkspace(m)}
                           rendering={renderingModelSlug === m.slug}
+                          latestRenderUrl={latestRenderBySlug[m.slug]}
                         />
                       ))}
                     </div>
