@@ -139,7 +139,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-6 pb-3 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold" style={{ color: 'var(--pv-text)', fontFamily: "'Bricolage Grotesque', sans-serif" }}>{title ?? 'Gallery'}</h2>
+            <h2 className="text-2xl font-bold" style={{ color: 'var(--pv-text)', fontFamily: "'Bricolage Grotesque', sans-serif" }}>{title ?? 'Assets'}</h2>
             <span className="text-sm" style={{ color: 'var(--pv-text3)' }}>
               {filtered.length}{filtered.length !== assets.length ? ` / ${assets.length}` : ''}
             </span>
