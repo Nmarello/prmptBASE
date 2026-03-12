@@ -42,7 +42,7 @@ const STEPS: Step[] = [
     target: '[data-tour="dalle-card"]',
     position: 'right',
     title: 'Choose your model',
-    body: "These are your AI models — each one has different strengths. Tap DALL-E 3 to get started.",
+    body: "These are your AI models — each one has different strengths. You will learn more about all of them as you explore the site. For your first creation lets use DALL-E 3.",
   },
   // 2 – click Generate in drawer
   {
