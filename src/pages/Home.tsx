@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AuthModal from '../components/auth/AuthModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
@@ -105,6 +105,10 @@ export default function Home() {
   const [dark, setDark] = useState(true)
   const T = dark ? DARK : LIGHT
   const navigate = useNavigate()
+
+  useEffect(() => {
+    GALLERY_ASSETS.filter(a => !a.video).forEach(a => { new Image().src = a.url })
+  }, [])
 
   if (user) navigate('/dashboard')
 
@@ -291,7 +295,8 @@ export default function Home() {
                   </div>
                 </>
               ) : (
-                <img src={item.url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <img src={item.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
               )}
             </div>
           ))}
