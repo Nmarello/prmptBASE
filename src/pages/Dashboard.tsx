@@ -285,19 +285,24 @@ export default function Dashboard() {
     if (firstRunStep === 1 && drawerModel?.slug === 'dalle') setFirstRunStep(2)
   }, [drawerModel, firstRunStep])
 
-  // Step 2 → 3: workspace opened
+  // Step 2 → 3: workspace opened (Generate clicked in drawer)
   useEffect(() => {
     if (firstRunStep === 2 && workspaceOpen) setFirstRunStep(3)
   }, [workspaceOpen, firstRunStep])
 
-  // Step 6 → 7: generation started
+  // Step 3 → 4: gen type selected (txt2img chosen)
   useEffect(() => {
-    if (firstRunStep === 6 && submitting) setFirstRunStep(7)
+    if (firstRunStep === 3 && selectedGenType) setFirstRunStep(4)
+  }, [selectedGenType, firstRunStep])
+
+  // Step 9 → 10: generation started
+  useEffect(() => {
+    if (firstRunStep === 9 && submitting) setFirstRunStep(10)
   }, [submitting, firstRunStep])
 
-  // Step 7 → 8: result arrived
+  // Step 10 → 11: result arrived
   useEffect(() => {
-    if (firstRunStep === 7 && result) setFirstRunStep(8)
+    if (firstRunStep === 10 && result) setFirstRunStep(11)
   }, [result, firstRunStep])
 
   async function selectModel(model: Model) {
@@ -1132,7 +1137,7 @@ export default function Dashboard() {
               <div key={selectedModel.slug} className="flex-1 overflow-y-auto px-4 sm:px-7 py-5">
                 {/* Gen type picker (multi-type models) */}
                 {!selectedGenType && selectedModel.supported_gen_types.length > 1 && (
-                  <div>
+                  <div data-tour="gentype-picker">
                     <p className="text-xs font-medium mb-3" style={{ color: 'var(--pv-text3)' }}>
                       Choose generation type
                     </p>
@@ -1240,10 +1245,10 @@ export default function Dashboard() {
                       initialValues={img2imgInitialValues}
                       userTier={userTier}
                       modelMinTier={selectedModel?.min_tier}
-                      onTourSubjectTyped={() => { if (firstRunStep === 3) setFirstRunStep(4) }}
-                      onTourAiAssistClicked={() => { if (firstRunStep === 4) setFirstRunStep(5) }}
-                      onTourAiSuggestionReceived={() => {}}
-                      onTourAiSuggestionAccepted={() => { if (firstRunStep === 5) setFirstRunStep(6) }}
+                      onTourSubjectTyped={() => { if (firstRunStep === 4) setFirstRunStep(5) }}
+                      onTourAiAssistClicked={() => { if (firstRunStep === 5) setFirstRunStep(6) }}
+                      onTourAiSuggestionReceived={() => { if (firstRunStep === 6) setFirstRunStep(7) }}
+                      onTourAiSuggestionAccepted={() => { if (firstRunStep === 7) setFirstRunStep(8) }}
                     />
                   </>
                 )}
