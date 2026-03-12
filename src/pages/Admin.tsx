@@ -73,6 +73,26 @@ interface Stats {
   image_by_model: ImageByModel[]
 }
 
+// ─── Self-hosting reference data ─────────────────────────────────────────────
+// gpuSecondsH100: avg inference time on H100 per generation
+// falCostPer: fal.ai list price per generation
+// open: weights are publicly available — can actually be self-hosted
+const SELF_HOST_REF: { slug: string; name: string; falCostPer: number; gpuSecondsH100: number; open: true }[] = [
+  { slug: 'flux-schnell',       name: 'Flux Schnell',      falCostPer: 0.003,  gpuSecondsH100: 4,   open: true },
+  { slug: 'flux-dev',           name: 'Flux Dev',          falCostPer: 0.025,  gpuSecondsH100: 28,  open: true },
+  { slug: 'flux-dev-img2img',   name: 'Flux Dev img2img',  falCostPer: 0.025,  gpuSecondsH100: 28,  open: true },
+]
+
+// Open-weight models on fal.ai worth adding to prmptVAULT
+const ADDABLE_MODELS = [
+  { name: 'SDXL Lightning',     provider: 'ByteDance',       slug: 'fal-ai/lightning-models',         note: '4-step SDXL, extremely fast' },
+  { name: 'HiDream',            provider: 'HiDream.ai',      slug: 'fal-ai/hidream-i1-fast',          note: 'New high-quality open image model' },
+  { name: 'Stable Diffusion 3.5',provider: 'Stability AI',   slug: 'fal-ai/stable-diffusion-v35-large', note: 'Best SD release yet, Apache 2.0' },
+  { name: 'FLUX.1 Kontext',     provider: 'BFL',             slug: 'fal-ai/flux-pro/kontext',         note: 'In-context image editing + generation' },
+  { name: 'OmniGen2',           provider: 'OmniGen',         slug: 'fal-ai/omnigen-v2',               note: 'Multi-modal, instruction-based editing' },
+  { name: 'Sana',               provider: 'NVIDIA',          slug: 'fal-ai/sana',                     note: 'Ultra-fast, linear-attention architecture' },
+]
+
 // ─── tiny shared primitives ──────────────────────────────────────────────────
 
 function Card({ children, className = '', onClick }: { children: React.ReactNode; className?: string; onClick?: (e: React.MouseEvent) => void }) {
@@ -177,6 +197,7 @@ export default function Admin() {
   const [search, setSearch] = useState('')
   const [tierFilter, setTierFilter] = useState<Tier | 'all'>('all')
   const [loading, setLoading] = useState(true)
+  const [gpuRate, setGpuRate] = useState(3.89) // $/hr — RunPod H100 default
   const [updatingTier, setUpdatingTier] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [createEmail, setCreateEmail] = useState('')
@@ -572,6 +593,97 @@ export default function Admin() {
                   </div>
                 </Card>
               </div>
+
+              {/* Row 5 — Self-hosting planner */}
+              {(() => {
+                const gpuCostPerSec = gpuRate / 3600
+                const rows = SELF_HOST_REF.map(ref => {
+                  const model = stats.cost_by_model.find(m => m.slug === ref.slug)
+                  const monthlyCount = model?.count ?? 0
+                  const monthlyFal = monthlyCount * ref.falCostPer
+                  const selfHostPerGen = gpuCostPerSec * ref.gpuSecondsH100
+                  const monthlySelfHost = monthlyCount * selfHostPerGen
+                  // breakeven: how many gens/month until self-host is cheaper
+                  // (only relevant for cloud GPU — own hardware is fixed cost)
+                  const breakeven = Math.ceil(gpuRate * 24 * 30 / (ref.falCostPer - selfHostPerGen > 0 ? ref.falCostPer - selfHostPerGen : Infinity))
+                  const pct = breakeven === Infinity ? 0 : Math.min((monthlyCount / breakeven) * 100, 100)
+                  const savings = monthlyFal - monthlySelfHost
+                  return { ...ref, monthlyCount, monthlyFal, selfHostPerGen, monthlySelfHost, breakeven, pct, savings }
+                })
+                const totalFalOpen = rows.reduce((s, r) => s + r.monthlyFal, 0)
+                const totalSelfHost = rows.reduce((s, r) => s + r.monthlySelfHost, 0)
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-3 mb-8">
+                    <Card className="p-5">
+                      <div className="flex items-center gap-3 mb-4 flex-wrap">
+                        <SectionLabel>Self-Hosting Planner · Open-Weight Models</SectionLabel>
+                        <div className="flex items-center gap-2 ml-auto" style={{ marginBottom: 12 }}>
+                          <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>GPU $/hr</span>
+                          <input
+                            type="number"
+                            min={0.5} max={20} step={0.1}
+                            value={gpuRate}
+                            onChange={e => setGpuRate(parseFloat(e.target.value) || 3.89)}
+                            style={{ width: 68, padding: '3px 8px', borderRadius: 7, border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text)', fontSize: 12, fontFamily: 'inherit', outline: 'none' }}
+                          />
+                          <span style={{ fontSize: 10, color: 'var(--pv-text3)' }}>RunPod H100 ≈ $3.89</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        {rows.map(r => {
+                          const barColor = r.pct >= 80 ? '#f87171' : r.pct >= 50 ? '#f5c842' : 'var(--pv-accent)'
+                          return (
+                            <div key={r.slug}>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 5 }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--pv-text)' }}>{r.name}</span>
+                                <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>fal.ai ${r.falCostPer.toFixed(3)}/gen · self-host ${r.selfHostPerGen.toFixed(4)}/gen</span>
+                                <span style={{ marginLeft: 'auto', fontSize: 11, color: r.savings > 0 ? '#34c759' : r.savings < 0 ? '#f87171' : 'var(--pv-text3)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                  {r.monthlyCount === 0 ? 'No data yet' : r.savings > 0 ? `fal saves $${r.savings.toFixed(2)}/mo at current vol` : `self-host saves $${Math.abs(r.savings).toFixed(2)}/mo`}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{ flex: 1, height: 6, background: 'var(--pv-surface2)', borderRadius: 99, overflow: 'hidden' }}>
+                                  <div style={{ height: '100%', width: `${r.pct}%`, background: barColor, borderRadius: 99, transition: 'width 0.4s' }} />
+                                </div>
+                                <span style={{ fontSize: 11, color: 'var(--pv-text3)', whiteSpace: 'nowrap', minWidth: 120, textAlign: 'right' }}>
+                                  {r.monthlyCount.toLocaleString()} gens · breakeven at {r.breakeven === Infinity ? 'N/A' : r.breakeven.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--pv-border)', display: 'flex', gap: 24, fontSize: 12, color: 'var(--pv-text3)' }}>
+                        <span>Open-weight fal spend this month: <strong style={{ color: 'var(--pv-text)' }}>${totalFalOpen.toFixed(4)}</strong></span>
+                        <span>If self-hosted: <strong style={{ color: 'var(--pv-text)' }}>${totalSelfHost.toFixed(4)}</strong></span>
+                        <span style={{ color: totalFalOpen < totalSelfHost ? '#34c759' : '#f5c842' }}>
+                          {totalFalOpen <= totalSelfHost ? `fal.ai saves $${(totalSelfHost - totalFalOpen).toFixed(4)} at current volume` : `self-host would save $${(totalFalOpen - totalSelfHost).toFixed(4)}/mo now`}
+                        </span>
+                      </div>
+                      <div style={{ marginTop: 8, fontSize: 10, color: 'var(--pv-text3)' }}>
+                        Breakeven assumes a dedicated 24/7 cloud GPU instance. Your own hardware (4090) ≈ $82/mo fixed — breakeven at ~{Math.ceil(82 / 0.003).toLocaleString()} Schnell gens or ~{Math.ceil(82 / 0.025).toLocaleString()} Dev gens/month.
+                      </div>
+                    </Card>
+
+                    <Card className="p-5">
+                      <SectionLabel>Open Models to Add</SectionLabel>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {ADDABLE_MODELS.map(m => (
+                          <div key={m.slug} style={{ paddingBottom: 10, borderBottom: '1px solid var(--pv-border)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pv-text)' }}>{m.name}</span>
+                              <span style={{ fontSize: 10, color: 'var(--pv-text3)' }}>{m.provider}</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>{m.note}</div>
+                            <div style={{ fontSize: 10, color: 'var(--pv-accent)', marginTop: 3, fontFamily: 'monospace', opacity: 0.7 }}>{m.slug}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </div>
+                )
+              })()}
+
               </>
             )}
 
