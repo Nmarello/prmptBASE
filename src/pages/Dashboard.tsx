@@ -200,18 +200,6 @@ export default function Dashboard() {
         map[slug] = { url: asset.url, isVideo }
       }
     }
-    // Backfill models with no user renders using showcase pool (images only)
-    if (showcase.length > 0) {
-      const imgShowcase = showcase.filter(s => !s.url.match(/\.mp4(\?|$)/i))
-      const pool = imgShowcase.length > 0 ? imgShowcase : showcase
-      let si = 0
-      for (const model of models) {
-        if (!map[model.slug]) {
-          map[model.slug] = { url: pool[si % pool.length].url, isVideo: false }
-          si++
-        }
-      }
-    }
     return map
   }, [assets, models, showcase])
 
