@@ -126,6 +126,7 @@ export default function Dashboard() {
   }
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [pendingImage, setPendingImage] = useState<{ modelName: string } | null>(null)
+  const [renderingModelSlug, setRenderingModelSlug] = useState<string | null>(null)
   const [renderToast, setRenderToast] = useState<string | null>(null)
   const [, setNotifTick] = useState(0) // forces bell re-render after addNotification
 
@@ -268,6 +269,7 @@ export default function Dashboard() {
     setGenerateError(null)
     const isImageGen = selectedGenType !== 'txt2vid' && selectedGenType !== 'img2vid'
     if (isImageGen) setPendingImage({ modelName: selectedModel.name })
+    setRenderingModelSlug(selectedModel.slug)
     // Request notification permission for all generation types
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission()
@@ -364,6 +366,7 @@ export default function Dashboard() {
       }
 
       setPendingImage(null)
+      setRenderingModelSlug(null)
       setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt, isVideo })
       loadAssets()
       pushNotification({ type: 'image_ready', message: 'Your image is ready!', modelName: selectedModel.name, assetUrl: imageUrl, assetId })
@@ -374,6 +377,7 @@ export default function Dashboard() {
       setTimeout(() => setRenderToast(null), 6000)
     } catch (err) {
       setPendingImage(null)
+      setRenderingModelSlug(null)
       setGenerateError(err instanceof Error ? err.message : 'Generation failed')
     } finally {
       setSubmitting(false)
@@ -392,6 +396,7 @@ export default function Dashboard() {
       if (Date.now() - pendingVideo.startedAt > 30 * 60 * 1000) {
         if (videoPollerRef.current) clearInterval(videoPollerRef.current)
         setPendingVideo(null)
+        setRenderingModelSlug(null)
         setGenerateError('Video generation timed out after 30 minutes. Please try again.')
         return
       }
@@ -418,6 +423,7 @@ export default function Dashboard() {
         if (data.error) {
           if (videoPollerRef.current) clearInterval(videoPollerRef.current)
           setPendingVideo(null)
+          setRenderingModelSlug(null)
           setGenerateError(`Video generation failed: ${friendlyFalError(data.error)}`)
           return
         }
@@ -427,6 +433,7 @@ export default function Dashboard() {
             await supabase.from('assets').update({ project_id: activeProjectId }).eq('id', vidAssetId)
           }
           setPendingVideo(null)
+          setRenderingModelSlug(null)
           setResult({ url: data.video_url, prompt: '', isVideo: true })
           loadAssets()
           pushNotification({ type: 'video_ready', message: 'Your video is ready!', modelName: selectedModel?.name ?? 'Video', assetUrl: data.video_url, assetId: vidAssetId })
@@ -704,6 +711,7 @@ export default function Dashboard() {
                           selected={selectedModel?.id === m.id}
                           onClick={() => openWorkspace(m as Model)}
                           comingSoon={m._comingSoon || m.comingSoon}
+                          rendering={renderingModelSlug === m.slug}
                         />
                       ))}
                     </div>
@@ -739,6 +747,7 @@ export default function Dashboard() {
                           selected={selectedModel?.id === m.id}
                           onClick={() => openWorkspace(m as Model)}
                           comingSoon={m._comingSoon || m.comingSoon}
+                          rendering={renderingModelSlug === m.slug}
                         />
                       ))}
                     </div>

@@ -7,6 +7,7 @@ interface Props {
   selected: boolean
   onClick: () => void
   comingSoon?: boolean
+  rendering?: boolean
 }
 
 const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
@@ -59,7 +60,7 @@ const slugBrandLabels: Record<string, string> = {
   'minimax-txt2vid':  'MiniMax',
 }
 
-export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp }: Props) {
+export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering }: Props) {
   const accessible = tierCanAccess(userTier, model.min_tier)
   const comingSoon = comingSoonProp || false
   const art = MODEL_ART[model.slug] ?? DEFAULT_ART
@@ -85,6 +86,19 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
           className="absolute inset-0 transition-transform duration-500 group-hover:scale-105"
           style={{ background: art.gradient }}
         />
+        {/* Rendering LED */}
+        {rendering && (
+          <div
+            className="absolute z-20"
+            style={{
+              top: 10, left: 10,
+              width: 10, height: 10,
+              borderRadius: '50%',
+              background: '#ff3b30',
+              animation: 'ledPulse 1.4s ease-in-out infinite',
+            }}
+          />
+        )}
         {/* Noise texture */}
         <div
           className="absolute inset-0 pointer-events-none"
