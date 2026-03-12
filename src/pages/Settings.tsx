@@ -529,15 +529,6 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
               <MiniStat label="img2vid" value={stats.gen_type_totals['img2vid'] ?? 0}     accent="#c084fc" />
             </div>
 
-            {stats.total_spend > 0 && (
-              <>
-                <SectionLabel>Spend</SectionLabel>
-                <div className="grid grid-cols-2 gap-2 mb-6">
-                  <MiniStat label="This month" value={`$${stats.period_spend.toFixed(4)}`} />
-                  <MiniStat label="All time"   value={`$${stats.total_spend.toFixed(4)}`} />
-                </div>
-              </>
-            )}
 
             {stats.image_by_model?.length > 0 && (
               <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
@@ -577,7 +568,6 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
                       </div>
                       <div className="text-right">
                         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--pv-accent)', fontFamily: "'Bricolage Grotesque', sans-serif" }}>{m.count}</div>
-                        {m.total_cost > 0 && <div style={{ fontSize: 10, color: 'var(--pv-text3)' }}>${m.total_cost.toFixed(4)}</div>}
                       </div>
                     </div>
                   ))}
