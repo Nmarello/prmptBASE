@@ -177,22 +177,54 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
 
         {/* Collapsible filters */}
         {filtersOpen && assets.length > 0 && (
-          <div className="flex flex-wrap gap-2 px-4 sm:px-6 pb-3 items-center flex-shrink-0 border-b" style={{ borderColor: 'var(--pv-border)' }}>
-            <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
-              {(['all', 'images', 'videos'] as MediaFilter[]).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setMediaFilter(f)}
-                  style={mediaFilter === f ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)' } : { color: 'var(--pv-text2)' }}
-                  className="px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer"
+          <div className="flex flex-col gap-0 flex-shrink-0 border-b" style={{ borderColor: 'var(--pv-border)' }}>
+            {/* Row 2: media picker + all projects | sort */}
+            <div className="flex flex-wrap items-center gap-2 px-4 sm:px-6 py-2">
+              <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
+                {(['all', 'images', 'videos'] as MediaFilter[]).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setMediaFilter(f)}
+                    style={mediaFilter === f ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)' } : { color: 'var(--pv-text2)' }}
+                    className="px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer"
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+
+              {usedProjects.length > 0 && (
+                <select
+                  value={projectFilter}
+                  onChange={(e) => setProjectFilter(e.target.value)}
+                  style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                  className="px-3 py-1 rounded-xl text-xs font-medium border transition-all cursor-pointer outline-none"
                 >
-                  {f}
-                </button>
-              ))}
+                  <option value="all">All projects</option>
+                  <option value="__none__">No project</option>
+                  {usedProjects.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              )}
+
+              <div className="ml-auto flex gap-1 rounded-xl p-1" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
+                {(['newest', 'oldest', 'model'] as SortKey[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSort(s)}
+                    style={sort === s ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)' } : { color: 'var(--pv-text2)' }}
+                    className="px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
 
+            {/* Row 3: model pills */}
             {usedModels.length > 1 && (
-              <div className="flex gap-1 flex-wrap">
+              <div className="flex gap-1 flex-wrap px-4 sm:px-6 pb-2">
                 <button
                   onClick={() => setModelFilter('all')}
                   style={modelFilter === 'all' ? { background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' } : { background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
@@ -212,34 +244,6 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
                 ))}
               </div>
             )}
-
-            {usedProjects.length > 0 && (
-              <select
-                value={projectFilter}
-                onChange={(e) => setProjectFilter(e.target.value)}
-                style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
-                className="px-3 py-1 rounded-xl text-xs font-medium border transition-all cursor-pointer outline-none"
-              >
-                <option value="all">All projects</option>
-                <option value="__none__">No project</option>
-                {usedProjects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            )}
-
-            <div className="ml-auto flex gap-1 rounded-xl p-1" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
-              {(['newest', 'oldest', 'model'] as SortKey[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSort(s)}
-                  style={sort === s ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)' } : { color: 'var(--pv-text2)' }}
-                  className="px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
           </div>
         )}
 
@@ -269,7 +273,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
 
         {/* Column grid — scrollable, no animation */}
         {filtered.length > 0 && (
-          <div className="flex gap-2 flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-6 pt-3 items-start">
+          <div className="flex gap-2 flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-20 sm:pb-6 pt-3 items-start">
             {columns.map((colItems, ci) => (
               <div key={ci} className="flex-1 flex flex-col gap-2">
                 {colItems.map(({ asset, aspectW, aspectH }) => {

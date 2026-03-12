@@ -13,15 +13,15 @@ export default function Home() {
   return (
     <div style={{ background: '#f5f5f7', color: '#1d1d1f', fontFamily: "'Inter', -apple-system, sans-serif", overflowX: 'hidden' }}>
 
-      {/* FLOATING PILL NAV */}
-      <nav style={{
+      {/* FLOATING PILL NAV — desktop */}
+      <nav className="hidden sm:flex" style={{
         position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 50,
-        display: 'flex', alignItems: 'center', gap: 32,
+        alignItems: 'center', gap: 32,
         padding: '0 20px', height: 48,
         background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px) saturate(1.8)',
         border: '1px solid rgba(0,0,0,0.08)', borderRadius: 100,
         boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
-        minWidth: 680, justifyContent: 'space-between',
+        minWidth: 580, justifyContent: 'space-between',
       }}>
         <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.3px', color: '#1d1d1f' }}>
           prmpt<span style={{ color: '#0071e3' }}>VAULT</span>
@@ -54,8 +54,24 @@ export default function Home() {
         </div>
       </nav>
 
+      {/* MOBILE NAV */}
+      <nav className="sm:hidden flex items-center justify-between px-5" style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, height: 52,
+        background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(0,0,0,0.08)',
+      }}>
+        <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.3px', color: '#1d1d1f' }}>
+          prmpt<span style={{ color: '#0071e3' }}>VAULT</span>
+        </span>
+        <button onClick={() => setShowAuth(true)} style={{
+          background: '#0071e3', border: 'none', color: '#fff',
+          padding: '7px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600,
+          cursor: 'pointer', fontFamily: 'inherit',
+        }}>Start free</button>
+      </nav>
+
       {/* HERO */}
-      <section style={{ padding: '140px 40px 80px', textAlign: 'center', maxWidth: 1200, margin: '0 auto' }}>
+      <section className="px-5 sm:px-10 pt-28 sm:pt-36 pb-12 sm:pb-20" style={{ textAlign: 'center', maxWidth: 1200, margin: '0 auto' }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           background: 'rgba(0,113,227,0.08)', border: '1px solid rgba(0,113,227,0.2)',
@@ -80,28 +96,28 @@ export default function Home() {
         <div style={{
           width: '100%', maxWidth: 660, margin: '0 auto 48px',
           background: '#fff', border: '1px solid #d2d2d7', borderRadius: 14,
-          padding: '6px 6px 6px 20px', display: 'flex', alignItems: 'center', gap: 10,
+          padding: '6px 6px 6px 16px', display: 'flex', alignItems: 'center', gap: 8,
           boxShadow: '0 4px 24px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
         }}>
           <input
             readOnly
-            placeholder="A lone lighthouse at stormy dusk, dramatic waves, oil painting style…"
+            placeholder="A lone lighthouse at stormy dusk…"
             onClick={() => setShowAuth(true)}
             style={{
-              flex: 1, background: 'none', border: 'none', outline: 'none',
-              color: '#1d1d1f', fontFamily: 'inherit', fontSize: 15, cursor: 'text',
+              flex: 1, background: 'none', border: 'none', outline: 'none', minWidth: 0,
+              color: '#1d1d1f', fontFamily: 'inherit', fontSize: 14, cursor: 'text',
             }}
           />
-          <div style={{
+          <div className="hidden sm:block" style={{
             background: '#f0f0f2', border: '1px solid #d2d2d7', color: '#6e6e73',
             padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
             cursor: 'pointer', whiteSpace: 'nowrap',
           }}>Flux Pro Ultra ▾</div>
           <button onClick={() => setShowAuth(true)} style={{
             background: '#0071e3', color: '#fff', border: 'none',
-            padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700,
+            padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700,
             cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-            transition: 'background 0.15s',
+            transition: 'background 0.15s', flexShrink: 0,
           }}
             onMouseEnter={e => (e.currentTarget.style.background = '#0077ed')}
             onMouseLeave={e => (e.currentTarget.style.background = '#0071e3')}
@@ -128,12 +144,11 @@ export default function Home() {
       </section>
 
       {/* BENTO GRID */}
-      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 40px 80px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'auto auto', gap: 12 }}>
+      <section className="px-5 sm:px-10 pb-16 sm:pb-20" style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
 
           {/* TALL WIDE — Featured model */}
-          <div style={{
-            gridColumn: 'span 2', gridRow: 'span 2',
+          <div className="col-span-2 sm:row-span-2" style={{
             background: '#fff', borderRadius: 20, border: '1px solid #d2d2d7',
             padding: 24, display: 'flex', flexDirection: 'column', gap: 12,
             transition: 'all 0.2s', cursor: 'default',
@@ -242,14 +257,14 @@ export default function Home() {
       </section>
 
       {/* DARK APP PREVIEW */}
-      <section style={{ background: '#0a0a0f', padding: '80px 40px', textAlign: 'center' }}>
+      <section className="px-5 sm:px-10 py-16 sm:py-20" style={{ background: '#0a0a0f', textAlign: 'center' }}>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#475569', marginBottom: 16 }}>
           The Generator
         </div>
-        <h2 style={{ fontSize: 44, fontWeight: 800, letterSpacing: '-1.5px', color: '#f8fafc', marginBottom: 12 }}>
+        <h2 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 800, letterSpacing: '-1.5px', color: '#f8fafc', marginBottom: 12 }}>
           A studio-grade workspace.
         </h2>
-        <p style={{ fontSize: 16, color: '#64748b', marginBottom: 48 }}>
+        <p style={{ fontSize: 16, color: '#64748b', marginBottom: 36 }}>
           Clean. Fast. Built for high-volume creative work.
         </p>
         <div style={{
@@ -268,8 +283,8 @@ export default function Home() {
             </span>
           </div>
           {/* App content */}
-          <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', minHeight: 400 }}>
-            <div style={{ borderRight: '1px solid rgba(255,255,255,0.08)', padding: 16 }}>
+          <div style={{ display: 'grid', minHeight: 300 }} className="grid-cols-1 sm:grid-cols-[240px_1fr]">
+            <div className="hidden sm:block" style={{ borderRight: '1px solid rgba(255,255,255,0.08)', padding: 16 }}>
               <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#475569', marginBottom: 10, padding: '0 4px' }}>
                 Image Models
               </div>
@@ -316,10 +331,10 @@ export default function Home() {
       </section>
 
       {/* PRICING */}
-      <section style={{ padding: '80px 40px', maxWidth: 1000, margin: '0 auto' }}>
+      <section className="px-5 sm:px-10 py-16 sm:py-20" style={{ maxWidth: 1000, margin: '0 auto' }}>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#aeaeb2', marginBottom: 12 }}>Pricing</div>
-        <h2 style={{ fontSize: 44, fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 48 }}>Start free.<br />Scale when ready.</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <h2 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 36 }}>Start free.<br />Scale when ready.</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             {
               name: 'Free', price: '$0', period: '/mo', desc: 'Try it out, no card needed', featured: false,
@@ -400,12 +415,12 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '100px 40px', textAlign: 'center', background: '#f5f5f7' }}>
+      <section className="px-5 sm:px-10 py-20 sm:py-24" style={{ textAlign: 'center', background: '#f5f5f7' }}>
         <h2 style={{ fontSize: 'clamp(36px, 5vw, 56px)', fontWeight: 800, letterSpacing: '-2px', marginBottom: 20, color: '#1d1d1f' }}>
           Ready to build your<br /><span style={{ color: '#0071e3' }}>creative vault?</span>
         </h2>
         <p style={{ fontSize: 18, color: '#6e6e73', marginBottom: 36 }}>Free forever on the core plan. No credit card required.</p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
           <button onClick={() => setShowAuth(true)} style={{
             background: '#0071e3', color: '#fff', border: 'none', padding: '14px 28px',
             borderRadius: 100, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.2s',
@@ -425,7 +440,7 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer style={{ borderTop: '1px solid #d2d2d7', padding: '32px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#aeaeb2', fontSize: 13 }}>
+      <footer className="flex flex-col sm:flex-row gap-4 sm:gap-0 items-center justify-between px-5 sm:px-10 py-8" style={{ borderTop: '1px solid #d2d2d7', color: '#aeaeb2', fontSize: 13 }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: '#1d1d1f' }}>
           prmpt<span style={{ color: '#0071e3' }}>VAULT</span>
         </div>

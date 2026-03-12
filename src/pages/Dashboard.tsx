@@ -583,7 +583,7 @@ export default function Dashboard() {
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--pv-bg)', color: 'var(--pv-text)', fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── Icon Sidebar ── */}
-      <aside className="flex flex-col items-center py-4 gap-1 flex-shrink-0 relative z-10" style={{ width: '60px', background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}>
+      <aside className="hidden sm:flex flex-col items-center py-4 gap-1 flex-shrink-0 relative z-10" style={{ width: '60px', background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}>
         {/* Logo */}
         <div className="mb-3 flex-shrink-0 rounded-[10px] flex items-center justify-center cursor-pointer" style={{ width: 36, height: 36, background: '#18140e' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -638,7 +638,7 @@ export default function Dashboard() {
         {view === 'models' && (
           <div className="flex flex-col h-full overflow-hidden">
             {/* Header */}
-            <div className="px-7 pt-6 pb-4 flex-shrink-0">
+            <div className="px-4 sm:px-7 pt-4 sm:pt-6 pb-4 flex-shrink-0">
               <div className="flex items-end justify-between mb-4">
                 <div>
                   <h1 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em' }}>
@@ -682,7 +682,7 @@ export default function Dashboard() {
                     value={modelSearch}
                     onChange={e => setModelSearch(e.target.value)}
                     placeholder="Search…"
-                    className="text-sm pl-7 pr-3 py-1.5 rounded-full pv-placeholder outline-none w-36"
+                    className="text-sm pl-7 pr-3 py-1.5 rounded-full pv-placeholder outline-none w-24 sm:w-36"
                     style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}
                   />
                 </div>
@@ -690,7 +690,7 @@ export default function Dashboard() {
             </div>
 
             {/* Scrollable model rows */}
-            <div className="flex-1 overflow-y-auto px-7 pb-10 space-y-8">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-7 pb-24 sm:pb-10 space-y-8">
               {/* Image Models row */}
               {(() => {
                 if (modelFilter === 'videos') return null
@@ -849,6 +849,35 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* ── Mobile Bottom Tab Bar ── */}
+      <nav
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-20 flex items-center justify-around h-14 flex-shrink-0"
+        style={{ background: 'var(--pv-surface)', borderTop: '1px solid var(--pv-border)' }}
+      >
+        {([
+          { id: 'models', tip: 'Generate', icon: <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/> },
+          { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
+          { id: 'projects', tip: 'Projects', icon: <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/> },
+        ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (
+          <button
+            key={id}
+            onClick={() => setView(id)}
+            className="flex flex-col items-center gap-0.5 py-1 px-4 cursor-pointer transition-opacity"
+            style={{ color: view === id ? 'var(--pv-accent)' : 'var(--pv-text3)' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+            <span className="text-[10px] font-medium">{tip}</span>
+          </button>
+        ))}
+        <NotificationBell
+          onViewAsset={(assetId, _assetUrl, _isVideo) => {
+            const asset = assets.find((a) => a.id === assetId)
+            if (asset) { setLightboxAsset(asset) } else { setView('assets'); loadAssets() }
+          }}
+        />
+        <SettingsPopover onSignOut={signOut} userInitial={userInitial} />
+      </nav>
+
       {/* ── WORKSPACE OVERLAY ── */}
       {workspaceOpen && selectedModel && (
         <div
@@ -859,11 +888,11 @@ export default function Dashboard() {
           <div className="absolute inset-0" onClick={closeWorkspace} />
 
           <div
-            className="relative z-10 flex w-full animate-fade-in"
+            className="relative z-10 flex flex-col sm:flex-row w-full animate-fade-in overflow-y-auto sm:overflow-hidden"
             style={{ transform: 'none' }}
           >
             {/* Left: canvas / output */}
-            <div className="flex-1 flex flex-col p-8">
+            <div className="flex-1 flex flex-col p-4 sm:p-8 min-h-[45vw] sm:min-h-0">
               <div
                 className="flex-1 rounded-[20px] overflow-hidden relative flex items-center justify-center"
                 style={{ border: '1.5px solid rgba(255,255,255,0.08)' }}
@@ -962,11 +991,11 @@ export default function Dashboard() {
 
             {/* Right: form panel */}
             <div
-              className="flex flex-col overflow-hidden flex-shrink-0"
-              style={{ width: 420, background: 'var(--pv-surface)', borderLeft: '1px solid var(--pv-border)' }}
+              className="flex flex-col overflow-hidden flex-shrink-0 w-full sm:w-[420px] border-t sm:border-t-0 sm:border-l"
+              style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }}
             >
               {/* Model header */}
-              <div className="px-7 pt-6 pb-5 flex-shrink-0" style={{ borderBottom: '1px solid var(--pv-border)' }}>
+              <div className="px-4 sm:px-7 pt-4 sm:pt-6 pb-5 flex-shrink-0" style={{ borderBottom: '1px solid var(--pv-border)' }}>
                 <div className="flex items-center gap-3.5">
                   <div className="rounded-[12px] overflow-hidden flex-shrink-0" style={{ width: 48, height: 48 }}>
                     <div className="w-full h-full flex items-center justify-center text-xl" style={{ background: (MODEL_ART_MAP as any)[selectedModel.slug]?.gradient ?? 'linear-gradient(145deg,#222,#3a3a3a)' }}>
@@ -985,7 +1014,7 @@ export default function Dashboard() {
               </div>
 
               {/* Form body */}
-              <div key={selectedModel.slug} className="flex-1 overflow-y-auto px-7 py-5">
+              <div key={selectedModel.slug} className="flex-1 overflow-y-auto px-4 sm:px-7 py-5">
                 {/* Gen type picker (multi-type models) */}
                 {!selectedGenType && selectedModel.supported_gen_types.length > 1 && (
                   <div>
@@ -1146,7 +1175,7 @@ export default function Dashboard() {
       })()}
       <GuidedTour active={tourActive} onFinish={() => { markTourSeen(); setTourActive(false) }} />
       {renderToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl text-sm font-medium animate-fade-in" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}>
+        <div className="fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl text-sm font-medium animate-fade-in" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}>
           <svg className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--pv-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
           <span>{renderToast}</span>
           <button onClick={() => setRenderToast(null)} className="ml-2 text-base leading-none cursor-pointer" style={{ color: 'var(--pv-text3)' }}>✕</button>

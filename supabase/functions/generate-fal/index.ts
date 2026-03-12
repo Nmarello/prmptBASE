@@ -296,6 +296,7 @@ Deno.serve(async (req) => {
     }
 
     const slug = (model_slug as string) ?? 'flux-schnell'
+    const genType = (body.gen_type as string | undefined) ?? ''
     const isImg2Img = slug === 'flux-dev-img2img'
     const isKontext = slug === 'flux-kontext-pro'
     const isRecraft = slug === 'recraft-v4-pro'
@@ -642,7 +643,7 @@ Deno.serve(async (req) => {
       const aspectRatio = (aspect_ratio && NANO_BANANA_ASPECT_DIMS[aspect_ratio]) ? aspect_ratio : '1:1'
       const [nbW, nbH] = NANO_BANANA_ASPECT_DIMS[aspectRatio]
 
-      if (isImg2Img && source_image) {
+      if ((genType === 'img2img') && source_image) {
         // Edit path — upload source image first
         let imageUrl: string
         const src = source_image as string

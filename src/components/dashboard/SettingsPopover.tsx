@@ -86,7 +86,7 @@ export default function SettingsPopover({ onSignOut, userInitial = '?' }: Props)
       </button>
 
       {open && (
-        <div className="absolute left-full bottom-0 ml-2 w-72 bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden animate-fade-in">
+        <div className="absolute bottom-full right-0 mb-2 sm:bottom-0 sm:left-full sm:right-auto sm:mb-0 sm:ml-2 w-72 max-w-[calc(100vw-16px)] bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden animate-fade-in">
 
           {/* Timezone */}
           <div className="px-4 pt-4 pb-3 border-b border-white/8">

@@ -106,7 +106,7 @@ export default function NotificationBell({ onViewAsset }: Props) {
       </button>
 
       {open && (
-        <div className="absolute left-full bottom-0 ml-2 w-80 rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-in" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
+        <div className="absolute bottom-full right-0 mb-2 sm:bottom-0 sm:left-full sm:right-auto sm:mb-0 sm:ml-2 w-80 max-w-[calc(100vw-16px)] rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-in" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}>
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--pv-border)' }}>
             <span className="text-sm font-semibold" style={{ color: 'var(--pv-text)' }}>Notifications</span>
             {notifications.length > 0 && (
