@@ -139,15 +139,15 @@ function BarChart({
   )
 }
 
-function SbBtn({ tip, onClick, children }: { tip?: string; onClick?: () => void; children: React.ReactNode }) {
+function SbBtn({ tip, active, onClick, children }: { tip?: string; active?: boolean; onClick?: () => void; children: React.ReactNode }) {
   return (
     <button
       onClick={onClick}
       title={tip}
       className="relative flex items-center justify-center rounded-[11px] transition-all cursor-pointer"
-      style={{ width: 40, height: 40, color: 'var(--pv-text3)', background: 'transparent', border: 'none', flexShrink: 0 }}
-      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--pv-text)'; (e.currentTarget as HTMLButtonElement).style.background = 'var(--pv-surface2)' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--pv-text3)'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+      style={{ width: 40, height: 40, color: active ? 'var(--pv-accent)' : 'var(--pv-text3)', background: active ? 'var(--pv-surface2)' : 'transparent', border: 'none', flexShrink: 0 }}
+      onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.color = 'var(--pv-text)'; (e.currentTarget as HTMLButtonElement).style.background = 'var(--pv-surface2)' } }}
+      onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.color = 'var(--pv-text3)'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent' } }}
     >
       {children}
     </button>
@@ -156,9 +156,12 @@ function SbBtn({ tip, onClick, children }: { tip?: string; onClick?: () => void;
 
 // ─── main component ───────────────────────────────────────────────────────────
 
+type AdminView = 'stats' | 'users'
+
 export default function Admin() {
   const { user, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
+  const [view, setView] = useState<AdminView>('stats')
   const [users, setUsers] = useState<UserRow[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [search, setSearch] = useState('')
@@ -301,9 +304,23 @@ export default function Admin() {
         </a>
 
         {/* Admin badge */}
-        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 99, background: 'rgba(245,200,66,0.12)', color: '#f5c842', border: '1px solid rgba(245,200,66,0.2)', letterSpacing: '0.04em', marginBottom: 4 }}>
+        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 99, background: 'rgba(245,200,66,0.12)', color: '#f5c842', border: '1px solid rgba(245,200,66,0.2)', letterSpacing: '0.04em', marginBottom: 8 }}>
           ADMIN
         </span>
+
+        {/* Nav: Stats */}
+        <SbBtn tip="Stats" active={view === 'stats'} onClick={() => setView('stats')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+        </SbBtn>
+
+        {/* Nav: Users */}
+        <SbBtn tip="Users" active={view === 'users'} onClick={() => setView('users')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </SbBtn>
 
         {/* Bottom actions */}
         <div className="mt-auto flex flex-col items-center gap-1">
@@ -357,12 +374,14 @@ export default function Admin() {
 
             {/* Page header */}
             <div className="mb-6">
-              <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em', lineHeight: 1.1 }}>Admin</h1>
+              <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em', lineHeight: 1.1 }}>
+                {view === 'stats' ? 'Stats' : 'Users'}
+              </h1>
               <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 3 }}>{user?.email}</p>
             </div>
 
-            {/* ── Stats ── */}
-            {stats && (
+            {/* ── Stats view ── */}
+            {view === 'stats' && stats && (
               <>
               {/* Row 1 — 8 count cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-3">
@@ -472,8 +491,8 @@ export default function Admin() {
               </>
             )}
 
-            {/* ── Users ── */}
-            <div className="flex gap-3 mb-4 flex-wrap items-center">
+            {/* ── Users view ── */}
+            {view === 'users' && <><div className="flex gap-3 mb-4 flex-wrap items-center">
               <input
                 type="text"
                 placeholder="Search email or name…"
@@ -571,7 +590,7 @@ export default function Admin() {
                   </table>
                 </div>
               )}
-            </Card>
+            </Card></>}
 
           </div>
         </div>
