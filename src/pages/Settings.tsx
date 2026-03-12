@@ -194,12 +194,16 @@ export default function Settings() {
                   <MiniStat label="img2vid" value={stats.gen_type_totals['img2vid'] ?? 0}     accent="#c084fc" />
                 </div>
 
-                {/* Spend */}
-                <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)', marginBottom: 10 }}>Spend</div>
-                <div className="grid grid-cols-2 gap-2 mb-6">
-                  <MiniStat label="This month" value={stats.period_spend > 0 ? `$${stats.period_spend.toFixed(4)}` : '—'} />
-                  <MiniStat label="All time"   value={stats.total_spend   > 0 ? `$${stats.total_spend.toFixed(4)}`   : '—'} />
-                </div>
+                {/* Spend — only show when there's actual billing data */}
+                {stats.total_spend > 0 && (
+                  <>
+                    <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)', marginBottom: 10 }}>Spend</div>
+                    <div className="grid grid-cols-2 gap-2 mb-6">
+                      <MiniStat label="This month" value={`$${stats.period_spend.toFixed(4)}`} />
+                      <MiniStat label="All time"   value={`$${stats.total_spend.toFixed(4)}`} />
+                    </div>
+                  </>
+                )}
 
                 {/* Image bar chart */}
                 {stats.image_by_model?.length > 0 && (
