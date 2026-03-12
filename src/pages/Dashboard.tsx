@@ -56,6 +56,7 @@ import GuidedTour, { markTourSeen } from '../components/dashboard/GuidedTour'
 import { useLearningMode } from '../contexts/LearningModeContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
+import ModelDrawer from '../components/dashboard/ModelDrawer'
 
 type View = 'models' | 'builder' | 'assets' | 'projects'
 
@@ -165,6 +166,7 @@ export default function Dashboard() {
   const [img2vidPickerUrl, setImg2vidPickerUrl] = useState<string | null>(null)
   const [_sidebarOpen, setSidebarOpen] = useState(false)
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
+  const [drawerModel, setDrawerModel] = useState<Model | null>(null)
 
   const MODEL_ART_MAP = {
     'dalle':              { gradient: 'linear-gradient(145deg,#c0392b,#e8570a,#f5a623)', initial: 'D3' },
@@ -759,7 +761,7 @@ export default function Dashboard() {
                           model={m as Model}
                           userTier={userTier}
                           selected={selectedModel?.id === m.id}
-                          onClick={() => openWorkspace(m as Model)}
+                          onClick={() => setDrawerModel(m as Model)}
                           comingSoon={m._comingSoon || m.comingSoon}
                           rendering={renderingModelSlug === m.slug}
                           latestRenderUrl={latestRenderBySlug[m.slug]?.url}
@@ -797,7 +799,7 @@ export default function Dashboard() {
                           model={m as Model}
                           userTier={userTier}
                           selected={selectedModel?.id === m.id}
-                          onClick={() => openWorkspace(m as Model)}
+                          onClick={() => setDrawerModel(m as Model)}
                           comingSoon={m._comingSoon || m.comingSoon}
                           rendering={renderingModelSlug === m.slug}
                           latestRenderUrl={latestRenderBySlug[m.slug]?.url}
@@ -832,7 +834,7 @@ export default function Dashboard() {
                           model={m}
                           userTier={userTier}
                           selected={selectedModel?.id === m.id}
-                          onClick={() => openWorkspace(m)}
+                          onClick={() => setDrawerModel(m)}
                           rendering={renderingModelSlug === m.slug}
                           latestRenderUrl={latestRenderBySlug[m.slug]?.url}
                           latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
@@ -882,6 +884,28 @@ export default function Dashboard() {
           />
         )}
       </div>
+
+      {/* ── Model Drawer ── */}
+      {drawerModel && (() => {
+        const art = (MODEL_ART_MAP as Record<string, { gradient: string; initial: string }>)[drawerModel.slug]
+          ?? { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: drawerModel.name.slice(0,2).toUpperCase() }
+        const brand = SLUG_BRAND_MAP[drawerModel.slug] ?? drawerModel.provider
+        const drawerAssets = assets.filter(a => a.model_id === drawerModel.id)
+        return (
+          <ModelDrawer
+            model={drawerModel}
+            assets={drawerAssets}
+            modelArt={art}
+            brandName={brand}
+            onClose={() => setDrawerModel(null)}
+            onGenerate={() => { setDrawerModel(null); openWorkspace(drawerModel) }}
+            onViewAsset={(asset) => setLightboxAsset(asset)}
+            onDeleteAsset={deleteAsset}
+            onSendToImg2Img={(url) => { setDrawerModel(null); sendToImg2Img(url) }}
+            onSendToImg2Vid={(url) => { setDrawerModel(null); sendToImg2Vid(url) }}
+          />
+        )
+      })()}
 
       {/* ── Mobile Bottom Tab Bar ── */}
       <nav
