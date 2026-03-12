@@ -83,8 +83,8 @@ const STEPS: Step[] = [
   {
     target: '[data-tour="ai-suggestion-subject"]',
     position: 'left',
-    title: 'Your enhanced prompt',
-    body: "AI has expanded your idea into a richer prompt. Click Accept to use it.",
+    title: 'Your copy is ready!',
+    body: "Click Accept to use it, or Decline to keep your original. You can always adjust it once it's in your prompt window.",
   },
   // 8 – explain optional settings
   {
