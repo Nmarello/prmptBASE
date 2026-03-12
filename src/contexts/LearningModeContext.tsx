@@ -9,7 +9,7 @@ function getSaved(): LearningMode {
     const v = localStorage.getItem(STORAGE_KEY)
     if (v === 'tooltips' || v === 'guided') return v
   } catch {}
-  return 'none'
+  return 'tooltips'
 }
 
 interface Ctx {
