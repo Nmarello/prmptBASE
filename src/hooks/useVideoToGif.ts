@@ -14,10 +14,10 @@ async function getFFmpeg(): Promise<FFmpeg> {
   }
   if (!ffmpegInstance.loaded) {
     if (!loadPromise) {
-      loadPromise = ffmpegInstance.load({
+      loadPromise = (ffmpegInstance.load({
         coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, 'text/javascript'),
         wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, 'application/wasm'),
-      }).finally(() => { loadPromise = null })
+      }) as Promise<unknown>).then(() => {}).finally(() => { loadPromise = null })
     }
     await loadPromise
   }
@@ -55,7 +55,8 @@ export function useVideoToGif() {
       ])
 
       const data = await ff.readFile(outputName)
-      const blob = new Blob([data], { type: 'image/gif' })
+      const bytes = data instanceof Uint8Array ? data : new TextEncoder().encode(data as string)
+      const blob = new Blob([bytes as unknown as BlobPart], { type: 'image/gif' })
       const url = URL.createObjectURL(blob)
 
       const a = document.createElement('a')

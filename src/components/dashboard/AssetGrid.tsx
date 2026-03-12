@@ -86,8 +86,6 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
   const [projectFilter, setProjectFilter] = useState<string>('all')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const { scrollRef: gridScrollRef, distance: pullDist, refreshing: pullRefreshing } = usePullToRefresh(onRefresh ?? (() => {}))
-  const { convertToGif, converting: gifConverting, progress: gifProgress } = useVideoToGif()
-
   const numCols = useNumCols()
 
   const modelMap = useMemo(() => Object.fromEntries(models.map((m) => [m.id, m])), [models])
@@ -387,6 +385,7 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
   onSendToImg2Vid: (url: string) => void
   onMoveToProject?: (assetId: string, projectId: string | null) => void
 }) {
+  const { convertToGif, converting: gifConverting, progress: gifProgress } = useVideoToGif()
   const prompt = (asset.metadata as Record<string, unknown>)?.prompt as string | undefined
   const revisedPrompt = (asset.metadata as Record<string, unknown>)?.revised_prompt as string | undefined
   const [selectedProjectId, setSelectedProjectId] = useState<string>(asset.project_id ?? '')
