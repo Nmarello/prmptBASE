@@ -754,6 +754,38 @@ export default function Dashboard() {
                   </div>
                 )
               })()}
+              {/* Featured row */}
+              {!modelSearch && (() => {
+                const FEATURED_SLUGS = ['flux-pro-ultra', 'recraft-v4-pro', 'luma-txt2vid', 'flux-kontext-pro']
+                const featuredModels = FEATURED_SLUGS
+                  .map(slug => models.find(m => m.slug === slug))
+                  .filter(Boolean) as Model[]
+                if (featuredModels.length === 0) return null
+                return (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                        Featured
+                      </h2>
+                      <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'linear-gradient(90deg,#0050ff18,#7b2ff718)', border: '1px solid #0050ff30', color: 'var(--pv-accent)' }}>
+                        Staff picks
+                      </span>
+                    </div>
+                    <div className="flex gap-3.5 overflow-x-auto pb-3">
+                      {featuredModels.map((m) => (
+                        <ModelCard
+                          key={m.id}
+                          model={m}
+                          userTier={userTier}
+                          selected={selectedModel?.id === m.id}
+                          onClick={() => openWorkspace(m)}
+                          rendering={renderingModelSlug === m.slug}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           </div>
         )}
