@@ -104,7 +104,7 @@ function SbBtn({ tip, active, onClick, children }: { tip?: string; active?: bool
 }
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth()
+  const { user, signOut, isAdmin } = useAuth()
   const { mode: learningMode } = useLearningMode()
   const { theme, setTheme } = useTheme()
   const userInitial = (user?.user_metadata?.full_name ?? user?.email ?? '?')[0].toUpperCase()
@@ -660,7 +660,7 @@ export default function Dashboard() {
               }
             }}
           />
-          <SettingsPopover onSignOut={signOut} userInitial={userInitial} />
+          <SettingsPopover onSignOut={signOut} userInitial={userInitial} isAdmin={isAdmin} />
         </div>
       </aside>
 
@@ -934,7 +934,7 @@ export default function Dashboard() {
             if (asset) { setLightboxAsset(asset) } else { setView('assets'); loadAssets() }
           }}
         />
-        <SettingsPopover onSignOut={signOut} userInitial={userInitial} inBottomNav />
+        <SettingsPopover onSignOut={signOut} userInitial={userInitial} inBottomNav isAdmin={isAdmin} />
       </nav>
 
       {/* ── WORKSPACE OVERLAY ── */}

@@ -48,9 +48,10 @@ interface Props {
   onSignOut: () => void
   userInitial?: string
   inBottomNav?: boolean
+  isAdmin?: boolean
 }
 
-export default function SettingsPopover({ onSignOut, userInitial = '?', inBottomNav }: Props) {
+export default function SettingsPopover({ onSignOut, userInitial = '?', inBottomNav, isAdmin }: Props) {
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const { theme, setTheme } = useTheme()
@@ -82,7 +83,7 @@ export default function SettingsPopover({ onSignOut, userInitial = '?', inBottom
           aria-label="Settings"
           data-tour="settings-btn"
           className="flex flex-col items-center gap-0.5 py-1 px-4 cursor-pointer transition-opacity"
-          style={{ color: open ? 'var(--pv-accent)' : 'var(--pv-text3)' }}
+          style={{ color: open ? 'var(--pv-accent)' : 'var(--pv-text3)', background: 'none', border: 'none', fontFamily: 'inherit' }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
@@ -95,24 +96,27 @@ export default function SettingsPopover({ onSignOut, userInitial = '?', inBottom
           aria-label="Settings"
           data-tour="settings-btn"
           className="flex items-center justify-center rounded-full cursor-pointer transition-opacity hover:opacity-80 flex-shrink-0"
-          style={{ width: 30, height: 30, background: 'var(--pv-accent)', color: '#fff', fontSize: 12, fontWeight: 700, userSelect: 'none' }}
+          style={{ width: 30, height: 30, background: 'var(--pv-accent)', color: '#fff', fontSize: 12, fontWeight: 700, userSelect: 'none', border: 'none' }}
         >
           {userInitial}
         </button>
       )}
 
       {open && (
-        <div className="absolute bottom-full right-0 mb-2 sm:bottom-0 sm:left-full sm:right-auto sm:mb-0 sm:ml-2 w-72 max-w-[calc(100vw-16px)] bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden animate-fade-in">
-
+        <div
+          className="absolute bottom-full right-0 mb-2 sm:bottom-0 sm:left-full sm:right-auto sm:mb-0 sm:ml-2 w-72 max-w-[calc(100vw-16px)] rounded-2xl shadow-2xl z-50 overflow-hidden animate-fade-in"
+          style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}
+        >
           {/* Timezone */}
-          <div className="px-4 pt-4 pb-3 border-b border-white/8">
-            <label className="text-[11px] font-semibold text-white/40 uppercase tracking-wider block mb-2">
+          <div className="px-4 pt-4 pb-3" style={{ borderBottom: '1px solid var(--pv-border)' }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--pv-text3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>
               Timezone
             </label>
             <select
               value={timezone}
               onChange={(e) => handleTimezone(e.target.value)}
-              className="w-full bg-white/6 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500/50 cursor-pointer"
+              className="w-full rounded-lg px-3 py-2 text-sm cursor-pointer outline-none"
+              style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}
             >
               {TIMEZONES.map((tz) => (
                 <option key={tz} value={tz}>{TZ_LABELS[tz] ?? tz}</option>
@@ -121,50 +125,63 @@ export default function SettingsPopover({ onSignOut, userInitial = '?', inBottom
           </div>
 
           {/* Theme toggle */}
-          <div className="px-4 py-3 border-b border-white/8">
+          <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--pv-border)' }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/70">Theme</p>
-                <p className="text-[11px] text-white/35">Dark / Light</p>
+                <p style={{ fontSize: 13, color: 'var(--pv-text)' }}>Theme</p>
+                <p style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Dark / Light</p>
               </div>
               <button
                 type="button"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 className="flex items-center gap-2 cursor-pointer"
+                style={{ background: 'none', border: 'none' }}
               >
-                <span className="text-xs text-white/50">{theme === 'dark' ? 'Dark' : 'Light'}</span>
-                <div className={`w-10 h-5 rounded-full relative border transition-colors ${theme === 'dark' ? 'bg-sky-500 border-sky-400' : 'bg-white/10 border-white/10'}`}>
-                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all duration-200 ${theme === 'dark' ? 'left-5' : 'left-0.5'}`} />
+                <span style={{ fontSize: 12, color: 'var(--pv-text3)' }}>{theme === 'dark' ? 'Dark' : 'Light'}</span>
+                <div style={{ width: 40, height: 20, borderRadius: 99, position: 'relative', background: theme === 'dark' ? 'var(--pv-accent)' : 'var(--pv-surface2)', border: '1px solid var(--pv-border)', transition: 'background 0.2s', flexShrink: 0 }}>
+                  <div style={{ position: 'absolute', top: 2, width: 14, height: 14, background: '#fff', borderRadius: '50%', transition: 'left 0.2s', left: theme === 'dark' ? 22 : 2 }} />
                 </div>
               </button>
             </div>
           </div>
 
-          {/* Learning Mode — disabled until feature-complete
-          <div className="px-4 py-3 border-b border-white/8"> ... </div>
-          */}
-
-          {/* Admin link */}
-          <div className="px-4 pb-3 border-t border-white/8 pt-3">
+          {/* My stats */}
+          <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--pv-border)' }}>
             <a
-              href="/admin"
-              className="w-full text-left text-sm text-white/40 hover:text-white/70 transition-colors cursor-pointer block"
+              href="/settings"
+              onClick={() => setOpen(false)}
+              style={{ fontSize: 13, color: 'var(--pv-text2)', textDecoration: 'none', display: 'block' }}
+              className="hover:text-[var(--pv-text)] transition-colors"
             >
-              Admin panel →
+              My stats →
             </a>
           </div>
+
+          {/* Admin link — only shown to admins */}
+          {isAdmin && (
+            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--pv-border)' }}>
+              <a
+                href="/admin"
+                onClick={() => setOpen(false)}
+                style={{ fontSize: 13, color: 'var(--pv-text2)', textDecoration: 'none', display: 'block' }}
+                className="hover:text-[var(--pv-text)] transition-colors"
+              >
+                Admin panel →
+              </a>
+            </div>
+          )}
 
           {/* Sign out */}
           <div className="px-4 py-3">
             <button
               type="button"
               onClick={() => { setOpen(false); onSignOut() }}
-              className="w-full text-left text-sm text-white/40 hover:text-white/70 transition-colors cursor-pointer"
+              style={{ fontSize: 13, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', width: '100%', textAlign: 'left', padding: 0 }}
+              className="hover:text-[var(--pv-text)] transition-colors"
             >
               Sign out
             </button>
           </div>
-
         </div>
       )}
     </div>

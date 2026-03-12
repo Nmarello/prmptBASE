@@ -8,6 +8,7 @@ import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
 import Pricing from './pages/Pricing'
 import Admin from './pages/Admin'
+import Settings from './pages/Settings'
 
 export default function App() {
   return (
@@ -26,6 +27,14 @@ export default function App() {
             }
           />
           <Route path="/pricing" element={<Pricing />} />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin"
             element={
