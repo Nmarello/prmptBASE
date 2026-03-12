@@ -3,21 +3,87 @@ import AuthModal from '../components/auth/AuthModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
-const SUPABASE_STORAGE = 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets'
+const S = 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets'
+const U = 'f9965304-4af9-4eba-a762-7b7c892473e1'
 const U1 = '0a44a1d5-f0ef-4e0c-ad0a-995eb44cec90'
-const U2 = 'f9965304-4af9-4eba-a762-7b7c892473e1'
 
-// Real generated assets from the vault
-const SHOWCASE_ASSET = `${SUPABASE_STORAGE}/${U1}/1773262454542-k1hcqk0lpr.webp`
-const GALLERY_ASSETS = [
-  `${SUPABASE_STORAGE}/${U1}/1773262268853.png`,
-  `${SUPABASE_STORAGE}/${U2}/1773121140586-hhuk0k4iz3a.jpg`,
-  `${SUPABASE_STORAGE}/${U1}/1773261705891.png`,
-  `${SUPABASE_STORAGE}/${U2}/1773097728856-v3ap7gzlfnn.jpg`,
-  `${SUPABASE_STORAGE}/${U2}/1773097779411-6tbdqm308qy.jpg`,
-  `${SUPABASE_STORAGE}/${U1}/1773261524475.png`,
-  `${SUPABASE_STORAGE}/${U2}/1773121140586-oca8u7wy5v.jpg`,
-  `${SUPABASE_STORAGE}/${U2}/1773097669991-vcaf8o2fhni.jpg`,
+// Main showcase (workspace mockup)
+const SHOWCASE_ASSET = `${S}/${U1}/1773262454542-k1hcqk0lpr.webp`
+
+// All unique generated assets — images + videos, no src- files, no repeats
+type GalleryItem = { url: string; video: boolean }
+const GALLERY_ASSETS: GalleryItem[] = [
+  // ── images ──
+  { url: `${S}/${U}/1772726010394.png`,                    video: false },
+  { url: `${S}/${U}/1772726421198.png`,                    video: false },
+  { url: `${S}/${U}/1772729476761.png`,                    video: false },
+  { url: `${S}/${U}/1772729597864.png`,                    video: false },
+  { url: `${S}/${U}/1772772002691.png`,                    video: false },
+  { url: `${S}/${U}/1772772089090.png`,                    video: false },
+  { url: `${S}/${U}/1772772445427.png`,                    video: false },
+  { url: `${S}/${U}/1772772580175.png`,                    video: false },
+  { url: `${S}/${U}/1772772684856.png`,                    video: false },
+  { url: `${S}/${U}/1772772981088.png`,                    video: false },
+  { url: `${S}/${U}/1772773304799.png`,                    video: false },
+  { url: `${S}/${U}/1773097669991-vcaf8o2fhni.jpg`,        video: false },
+  { url: `${S}/${U}/1773097728856-v3ap7gzlfnn.jpg`,        video: false },
+  { url: `${S}/${U}/1773097779411-6tbdqm308qy.jpg`,        video: false },
+  { url: `${S}/${U}/1773097840496-zln7cfsexdb.jpg`,        video: false },
+  { url: `${S}/${U}/1773097895754-gisdzjotcn9.jpg`,        video: false },
+  { url: `${S}/${U}/1773097957715-vbcmkai9f0h.jpg`,        video: false },
+  { url: `${S}/${U}/1773105432147.png`,                    video: false },
+  { url: `${S}/${U}/1773119774536-nmt8pitqvpc.jpg`,        video: false },
+  { url: `${S}/${U}/1773119774537-nmlxwhj38vk.jpg`,        video: false },
+  { url: `${S}/${U}/1773120073813-dygigi20mw7.jpg`,        video: false },
+  { url: `${S}/${U}/1773121140586-hhuk0k4iz3a.jpg`,        video: false },
+  { url: `${S}/${U}/1773121140586-oca8u7wy5v.jpg`,         video: false },
+  { url: `${S}/${U}/1773121140602-9qavd1fhiie.jpg`,        video: false },
+  { url: `${S}/${U}/1773121140603-b8x1m020cwu.jpg`,        video: false },
+  { url: `${S}/${U}/1773121196651-6yczb7uvhtd.jpg`,        video: false },
+  { url: `${S}/${U}/1773121196652-hvh2uf66b6h.jpg`,        video: false },
+  { url: `${S}/${U}/1773167726198.png`,                    video: false },
+  { url: `${S}/${U}/1773167784188.png`,                    video: false },
+  { url: `${S}/${U}/1773167850979.png`,                    video: false },
+  { url: `${S}/${U}/1773167880458.png`,                    video: false },
+  { url: `${S}/${U}/1773167969354.png`,                    video: false },
+  { url: `${S}/${U}/1773168026347.png`,                    video: false },
+  { url: `${S}/${U}/1773168450544.png`,                    video: false },
+  { url: `${S}/${U}/1773168565808-hq41x9wlrjo.jpg`,        video: false },
+  { url: `${S}/${U}/1773189262873-bdvfolfm3x5.jpg`,        video: false },
+  { url: `${S}/${U}/1773191631204-uu3nt8u53o.jpg`,         video: false },
+  { url: `${S}/${U}/1773191916158-e8x9a1u7dt9.jpg`,        video: false },
+  { url: `${S}/${U}/1773192090990-d0f4il12bg.jpg`,         video: false },
+  { url: `${S}/${U}/1773192256036-4xvglnwuq23.jpg`,        video: false },
+  { url: `${S}/${U}/1773192400838-hyayxhlodt.webp`,        video: false },
+  { url: `${S}/${U}/1773238327397-lnmxu6g9z4a.png`,        video: false },
+  { url: `${S}/${U}/1773249473034.png`,                    video: false },
+  { url: `${S}/${U}/1773249541519.png`,                    video: false },
+  { url: `${S}/${U}/1773250936737.png`,                    video: false },
+  { url: `${S}/${U}/1773252682825-eynyylfklh.jpg`,         video: false },
+  { url: `${S}/${U}/1773265297836.png`,                    video: false },
+  { url: `${S}/${U}/1773265806557.png`,                    video: false },
+  { url: `${S}/${U}/1773271432448.png`,                    video: false },
+  { url: `${S}/${U}/1773272870789-fmnshh3tee9.png`,        video: false },
+  { url: `${S}/${U}/1773272947223-yt22djpgk0o.png`,        video: false },
+  { url: `${S}/${U}/1773273530824-kfnn11kkf6.webp`,        video: false },
+  { url: `${S}/${U}/1773275392279-mp7lake1ihf.jpg`,        video: false },
+  { url: `${S}/${U}/1773276565870-gc1ziwuizgu.webp`,       video: false },
+  { url: `${S}/${U}/1773278431301-mn8y3tw9fp.jpg`,         video: false },
+  // ── videos ──
+  { url: `${S}/${U}/1773102057074-8lky3sgejaq.mp4`,        video: true  },
+  { url: `${S}/${U}/1773106216078-opq0kulv11b.mp4`,        video: true  },
+  { url: `${S}/${U}/1773121567051-qei4c5elpj.mp4`,         video: true  },
+  { url: `${S}/${U}/1773122231715-ucfvkydadi9.mp4`,        video: true  },
+  { url: `${S}/${U}/1773149521681-33oxodtbep5.mp4`,        video: true  },
+  { url: `${S}/${U}/1773155848247-t6h55dqnmka.mp4`,        video: true  },
+  { url: `${S}/${U}/1773193147392-dupb0dqsjdj.mp4`,        video: true  },
+  { url: `${S}/${U}/1773234353024-8ettbnmug4g.mp4`,        video: true  },
+  { url: `${S}/${U}/1773238785803-oug93xafgc9.mp4`,        video: true  },
+  { url: `${S}/${U}/1773274984200-e09ebqbxg2t.mp4`,        video: true  },
+  { url: `${S}/${U}/1773275602324-jm6unhe3yg.mp4`,         video: true  },
+  { url: `${S}/${U}/1773276571664-izhbdgt2vtq.mp4`,        video: true  },
+  { url: `${S}/${U}/1773281096192-3ko42n3qfbv.mp4`,        video: true  },
+  { url: `${S}/${U}/1773286040352-cy3jf9c873m.mp4`,        video: true  },
 ]
 
 export default function Home() {
@@ -158,15 +224,37 @@ export default function Home() {
       <section id="gallery" style={{ overflow: 'hidden', paddingBottom: 4 }}>
         <div style={{
           display: 'flex', gap: 10,
-          animation: 'marquee 32s linear infinite',
+          animation: 'marquee 90s linear infinite',
           width: 'max-content', padding: '0 10px',
         }}>
-          {[...GALLERY_ASSETS, ...GALLERY_ASSETS].map((url, i) => (
+          {/* Double the array for seamless infinite loop — no repeats in the original set */}
+          {[...GALLERY_ASSETS, ...GALLERY_ASSETS].map((item, i) => (
             <div key={i} style={{
               width: 220, height: 160, borderRadius: 14, overflow: 'hidden', flexShrink: 0,
-              border: '1px solid rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.06)', position: 'relative',
             }}>
-              <img src={url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              {item.video ? (
+                <>
+                  <video
+                    src={item.url}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                  <div style={{
+                    position: 'absolute', top: 6, left: 6,
+                    width: 18, height: 18, borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="7" height="7" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  </div>
+                </>
+              ) : (
+                <img src={item.url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              )}
             </div>
           ))}
         </div>
@@ -348,7 +436,7 @@ export default function Home() {
             onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(61,127,255,0.25)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'none'; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)' }}
           >
-            <img src={GALLERY_ASSETS[1]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+            <img src={GALLERY_ASSETS[21].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,9,8,0.92) 0%, rgba(10,9,8,0.1) 60%)' }} />
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 22 }}>
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(240,237,232,0.35)', marginBottom: 6 }}>Featured · Flux Pro Ultra</div>
