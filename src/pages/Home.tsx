@@ -251,15 +251,6 @@ export default function Home() {
           >Generate →</button>
         </div>
 
-        {/* SOCIAL PROOF */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', fontSize: 13, color: T.text3 }}>
-          <div style={{ display: 'flex' }}>
-            {['linear-gradient(135deg,#ff6b6b,#ee5a24)', 'linear-gradient(135deg,#a29bfe,#6c5ce7)', 'linear-gradient(135deg,#fd79a8,#e84393)', 'linear-gradient(135deg,#55efc4,#00b894)'].map((bg, i) => (
-              <div key={i} style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid ' + T.bg, marginLeft: i === 0 ? 0 : -6, background: bg }} />
-            ))}
-          </div>
-          <span>Joined by <strong style={{ color: T.text2 }}>2,400+ creators</strong> this month</span>
-        </div>
       </section>
 
       {/* ── ASSET GALLERY STRIP ────────────────────────── */}
@@ -302,6 +293,120 @@ export default function Home() {
           ))}
         </div>
         <style>{`@keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }`}</style>
+      </section>
+
+      {/* ── WHY PRMPTVAULT ────────────────────────────── */}
+      <section className="px-5 sm:px-10 py-20 sm:py-28" style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: T.text3, marginBottom: 14 }}>
+            Why prmptVAULT
+          </div>
+          <h2 style={{ fontSize: 'clamp(28px, 5vw, 50px)', fontWeight: 800, letterSpacing: '-1.5px', color: T.text, marginBottom: 16, lineHeight: 1.1 }}>
+            Not a blank box.<br />A structured studio.
+          </h2>
+          <p style={{ fontSize: 17, color: T.text2, maxWidth: 560, margin: '0 auto', lineHeight: 1.7 }}>
+            Every other tool gives you a text field and wishes you luck. prmptVAULT gives you purpose-built fields for every model — so your subject, style, lighting, mood, and lens are all intentional, not accidental.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+          {/* Card 1 — Structured fields */}
+          <div style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28, transition: 'all 0.2s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(61,127,255,0.25)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = T.border; (e.currentTarget as HTMLDivElement).style.transform = 'none' }}
+          >
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(61,127,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3d7fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="11" height="4" rx="1"/><rect x="3" y="17" width="14" height="4" rx="1"/>
+              </svg>
+            </div>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 10, letterSpacing: '-0.3px' }}>Guided by structure</h3>
+            <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.7 }}>
+              Subject. Style. Lighting. Mood. Lens. Composition. Each field is purpose-built for the model you're using — no guessing, no prompt engineering degree required.
+            </p>
+          </div>
+
+          {/* Card 2 — All models */}
+          <div style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28, transition: 'all 0.2s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(155,122,255,0.25)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = T.border; (e.currentTarget as HTMLDivElement).style.transform = 'none' }}
+          >
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(155,122,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9b7aff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+              </svg>
+            </div>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 10, letterSpacing: '-0.3px' }}>Every model. One place.</h3>
+            <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.7 }}>
+              DALL-E 3. Flux Pro Ultra. Kling. Luma Ray-2. Veo 3. Minimax. 12+ image and video models, all in one workspace — no switching tabs, no managing API keys, no stitching tools together.
+            </p>
+          </div>
+
+          {/* Card 3 — Your vault */}
+          <div style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28, transition: 'all 0.2s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(52,199,89,0.25)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = T.border; (e.currentTarget as HTMLDivElement).style.transform = 'none' }}
+          >
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(52,199,89,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34c759" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 11h6M19 8v6"/>
+              </svg>
+            </div>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 10, letterSpacing: '-0.3px' }}>Everything saved. Always.</h3>
+            <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.7 }}>
+              Every image and video you generate lives in your personal vault. Download it, send it to img2img, run it through a different model, or pick up exactly where you left off — months later.
+            </p>
+          </div>
+        </div>
+
+        {/* Before / after comparison */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Without */}
+          <div style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.text3, marginBottom: 16 }}>Without prmptVAULT</div>
+            <div style={{ background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', border: '1px solid ' + T.border, borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}>
+              <div style={{ fontSize: 12, color: T.text3, fontStyle: 'italic' }}>a lighthouse at night...</div>
+            </div>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                'Blank text box, no guidance',
+                'Switch tabs to compare models',
+                'Download and lose track of outputs',
+                'Start from scratch every time',
+              ].map(t => (
+                <li key={t} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: T.text2 }}>
+                  <span style={{ color: '#f87171', fontSize: 14, fontWeight: 700 }}>✕</span> {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+          {/* With */}
+          <div style={{ background: dark ? 'rgba(61,127,255,0.06)' : 'rgba(61,127,255,0.04)', border: '1px solid rgba(61,127,255,0.2)', borderRadius: 20, padding: 28 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7aabff', marginBottom: 16 }}>With prmptVAULT</div>
+            <div style={{ background: 'rgba(61,127,255,0.08)', border: '1px solid rgba(61,127,255,0.15)', borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {[['Subject', 'A lone lighthouse'], ['Lighting', 'Golden hour'], ['Mood', 'Dramatic, cinematic'], ['Lens', '24mm wide']].map(([l, v]) => (
+                  <div key={l} style={{ display: 'flex', gap: 8, fontSize: 12 }}>
+                    <span style={{ color: T.text3, width: 60, flexShrink: 0 }}>{l}</span>
+                    <span style={{ color: T.text }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                'Structured fields for every model',
+                '12+ models in one workspace',
+                'Every output saved to your vault',
+                'Remix and iterate on anything',
+              ].map(t => (
+                <li key={t} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: T.text2 }}>
+                  <span style={{ color: '#34c759', fontSize: 14, fontWeight: 700 }}>✓</span> {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </section>
 
       {/* ── STUDIO WORKSPACE ──────────────────────────── */}
