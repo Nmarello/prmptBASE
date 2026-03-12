@@ -8,7 +8,7 @@ function friendlyFalError(raw: string): string {
     const type = detail?.type ?? parsed?.type ?? ''
     const msg  = detail?.msg  ?? parsed?.msg  ?? ''
     if (type === 'downstream_service_error' || msg.toLowerCase().includes('overloaded') || msg.toLowerCase().includes('try again')) {
-      return "The model's servers are under heavy load right now — not us. We retried automatically and it still didn't come through. Please try again in a moment."
+      return "The model's servers are under heavy load right now — not ours. We'll keep retrying for you — hit Generate again and we'll try a few more times automatically."
     }
     if (type === 'rate_limit' || msg.toLowerCase().includes('rate limit')) {
       return 'Rate limit reached. Please wait a moment before generating again.'
@@ -19,10 +19,10 @@ function friendlyFalError(raw: string): string {
   }
   if (typeof raw === 'string') {
     if (raw.toLowerCase().includes('overload') || raw.toLowerCase().includes('try again later')) {
-      return "The model's servers are under heavy load right now — not us. We retried automatically and it still didn't come through. Please try again in a moment."
+      return "The model's servers are under heavy load right now — not ours. We'll keep retrying for you — hit Generate again and we'll try a few more times automatically."
     }
     if (raw.toLowerCase().includes('compute resources') || raw.toLowerCase().includes('not enough compute') || raw.toLowerCase().includes('runner_scheduling_failure') || raw.toLowerCase().includes('failed after retries')) {
-      return "The model ran out of resources — not us. We retried automatically. Please try again in a moment."
+      return "The model ran out of resources on their end, not ours. We'll keep retrying for you — hit Generate again and we'll try a few more times automatically."
     }
     if (raw.length > 200) return 'Generation failed. Please try again.'
   }
