@@ -1,15 +1,13 @@
 import { useState, useMemo, useEffect } from 'react'
 import type { Asset, Model, UserProject } from '../../types'
 
-interface ShowcaseItem { url: string; gen_type: string | null }
-
 interface Props {
   assets: Asset[]
   models: Model[]
   projects: UserProject[]
   loading: boolean
   title?: string
-  showcaseAssets?: ShowcaseItem[]
+  showcaseAssets?: { url: string; gen_type: string | null }[]
   onDelete: (id: string) => void
   onGenerate: () => void
   onSendToImg2Img: (url: string) => void
@@ -31,24 +29,19 @@ const PROJECT_COLORS = [
   'bg-indigo-50 text-indigo-600 border-indigo-200',
 ]
 
-// Gallery tile formats: standard + half-height variants for texture
 const GALLERY_FORMATS: [number, number][] = [
-  [1, 1],    // Square
-  [16, 9],   // Landscape
-  [9, 16],   // Portrait
-  [2, 1],    // Half-square (landscape strip)
-  [32, 9],   // Half 16:9 (wide cinematic strip)
-  [9, 8],    // Half 9:16 (squarish portrait)
+  [1, 1],
+  [16, 9],
+  [9, 16],
+  [2, 1],
+  [32, 9],
+  [9, 8],
 ]
 
 function pickFormat(): [number, number] {
   return GALLERY_FORMATS[Math.floor(Math.random() * GALLERY_FORMATS.length)]
 }
 
-// Slightly varied durations per column for organic feel
-const COL_DURATIONS = [62, 74, 54, 68, 50, 78]
-
-// Liquid column count — more columns as viewport widens
 function useNumCols() {
   const get = () => {
     if (typeof window === 'undefined') return 4
@@ -67,22 +60,13 @@ function useNumCols() {
   return n
 }
 
-interface GridItem {
-  asset?: Asset
-  showcaseUrl?: string
-  isShowcase: boolean
-  aspectW: number
-  aspectH: number
-}
-
-export default function AssetGrid({ assets, models, projects, loading, title, showcaseAssets = [], onDelete, onGenerate, onSendToImg2Img, onSendToImg2Vid, onMoveToProject }: Props) {
+export default function AssetGrid({ assets, models, projects, loading, title, onDelete, onGenerate, onSendToImg2Img, onSendToImg2Vid, onMoveToProject }: Props) {
   const [lightbox, setLightbox] = useState<Asset | null>(null)
   const [sort, setSort] = useState<SortKey>('newest')
   const [mediaFilter, setMediaFilter] = useState<MediaFilter>('all')
   const [modelFilter, setModelFilter] = useState<string>('all')
   const [projectFilter, setProjectFilter] = useState<string>('all')
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [pausedCol, setPausedCol] = useState<number | null>(null)
 
   const numCols = useNumCols()
 
@@ -124,30 +108,15 @@ export default function AssetGrid({ assets, models, projects, loading, title, sh
     return out
   }, [assets, mediaFilter, modelFilter, projectFilter, sort, modelMap])
 
-  // Assign random formats and distribute round-robin to columns, backfill with showcase
-  const columns = useMemo<GridItem[][]>(() => {
-    if (filtered.length === 0 && showcaseAssets.length === 0) return Array.from({ length: numCols }, () => [])
-
-    const userItems: GridItem[] = filtered.map((asset) => {
+  // Distribute assets round-robin to columns with random aspect ratios
+  const columns = useMemo(() => {
+    const cols: { asset: Asset; aspectW: number; aspectH: number }[][] = Array.from({ length: numCols }, () => [])
+    filtered.forEach((asset, i) => {
       const [aspectW, aspectH] = pickFormat()
-      return { asset, isShowcase: false, aspectW, aspectH }
+      cols[i % numCols].push({ asset, aspectW, aspectH })
     })
-
-    // Pad to at least numCols * 5 items so animation loops look full
-    const minTotal = Math.max(userItems.length, numCols * 5)
-    const backfillCount = Math.max(0, minTotal - userItems.length)
-    const shuffledShowcase = [...showcaseAssets].sort(() => Math.random() - 0.5)
-    const backfill: GridItem[] = Array.from({ length: backfillCount }, (_, i) => {
-      const s = shuffledShowcase[i % shuffledShowcase.length]
-      const [aspectW, aspectH] = pickFormat()
-      return { showcaseUrl: s?.url, isShowcase: true, aspectW, aspectH }
-    })
-
-    const all = [...userItems, ...backfill]
-    const cols: GridItem[][] = Array.from({ length: numCols }, () => [])
-    all.forEach((item, i) => cols[i % numCols].push(item))
     return cols
-  }, [filtered, numCols, showcaseAssets])
+  }, [filtered, numCols])
 
   const activeFilterCount = [
     mediaFilter !== 'all',
@@ -198,7 +167,8 @@ export default function AssetGrid({ assets, models, projects, loading, title, sh
             )}
             <button
               onClick={onGenerate}
-              className="px-4 py-1.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
+              className="px-4 py-1.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
+              style={{ background: 'var(--pv-accent)' }}
             >
               + Generate
             </button>
@@ -282,7 +252,8 @@ export default function AssetGrid({ assets, models, projects, loading, title, sh
               <p className="text-sm mb-6" style={{ color: 'var(--pv-text2)' }}>Generate something to see it here</p>
               <button
                 onClick={onGenerate}
-                className="px-5 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
+                className="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer"
+                style={{ background: 'var(--pv-accent)' }}
               >
                 Generate your first image →
               </button>
@@ -296,78 +267,47 @@ export default function AssetGrid({ assets, models, projects, loading, title, sh
           </div>
         )}
 
-        {/* Animated column grid */}
+        {/* Column grid — scrollable, no animation */}
         {filtered.length > 0 && (
-          <div className="flex gap-2 flex-1 min-h-0 overflow-hidden px-4 sm:px-6 pb-4 sm:pb-6 pt-3">
+          <div className="flex gap-2 flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-6 pt-3 items-start">
             {columns.map((colItems, ci) => (
-              <div
-                key={ci}
-                className="flex-1 overflow-hidden relative"
-                onMouseEnter={() => setPausedCol(ci)}
-                onMouseLeave={() => setPausedCol(null)}
-              >
-                {/* Duplicated strip for seamless loop */}
-                <div
-                  className="flex flex-col gap-2"
-                  style={{
-                    animationName: ci % 2 === 0 ? 'galleryScrollUp' : 'galleryScrollDown',
-                    animationDuration: `${COL_DURATIONS[ci % COL_DURATIONS.length]}s`,
-                    animationTimingFunction: 'linear',
-                    animationIterationCount: 'infinite',
-                    animationPlayState: pausedCol === ci ? 'paused' : 'running',
-                  }}
-                >
-                  {[...colItems, ...colItems].map((item, ii) => {
-                    const pct = (item.aspectH / item.aspectW) * 100
-                    if (item.isShowcase) {
-                      return (
-                        <div
-                          key={`sc-${ii}`}
-                          className="relative w-full flex-shrink-0 rounded-xl overflow-hidden"
-                          style={{ paddingBottom: `${pct}%`, background: 'var(--pv-surface)' }}
-                        >
-                          <img src={item.showcaseUrl} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
-                          {/* 10% tint — white in light mode, black in dark mode */}
-                          <div className="absolute inset-0 bg-white/10 dark:bg-black/10 pointer-events-none" />
-                        </div>
-                      )
-                    }
-                    const asset = item.asset!
-                    const isVideo = asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid'
-                    const modelName = asset.model_id ? (modelMap[asset.model_id]?.name ?? null) : null
-                    const projectName = asset.project_id ? (projectMap[asset.project_id] ?? null) : null
-                    const projectColor = asset.project_id ? (projectColorMap[asset.project_id] ?? PROJECT_COLORS[0]) : null
-                    return (
-                      <div
-                        key={`${asset.id}-${ii}`}
-                        onClick={() => setLightbox(asset)}
-                        className="relative w-full flex-shrink-0 rounded-xl overflow-hidden cursor-pointer group"
-                        style={{ paddingBottom: `${pct}%`, background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}
-                      >
-                        {isVideo ? (
-                          <video src={asset.url} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover" />
-                        ) : (
-                          <img src={asset.url} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+              <div key={ci} className="flex-1 flex flex-col gap-2">
+                {colItems.map(({ asset, aspectW, aspectH }) => {
+                  const pct = (aspectH / aspectW) * 100
+                  const isVideo = asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid'
+                  const modelName = asset.model_id ? (modelMap[asset.model_id]?.name ?? null) : null
+                  const projectName = asset.project_id ? (projectMap[asset.project_id] ?? null) : null
+                  const projectColor = asset.project_id ? (projectColorMap[asset.project_id] ?? PROJECT_COLORS[0]) : null
+                  return (
+                    <div
+                      key={asset.id}
+                      onClick={() => setLightbox(asset)}
+                      className="relative w-full flex-shrink-0 rounded-xl overflow-hidden cursor-pointer group"
+                      style={{ paddingBottom: `${pct}%`, background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}
+                    >
+                      {isVideo ? (
+                        <video src={asset.url} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover" />
+                      ) : (
+                        <img src={asset.url} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                      )}
+                      <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start pointer-events-none">
+                        {projectName && projectColor && (
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold border backdrop-blur-sm ${projectColor}`}>{projectName}</span>
                         )}
-                        <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start pointer-events-none">
-                          {projectName && projectColor && (
-                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold border backdrop-blur-sm ${projectColor}`}>{projectName}</span>
-                          )}
-                          {modelName && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-black/40 backdrop-blur-sm text-white/80">
-                              {modelName.replace(/ [—–-]+ img2img$/i, '')}
-                            </span>
-                          )}
-                        </div>
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end justify-end p-2 gap-1.5">
-                          <button onClick={(e) => { e.stopPropagation(); onSendToImg2Img(asset.url) }} className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm">img2img</button>
-                          <a href={asset.url} download target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[10px] font-medium transition-all backdrop-blur-sm">↓</a>
-                          <button onClick={(e) => { e.stopPropagation(); onDelete(asset.id) }} className="px-2 py-1 bg-white/20 hover:bg-red-500/60 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm">✕</button>
-                        </div>
+                        {modelName && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-black/40 backdrop-blur-sm text-white/80">
+                            {modelName.replace(/ [—–-]+ img2img$/i, '')}
+                          </span>
+                        )}
                       </div>
-                    )
-                  })}
-                </div>
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end justify-end p-2 gap-1.5">
+                        <button onClick={(e) => { e.stopPropagation(); onSendToImg2Img(asset.url) }} className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm">img2img</button>
+                        <a href={asset.url} download target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[10px] font-medium transition-all backdrop-blur-sm">↓</a>
+                        <button onClick={(e) => { e.stopPropagation(); onDelete(asset.id) }} className="px-2 py-1 bg-white/20 hover:bg-red-500/60 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm">✕</button>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             ))}
           </div>
@@ -517,7 +457,8 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
                 download
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 py-2.5 bg-[#0071e3] hover:bg-[#0077ed] rounded-xl text-sm font-medium text-white text-center transition-all"
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white text-center transition-all"
+                style={{ background: 'var(--pv-accent)' }}
               >
                 Download
               </a>
