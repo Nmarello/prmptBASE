@@ -40,7 +40,7 @@ export default function OnboardingModal({ onDone }: OnboardingModalProps) {
           },
           body: JSON.stringify({
             display_name: displayName.trim(),
-            phone: phone.trim() || null,
+            ...(phone.trim() ? { phone: phone.trim() } : {}),
           }),
         }
       )
