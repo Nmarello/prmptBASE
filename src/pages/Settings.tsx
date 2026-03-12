@@ -6,6 +6,49 @@ import { supabase } from '../lib/supabase'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
 const ANON_KEY     = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
+const TIMEZONES = [
+  'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+  'America/Anchorage', 'Pacific/Honolulu', 'America/Toronto', 'America/Vancouver',
+  'America/Sao_Paulo', 'America/Mexico_City', 'Europe/London', 'Europe/Paris',
+  'Europe/Berlin', 'Europe/Madrid', 'Europe/Rome', 'Europe/Amsterdam',
+  'Europe/Stockholm', 'Europe/Moscow', 'Asia/Dubai', 'Asia/Karachi',
+  'Asia/Kolkata', 'Asia/Bangkok', 'Asia/Singapore', 'Asia/Tokyo',
+  'Asia/Seoul', 'Asia/Shanghai', 'Australia/Sydney', 'Pacific/Auckland',
+]
+
+const TZ_LABELS: Record<string, string> = {
+  'America/New_York': 'Eastern (ET)',
+  'America/Chicago': 'Central (CT)',
+  'America/Denver': 'Mountain (MT)',
+  'America/Los_Angeles': 'Pacific (PT)',
+  'America/Anchorage': 'Alaska (AKT)',
+  'Pacific/Honolulu': 'Hawaii (HT)',
+  'America/Toronto': 'Toronto',
+  'America/Vancouver': 'Vancouver',
+  'America/Sao_Paulo': 'São Paulo',
+  'America/Mexico_City': 'Mexico City',
+  'Europe/London': 'London (GMT)',
+  'Europe/Paris': 'Paris (CET)',
+  'Europe/Berlin': 'Berlin',
+  'Europe/Madrid': 'Madrid',
+  'Europe/Rome': 'Rome',
+  'Europe/Amsterdam': 'Amsterdam',
+  'Europe/Stockholm': 'Stockholm',
+  'Europe/Moscow': 'Moscow',
+  'Asia/Dubai': 'Dubai (GST)',
+  'Asia/Karachi': 'Karachi (PKT)',
+  'Asia/Kolkata': 'India (IST)',
+  'Asia/Bangkok': 'Bangkok (ICT)',
+  'Asia/Singapore': 'Singapore (SGT)',
+  'Asia/Tokyo': 'Tokyo (JST)',
+  'Asia/Seoul': 'Seoul (KST)',
+  'Asia/Shanghai': 'Shanghai (CST)',
+  'Australia/Sydney': 'Sydney (AEDT)',
+  'Pacific/Auckland': 'Auckland (NZDT)',
+}
+
+const TZ_STORAGE_KEY = 'prmptVAULT_timezone'
+
 const TIER_COLORS: Record<string, string> = {
   newbie:  'bg-[var(--pv-surface2)] text-[var(--pv-text2)] border-[var(--pv-border)]',
   creator: 'bg-[#0050ff]/10 text-[#6699ff] border-[#0050ff]/20',
@@ -208,8 +251,8 @@ function AvatarMenu({ onUpload, onPickGallery, onRemove, hasAvatar, onClose }: {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function Settings() {
-  const { user, signOut } = useAuth()
+export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boolean; onClose?: () => void } = {}) {
+  const { user, signOut, isAdmin } = useAuth()
   const { theme, setTheme } = useTheme()
   const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -233,6 +276,16 @@ export default function Settings() {
   const [showDelete, setShowDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  // timezone
+  const [timezone, setTimezone] = useState<string>(() => {
+    try { return localStorage.getItem(TZ_STORAGE_KEY) || Intl.DateTimeFormat().resolvedOptions().timeZone } catch { return 'America/New_York' }
+  })
+
+  function handleTimezone(tz: string) {
+    setTimezone(tz)
+    try { localStorage.setItem(TZ_STORAGE_KEY, tz) } catch {}
+  }
 
   useEffect(() => {
     async function load() {
@@ -291,12 +344,11 @@ export default function Settings() {
       const token = session?.access_token
       if (!token) return
 
-      // Read as base64
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = () => {
           const result = reader.result as string
-          resolve(result.split(',')[1]) // strip data:...;base64,
+          resolve(result.split(',')[1])
         }
         reader.onerror = reject
         reader.readAsDataURL(file)
@@ -311,7 +363,7 @@ export default function Settings() {
       if (data.url) {
         setAvatarUrl(data.url)
         setStats(prev => prev ? { ...prev, profile: { ...prev.profile, avatar_url: data.url } } : null)
-        setProfileDirty(false) // avatar was already saved by edge fn
+        setProfileDirty(false)
       }
     } catch {}
     setUploadingAvatar(false)
@@ -350,6 +402,406 @@ export default function Settings() {
 
   const initial = (stats?.profile.display_name ?? user?.email ?? '?')[0].toUpperCase()
 
+  // ── Shared scrollable content ─────────────────────────────────────────────
+  const settingsBody = (
+    <div className="flex-1 overflow-y-auto">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+        {/* ── Profile card ── */}
+        <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 16, padding: '20px 22px', marginBottom: 24 }}>
+
+          {/* Avatar + name row */}
+          <div className="flex items-center gap-4 mb-4">
+
+            {/* Avatar with menu */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                onClick={() => setShowAvatarMenu(v => !v)}
+                style={{ width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', border: '2px solid var(--pv-border)', padding: 0, background: 'var(--pv-surface2)', position: 'relative', flexShrink: 0 }}
+                className="group"
+              >
+                {(uploadingAvatar) ? (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--pv-surface2)' }} className="animate-pulse">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pv-text3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+                      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                    </svg>
+                  </div>
+                ) : avatarUrl ? (
+                  <>
+                    <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s' }} className="group-hover:opacity-100">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--pv-accent)', fontSize: 22, fontWeight: 700, color: '#fff' }}>
+                      {initial}
+                    </div>
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s' }} className="group-hover:opacity-100">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                  </>
+                )}
+              </button>
+
+              {showAvatarMenu && (
+                <AvatarMenu
+                  hasAvatar={!!avatarUrl}
+                  onUpload={() => fileInputRef.current?.click()}
+                  onPickGallery={() => setShowGallery(true)}
+                  onRemove={() => { setAvatarUrl(null); setProfileDirty(true) }}
+                  onClose={() => setShowAvatarMenu(false)}
+                />
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = '' }}
+              />
+            </div>
+
+            {/* Name + email */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <input
+                type="text"
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                placeholder="Display name"
+                style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 20, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em', marginBottom: 3, padding: 0 }}
+                className="focus:underline focus:decoration-dashed focus:decoration-[var(--pv-text3)]"
+              />
+              <div style={{ fontSize: 13, color: 'var(--pv-text3)' }}>{user?.email}</div>
+            </div>
+          </div>
+
+          {/* Tier + joined */}
+          {stats && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${TIER_COLORS[stats.profile.tier] ?? ''}`}>
+                {stats.profile.tier}
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>
+                Joined {new Date(stats.profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </span>
+            </div>
+          )}
+
+          {/* Save / cancel */}
+          {profileDirty && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={saveProfile}
+                disabled={savingProfile}
+                style={{ padding: '7px 18px', borderRadius: 10, background: 'var(--pv-accent)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                className="hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {savingProfile ? 'Saving…' : 'Save changes'}
+              </button>
+              <button
+                onClick={() => { setEditName(stats?.profile.display_name ?? ''); setAvatarUrl(stats?.profile.avatar_url ?? null); setProfileDirty(false) }}
+                style={{ padding: '7px 14px', borderRadius: 10, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+          {profileSaved && (
+            <div style={{ fontSize: 12, color: '#34c759', marginTop: 2 }}>Profile saved ✓</div>
+          )}
+        </div>
+
+        {/* ── Stats ── */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20 animate-pulse" style={{ color: 'var(--pv-text3)', fontSize: 13 }}>Loading…</div>
+        ) : stats ? (
+          <>
+            <SectionLabel>Assets</SectionLabel>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6">
+              <MiniStat label="Total"   value={stats.total_assets}                        accent="var(--pv-text)" />
+              <MiniStat label="Today"   value={stats.assets_today}                        accent="var(--pv-accent)" />
+              <MiniStat label="txt2img" value={stats.gen_type_totals['txt2img'] ?? 0}     accent="var(--pv-text2)" />
+              <MiniStat label="img2img" value={stats.gen_type_totals['img2img'] ?? 0}     accent="var(--pv-text2)" />
+              <MiniStat label="txt2vid" value={stats.gen_type_totals['txt2vid'] ?? 0}     accent="#a78bfa" />
+              <MiniStat label="img2vid" value={stats.gen_type_totals['img2vid'] ?? 0}     accent="#c084fc" />
+            </div>
+
+            {stats.total_spend > 0 && (
+              <>
+                <SectionLabel>Spend</SectionLabel>
+                <div className="grid grid-cols-2 gap-2 mb-6">
+                  <MiniStat label="This month" value={`$${stats.period_spend.toFixed(4)}`} />
+                  <MiniStat label="All time"   value={`$${stats.total_spend.toFixed(4)}`} />
+                </div>
+              </>
+            )}
+
+            {stats.image_by_model?.length > 0 && (
+              <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+                <div className="flex items-center justify-between mb-3">
+                  <SectionLabel>Image Assets · by Model</SectionLabel>
+                  <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)', marginBottom: 12 }}>
+                    <span style={{ color: 'var(--pv-accent)' }}>■ txt2img</span>
+                    <span style={{ color: '#7aabff' }}>■ img2img</span>
+                  </div>
+                </div>
+                <BarChart rows={stats.image_by_model as unknown as Array<{ name: string; slug: string; [key: string]: string | number }>} colorA="var(--pv-accent)" colorB="#7aabff" keyA="txt2img" keyB="img2img" />
+              </div>
+            )}
+
+            {stats.video_by_model?.length > 0 && (
+              <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+                <div className="flex items-center justify-between mb-3">
+                  <SectionLabel>Video Assets · by Model</SectionLabel>
+                  <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)', marginBottom: 12 }}>
+                    <span style={{ color: '#a78bfa' }}>■ txt2vid</span>
+                    <span style={{ color: '#c084fc' }}>■ img2vid</span>
+                  </div>
+                </div>
+                <BarChart rows={stats.video_by_model as unknown as Array<{ name: string; slug: string; [key: string]: string | number }>} colorA="#a78bfa" colorB="#c084fc" keyA="txt2vid" keyB="img2vid" />
+              </div>
+            )}
+
+            {stats.by_model.length > 0 && (
+              <div className="mb-6">
+                <SectionLabel>By Model</SectionLabel>
+                <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden' }}>
+                  {stats.by_model.map((m, i) => (
+                    <div key={m.slug} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: i < stats.by_model.length - 1 ? '1px solid var(--pv-border)' : undefined }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>{m.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>{m.provider}</div>
+                      </div>
+                      <div className="text-right">
+                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--pv-accent)', fontFamily: "'Bricolage Grotesque', sans-serif" }}>{m.count}</div>
+                        {m.total_cost > 0 && <div style={{ fontSize: 10, color: 'var(--pv-text3)' }}>${m.total_cost.toFixed(4)}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {stats.total_assets === 0 && (
+              <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 24 }}>
+                <div style={{ fontSize: 14, color: 'var(--pv-text3)', marginBottom: 12 }}>No assets yet — start generating!</div>
+                <a href="/dashboard" style={{ fontSize: 13, color: 'var(--pv-accent)', textDecoration: 'none', fontWeight: 600 }}>Go to Dashboard →</a>
+              </div>
+            )}
+          </>
+        ) : (
+          <div style={{ fontSize: 13, color: 'var(--pv-text3)', textAlign: 'center', paddingTop: 32 }}>Failed to load stats</div>
+        )}
+
+        {/* ── Preferences ── */}
+        <div style={{ borderTop: '1px solid var(--pv-border)', paddingTop: 24, marginTop: 8 }}>
+          <SectionLabel>Preferences</SectionLabel>
+          <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
+
+            {/* Theme */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--pv-border)' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Theme</div>
+                <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Dark or light mode</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="flex items-center gap-2 cursor-pointer"
+                style={{ background: 'none', border: 'none' }}
+              >
+                <span style={{ fontSize: 12, color: 'var(--pv-text3)' }}>{theme === 'dark' ? 'Dark' : 'Light'}</span>
+                <div style={{ width: 40, height: 20, borderRadius: 99, position: 'relative', background: theme === 'dark' ? 'var(--pv-accent)' : 'var(--pv-surface2)', border: '1px solid var(--pv-border)', transition: 'background 0.2s', flexShrink: 0 }}>
+                  <div style={{ position: 'absolute', top: 2, width: 14, height: 14, background: '#fff', borderRadius: '50%', transition: 'left 0.2s', left: theme === 'dark' ? 22 : 2 }} />
+                </div>
+              </button>
+            </div>
+
+            {/* Timezone */}
+            <div style={{ padding: '14px 18px' }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)', marginBottom: 8 }}>Timezone</div>
+              <select
+                value={timezone}
+                onChange={e => handleTimezone(e.target.value)}
+                className="w-full rounded-lg px-3 py-2 text-sm cursor-pointer outline-none"
+                style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}
+              >
+                {TIMEZONES.map(tz => (
+                  <option key={tz} value={tz}>{TZ_LABELS[tz] ?? tz}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Account ── */}
+        <div style={{ paddingTop: 8, marginTop: 8 }}>
+          <SectionLabel>Account</SectionLabel>
+          <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
+
+            {/* Change password */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--pv-border)' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Password</div>
+                <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Send a reset link to your email</div>
+              </div>
+              {resetSent ? (
+                <span style={{ fontSize: 12, color: '#34c759' }}>Reset link sent ✓</span>
+              ) : (
+                <button
+                  onClick={sendPasswordReset}
+                  disabled={resetLoading}
+                  style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-text)] transition-colors disabled:opacity-50"
+                >
+                  {resetLoading ? 'Sending…' : 'Reset password'}
+                </button>
+              )}
+            </div>
+
+            {/* Pricing */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--pv-border)' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Plan &amp; billing</div>
+                <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>View plans, upgrade or manage subscription</div>
+              </div>
+              <a
+                href="/pricing"
+                style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, textDecoration: 'none', display: 'inline-block' }}
+                className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-text)] transition-colors"
+              >
+                View plans →
+              </a>
+            </div>
+
+            {/* Admin link */}
+            {isAdmin && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--pv-border)' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Admin panel</div>
+                  <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Manage users and platform settings</div>
+                </div>
+                <a
+                  href="/admin"
+                  style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, textDecoration: 'none', display: 'inline-block' }}
+                  className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-text)] transition-colors"
+                >
+                  Open →
+                </a>
+              </div>
+            )}
+
+            {/* Sign out */}
+            <div style={{ padding: '14px 18px' }}>
+              <button
+                type="button"
+                onClick={signOut}
+                style={{ fontSize: 13, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+                className="hover:text-[var(--pv-text)] transition-colors"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Data ── */}
+        <div style={{ marginTop: 8 }}>
+          <SectionLabel>Data</SectionLabel>
+          <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Export library</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text3)', letterSpacing: '0.04em' }}>COMING SOON</span>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Download all your generated assets as a ZIP</div>
+              </div>
+              <button
+                disabled
+                style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text3)', fontSize: 12, fontWeight: 600, cursor: 'not-allowed', fontFamily: 'inherit', opacity: 0.5 }}
+              >
+                Export
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Danger zone ── */}
+        <div style={{ marginTop: 8, marginBottom: 32 }}>
+          <SectionLabel>Danger zone</SectionLabel>
+          <div style={{ background: 'rgba(248,113,113,0.04)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 14, padding: '14px 18px' }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Delete account</div>
+                <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Permanently delete your account and all assets</div>
+              </div>
+              <button
+                onClick={() => setShowDelete(true)}
+                style={{ padding: '6px 14px', borderRadius: 9, background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.25)', color: '#f87171', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                className="hover:bg-red-500/20 transition-colors"
+              >
+                Delete account
+              </button>
+            </div>
+            {deleteError && <div style={{ fontSize: 12, color: '#f87171', marginTop: 8 }}>{deleteError}</div>}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
+
+  const modals = (
+    <>
+      {showGallery && user && (
+        <GalleryPicker
+          userId={user.id}
+          onPick={url => { setAvatarUrl(url); setProfileDirty(true) }}
+          onClose={() => setShowGallery(false)}
+        />
+      )}
+      {showDelete && (
+        <DeleteModal onConfirm={deleteAccount} onClose={() => { setShowDelete(false); setDeleteError(null) }} loading={deleting} />
+      )}
+    </>
+  )
+
+  // ── Drawer mode ─────────────────────────────────────────────────────────────
+  if (asDrawer) {
+    return (
+      <>
+        <div className="flex flex-col h-full" style={{ background: 'var(--pv-bg)', color: 'var(--pv-text)', fontFamily: "'DM Sans', sans-serif" }}>
+          {/* Drawer header */}
+          <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--pv-border)' }}>
+            <div style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 17, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+              Settings
+            </div>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="flex items-center justify-center rounded-[8px] transition-all cursor-pointer"
+                style={{ width: 32, height: 32, background: 'var(--pv-surface2)', color: 'var(--pv-text3)', border: 'none' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--pv-text)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--pv-text3)')}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            )}
+          </div>
+          {settingsBody}
+        </div>
+        {modals}
+      </>
+    )
+  }
+
+  // ── Full page mode ───────────────────────────────────────────────────────────
   return (
     <>
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--pv-bg)', color: 'var(--pv-text)', fontFamily: "'DM Sans', sans-serif" }}>
@@ -364,17 +816,6 @@ export default function Settings() {
           </div>
         </a>
         <div className="mt-auto flex flex-col items-center gap-1">
-          <SbBtn tip={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-            {theme === 'dark' ? (
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-              </svg>
-            ) : (
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            )}
-          </SbBtn>
           <SbBtn tip="Dashboard" onClick={() => window.location.href = '/dashboard'}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
@@ -402,299 +843,11 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-
-            {/* ── Profile card ── */}
-            <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 16, padding: '20px 22px', marginBottom: 24 }}>
-
-              {/* Avatar + name row */}
-              <div className="flex items-center gap-4 mb-4">
-
-                {/* Avatar with menu */}
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <button
-                    onClick={() => setShowAvatarMenu(v => !v)}
-                    style={{ width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', border: '2px solid var(--pv-border)', padding: 0, background: 'var(--pv-surface2)', position: 'relative', flexShrink: 0 }}
-                    className="group"
-                  >
-                    {(uploadingAvatar) ? (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--pv-surface2)' }} className="animate-pulse">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pv-text3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
-                          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-                        </svg>
-                      </div>
-                    ) : avatarUrl ? (
-                      <>
-                        <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s' }} className="group-hover:opacity-100">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--pv-accent)', fontSize: 22, fontWeight: 700, color: '#fff' }}>
-                          {initial}
-                        </div>
-                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s' }} className="group-hover:opacity-100">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        </div>
-                      </>
-                    )}
-                  </button>
-
-                  {showAvatarMenu && (
-                    <AvatarMenu
-                      hasAvatar={!!avatarUrl}
-                      onUpload={() => fileInputRef.current?.click()}
-                      onPickGallery={() => setShowGallery(true)}
-                      onRemove={() => { setAvatarUrl(null); setProfileDirty(true) }}
-                      onClose={() => setShowAvatarMenu(false)}
-                    />
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = '' }}
-                  />
-                </div>
-
-                {/* Name + email */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={e => setEditName(e.target.value)}
-                    placeholder="Display name"
-                    style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 20, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em', marginBottom: 3, padding: 0 }}
-                    className="focus:underline focus:decoration-dashed focus:decoration-[var(--pv-text3)]"
-                  />
-                  <div style={{ fontSize: 13, color: 'var(--pv-text3)' }}>{user?.email}</div>
-                </div>
-              </div>
-
-              {/* Tier + joined */}
-              {stats && (
-                <div className="flex items-center gap-2 mb-4">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${TIER_COLORS[stats.profile.tier] ?? ''}`}>
-                    {stats.profile.tier}
-                  </span>
-                  <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>
-                    Joined {new Date(stats.profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                  </span>
-                </div>
-              )}
-
-              {/* Save / cancel */}
-              {profileDirty && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={saveProfile}
-                    disabled={savingProfile}
-                    style={{ padding: '7px 18px', borderRadius: 10, background: 'var(--pv-accent)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-                    className="hover:opacity-90 transition-opacity disabled:opacity-50"
-                  >
-                    {savingProfile ? 'Saving…' : 'Save changes'}
-                  </button>
-                  <button
-                    onClick={() => { setEditName(stats?.profile.display_name ?? ''); setAvatarUrl(stats?.profile.avatar_url ?? null); setProfileDirty(false) }}
-                    style={{ padding: '7px 14px', borderRadius: 10, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-              {profileSaved && (
-                <div style={{ fontSize: 12, color: '#34c759', marginTop: 2 }}>Profile saved ✓</div>
-              )}
-            </div>
-
-            {/* ── Stats ── */}
-            {loading ? (
-              <div className="flex items-center justify-center py-20 animate-pulse" style={{ color: 'var(--pv-text3)', fontSize: 13 }}>Loading…</div>
-            ) : stats ? (
-              <>
-                <SectionLabel>Assets</SectionLabel>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6">
-                  <MiniStat label="Total"   value={stats.total_assets}                        accent="var(--pv-text)" />
-                  <MiniStat label="Today"   value={stats.assets_today}                        accent="var(--pv-accent)" />
-                  <MiniStat label="txt2img" value={stats.gen_type_totals['txt2img'] ?? 0}     accent="var(--pv-text2)" />
-                  <MiniStat label="img2img" value={stats.gen_type_totals['img2img'] ?? 0}     accent="var(--pv-text2)" />
-                  <MiniStat label="txt2vid" value={stats.gen_type_totals['txt2vid'] ?? 0}     accent="#a78bfa" />
-                  <MiniStat label="img2vid" value={stats.gen_type_totals['img2vid'] ?? 0}     accent="#c084fc" />
-                </div>
-
-                {stats.total_spend > 0 && (
-                  <>
-                    <SectionLabel>Spend</SectionLabel>
-                    <div className="grid grid-cols-2 gap-2 mb-6">
-                      <MiniStat label="This month" value={`$${stats.period_spend.toFixed(4)}`} />
-                      <MiniStat label="All time"   value={`$${stats.total_spend.toFixed(4)}`} />
-                    </div>
-                  </>
-                )}
-
-                {stats.image_by_model?.length > 0 && (
-                  <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
-                    <div className="flex items-center justify-between mb-3">
-                      <SectionLabel>Image Assets · by Model</SectionLabel>
-                      <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)', marginBottom: 12 }}>
-                        <span style={{ color: 'var(--pv-accent)' }}>■ txt2img</span>
-                        <span style={{ color: '#7aabff' }}>■ img2img</span>
-                      </div>
-                    </div>
-                    <BarChart rows={stats.image_by_model as unknown as Array<{ name: string; slug: string; [key: string]: string | number }>} colorA="var(--pv-accent)" colorB="#7aabff" keyA="txt2img" keyB="img2img" />
-                  </div>
-                )}
-
-                {stats.video_by_model?.length > 0 && (
-                  <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
-                    <div className="flex items-center justify-between mb-3">
-                      <SectionLabel>Video Assets · by Model</SectionLabel>
-                      <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)', marginBottom: 12 }}>
-                        <span style={{ color: '#a78bfa' }}>■ txt2vid</span>
-                        <span style={{ color: '#c084fc' }}>■ img2vid</span>
-                      </div>
-                    </div>
-                    <BarChart rows={stats.video_by_model as unknown as Array<{ name: string; slug: string; [key: string]: string | number }>} colorA="#a78bfa" colorB="#c084fc" keyA="txt2vid" keyB="img2vid" />
-                  </div>
-                )}
-
-                {stats.by_model.length > 0 && (
-                  <div className="mb-6">
-                    <SectionLabel>By Model</SectionLabel>
-                    <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden' }}>
-                      {stats.by_model.map((m, i) => (
-                        <div key={m.slug} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: i < stats.by_model.length - 1 ? '1px solid var(--pv-border)' : undefined }}>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>{m.name}</div>
-                            <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>{m.provider}</div>
-                          </div>
-                          <div className="text-right">
-                            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--pv-accent)', fontFamily: "'Bricolage Grotesque', sans-serif" }}>{m.count}</div>
-                            {m.total_cost > 0 && <div style={{ fontSize: 10, color: 'var(--pv-text3)' }}>${m.total_cost.toFixed(4)}</div>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {stats.total_assets === 0 && (
-                  <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 24 }}>
-                    <div style={{ fontSize: 14, color: 'var(--pv-text3)', marginBottom: 12 }}>No assets yet — start generating!</div>
-                    <a href="/dashboard" style={{ fontSize: 13, color: 'var(--pv-accent)', textDecoration: 'none', fontWeight: 600 }}>Go to Dashboard →</a>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div style={{ fontSize: 13, color: 'var(--pv-text3)', textAlign: 'center', paddingTop: 32 }}>Failed to load stats</div>
-            )}
-
-            {/* ── Account ── */}
-            <div style={{ borderTop: '1px solid var(--pv-border)', paddingTop: 24, marginTop: 8 }}>
-              <SectionLabel>Account</SectionLabel>
-              <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
-
-                {/* Change password */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--pv-border)' }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Password</div>
-                    <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Send a reset link to your email</div>
-                  </div>
-                  {resetSent ? (
-                    <span style={{ fontSize: 12, color: '#34c759' }}>Reset link sent ✓</span>
-                  ) : (
-                    <button
-                      onClick={sendPasswordReset}
-                      disabled={resetLoading}
-                      style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-                      className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-text)] transition-colors disabled:opacity-50"
-                    >
-                      {resetLoading ? 'Sending…' : 'Reset password'}
-                    </button>
-                  )}
-                </div>
-
-                {/* Pricing */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px' }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Plan &amp; billing</div>
-                    <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>View plans, upgrade or manage subscription</div>
-                  </div>
-                  <a
-                    href="/pricing"
-                    style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, textDecoration: 'none', display: 'inline-block' }}
-                    className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-text)] transition-colors"
-                  >
-                    View plans →
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Data ── */}
-            <div style={{ marginTop: 8 }}>
-              <SectionLabel>Data</SectionLabel>
-              <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Export library</span>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text3)', letterSpacing: '0.04em' }}>COMING SOON</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Download all your generated assets as a ZIP</div>
-                  </div>
-                  <button
-                    disabled
-                    style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text3)', fontSize: 12, fontWeight: 600, cursor: 'not-allowed', fontFamily: 'inherit', opacity: 0.5 }}
-                  >
-                    Export
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Danger zone ── */}
-            <div style={{ marginTop: 8, marginBottom: 32 }}>
-              <SectionLabel>Danger zone</SectionLabel>
-              <div style={{ background: 'rgba(248,113,113,0.04)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 14, padding: '14px 18px' }}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Delete account</div>
-                    <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Permanently delete your account and all assets</div>
-                  </div>
-                  <button
-                    onClick={() => setShowDelete(true)}
-                    style={{ padding: '6px 14px', borderRadius: 9, background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.25)', color: '#f87171', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-                    className="hover:bg-red-500/20 transition-colors"
-                  >
-                    Delete account
-                  </button>
-                </div>
-                {deleteError && <div style={{ fontSize: 12, color: '#f87171', marginTop: 8 }}>{deleteError}</div>}
-              </div>
-            </div>
-
-          </div>
-        </div>
+        {settingsBody}
       </div>
     </div>
 
-    {/* Modals */}
-    {showGallery && user && (
-      <GalleryPicker
-        userId={user.id}
-        onPick={url => { setAvatarUrl(url); setProfileDirty(true) }}
-        onClose={() => setShowGallery(false)}
-      />
-    )}
-    {showDelete && (
-      <DeleteModal onConfirm={deleteAccount} onClose={() => { setShowDelete(false); setDeleteError(null) }} loading={deleting} />
-    )}
+    {modals}
     </>
   )
 }

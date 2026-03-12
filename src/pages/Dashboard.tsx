@@ -51,7 +51,7 @@ import AssetGrid from '../components/dashboard/AssetGrid'
 import ProjectsView from '../components/dashboard/ProjectsView'
 import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
 import NotificationBell, { addNotification } from '../components/dashboard/NotificationBell'
-import SettingsPopover from '../components/dashboard/SettingsPopover'
+import SettingsDrawer from '../components/dashboard/SettingsDrawer'
 import GuidedTour, { markTourSeen } from '../components/dashboard/GuidedTour'
 import { useLearningMode } from '../contexts/LearningModeContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -104,7 +104,7 @@ function SbBtn({ tip, active, onClick, children }: { tip?: string; active?: bool
 }
 
 export default function Dashboard() {
-  const { user, signOut, isAdmin } = useAuth()
+  const { user } = useAuth()
   const { mode: learningMode } = useLearningMode()
   const { theme, setTheme } = useTheme()
   const userInitial = (user?.user_metadata?.full_name ?? user?.email ?? '?')[0].toUpperCase()
@@ -167,6 +167,7 @@ export default function Dashboard() {
   const [_sidebarOpen, setSidebarOpen] = useState(false)
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const [drawerModel, setDrawerModel] = useState<Model | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const MODEL_ART_MAP = {
     'dalle':              { gradient: 'linear-gradient(145deg,#c0392b,#e8570a,#f5a623)', initial: 'D3' },
@@ -660,7 +661,15 @@ export default function Dashboard() {
               }
             }}
           />
-          <SettingsPopover onSignOut={signOut} userInitial={userInitial} isAdmin={isAdmin} />
+          <button
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            data-tour="settings-btn"
+            className="flex items-center justify-center rounded-full cursor-pointer transition-opacity hover:opacity-80 flex-shrink-0"
+            style={{ width: 30, height: 30, background: 'var(--pv-accent)', color: '#fff', fontSize: 12, fontWeight: 700, userSelect: 'none', border: 'none' }}
+          >
+            {userInitial}
+          </button>
         </div>
       </aside>
 
@@ -907,6 +916,9 @@ export default function Dashboard() {
         )
       })()}
 
+      {/* ── Settings Drawer ── */}
+      {settingsOpen && <SettingsDrawer onClose={() => setSettingsOpen(false)} />}
+
       {/* ── Mobile Bottom Tab Bar ── */}
       <nav
         className="sm:hidden fixed bottom-0 left-0 right-0 z-20 flex items-center justify-around flex-shrink-0"
@@ -934,7 +946,18 @@ export default function Dashboard() {
             if (asset) { setLightboxAsset(asset) } else { setView('assets'); loadAssets() }
           }}
         />
-        <SettingsPopover onSignOut={signOut} userInitial={userInitial} inBottomNav isAdmin={isAdmin} />
+        <button
+          onClick={() => setSettingsOpen(true)}
+          aria-label="Settings"
+          data-tour="settings-btn"
+          className="flex flex-col items-center gap-0.5 py-1 px-4 cursor-pointer transition-opacity"
+          style={{ color: settingsOpen ? 'var(--pv-accent)' : 'var(--pv-text3)', background: 'none', border: 'none', fontFamily: 'inherit' }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+          <span className="text-[10px] font-medium">Account</span>
+        </button>
       </nav>
 
       {/* ── WORKSPACE OVERLAY ── */}
