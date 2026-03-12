@@ -24,7 +24,10 @@ interface UserRow {
 interface CostByModel {
   name: string
   slug: string
-  avg_cost: number
+  provider: string
+  predicted_cost: number | null
+  cost_notes: string | null
+  avg_actual_cost: number | null
   total_cost: number
   count: number
 }
@@ -306,34 +309,50 @@ export default function Admin() {
               </div>
             </div>
 
-            {/* Avg cost per model */}
+            {/* Predicted vs actual cost per model */}
             <div style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '14px', padding: '20px' }}>
-              <div style={{ fontSize: '11px', color: '#4a4540', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '14px' }}>Avg Cost per Generation · by Model</div>
-              {stats.cost_by_model.length === 0 ? (
-                <div style={{ fontSize: '13px', color: '#4a4540' }}>No cost data yet — generates after your next run</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid #302d29' }}>
-                        {['Model', 'Avg Cost', 'Runs', 'Total Spent'].map(h => (
-                          <th key={h} className="pb-2 text-left pr-6" style={{ fontSize: '10px', fontWeight: 600, color: '#4a4540', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stats.cost_by_model.map(m => (
-                        <tr key={m.slug} style={{ borderBottom: '1px solid #1a1814' }}>
-                          <td className="py-2 pr-6" style={{ color: '#f2ede4', fontSize: '13px', fontWeight: 500 }}>{m.name}</td>
-                          <td className="py-2 pr-6" style={{ color: '#7aabff', fontSize: '13px', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>${m.avg_cost.toFixed(4)}</td>
-                          <td className="py-2 pr-6" style={{ color: '#7a7268', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>{m.count.toLocaleString()}</td>
-                          <td className="py-2" style={{ color: '#7a7268', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>${m.total_cost.toFixed(4)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ fontSize: '11px', color: '#4a4540', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Cost per Generation · Predicted vs Actual · by Model</div>
+                <div style={{ display: 'flex', gap: 16, fontSize: '10px', color: '#4a4540' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: '#4a4540', display: 'inline-block' }} />Predicted</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: '#7aabff', display: 'inline-block' }} />Actual avg</span>
                 </div>
-              )}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #302d29' }}>
+                      {['Model', 'Provider', 'Predicted', 'Actual Avg', 'Δ', 'Runs', 'Total Spent', 'Unit'].map(h => (
+                        <th key={h} className="pb-2 text-left pr-4" style={{ fontSize: '10px', fontWeight: 600, color: '#4a4540', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.cost_by_model.map(m => {
+                      const delta = (m.avg_actual_cost != null && m.predicted_cost != null) ? m.avg_actual_cost - m.predicted_cost : null
+                      const deltaColor = delta == null ? '#4a4540' : delta > 0.001 ? '#f87171' : delta < -0.001 ? '#34c759' : '#7a7268'
+                      return (
+                        <tr key={m.slug} style={{ borderBottom: '1px solid #1a1814' }}>
+                          <td className="py-2 pr-4" style={{ color: '#f2ede4', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }}>{m.name}</td>
+                          <td className="py-2 pr-4" style={{ color: '#4a4540', fontSize: '11px' }}>{m.provider}</td>
+                          <td className="py-2 pr-4" style={{ color: '#7a7268', fontSize: '12px', fontVariantNumeric: 'tabular-nums' }}>
+                            {m.predicted_cost != null ? `$${m.predicted_cost.toFixed(4)}` : '—'}
+                          </td>
+                          <td className="py-2 pr-4" style={{ color: m.avg_actual_cost != null ? '#7aabff' : '#4a4540', fontSize: '12px', fontWeight: m.avg_actual_cost != null ? 600 : 400, fontVariantNumeric: 'tabular-nums' }}>
+                            {m.avg_actual_cost != null ? `$${m.avg_actual_cost.toFixed(4)}` : '—'}
+                          </td>
+                          <td className="py-2 pr-4" style={{ color: deltaColor, fontSize: '12px', fontVariantNumeric: 'tabular-nums' }}>
+                            {delta != null ? `${delta >= 0 ? '+' : ''}$${delta.toFixed(4)}` : '—'}
+                          </td>
+                          <td className="py-2 pr-4" style={{ color: '#7a7268', fontSize: '12px', fontVariantNumeric: 'tabular-nums' }}>{m.count > 0 ? m.count.toLocaleString() : '—'}</td>
+                          <td className="py-2 pr-4" style={{ color: '#7a7268', fontSize: '12px', fontVariantNumeric: 'tabular-nums' }}>{m.total_cost > 0 ? `$${m.total_cost.toFixed(4)}` : '—'}</td>
+                          <td className="py-2" style={{ color: '#4a4540', fontSize: '11px', whiteSpace: 'nowrap' }}>{m.cost_notes ?? '—'}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

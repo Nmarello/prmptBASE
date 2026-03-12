@@ -36,18 +36,33 @@ Deno.serve(async (req) => {
     const countMap: Record<string, number> = {}
     assetRows?.forEach(a => { countMap[a.user_id] = (countMap[a.user_id] ?? 0) + 1 })
 
-    // Aggregate cost per model
-    const modelMap: Record<string, { name: string; slug: string; total: number; count: number }> = {}
+    // Fetch predicted costs from models table
+    const { data: modelRows } = await adminClient
+      .from('models')
+      .select('id, name, slug, provider, predicted_cost_usd, cost_notes')
+      .order('sort_order')
+
+    // Aggregate actual cost per model
+    const modelMap: Record<string, { name: string; slug: string; provider: string; predicted: number | null; cost_notes: string | null; total: number; count: number }> = {}
+    // Seed map from models table so all models appear (even with 0 runs)
+    modelRows?.forEach((m: any) => {
+      modelMap[m.id] = { name: m.name, slug: m.slug, provider: m.provider, predicted: m.predicted_cost_usd != null ? Number(m.predicted_cost_usd) : null, cost_notes: m.cost_notes, total: 0, count: 0 }
+    })
     assetRows?.forEach((a: any) => {
-      if (a.cost_usd == null || !a.model_id) return
-      const key = a.model_id
-      if (!modelMap[key]) modelMap[key] = { name: a.models?.name ?? a.model_id, slug: a.models?.slug ?? '', total: 0, count: 0 }
-      modelMap[key].total += Number(a.cost_usd)
-      modelMap[key].count += 1
+      if (!a.model_id || !modelMap[a.model_id]) return
+      if (a.cost_usd != null) {
+        modelMap[a.model_id].total += Number(a.cost_usd)
+        modelMap[a.model_id].count += 1
+      }
     })
     const cost_by_model = Object.values(modelMap)
-      .map(m => ({ name: m.name, slug: m.slug, avg_cost: m.count > 0 ? m.total / m.count : 0, total_cost: m.total, count: m.count }))
-      .sort((a, b) => b.total_cost - a.total_cost)
+      .map(m => ({
+        name: m.name, slug: m.slug, provider: m.provider,
+        predicted_cost: m.predicted, cost_notes: m.cost_notes,
+        avg_actual_cost: m.count > 0 ? m.total / m.count : null,
+        total_cost: m.total, count: m.count,
+      }))
+      .sort((a, b) => (b.predicted_cost ?? 0) - (a.predicted_cost ?? 0))
 
     // Period spend (current calendar month)
     const startOfMonth = new Date()
