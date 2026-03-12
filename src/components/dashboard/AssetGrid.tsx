@@ -1,6 +1,22 @@
 import { useState, useMemo, useEffect } from 'react'
 import type { Asset, Model, UserProject } from '../../types'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
+import { useVideoToGif } from '../../hooks/useVideoToGif'
+
+async function downloadAsset(url: string, filename: string) {
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    const blobUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(blobUrl)
+  } catch {
+    window.open(url, '_blank')
+  }
+}
 
 interface Props {
   assets: Asset[]
@@ -70,6 +86,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
   const [projectFilter, setProjectFilter] = useState<string>('all')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const { scrollRef: gridScrollRef, distance: pullDist, refreshing: pullRefreshing } = usePullToRefresh(onRefresh ?? (() => {}))
+  const { convertToGif, converting: gifConverting, progress: gifProgress } = useVideoToGif()
 
   const numCols = useNumCols()
 
@@ -325,7 +342,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
                       </div>
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end justify-end p-2 gap-1.5">
                         <button onClick={(e) => { e.stopPropagation(); onSendToImg2Img(asset.url) }} className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm">img2img</button>
-                        <a href={asset.url} download target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[10px] font-medium transition-all backdrop-blur-sm">↓</a>
+                        <button onClick={(e) => { e.stopPropagation(); downloadAsset(asset.url, `asset-${asset.id}`) }} className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm">↓</button>
                         <button onClick={(e) => { e.stopPropagation(); onDelete(asset.id) }} className="px-2 py-1 bg-white/20 hover:bg-red-500/60 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm">✕</button>
                       </div>
                     </div>
@@ -475,16 +492,24 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
               Send to img2img →
             </button>
             <div className="flex gap-2">
-              <a
-                href={asset.url}
-                download
-                target="_blank"
-                rel="noreferrer"
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white text-center transition-all"
+              <button
+                onClick={() => downloadAsset(asset.url, `asset-${asset.id}`)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white text-center transition-all cursor-pointer"
                 style={{ background: 'var(--pv-accent)' }}
               >
                 Download
-              </a>
+              </button>
+              {(asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid') && (
+                <button
+                  onClick={() => convertToGif(asset.url, `asset-${asset.id}`)}
+                  disabled={gifConverting}
+                  className="px-3 py-2.5 border rounded-xl text-sm font-medium transition-all cursor-pointer disabled:opacity-60"
+                  style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+                  title="Convert to GIF and download"
+                >
+                  {gifConverting ? `GIF ${gifProgress}%` : 'GIF'}
+                </button>
+              )}
               <button
                 onClick={() => onDelete(asset.id)}
                 style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
