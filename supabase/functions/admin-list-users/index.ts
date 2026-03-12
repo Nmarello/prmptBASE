@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
 
     const { data: assetRows } = await adminClient
       .from('assets')
-      .select('user_id, cost_usd, model_id, models(name, slug)')
+      .select('user_id, cost_usd, model_id, gen_type, created_at, models(name, slug, provider)')
 
     const countMap: Record<string, number> = {}
     assetRows?.forEach(a => { countMap[a.user_id] = (countMap[a.user_id] ?? 0) + 1 })
@@ -75,9 +75,31 @@ Deno.serve(async (req) => {
     const period_spend = periodRows?.reduce((s: number, a: any) => s + Number(a.cost_usd), 0) ?? 0
     const total_spend = assetRows?.reduce((s: number, a: any) => s + (a.cost_usd != null ? Number(a.cost_usd) : 0), 0) ?? 0
 
+    // Gen type totals
+    const genTypeTotals: Record<string, number> = {}
+    assetRows?.forEach((a: any) => {
+      const t = a.gen_type ?? 'unknown'
+      genTypeTotals[t] = (genTypeTotals[t] ?? 0) + 1
+    })
+
+    // Video breakdown by model+type (txt2vid, img2vid)
+    const videoModelMap: Record<string, { name: string; slug: string; provider: string; txt2vid: number; img2vid: number }> = {}
+    assetRows?.forEach((a: any) => {
+      if (a.gen_type !== 'txt2vid' && a.gen_type !== 'img2vid') return
+      const key = a.model_id ?? 'unknown'
+      if (!videoModelMap[key]) videoModelMap[key] = { name: a.models?.name ?? key, slug: a.models?.slug ?? '', provider: a.models?.provider ?? '', txt2vid: 0, img2vid: 0 }
+      videoModelMap[key][a.gen_type as 'txt2vid' | 'img2vid'] += 1
+    })
+    const video_by_model = Object.values(videoModelMap)
+      .sort((a, b) => (b.txt2vid + b.img2vid) - (a.txt2vid + a.img2vid))
+
+    // Assets created today
+    const today = new Date().toISOString().slice(0, 10)
+    const assets_today = assetRows?.filter((a: any) => a.created_at?.startsWith(today)).length ?? 0
+
     const users = (profiles ?? []).map(p => ({ ...p, asset_count: countMap[p.id] ?? 0 }))
 
-    return new Response(JSON.stringify({ users, cost_by_model, period_spend, total_spend }), {
+    return new Response(JSON.stringify({ users, cost_by_model, period_spend, total_spend, gen_type_totals: genTypeTotals, video_by_model, assets_today }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {

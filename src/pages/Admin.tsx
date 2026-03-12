@@ -32,6 +32,14 @@ interface CostByModel {
   count: number
 }
 
+interface VideoByModel {
+  name: string
+  slug: string
+  provider: string
+  txt2vid: number
+  img2vid: number
+}
+
 interface Stats {
   total_users: number
   by_tier: Record<Tier, number>
@@ -41,6 +49,8 @@ interface Stats {
   period_spend: number
   total_spend: number
   cost_by_model: CostByModel[]
+  gen_type_totals: Record<string, number>
+  video_by_model: VideoByModel[]
 }
 
 export default function Admin() {
@@ -100,11 +110,13 @@ export default function Admin() {
       total_users: rows.length,
       by_tier: byTier,
       total_assets: totalAssets,
-      assets_today: 0,
+      assets_today: data.assets_today ?? 0,
       new_users_today: rows.filter(r => r.created_at.startsWith(today)).length,
       period_spend: data.period_spend ?? 0,
       total_spend: data.total_spend ?? 0,
       cost_by_model: data.cost_by_model ?? [],
+      gen_type_totals: data.gen_type_totals ?? {},
+      video_by_model: data.video_by_model ?? [],
     })
     setLoading(false)
   }
@@ -265,21 +277,96 @@ export default function Admin() {
 
         {/* Stats row */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+          <>
+          {/* Row 1 — users + asset type counts */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-3">
             {[
-              { label: 'Total Users',   value: stats.total_users,                          accent: '#f2ede4' },
-              { label: 'New Today',     value: stats.new_users_today,                      accent: '#3d7fff' },
-              { label: 'Total Assets',  value: stats.total_assets,                         accent: '#f2ede4' },
-              { label: 'Newbie',        value: stats.by_tier.newbie,                       accent: '#7a7268' },
-              { label: 'Creator',       value: stats.by_tier.creator,                      accent: '#6699ff' },
-              { label: 'Studio / Pro',  value: stats.by_tier.studio + stats.by_tier.pro,   accent: '#c084fc' },
+              { label: 'Total Users',   value: stats.total_users,                                  accent: '#f2ede4' },
+              { label: 'New Today',     value: stats.new_users_today,                              accent: '#3d7fff' },
+              { label: 'Assets Today',  value: stats.assets_today,                                 accent: '#3d7fff' },
+              { label: 'Total Assets',  value: stats.total_assets,                                 accent: '#f2ede4' },
+              { label: 'txt2img',       value: stats.gen_type_totals['txt2img'] ?? 0,              accent: '#7a7268' },
+              { label: 'img2img',       value: stats.gen_type_totals['img2img'] ?? 0,              accent: '#7a7268' },
+              { label: 'txt2vid',       value: stats.gen_type_totals['txt2vid'] ?? 0,              accent: '#a78bfa' },
+              { label: 'img2vid',       value: stats.gen_type_totals['img2vid'] ?? 0,              accent: '#c084fc' },
             ].map(s => (
-              <div key={s.label} style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '14px', padding: '16px' }}>
-                <div style={{ fontSize: '11px', color: '#4a4540', marginBottom: '6px', fontWeight: 500, letterSpacing: '0.02em' }}>{s.label}</div>
-                <div style={{ fontSize: '26px', fontWeight: 700, color: s.accent, fontFamily: "'Bricolage Grotesque', sans-serif", letterSpacing: '-0.03em' }}>{s.value}</div>
+              <div key={s.label} style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '14px', padding: '14px 16px' }}>
+                <div style={{ fontSize: '10px', color: '#4a4540', marginBottom: '5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.label}</div>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: s.accent, fontFamily: "'Bricolage Grotesque', sans-serif", letterSpacing: '-0.03em' }}>{s.value}</div>
               </div>
             ))}
           </div>
+
+          {/* Row 2 — users by tier + video by model */}
+          <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-3 mb-8">
+
+            {/* Tier breakdown */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3">
+              {([
+                { label: 'Newbie',       value: stats.by_tier.newbie,                     accent: '#7a7268' },
+                { label: 'Creator',      value: stats.by_tier.creator,                    accent: '#6699ff' },
+                { label: 'Studio',       value: stats.by_tier.studio,                     accent: '#c084fc' },
+                { label: 'Pro',          value: stats.by_tier.pro,                        accent: '#f5c842' },
+              ] as const).map(s => (
+                <div key={s.label} style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '14px', padding: '14px 16px' }}>
+                  <div style={{ fontSize: '10px', color: '#4a4540', marginBottom: '5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.label}</div>
+                  <div style={{ fontSize: '24px', fontWeight: 700, color: s.accent, fontFamily: "'Bricolage Grotesque', sans-serif", letterSpacing: '-0.03em' }}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Video by model */}
+            <div style={{ background: '#1e1c19', border: '1px solid #302d29', borderRadius: '14px', padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ fontSize: '10px', color: '#4a4540', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Video Assets · by Model &amp; Type</div>
+                <div style={{ display: 'flex', gap: 12, fontSize: '10px' }}>
+                  <span style={{ color: '#a78bfa' }}>■ txt2vid</span>
+                  <span style={{ color: '#c084fc' }}>■ img2vid</span>
+                </div>
+              </div>
+              {stats.video_by_model.length === 0 ? (
+                <div style={{ fontSize: '12px', color: '#4a4540' }}>No video assets yet</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {stats.video_by_model.map(m => {
+                    const total = m.txt2vid + m.img2vid
+                    const maxTotal = Math.max(...stats.video_by_model.map(x => x.txt2vid + x.img2vid))
+                    return (
+                      <div key={m.slug} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 120, fontSize: '12px', color: '#f2ede4', fontWeight: 500, flexShrink: 0 }}>{m.name}</div>
+                        <div style={{ flex: 1, display: 'flex', gap: 2, height: 20, alignItems: 'center' }}>
+                          {/* txt2vid bar */}
+                          {m.txt2vid > 0 && (
+                            <div style={{
+                              height: '100%', borderRadius: '4px 2px 2px 4px',
+                              background: '#a78bfa',
+                              width: `${(m.txt2vid / maxTotal) * 70}%`,
+                              minWidth: 20,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '10px', fontWeight: 700, color: 'rgba(0,0,0,0.7)',
+                            }}>{m.txt2vid}</div>
+                          )}
+                          {/* img2vid bar */}
+                          {m.img2vid > 0 && (
+                            <div style={{
+                              height: '100%', borderRadius: m.txt2vid > 0 ? '2px 4px 4px 2px' : '4px',
+                              background: '#c084fc',
+                              width: `${(m.img2vid / maxTotal) * 70}%`,
+                              minWidth: 20,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '10px', fontWeight: 700, color: 'rgba(0,0,0,0.7)',
+                            }}>{m.img2vid}</div>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#4a4540', width: 24, textAlign: 'right', flexShrink: 0 }}>{total}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+          </>
         )}
 
         {/* Cost section */}
