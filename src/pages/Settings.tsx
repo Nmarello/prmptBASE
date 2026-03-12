@@ -16,8 +16,36 @@ interface UserStats {
   assets_today: number
   gen_type_totals: Record<string, number>
   by_model: Array<{ name: string; slug: string; provider: string; count: number; total_cost: number }>
+  image_by_model: Array<{ name: string; slug: string; provider: string; txt2img: number; img2img: number }>
+  video_by_model: Array<{ name: string; slug: string; provider: string; txt2vid: number; img2vid: number }>
   total_spend: number
   period_spend: number
+}
+
+function BarChart({ rows, colorA, colorB, keyA, keyB }: {
+  rows: Array<{ name: string; slug: string; [key: string]: string | number }>
+  colorA: string; colorB: string; keyA: string; keyB: string
+}) {
+  const maxTotal = Math.max(...rows.map(r => ((r[keyA] as number) ?? 0) + ((r[keyB] as number) ?? 0)), 1)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {rows.map(m => {
+        const a = (m[keyA] as number) ?? 0
+        const b = (m[keyB] as number) ?? 0
+        const total = a + b
+        return (
+          <div key={m.slug} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 120, fontSize: 12, color: 'var(--pv-text)', fontWeight: 500, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
+            <div style={{ flex: 1, display: 'flex', gap: 2, height: 20, alignItems: 'center' }}>
+              {a > 0 && <div style={{ height: '100%', borderRadius: b > 0 ? '4px 2px 2px 4px' : '4px', background: colorA, width: `${(a / maxTotal) * 80}%`, minWidth: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'rgba(0,0,0,0.7)' }}>{a}</div>}
+              {b > 0 && <div style={{ height: '100%', borderRadius: a > 0 ? '2px 4px 4px 2px' : '4px', background: colorB, width: `${(b / maxTotal) * 80}%`, minWidth: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'rgba(0,0,0,0.7)' }}>{b}</div>}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--pv-text3)', width: 24, textAlign: 'right', flexShrink: 0 }}>{total}</div>
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 function SbBtn({ tip, onClick, children }: { tip?: string; onClick?: () => void; children: React.ReactNode }) {
@@ -169,9 +197,37 @@ export default function Settings() {
                 {/* Spend */}
                 <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)', marginBottom: 10 }}>Spend</div>
                 <div className="grid grid-cols-2 gap-2 mb-6">
-                  <MiniStat label="This month" value={`$${stats.period_spend.toFixed(4)}`} />
-                  <MiniStat label="All time"   value={`$${stats.total_spend.toFixed(4)}`} />
+                  <MiniStat label="This month" value={stats.period_spend > 0 ? `$${stats.period_spend.toFixed(4)}` : '—'} />
+                  <MiniStat label="All time"   value={stats.total_spend   > 0 ? `$${stats.total_spend.toFixed(4)}`   : '—'} />
                 </div>
+
+                {/* Image bar chart */}
+                {stats.image_by_model?.length > 0 && (
+                  <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)' }}>Image Assets · by Model</div>
+                      <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)' }}>
+                        <span style={{ color: 'var(--pv-accent)' }}>■ txt2img</span>
+                        <span style={{ color: '#7aabff' }}>■ img2img</span>
+                      </div>
+                    </div>
+                    <BarChart rows={stats.image_by_model as unknown as Array<{ name: string; slug: string; [key: string]: string | number }>} colorA="var(--pv-accent)" colorB="#7aabff" keyA="txt2img" keyB="img2img" />
+                  </div>
+                )}
+
+                {/* Video bar chart */}
+                {stats.video_by_model?.length > 0 && (
+                  <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)' }}>Video Assets · by Model</div>
+                      <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)' }}>
+                        <span style={{ color: '#a78bfa' }}>■ txt2vid</span>
+                        <span style={{ color: '#c084fc' }}>■ img2vid</span>
+                      </div>
+                    </div>
+                    <BarChart rows={stats.video_by_model as unknown as Array<{ name: string; slug: string; [key: string]: string | number }>} colorA="#a78bfa" colorB="#c084fc" keyA="txt2vid" keyB="img2vid" />
+                  </div>
+                )}
 
                 {/* By model */}
                 {stats.by_model.length > 0 && (

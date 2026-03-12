@@ -53,6 +53,26 @@ Deno.serve(async (req) => {
     })
     const by_model = Object.values(modelMap).sort((a, b) => b.count - a.count)
 
+    // Image breakdown by model (txt2img, img2img)
+    const imageModelMap: Record<string, { name: string; slug: string; provider: string; txt2img: number; img2img: number }> = {}
+    assets?.forEach((a: any) => {
+      if (a.gen_type !== 'txt2img' && a.gen_type !== 'img2img') return
+      const key = a.model_id ?? 'unknown'
+      if (!imageModelMap[key]) imageModelMap[key] = { name: a.models?.name ?? key, slug: a.models?.slug ?? key, provider: a.models?.provider ?? '', txt2img: 0, img2img: 0 }
+      imageModelMap[key][a.gen_type as 'txt2img' | 'img2img'] += 1
+    })
+    const image_by_model = Object.values(imageModelMap).sort((a, b) => (b.txt2img + b.img2img) - (a.txt2img + a.img2img))
+
+    // Video breakdown by model (txt2vid, img2vid)
+    const videoModelMap: Record<string, { name: string; slug: string; provider: string; txt2vid: number; img2vid: number }> = {}
+    assets?.forEach((a: any) => {
+      if (a.gen_type !== 'txt2vid' && a.gen_type !== 'img2vid') return
+      const key = a.model_id ?? 'unknown'
+      if (!videoModelMap[key]) videoModelMap[key] = { name: a.models?.name ?? key, slug: a.models?.slug ?? key, provider: a.models?.provider ?? '', txt2vid: 0, img2vid: 0 }
+      videoModelMap[key][a.gen_type as 'txt2vid' | 'img2vid'] += 1
+    })
+    const video_by_model = Object.values(videoModelMap).sort((a, b) => (b.txt2vid + b.img2vid) - (a.txt2vid + a.img2vid))
+
     // Spend
     const total_spend = assets?.reduce((s: number, a: any) => s + (a.cost_usd != null ? Number(a.cost_usd) : 0), 0) ?? 0
     const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0)
@@ -69,6 +89,8 @@ Deno.serve(async (req) => {
       assets_today,
       gen_type_totals,
       by_model,
+      image_by_model,
+      video_by_model,
       total_spend,
       period_spend,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
