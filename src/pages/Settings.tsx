@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
+const ANON_KEY     = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 const TIER_COLORS: Record<string, string> = {
   newbie:  'bg-[var(--pv-surface2)] text-[var(--pv-text2)] border-[var(--pv-border)]',
@@ -11,7 +14,7 @@ const TIER_COLORS: Record<string, string> = {
 }
 
 interface UserStats {
-  profile: { id: string; email: string; display_name: string | null; tier: string; created_at: string }
+  profile: { id: string; email: string; display_name: string | null; tier: string; created_at: string; avatar_url?: string | null }
   total_assets: number
   assets_today: number
   gen_type_totals: Record<string, number>
@@ -21,6 +24,8 @@ interface UserStats {
   total_spend: number
   period_spend: number
 }
+
+interface RecentAsset { id: string; result_url: string; gen_type: string }
 
 function BarChart({ rows, colorA, colorB, keyA, keyB }: {
   rows: Array<{ name: string; slug: string; [key: string]: string | number }>
@@ -72,11 +77,162 @@ function MiniStat({ label, value, accent }: { label: string; value: string | num
   )
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)', marginBottom: 10 }}>
+      {children}
+    </div>
+  )
+}
+
+// ── Gallery picker modal ──────────────────────────────────────────────────────
+function GalleryPicker({ userId, onPick, onClose }: { userId: string; onPick: (url: string) => void; onClose: () => void }) {
+  const [assets, setAssets] = useState<RecentAsset[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase
+      .from('assets')
+      .select('id, result_url, gen_type')
+      .eq('user_id', userId)
+      .in('gen_type', ['txt2img', 'img2img'])
+      .order('created_at', { ascending: false })
+      .limit(16)
+      .then(({ data }) => { setAssets((data ?? []) as RecentAsset[]); setLoading(false) })
+  }, [userId])
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={onClose}>
+      <div
+        style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 18, width: '100%', maxWidth: 480, maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--pv-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--pv-text)' }}>Pick from generations</div>
+          <button onClick={onClose} style={{ color: 'var(--pv-text3)', fontSize: 18, background: 'none', border: 'none', cursor: 'pointer' }} className="hover:text-[var(--pv-text)] transition-colors">✕</button>
+        </div>
+        <div style={{ padding: 16, overflowY: 'auto', flex: 1 }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--pv-text3)', fontSize: 13 }} className="animate-pulse">Loading…</div>
+          ) : assets.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--pv-text3)', fontSize: 13 }}>No images generated yet</div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+              {assets.map(a => (
+                <button
+                  key={a.id}
+                  onClick={() => { onPick(a.result_url); onClose() }}
+                  style={{ aspectRatio: '1', borderRadius: 10, overflow: 'hidden', border: '2px solid transparent', cursor: 'pointer', padding: 0, background: 'var(--pv-surface2)' }}
+                  className="hover:border-[var(--pv-accent)] transition-all"
+                >
+                  <img src={a.result_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Delete confirmation modal ─────────────────────────────────────────────────
+function DeleteModal({ onConfirm, onClose, loading }: { onConfirm: () => void; onClose: () => void; loading: boolean }) {
+  const [typed, setTyped] = useState('')
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={onClose}>
+      <div
+        style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 18, width: '100%', maxWidth: 400, padding: 24 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 18, fontWeight: 700, color: '#f87171', marginBottom: 8 }}>Delete account?</div>
+        <p style={{ fontSize: 13, color: 'var(--pv-text2)', marginBottom: 16, lineHeight: 1.5 }}>
+          This permanently deletes your account and all generated assets. This cannot be undone.
+        </p>
+        <p style={{ fontSize: 12, color: 'var(--pv-text3)', marginBottom: 8 }}>Type <strong style={{ color: 'var(--pv-text)' }}>DELETE</strong> to confirm:</p>
+        <input
+          type="text"
+          value={typed}
+          onChange={e => setTyped(e.target.value)}
+          placeholder="DELETE"
+          autoFocus
+          style={{ width: '100%', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', borderRadius: 10, padding: '9px 12px', fontSize: 14, color: 'var(--pv-text)', outline: 'none', fontFamily: 'inherit', marginBottom: 16, boxSizing: 'border-box' }}
+          className="focus:border-red-500 transition-colors"
+        />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '10px 0', borderRadius: 10, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={typed !== 'DELETE' || loading}
+            style={{ flex: 1, padding: '10px 0', borderRadius: 10, background: typed === 'DELETE' ? '#f87171' : 'var(--pv-surface2)', border: 'none', color: typed === 'DELETE' ? '#fff' : 'var(--pv-text3)', fontSize: 13, fontWeight: 700, cursor: typed === 'DELETE' ? 'pointer' : 'not-allowed', fontFamily: 'inherit', transition: 'all 0.2s' }}
+          >
+            {loading ? 'Deleting…' : 'Delete my account'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Avatar menu popup ─────────────────────────────────────────────────────────
+function AvatarMenu({ onUpload, onPickGallery, onRemove, hasAvatar, onClose }: {
+  onUpload: () => void; onPickGallery: () => void; onRemove: () => void; hasAvatar: boolean; onClose: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    function h(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) onClose() }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [onClose])
+
+  return (
+    <div ref={ref} style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 12, overflow: 'hidden', minWidth: 180, zIndex: 30, boxShadow: '0 8px 30px rgba(0,0,0,0.25)' }}>
+      {[
+        { label: 'Upload photo', onClick: onUpload },
+        { label: 'Pick from generations', onClick: onPickGallery },
+        ...(hasAvatar ? [{ label: 'Remove photo', onClick: onRemove, danger: true }] : []),
+      ].map(item => (
+        <button
+          key={item.label}
+          onClick={() => { item.onClick(); onClose() }}
+          style={{ display: 'block', width: '100%', padding: '10px 16px', fontSize: 13, color: (item as any).danger ? '#f87171' : 'var(--pv-text2)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+          className="hover:bg-white/5 transition-colors"
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function Settings() {
   const { user, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
   const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // profile edit state
+  const [editName, setEditName] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [profileDirty, setProfileDirty] = useState(false)
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [profileSaved, setProfileSaved] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false)
+  const [showGallery, setShowGallery] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // password reset
+  const [resetSent, setResetSent] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
+
+  // delete
+  const [showDelete, setShowDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -85,22 +241,117 @@ export default function Settings() {
       const token = session?.access_token
       if (!token) { setLoading(false); return }
       try {
-        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-stats`, {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/user-stats`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}`, 'apikey': ANON_KEY },
           body: JSON.stringify({ user_token: token }),
         })
         const data = await res.json()
-        if (!data.error) setStats(data)
+        if (!data.error) {
+          setStats(data)
+          setEditName(data.profile.display_name ?? '')
+          setAvatarUrl(data.profile.avatar_url ?? null)
+        }
       } catch {}
       setLoading(false)
     }
     load()
   }, [])
 
-  const userInitial = (stats?.profile.display_name ?? user?.email ?? '?')[0].toUpperCase()
+  // track dirty
+  useEffect(() => {
+    if (!stats) return
+    const nameDirty = editName !== (stats.profile.display_name ?? '')
+    const avatarDirty = avatarUrl !== (stats.profile.avatar_url ?? null)
+    setProfileDirty(nameDirty || avatarDirty)
+  }, [editName, avatarUrl, stats])
+
+  async function saveProfile() {
+    if (!user || !stats) return
+    setSavingProfile(true)
+    try {
+      await supabase.from('profiles').update({
+        display_name: editName.trim() || null,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString(),
+      }).eq('id', user.id)
+      setStats(prev => prev ? { ...prev, profile: { ...prev.profile, display_name: editName.trim() || null, avatar_url: avatarUrl } } : null)
+      setProfileDirty(false)
+      setProfileSaved(true)
+      setTimeout(() => setProfileSaved(false), 2000)
+    } catch {}
+    setSavingProfile(false)
+  }
+
+  async function handleFileUpload(file: File) {
+    if (!user) return
+    setUploadingAvatar(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) return
+
+      // Read as base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const result = reader.result as string
+          resolve(result.split(',')[1]) // strip data:...;base64,
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/upload-avatar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}`, 'apikey': ANON_KEY },
+        body: JSON.stringify({ user_token: token, file_base64: base64, content_type: file.type }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        setAvatarUrl(data.url)
+        setStats(prev => prev ? { ...prev, profile: { ...prev.profile, avatar_url: data.url } } : null)
+        setProfileDirty(false) // avatar was already saved by edge fn
+      }
+    } catch {}
+    setUploadingAvatar(false)
+  }
+
+  async function sendPasswordReset() {
+    if (!user?.email) return
+    setResetLoading(true)
+    await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/update-password`,
+    })
+    setResetSent(true)
+    setResetLoading(false)
+  }
+
+  async function deleteAccount() {
+    setDeleting(true); setDeleteError(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('Not authenticated')
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}`, 'apikey': ANON_KEY },
+        body: JSON.stringify({ user_token: token }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error ?? 'Failed to delete account')
+      await supabase.auth.signOut()
+      window.location.href = '/'
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete account')
+    }
+    setDeleting(false)
+  }
+
+  const initial = (stats?.profile.display_name ?? user?.email ?? '?')[0].toUpperCase()
 
   return (
+    <>
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--pv-bg)', color: 'var(--pv-text)', fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── Sidebar ── */}
@@ -154,37 +405,119 @@ export default function Settings() {
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
-            {/* Profile header */}
-            <div className="flex items-center gap-4 mb-8">
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--pv-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                {userInitial}
-              </div>
-              <div>
-                <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 22, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.04em', lineHeight: 1.1 }}>
-                  {stats?.profile.display_name ?? user?.email}
-                </h1>
-                {stats?.profile.display_name && <div style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 2 }}>{user?.email}</div>}
-                <div className="flex items-center gap-2 mt-2">
-                  {stats?.profile.tier && (
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${TIER_COLORS[stats.profile.tier] ?? ''}`}>
-                      {stats.profile.tier}
-                    </span>
+            {/* ── Profile card ── */}
+            <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 16, padding: '20px 22px', marginBottom: 24 }}>
+
+              {/* Avatar + name row */}
+              <div className="flex items-center gap-4 mb-4">
+
+                {/* Avatar with menu */}
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <button
+                    onClick={() => setShowAvatarMenu(v => !v)}
+                    style={{ width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', border: '2px solid var(--pv-border)', padding: 0, background: 'var(--pv-surface2)', position: 'relative', flexShrink: 0 }}
+                    className="group"
+                  >
+                    {(uploadingAvatar) ? (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--pv-surface2)' }} className="animate-pulse">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pv-text3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+                          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                        </svg>
+                      </div>
+                    ) : avatarUrl ? (
+                      <>
+                        <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s' }} className="group-hover:opacity-100">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--pv-accent)', fontSize: 22, fontWeight: 700, color: '#fff' }}>
+                          {initial}
+                        </div>
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s' }} className="group-hover:opacity-100">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </div>
+                      </>
+                    )}
+                  </button>
+
+                  {showAvatarMenu && (
+                    <AvatarMenu
+                      hasAvatar={!!avatarUrl}
+                      onUpload={() => fileInputRef.current?.click()}
+                      onPickGallery={() => setShowGallery(true)}
+                      onRemove={() => { setAvatarUrl(null); setProfileDirty(true) }}
+                      onClose={() => setShowAvatarMenu(false)}
+                    />
                   )}
-                  {stats?.profile.created_at && (
-                    <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>
-                      Joined {new Date(stats.profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                    </span>
-                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = '' }}
+                  />
+                </div>
+
+                {/* Name + email */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    placeholder="Display name"
+                    style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 20, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em', marginBottom: 3, padding: 0 }}
+                    className="focus:underline focus:decoration-dashed focus:decoration-[var(--pv-text3)]"
+                  />
+                  <div style={{ fontSize: 13, color: 'var(--pv-text3)' }}>{user?.email}</div>
                 </div>
               </div>
+
+              {/* Tier + joined */}
+              {stats && (
+                <div className="flex items-center gap-2 mb-4">
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${TIER_COLORS[stats.profile.tier] ?? ''}`}>
+                    {stats.profile.tier}
+                  </span>
+                  <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>
+                    Joined {new Date(stats.profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </span>
+                </div>
+              )}
+
+              {/* Save / cancel */}
+              {profileDirty && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={saveProfile}
+                    disabled={savingProfile}
+                    style={{ padding: '7px 18px', borderRadius: 10, background: 'var(--pv-accent)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                    className="hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {savingProfile ? 'Saving…' : 'Save changes'}
+                  </button>
+                  <button
+                    onClick={() => { setEditName(stats?.profile.display_name ?? ''); setAvatarUrl(stats?.profile.avatar_url ?? null); setProfileDirty(false) }}
+                    style={{ padding: '7px 14px', borderRadius: 10, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+              {profileSaved && (
+                <div style={{ fontSize: 12, color: '#34c759', marginTop: 2 }}>Profile saved ✓</div>
+              )}
             </div>
 
+            {/* ── Stats ── */}
             {loading ? (
               <div className="flex items-center justify-center py-20 animate-pulse" style={{ color: 'var(--pv-text3)', fontSize: 13 }}>Loading…</div>
             ) : stats ? (
               <>
-                {/* Assets */}
-                <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)', marginBottom: 10 }}>Assets</div>
+                <SectionLabel>Assets</SectionLabel>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6">
                   <MiniStat label="Total"   value={stats.total_assets}                        accent="var(--pv-text)" />
                   <MiniStat label="Today"   value={stats.assets_today}                        accent="var(--pv-accent)" />
@@ -194,10 +527,9 @@ export default function Settings() {
                   <MiniStat label="img2vid" value={stats.gen_type_totals['img2vid'] ?? 0}     accent="#c084fc" />
                 </div>
 
-                {/* Spend — only show when there's actual billing data */}
                 {stats.total_spend > 0 && (
                   <>
-                    <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)', marginBottom: 10 }}>Spend</div>
+                    <SectionLabel>Spend</SectionLabel>
                     <div className="grid grid-cols-2 gap-2 mb-6">
                       <MiniStat label="This month" value={`$${stats.period_spend.toFixed(4)}`} />
                       <MiniStat label="All time"   value={`$${stats.total_spend.toFixed(4)}`} />
@@ -205,12 +537,11 @@ export default function Settings() {
                   </>
                 )}
 
-                {/* Image bar chart */}
                 {stats.image_by_model?.length > 0 && (
                   <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
                     <div className="flex items-center justify-between mb-3">
-                      <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)' }}>Image Assets · by Model</div>
-                      <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)' }}>
+                      <SectionLabel>Image Assets · by Model</SectionLabel>
+                      <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)', marginBottom: 12 }}>
                         <span style={{ color: 'var(--pv-accent)' }}>■ txt2img</span>
                         <span style={{ color: '#7aabff' }}>■ img2img</span>
                       </div>
@@ -219,12 +550,11 @@ export default function Settings() {
                   </div>
                 )}
 
-                {/* Video bar chart */}
                 {stats.video_by_model?.length > 0 && (
                   <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
                     <div className="flex items-center justify-between mb-3">
-                      <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)' }}>Video Assets · by Model</div>
-                      <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)' }}>
+                      <SectionLabel>Video Assets · by Model</SectionLabel>
+                      <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)', marginBottom: 12 }}>
                         <span style={{ color: '#a78bfa' }}>■ txt2vid</span>
                         <span style={{ color: '#c084fc' }}>■ img2vid</span>
                       </div>
@@ -233,11 +563,10 @@ export default function Settings() {
                   </div>
                 )}
 
-                {/* By model */}
                 {stats.by_model.length > 0 && (
-                  <>
-                    <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)', marginBottom: 10 }}>By Model</div>
-                    <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden', marginBottom: 6 }}>
+                  <div className="mb-6">
+                    <SectionLabel>By Model</SectionLabel>
+                    <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden' }}>
                       {stats.by_model.map((m, i) => (
                         <div key={m.slug} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: i < stats.by_model.length - 1 ? '1px solid var(--pv-border)' : undefined }}>
                           <div>
@@ -251,30 +580,121 @@ export default function Settings() {
                         </div>
                       ))}
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {stats.total_assets === 0 && (
-                  <div style={{ textAlign: 'center', paddingTop: 32 }}>
+                  <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 24 }}>
                     <div style={{ fontSize: 14, color: 'var(--pv-text3)', marginBottom: 12 }}>No assets yet — start generating!</div>
                     <a href="/dashboard" style={{ fontSize: 13, color: 'var(--pv-accent)', textDecoration: 'none', fontWeight: 600 }}>Go to Dashboard →</a>
                   </div>
                 )}
-
-                {/* Upgrade nudge */}
-                <div className="mt-6" style={{ borderTop: '1px solid var(--pv-border)', paddingTop: 20 }}>
-                  <a href="/pricing" style={{ fontSize: 13, color: 'var(--pv-text3)', textDecoration: 'none' }} className="hover:text-[var(--pv-text)] transition-colors">
-                    View plans & pricing →
-                  </a>
-                </div>
               </>
             ) : (
               <div style={{ fontSize: 13, color: 'var(--pv-text3)', textAlign: 'center', paddingTop: 32 }}>Failed to load stats</div>
             )}
 
+            {/* ── Account ── */}
+            <div style={{ borderTop: '1px solid var(--pv-border)', paddingTop: 24, marginTop: 8 }}>
+              <SectionLabel>Account</SectionLabel>
+              <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
+
+                {/* Change password */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--pv-border)' }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Password</div>
+                    <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Send a reset link to your email</div>
+                  </div>
+                  {resetSent ? (
+                    <span style={{ fontSize: 12, color: '#34c759' }}>Reset link sent ✓</span>
+                  ) : (
+                    <button
+                      onClick={sendPasswordReset}
+                      disabled={resetLoading}
+                      style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                      className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-text)] transition-colors disabled:opacity-50"
+                    >
+                      {resetLoading ? 'Sending…' : 'Reset password'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Pricing */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px' }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Plan &amp; billing</div>
+                    <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>View plans, upgrade or manage subscription</div>
+                  </div>
+                  <a
+                    href="/pricing"
+                    style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, textDecoration: 'none', display: 'inline-block' }}
+                    className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-text)] transition-colors"
+                  >
+                    View plans →
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Data ── */}
+            <div style={{ marginTop: 8 }}>
+              <SectionLabel>Data</SectionLabel>
+              <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Export library</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text3)', letterSpacing: '0.04em' }}>COMING SOON</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Download all your generated assets as a ZIP</div>
+                  </div>
+                  <button
+                    disabled
+                    style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text3)', fontSize: 12, fontWeight: 600, cursor: 'not-allowed', fontFamily: 'inherit', opacity: 0.5 }}
+                  >
+                    Export
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Danger zone ── */}
+            <div style={{ marginTop: 8, marginBottom: 32 }}>
+              <SectionLabel>Danger zone</SectionLabel>
+              <div style={{ background: 'rgba(248,113,113,0.04)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 14, padding: '14px 18px' }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Delete account</div>
+                    <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Permanently delete your account and all assets</div>
+                  </div>
+                  <button
+                    onClick={() => setShowDelete(true)}
+                    style={{ padding: '6px 14px', borderRadius: 9, background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.25)', color: '#f87171', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                    className="hover:bg-red-500/20 transition-colors"
+                  >
+                    Delete account
+                  </button>
+                </div>
+                {deleteError && <div style={{ fontSize: 12, color: '#f87171', marginTop: 8 }}>{deleteError}</div>}
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
     </div>
+
+    {/* Modals */}
+    {showGallery && user && (
+      <GalleryPicker
+        userId={user.id}
+        onPick={url => { setAvatarUrl(url); setProfileDirty(true) }}
+        onClose={() => setShowGallery(false)}
+      />
+    )}
+    {showDelete && (
+      <DeleteModal onConfirm={deleteAccount} onClose={() => { setShowDelete(false); setDeleteError(null) }} loading={deleting} />
+    )}
+    </>
   )
 }

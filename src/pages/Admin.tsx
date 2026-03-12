@@ -194,6 +194,13 @@ export default function Admin() {
   const [detailUser, setDetailUser] = useState<UserRow | null>(null)
   const [userDetail, setUserDetail] = useState<UserDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [detailEditName, setDetailEditName] = useState('')
+  const [detailSaving, setDetailSaving] = useState(false)
+  const [detailSaved, setDetailSaved] = useState(false)
+  const [showDeleteUser, setShowDeleteUser] = useState(false)
+  const [deletingUser, setDeletingUser] = useState(false)
+  const [deleteUserError, setDeleteUserError] = useState<string | null>(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
 
   useEffect(() => { loadAll() }, [])
 
@@ -275,6 +282,11 @@ export default function Admin() {
     setDetailUser(u)
     setUserDetail(null)
     setDetailLoading(true)
+    setDetailEditName(u.display_name ?? '')
+    setDetailSaved(false)
+    setShowDeleteUser(false)
+    setDeleteUserError(null)
+    setDeleteConfirmText('')
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
@@ -311,6 +323,46 @@ export default function Admin() {
       setEditUser(null)
     } catch (err) { setEditError(err instanceof Error ? err.message : 'Save failed') }
     finally { setSaving(false) }
+  }
+
+  async function saveDetailName() {
+    if (!detailUser) return
+    setDetailSaving(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body: JSON.stringify({ target_user_id: detailUser.id, display_name: detailEditName.trim() || null }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`)
+      setUsers(prev => prev.map(u => u.id === detailUser.id ? { ...u, display_name: detailEditName.trim() || null } : u))
+      setDetailUser(prev => prev ? { ...prev, display_name: detailEditName.trim() || null } : null)
+      setDetailSaved(true)
+      setTimeout(() => setDetailSaved(false), 2000)
+    } catch {}
+    setDetailSaving(false)
+  }
+
+  async function deleteDetailUser() {
+    if (!detailUser) return
+    setDeletingUser(true); setDeleteUserError(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-delete-user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body: JSON.stringify({ user_token: token, target_user_id: detailUser.id }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error ?? 'Failed to delete user')
+      setUsers(prev => prev.filter(u => u.id !== detailUser.id))
+      setDetailUser(null)
+      loadAll()
+    } catch (err) { setDeleteUserError(err instanceof Error ? err.message : 'Delete failed') }
+    setDeletingUser(false)
   }
 
   const filtered = users.filter(u => {
@@ -642,23 +694,39 @@ export default function Admin() {
         >
           {/* Header */}
           <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--pv-border)', flexShrink: 0 }}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex items-center gap-3" style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--pv-text2)', flexShrink: 0 }}>
                   {(detailUser.display_name ?? detailUser.email)[0].toUpperCase()}
                 </div>
-                <div>
-                  <div style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--pv-text)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-                    {detailUser.display_name ?? '—'}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--pv-text3)', marginTop: 2 }}>{detailUser.email}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <input
+                    type="text"
+                    value={detailEditName}
+                    onChange={e => setDetailEditName(e.target.value)}
+                    placeholder="Display name"
+                    style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--pv-text)', letterSpacing: '-0.02em', padding: 0, marginBottom: 2 }}
+                    className="focus:underline focus:decoration-dashed focus:decoration-[var(--pv-text3)]"
+                  />
+                  <div style={{ fontSize: 12, color: 'var(--pv-text3)' }}>{detailUser.email}</div>
                 </div>
               </div>
               <button onClick={() => setDetailUser(null)} style={{ color: 'var(--pv-text3)', fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1, flexShrink: 0 }} className="hover:text-[var(--pv-text)] transition-colors">✕</button>
             </div>
-            <div className="flex items-center gap-2 mt-3">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${TIER_COLORS[detailUser.tier]}`}>{detailUser.tier}</span>
               <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Joined {new Date(detailUser.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              {detailEditName !== (detailUser.display_name ?? '') && (
+                <button
+                  onClick={saveDetailName}
+                  disabled={detailSaving}
+                  style={{ marginLeft: 'auto', padding: '4px 12px', borderRadius: 8, background: 'var(--pv-accent)', border: 'none', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  className="hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {detailSaving ? 'Saving…' : 'Save name'}
+                </button>
+              )}
+              {detailSaved && <span style={{ fontSize: 12, color: '#34c759', marginLeft: 'auto' }}>Saved ✓</span>}
             </div>
           </div>
 
@@ -728,6 +796,42 @@ export default function Admin() {
             ) : (
               <div style={{ fontSize: 13, color: 'var(--pv-text3)', textAlign: 'center', paddingTop: 24 }}>Failed to load</div>
             )}
+
+            {/* ── Danger zone ── */}
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--pv-border)' }}>
+              {!showDeleteUser ? (
+                <button
+                  onClick={() => { setShowDeleteUser(true); setDeleteConfirmText(''); setDeleteUserError(null) }}
+                  style={{ width: '100%', padding: '10px 0', borderRadius: 10, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', color: '#f87171', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  className="hover:bg-red-500/15 transition-colors"
+                >
+                  Delete user account
+                </button>
+              ) : (
+                <div style={{ background: 'rgba(248,113,113,0.04)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontSize: 13, color: '#f87171', fontWeight: 600, marginBottom: 6 }}>Delete {detailUser.display_name ?? detailUser.email}?</div>
+                  <div style={{ fontSize: 12, color: 'var(--pv-text3)', marginBottom: 10 }}>This permanently deletes their account and all assets. Type <strong style={{ color: 'var(--pv-text)' }}>DELETE</strong> to confirm.</div>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={e => setDeleteConfirmText(e.target.value)}
+                    placeholder="DELETE"
+                    style={{ width: '100%', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: 'var(--pv-text)', outline: 'none', fontFamily: 'inherit', marginBottom: 10, boxSizing: 'border-box' }}
+                  />
+                  {deleteUserError && <div style={{ fontSize: 12, color: '#f87171', marginBottom: 8 }}>{deleteUserError}</div>}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => setShowDeleteUser(false)} style={{ flex: 1, padding: '8px 0', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+                    <button
+                      onClick={deleteDetailUser}
+                      disabled={deleteConfirmText !== 'DELETE' || deletingUser}
+                      style={{ flex: 1, padding: '8px 0', borderRadius: 9, background: deleteConfirmText === 'DELETE' ? '#f87171' : 'var(--pv-surface2)', border: 'none', color: deleteConfirmText === 'DELETE' ? '#fff' : 'var(--pv-text3)', fontSize: 12, fontWeight: 700, cursor: deleteConfirmText === 'DELETE' ? 'pointer' : 'not-allowed', fontFamily: 'inherit', transition: 'all 0.2s' }}
+                    >
+                      {deletingUser ? 'Deleting…' : 'Delete user'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
