@@ -819,7 +819,6 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
           <div className="flex items-center gap-1.5">
             <label className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>
               {field.label}
-              {field.required && <span className="text-sky-400 ml-1">*</span>}
             </label>
             {/* Tooltip ℹ️ icon — only in tooltips mode */}
             {showTooltips && tooltipText && (
