@@ -136,6 +136,7 @@ export default function Dashboard() {
   const [addingProject, setAddingProject] = useState(false)
   const [assets, setAssets] = useState<Asset[]>([])
   const [assetsLoading, setAssetsLoading] = useState(false)
+  const [showcase, setShowcase] = useState<{ url: string; gen_type: string | null }[]>([])
 
   const [img2imgPickerUrl, setImg2imgPickerUrl] = useState<string | null>(null)
   const [img2imgInitialValues, setImg2imgInitialValues] = useState<Record<string, unknown> | undefined>(undefined)
@@ -187,17 +188,27 @@ export default function Dashboard() {
     'sora2':              'OpenAI',
   }
 
-  // Latest image render per model slug (for model card art)
+  // Latest render per model slug (includes videos; showcase fallback for unused models)
   const latestRenderBySlug = useMemo(() => {
     const slugById = Object.fromEntries(models.map(m => [m.id, m.slug]))
     const map: Record<string, string> = {}
     for (const asset of assets) {
-      if (!asset.model_id || asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid') continue
+      if (!asset.model_id) continue
       const slug = slugById[asset.model_id]
       if (slug && !map[slug]) map[slug] = asset.url
     }
+    // Backfill models with no user renders using showcase pool
+    if (showcase.length > 0) {
+      let si = 0
+      for (const model of models) {
+        if (!map[model.slug]) {
+          map[model.slug] = showcase[si % showcase.length].url
+          si++
+        }
+      }
+    }
     return map
-  }, [assets, models])
+  }, [assets, models, showcase])
 
   const loadAssets = useCallback(async () => {
     if (!user) return
@@ -217,6 +228,8 @@ export default function Dashboard() {
       .then(({ data }) => { if (data) setUserTier(data.tier) })
     supabase.from('models').select('*').eq('is_active', true).order('sort_order')
       .then(({ data }) => { if (data) setModels(data as Model[]) })
+    supabase.from('showcase_assets').select('url,gen_type').order('created_at', { ascending: false }).limit(80)
+      .then(({ data }) => { if (data) setShowcase(data as { url: string; gen_type: string | null }[]) })
     supabase.from('user_projects').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
       .then(({ data }) => { if (data) setProjects(data as UserProject[]) })
     loadAssets()
@@ -812,6 +825,7 @@ export default function Dashboard() {
             models={models}
             projects={projects}
             loading={assetsLoading}
+            showcaseAssets={showcase}
             onDelete={deleteAsset}
             onGenerate={() => setView('models')}
             onSendToImg2Img={sendToImg2Img}
