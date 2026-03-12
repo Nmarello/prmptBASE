@@ -251,14 +251,6 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
           <div className="absolute z-20" style={{ top:10, left:10, width:10, height:10, borderRadius:'50%', background:'#ff3b30', animation:'ledPulse 1.4s ease-in-out infinite' }} />
         )}
 
-        {/* Provider logo — bottom left */}
-        <div
-          className="absolute bottom-0 left-0 z-10 flex items-center"
-          style={{ padding: '6px 10px', background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)', width: '100%' }}
-        >
-          <ProviderLogo slug={model.slug} />
-        </div>
-
         {/* Type badge — top right */}
         {!comingSoon && (
           <div className="absolute top-2.5 right-2.5 text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded z-10" style={{ background:'rgba(0,0,0,0.3)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.18)', color:'rgba(255,255,255,0.92)' }}>
