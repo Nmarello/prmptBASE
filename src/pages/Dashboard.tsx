@@ -721,7 +721,7 @@ export default function Dashboard() {
             </div>
 
             {/* Scrollable model rows */}
-            <div ref={generateScrollRef} className="flex-1 overflow-y-auto px-4 sm:px-7 pb-24 sm:pb-10 space-y-8">
+            <div ref={generateScrollRef} className="flex-1 overflow-y-auto px-4 sm:px-7 pb-28 sm:pb-10 space-y-8">
               <PullIndicator distance={generatePullDist} refreshing={generateRefreshing} />
               {/* Image Models row */}
               {(() => {
@@ -885,8 +885,8 @@ export default function Dashboard() {
 
       {/* ── Mobile Bottom Tab Bar ── */}
       <nav
-        className="sm:hidden fixed bottom-0 left-0 right-0 z-20 flex items-center justify-around h-14 flex-shrink-0"
-        style={{ background: 'var(--pv-surface)', borderTop: '1px solid var(--pv-border)' }}
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-20 flex items-center justify-around flex-shrink-0"
+        style={{ background: 'var(--pv-surface)', borderTop: '1px solid var(--pv-border)', height: 'calc(56px + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {([
           { id: 'models', tip: 'Generate', icon: <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/> },
