@@ -191,18 +191,23 @@ export default function Dashboard() {
   // Latest render per model slug (includes videos; showcase fallback for unused models)
   const latestRenderBySlug = useMemo(() => {
     const slugById = Object.fromEntries(models.map(m => [m.id, m.slug]))
-    const map: Record<string, string> = {}
+    const map: Record<string, { url: string; isVideo: boolean }> = {}
     for (const asset of assets) {
       if (!asset.model_id) continue
       const slug = slugById[asset.model_id]
-      if (slug && !map[slug]) map[slug] = asset.url
+      if (slug && !map[slug]) {
+        const isVideo = asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid'
+        map[slug] = { url: asset.url, isVideo }
+      }
     }
-    // Backfill models with no user renders using showcase pool
+    // Backfill models with no user renders using showcase pool (images only)
     if (showcase.length > 0) {
+      const imgShowcase = showcase.filter(s => !s.url.match(/\.mp4(\?|$)/i))
+      const pool = imgShowcase.length > 0 ? imgShowcase : showcase
       let si = 0
       for (const model of models) {
         if (!map[model.slug]) {
-          map[model.slug] = showcase[si % showcase.length].url
+          map[model.slug] = { url: pool[si % pool.length].url, isVideo: false }
           si++
         }
       }
@@ -737,7 +742,8 @@ export default function Dashboard() {
                           onClick={() => openWorkspace(m as Model)}
                           comingSoon={m._comingSoon || m.comingSoon}
                           rendering={renderingModelSlug === m.slug}
-                          latestRenderUrl={latestRenderBySlug[m.slug]}
+                          latestRenderUrl={latestRenderBySlug[m.slug]?.url}
+                          latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
                         />
                       ))}
                     </div>
@@ -774,7 +780,8 @@ export default function Dashboard() {
                           onClick={() => openWorkspace(m as Model)}
                           comingSoon={m._comingSoon || m.comingSoon}
                           rendering={renderingModelSlug === m.slug}
-                          latestRenderUrl={latestRenderBySlug[m.slug]}
+                          latestRenderUrl={latestRenderBySlug[m.slug]?.url}
+                          latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
                         />
                       ))}
                     </div>
@@ -807,7 +814,8 @@ export default function Dashboard() {
                           selected={selectedModel?.id === m.id}
                           onClick={() => openWorkspace(m)}
                           rendering={renderingModelSlug === m.slug}
-                          latestRenderUrl={latestRenderBySlug[m.slug]}
+                          latestRenderUrl={latestRenderBySlug[m.slug]?.url}
+                          latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
                         />
                       ))}
                     </div>

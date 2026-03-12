@@ -9,6 +9,7 @@ interface Props {
   comingSoon?: boolean
   rendering?: boolean
   latestRenderUrl?: string
+  latestRenderIsVideo?: boolean
 }
 
 const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
@@ -63,7 +64,7 @@ const slugBrandLabels: Record<string, string> = {
 
 // Provider logo mark — SVG or styled wordmark
 
-export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering, latestRenderUrl }: Props) {
+export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering, latestRenderUrl, latestRenderIsVideo }: Props) {
   const accessible = tierCanAccess(userTier, model.min_tier)
   const comingSoon = comingSoonProp || false
   const art = MODEL_ART[model.slug] ?? DEFAULT_ART
@@ -90,11 +91,22 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
         {/* Background */}
         {hasUserImage ? (
           <>
-            <img
-              src={latestRenderUrl}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+            {latestRenderIsVideo ? (
+              <video
+                src={latestRenderUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            ) : (
+              <img
+                src={latestRenderUrl}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            )}
             <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg,rgba(0,0,0,0.22) 0%,rgba(0,0,0,0.55) 100%)' }} />
           </>
         ) : (
