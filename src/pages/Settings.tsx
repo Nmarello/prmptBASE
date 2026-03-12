@@ -25,7 +25,7 @@ interface UserStats {
   period_spend: number
 }
 
-interface RecentAsset { id: string; result_url: string; gen_type: string }
+interface RecentAsset { id: string; url: string; gen_type: string }
 
 function BarChart({ rows, colorA, colorB, keyA, keyB }: {
   rows: Array<{ name: string; slug: string; [key: string]: string | number }>
@@ -93,7 +93,7 @@ function GalleryPicker({ userId, onPick, onClose }: { userId: string; onPick: (u
   useEffect(() => {
     supabase
       .from('assets')
-      .select('id, result_url, gen_type')
+      .select('id, url, gen_type')
       .eq('user_id', userId)
       .in('gen_type', ['txt2img', 'img2img'])
       .order('created_at', { ascending: false })
@@ -121,11 +121,11 @@ function GalleryPicker({ userId, onPick, onClose }: { userId: string; onPick: (u
               {assets.map(a => (
                 <button
                   key={a.id}
-                  onClick={() => { onPick(a.result_url); onClose() }}
+                  onClick={() => { onPick(a.url); onClose() }}
                   style={{ aspectRatio: '1', borderRadius: 10, overflow: 'hidden', border: '2px solid transparent', cursor: 'pointer', padding: 0, background: 'var(--pv-surface2)' }}
                   className="hover:border-[var(--pv-accent)] transition-all"
                 >
-                  <img src={a.result_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={a.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </button>
               ))}
             </div>
