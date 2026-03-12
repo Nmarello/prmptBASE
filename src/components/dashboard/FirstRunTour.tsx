@@ -33,7 +33,7 @@ const STEPS: Step[] = [
     target: null,
     position: 'center',
     title: 'Welcome to prmptVAULT',
-    body: 'Most AI tools give you a blank box and hope for the best.\n\nprmptVAULT gives you structure — purpose-built fields that shape every part of your image. Let\'s make your first one in about 60 seconds.',
+    body: "Most AI tools hand you a blank text box and wish you luck. prmptVAULT is different.\n\nWe give you structure — purpose-built fields, tuned for each model — so every part of your creation is intentional, not accidental. Your first one takes about 60 seconds.\n\nAnd everything you make lives here, ready to remix, refine, or run through a different model until it's exactly right.",
     hasButton: true,
     buttonLabel: "Let's go →",
   },
@@ -122,6 +122,7 @@ const STEPS: Step[] = [
 
 const PAD = 12
 const CARD_W = 300
+const CARD_W_CENTER = 420
 const GAP = 16
 
 interface Rect { top: number; left: number; width: number; height: number }
@@ -173,7 +174,7 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone }: Props) {
   function cardStyle(): React.CSSProperties {
     const base: React.CSSProperties = { position: 'fixed', zIndex: 9999, width: CARD_W }
     if (isCentered || !rect) {
-      return { ...base, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
+      return { ...base, width: CARD_W_CENTER, maxWidth: 'calc(100vw - 32px)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
     }
     const centerY = Math.min(Math.max(rect.top + rect.height / 2, 120), window.innerHeight - 260)
     const pos = current.position
