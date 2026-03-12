@@ -49,6 +49,16 @@ interface ImageByModel {
   img2img: number
 }
 
+interface UserDetail {
+  profile: { id: string; email: string; display_name: string | null; tier: Tier; created_at: string; is_admin: boolean }
+  total_assets: number
+  assets_today: number
+  gen_type_totals: Record<string, number>
+  by_model: Array<{ name: string; slug: string; provider: string; count: number; total_cost: number }>
+  total_spend: number
+  period_spend: number
+}
+
 interface Stats {
   total_users: number
   by_tier: Record<Tier, number>
@@ -181,6 +191,9 @@ export default function Admin() {
   const [editPassword, setEditPassword] = useState('')
   const [saving, setSaving] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
+  const [detailUser, setDetailUser] = useState<UserRow | null>(null)
+  const [userDetail, setUserDetail] = useState<UserDetail | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
 
   useEffect(() => { loadAll() }, [])
 
@@ -257,6 +270,25 @@ export default function Admin() {
   }
 
   function openEdit(u: UserRow) { setEditUser(u); setEditEmail(u.email); setEditName(u.display_name ?? ''); setEditPassword(''); setEditError(null) }
+
+  async function openUserDetail(u: UserRow) {
+    setDetailUser(u)
+    setUserDetail(null)
+    setDetailLoading(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-user-detail`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body: JSON.stringify({ user_token: token, target_user_id: u.id }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setUserDetail(data)
+    } catch (err) { console.error(err) }
+    finally { setDetailLoading(false) }
+  }
 
   async function saveEdit() {
     if (!editUser) return
@@ -539,7 +571,7 @@ export default function Admin() {
                     </thead>
                     <tbody>
                       {filtered.map(u => (
-                        <tr key={u.id} style={{ borderBottom: '1px solid var(--pv-border)' }} className={`transition-colors hover:bg-white/[0.02] ${u.email === user?.email ? 'bg-amber-500/[0.03]' : ''}`}>
+                        <tr key={u.id} onClick={() => openUserDetail(u)} style={{ borderBottom: '1px solid var(--pv-border)', cursor: 'pointer' }} className={`transition-colors hover:bg-white/[0.03] ${u.email === user?.email ? 'bg-amber-500/[0.03]' : ''}`}>
                           <td className="px-5 py-3.5">
                             <div className="flex items-center gap-2.5">
                               <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--pv-text2)', flexShrink: 0 }}>
@@ -561,7 +593,7 @@ export default function Admin() {
                           <td className="px-5 py-3.5" style={{ color: 'var(--pv-text3)', fontSize: 12 }}>
                             {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
                             <div className="flex gap-1">
                               {TIERS.map(t => (
                                 <button
@@ -577,7 +609,7 @@ export default function Admin() {
                               ))}
                             </div>
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => openEdit(u)}
                               style={{ color: 'var(--pv-text3)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
@@ -596,6 +628,110 @@ export default function Admin() {
         </div>
       </div>
     </div>
+
+    {/* ── User Detail Panel ── */}
+    {detailUser && (
+      <div className="fixed inset-0 z-40 flex" onClick={() => setDetailUser(null)}>
+        {/* backdrop */}
+        <div className="flex-1 bg-black/40 backdrop-blur-sm" />
+        {/* panel */}
+        <div
+          className="flex flex-col overflow-y-auto"
+          style={{ width: '100%', maxWidth: 480, background: 'var(--pv-surface)', borderLeft: '1px solid var(--pv-border)', height: '100%' }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--pv-border)', flexShrink: 0 }}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--pv-text2)', flexShrink: 0 }}>
+                  {(detailUser.display_name ?? detailUser.email)[0].toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--pv-text)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                    {detailUser.display_name ?? '—'}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--pv-text3)', marginTop: 2 }}>{detailUser.email}</div>
+                </div>
+              </div>
+              <button onClick={() => setDetailUser(null)} style={{ color: 'var(--pv-text3)', fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1, flexShrink: 0 }} className="hover:text-[var(--pv-text)] transition-colors">✕</button>
+            </div>
+            <div className="flex items-center gap-2 mt-3">
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${TIER_COLORS[detailUser.tier]}`}>{detailUser.tier}</span>
+              <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Joined {new Date(detailUser.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div style={{ padding: 24, flex: 1 }}>
+            {detailLoading ? (
+              <div className="flex items-center justify-center py-16 animate-pulse" style={{ color: 'var(--pv-text3)', fontSize: 13 }}>Loading…</div>
+            ) : userDetail ? (
+              <>
+                {/* Asset count stats */}
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)', marginBottom: 10 }}>Assets</div>
+                <div className="grid grid-cols-3 gap-2 mb-5">
+                  {[
+                    { label: 'Total',    value: userDetail.total_assets,                          accent: 'var(--pv-text)' },
+                    { label: 'Today',    value: userDetail.assets_today,                          accent: 'var(--pv-accent)' },
+                    { label: 'txt2img',  value: userDetail.gen_type_totals['txt2img']  ?? 0,      accent: 'var(--pv-text2)' },
+                    { label: 'img2img',  value: userDetail.gen_type_totals['img2img']  ?? 0,      accent: 'var(--pv-text2)' },
+                    { label: 'txt2vid',  value: userDetail.gen_type_totals['txt2vid']  ?? 0,      accent: '#a78bfa' },
+                    { label: 'img2vid',  value: userDetail.gen_type_totals['img2vid']  ?? 0,      accent: '#c084fc' },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: 'var(--pv-bg)', border: '1px solid var(--pv-border)', borderRadius: 10, padding: '10px 12px' }}>
+                      <div style={{ fontSize: 9, color: 'var(--pv-text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>{s.label}</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: s.accent, fontFamily: "'Bricolage Grotesque', sans-serif", letterSpacing: '-0.03em' }}>{s.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Spend */}
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)', marginBottom: 10 }}>Spend</div>
+                <div className="grid grid-cols-2 gap-2 mb-5">
+                  {[
+                    { label: 'This month', value: `$${userDetail.period_spend.toFixed(4)}` },
+                    { label: 'All time',   value: `$${userDetail.total_spend.toFixed(4)}` },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: 'var(--pv-bg)', border: '1px solid var(--pv-border)', borderRadius: 10, padding: '10px 12px' }}>
+                      <div style={{ fontSize: 9, color: 'var(--pv-text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>{s.label}</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--pv-text)', fontFamily: "'Bricolage Grotesque', sans-serif", letterSpacing: '-0.03em' }}>{s.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* By model */}
+                {userDetail.by_model.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pv-text3)', marginBottom: 10 }}>By Model</div>
+                    <div style={{ background: 'var(--pv-bg)', border: '1px solid var(--pv-border)', borderRadius: 10, overflow: 'hidden' }}>
+                      {userDetail.by_model.map((m, i) => (
+                        <div key={m.slug} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 14px', borderBottom: i < userDetail.by_model.length - 1 ? '1px solid var(--pv-border)' : undefined }}>
+                          <div>
+                            <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--pv-text)' }}>{m.name}</div>
+                            <div style={{ fontSize: 10, color: 'var(--pv-text3)' }}>{m.provider}</div>
+                          </div>
+                          <div className="text-right">
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--pv-accent)' }}>{m.count}</div>
+                            {m.total_cost > 0 && <div style={{ fontSize: 10, color: 'var(--pv-text3)' }}>${m.total_cost.toFixed(4)}</div>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {userDetail.total_assets === 0 && (
+                  <div style={{ fontSize: 13, color: 'var(--pv-text3)', textAlign: 'center', paddingTop: 24 }}>No assets yet</div>
+                )}
+              </>
+            ) : (
+              <div style={{ fontSize: 13, color: 'var(--pv-text3)', textAlign: 'center', paddingTop: 24 }}>Failed to load</div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* ── Modal: Create user ── */}
     {showCreate && (
