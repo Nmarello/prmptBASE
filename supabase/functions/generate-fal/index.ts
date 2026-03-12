@@ -48,6 +48,22 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
 
 const FAL_QUEUE_BASE = 'https://queue.fal.run'
 
+// Retry wrapper for sync fal calls — exponential backoff on 503/504 (resource errors)
+async function falFetch(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (attempt > 0) {
+      await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1))) // 1s, 2s, 4s
+    }
+    const res = await fetch(url, options)
+    if ((res.status === 503 || res.status === 504) && attempt < maxRetries) {
+      await res.text() // drain body
+      continue
+    }
+    return res
+  }
+  throw new Error('fal.ai request failed after retries')
+}
+
 const FAL_SIZE_DIMS: Record<string, [number, number]> = {
   square_hd:      [1024, 1024],
   square:         [512,  512],
@@ -339,7 +355,7 @@ Deno.serve(async (req) => {
         ...(seedVal !== undefined ? { seed: seedVal } : {}),
       }
 
-      const falRes = await fetch(FAL_ENDPOINTS['flux-dev-img2img'], {
+      const falRes = await falFetch(FAL_ENDPOINTS['flux-dev-img2img'], {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
         body: JSON.stringify(falPayload),
@@ -424,7 +440,7 @@ Deno.serve(async (req) => {
         ...(seedVal !== undefined ? { seed: seedVal } : {}),
       }
 
-      const falRes = await fetch(FAL_ENDPOINTS['flux-kontext-pro'], {
+      const falRes = await falFetch(FAL_ENDPOINTS['flux-kontext-pro'], {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
         body: JSON.stringify(falPayload),
@@ -685,7 +701,7 @@ Deno.serve(async (req) => {
           ...(seedVal !== undefined ? { seed: seedVal } : {}),
         }
 
-        const falRes = await fetch(FAL_ENDPOINTS['nano-banana-edit'], {
+        const falRes = await falFetch(FAL_ENDPOINTS['nano-banana-edit'], {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
           body: JSON.stringify(falPayload),
@@ -732,7 +748,7 @@ Deno.serve(async (req) => {
         ...(seedVal !== undefined ? { seed: seedVal } : {}),
       }
 
-      const falRes = await fetch(FAL_ENDPOINTS['nano-banana'], {
+      const falRes = await falFetch(FAL_ENDPOINTS['nano-banana'], {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
         body: JSON.stringify(falPayload),
@@ -784,7 +800,7 @@ Deno.serve(async (req) => {
         ...(seedVal !== undefined ? { seed: seedVal } : {}),
       }
 
-      const falRes = await fetch(FAL_ENDPOINTS['recraft-v4-pro'], {
+      const falRes = await falFetch(FAL_ENDPOINTS['recraft-v4-pro'], {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
         body: JSON.stringify(falPayload),
@@ -887,7 +903,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const falRes = await fetch(endpoint, {
+    const falRes = await falFetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
