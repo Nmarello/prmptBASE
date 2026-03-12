@@ -131,6 +131,8 @@ export default function Dashboard() {
 
   const [projects, setProjects] = useState<UserProject[]>([])
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
+  const [newProjectName, setNewProjectName] = useState('')
+  const [addingProject, setAddingProject] = useState(false)
   const [assets, setAssets] = useState<Asset[]>([])
   const [assetsLoading, setAssetsLoading] = useState(false)
 
@@ -445,14 +447,15 @@ export default function Dashboard() {
     setAssets((prev) => prev.filter((a) => a.id !== id))
   }
 
-  async function createProject(name: string, description: string) {
-    if (!user) return
+  async function createProject(name: string, description: string): Promise<UserProject | null> {
+    if (!user) return null
     const { data } = await supabase
       .from('user_projects')
       .insert({ user_id: user.id, name, description: description || null })
       .select()
       .single()
     if (data) setProjects((prev) => [data as UserProject, ...prev])
+    return (data as UserProject) ?? null
   }
 
   async function updateProject(id: string, name: string, description: string) {
@@ -953,20 +956,72 @@ export default function Dashboard() {
                         {generateError}
                       </div>
                     )}
-                    {projects.length > 0 && (
-                      <div className="mb-4 flex items-center gap-2">
-                        <span className="text-xs flex-shrink-0" style={{ color: 'var(--pv-text3)' }}>Save to</span>
-                        <select
-                          value={activeProjectId ?? ''}
-                          onChange={e => setActiveProjectId(e.target.value || null)}
-                          className="text-xs px-3 py-1.5 rounded-[10px] outline-none cursor-pointer transition-all flex-1"
-                          style={{ border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text)' }}
-                        >
-                          <option value="">No project</option>
-                          {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                        </select>
-                      </div>
-                    )}
+                    <div className="mb-4 flex items-center gap-2">
+                      <span className="text-xs flex-shrink-0" style={{ color: 'var(--pv-text3)' }}>Save to</span>
+                      {addingProject ? (
+                        <>
+                          <input
+                            autoFocus
+                            type="text"
+                            value={newProjectName}
+                            onChange={e => setNewProjectName(e.target.value)}
+                            onKeyDown={async e => {
+                              if (e.key === 'Enter' && newProjectName.trim()) {
+                                const created = await createProject(newProjectName.trim(), '')
+                                if (created) setActiveProjectId(created.id)
+                                setNewProjectName('')
+                                setAddingProject(false)
+                              } else if (e.key === 'Escape') {
+                                setNewProjectName(''); setAddingProject(false)
+                              }
+                            }}
+                            placeholder="Project name…"
+                            className="text-xs px-3 py-1.5 rounded-[10px] outline-none flex-1 pv-placeholder"
+                            style={{ border: '1px solid var(--pv-accent)', background: 'var(--pv-surface2)', color: 'var(--pv-text)' }}
+                          />
+                          <button
+                            onClick={async () => {
+                              if (!newProjectName.trim()) { setAddingProject(false); return }
+                              const created = await createProject(newProjectName.trim(), '')
+                              if (created) setActiveProjectId(created.id)
+                              setNewProjectName('')
+                              setAddingProject(false)
+                            }}
+                            className="text-xs px-2.5 py-1.5 rounded-[8px] font-semibold transition-all cursor-pointer"
+                            style={{ background: 'var(--pv-accent)', color: '#fff' }}
+                          >
+                            ✓
+                          </button>
+                          <button
+                            onClick={() => { setNewProjectName(''); setAddingProject(false) }}
+                            className="text-xs px-2 py-1.5 rounded-[8px] transition-all cursor-pointer"
+                            style={{ color: 'var(--pv-text3)' }}
+                          >
+                            ✕
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <select
+                            value={activeProjectId ?? ''}
+                            onChange={e => setActiveProjectId(e.target.value || null)}
+                            className="text-xs px-3 py-1.5 rounded-[10px] outline-none cursor-pointer transition-all flex-1"
+                            style={{ border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text)' }}
+                          >
+                            <option value="">No project</option>
+                            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                          </select>
+                          <button
+                            onClick={() => setAddingProject(true)}
+                            title="New project"
+                            className="flex-shrink-0 flex items-center justify-center rounded-[8px] transition-all cursor-pointer text-xs font-bold"
+                            style={{ width: 28, height: 28, border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text2)' }}
+                          >
+                            +
+                          </button>
+                        </>
+                      )}
+                    </div>
                     <TemplateForm
                       template={template}
                       genType={selectedGenType}
