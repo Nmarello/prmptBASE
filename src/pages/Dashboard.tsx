@@ -123,6 +123,7 @@ export default function Dashboard() {
   const [onboardingChecked, setOnboardingChecked] = useState(false)
 
   const [models, setModels] = useState<Model[]>([])
+  const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(new Set())
   const [modelFilter, setModelFilter] = useState<'all' | 'images' | 'videos'>('all')
   const [modelSearch, setModelSearch] = useState('')
   const [_mediaTab, _setMediaTab] = useState<'image' | 'video'>('image')
@@ -275,7 +276,18 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return
     supabase.from('profiles').select('tier').eq('id', user.id).single()
-      .then(({ data }) => { if (data) setUserTier(data.tier) })
+      .then(({ data }) => {
+        if (data) {
+          setUserTier(data.tier)
+          // Load model selections for creator/studio
+          if (data.tier === 'creator' || data.tier === 'studio') {
+            supabase.from('user_model_selections').select('model_id').eq('user_id', user.id)
+              .then(({ data: sels }) => {
+                if (sels) setSelectedModelIds(new Set(sels.map(s => s.model_id)))
+              })
+          }
+        }
+      })
     supabase.from('models').select('*').or('is_active.eq.true,coming_soon.eq.true').order('sort_order')
       .then(({ data }) => { if (data) setModels(data as Model[]) })
     supabase.from('showcase_assets').select('url,gen_type').order('created_at', { ascending: false }).limit(80)
@@ -821,6 +833,10 @@ export default function Dashboard() {
                     ? { ...m, supported_gen_types: [...new Set([...m.supported_gen_types, 'img2img'])] }
                     : m
                   )
+                // Creator: filter to selected image models (if selection exists)
+                if (userTier === 'creator' && selectedModelIds.size > 0) {
+                  imgModels = imgModels.filter(m => m.coming_soon || selectedModelIds.has(m.id))
+                }
                 // Mark DB coming_soon models + hardcoded ones, live models first
                 imgModels = imgModels.map(m => m.coming_soon ? { ...m, _comingSoon: true } : m)
                 imgModels.push(...COMING_SOON_IMAGE.map(m => ({ ...m, _comingSoon: true })))
@@ -836,6 +852,14 @@ export default function Dashboard() {
                       <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pv-text3)', background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', padding: '2px 8px', borderRadius: 20 }}>
                         {imgModels.filter(m => !(m as any)._comingSoon).length} available
                       </span>
+                      {userTier === 'creator' && selectedModelIds.size === 0 && (
+                        <button
+                          onClick={() => setSettingsOpen(true)}
+                          style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--pv-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+                        >
+                          Pick your 10 models →
+                        </button>
+                      )}
                     </div>
                     <div className="flex gap-3.5 overflow-x-auto pb-3">
                       {imgModels.map((m: any) => (
@@ -860,7 +884,17 @@ export default function Dashboard() {
               {/* Video Models row */}
               {(() => {
                 if (modelFilter === 'images') return null
-                let vidModels: any[] = models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid'))
+                const STUDIO_VIDEO_EXCLUDED_SLUGS = ['sora2', 'sora2-txt2vid', 'sora2-img2vid', 'kling', 'kling-txt2vid', 'kling-img2vid']
+                let vidModels: any[] = models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid' || g === 'vid2vid'))
+                // Studio: filter video to selected (excl. Sora2+Kling); free/creator: no video
+                if (userTier === 'studio') {
+                  vidModels = vidModels.filter(m =>
+                    m.coming_soon ||
+                    (!STUDIO_VIDEO_EXCLUDED_SLUGS.includes(m.slug) && (selectedModelIds.size === 0 || selectedModelIds.has(m.id)))
+                  )
+                } else if (userTier === 'creator' || userTier === 'newbie') {
+                  vidModels = [] // no video for free/creator
+                }
                 vidModels = vidModels.map(m => m.coming_soon ? { ...m, _comingSoon: true } : m)
                 vidModels.push(...COMING_SOON_VIDEO.map(m => ({ ...m, _comingSoon: true })))
                 vidModels.sort((a, b) => (a._comingSoon ? 1 : 0) - (b._comingSoon ? 1 : 0))
@@ -875,6 +909,14 @@ export default function Dashboard() {
                       <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pv-text3)', background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', padding: '2px 8px', borderRadius: 20 }}>
                         {vidModels.filter(m => !(m as any)._comingSoon).length} available
                       </span>
+                      {userTier === 'studio' && selectedModelIds.size === 0 && (
+                        <button
+                          onClick={() => setSettingsOpen(true)}
+                          style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--pv-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+                        >
+                          Pick your 5 video models →
+                        </button>
+                      )}
                     </div>
                     <div className="flex gap-3.5 overflow-x-auto pb-3">
                       {vidModels.map((m: any) => (

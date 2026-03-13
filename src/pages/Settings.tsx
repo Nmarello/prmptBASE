@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
+import ModelPicker from '../components/settings/ModelPicker'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
 const ANON_KEY     = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -602,6 +603,14 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
           </>
         ) : (
           <div style={{ fontSize: 13, color: 'var(--pv-text3)', textAlign: 'center', paddingTop: 32 }}>Failed to load stats</div>
+        )}
+
+        {/* ── Model Picker (creator + studio only) ── */}
+        {stats && ['creator', 'studio'].includes(stats.profile.tier) && user && (
+          <div style={{ borderTop: '1px solid var(--pv-border)', paddingTop: 24, marginTop: 8 }}>
+            <SectionLabel>My Models</SectionLabel>
+            <ModelPicker tier={stats.profile.tier} userId={user.id} />
+          </div>
         )}
 
         {/* ── Preferences ── */}

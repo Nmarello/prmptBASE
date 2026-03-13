@@ -46,7 +46,7 @@ const tiers = [
     price: 12,
     features: [
       '500 images / month',
-      'All image models',
+      'Pick up to 10 image models',
       'No video models',
       'Priority queue',
       'Assets saved to vault',
@@ -63,7 +63,7 @@ const tiers = [
     features: [
       '2,000 images / month',
       'All image models',
-      'All video models',
+      'Pick up to 5 video models',
       'Priority queue',
       'Assets saved to vault',
       'AI Assist',
@@ -80,7 +80,7 @@ const tiers = [
     features: [
       'Unlimited images',
       'All image models',
-      'All video models',
+      'All video models (incl. Sora 2 + Kling)',
       'Priority queue',
       'Unlimited storage',
       'AI Assist',
