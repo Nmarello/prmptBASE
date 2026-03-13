@@ -69,21 +69,31 @@ Deno.serve(async (req) => {
       resultData.videos?.[0]?.url ??
       resultData.output?.video?.url ??
       ''
+    const imageUrl: string = !videoUrl
+      ? (resultData.images?.[0]?.url ?? resultData.image?.url ?? '')
+      : ''
 
-    if (!videoUrl) throw new Error(`No video URL in result: ${JSON.stringify(resultData)}`)
+    if (!videoUrl && !imageUrl) throw new Error(`No media URL in result: ${JSON.stringify(resultData)}`)
 
-    // Download video and upload to Supabase Storage via REST
-    let permanentUrl = videoUrl
+    const sourceUrl = videoUrl || imageUrl
+    const isImage = !videoUrl
+
+    // Download and upload to Supabase Storage via REST
+    let permanentUrl = sourceUrl
     try {
-      const vidRes = await fetch(videoUrl)
-      const buf = await vidRes.arrayBuffer()
-      const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`
+      const mediaRes = await fetch(sourceUrl)
+      const buf = await mediaRes.arrayBuffer()
+      const contentType = isImage
+        ? (mediaRes.headers.get('content-type')?.split(';')[0].trim() ?? 'image/jpeg')
+        : 'video/mp4'
+      const ext = isImage ? (contentType.includes('png') ? 'png' : 'jpg') : 'mp4'
+      const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
       const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/assets/${fileName}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${serviceKey}`,
           'apikey': serviceKey,
-          'Content-Type': 'video/mp4',
+          'Content-Type': contentType,
           'x-upsert': 'false',
         },
         body: buf,
@@ -109,7 +119,10 @@ Deno.serve(async (req) => {
     )
 
     return new Response(
-      JSON.stringify({ status: 'complete', video_url: permanentUrl }),
+      JSON.stringify({
+        status: 'complete',
+        ...(isImage ? { image_url: permanentUrl } : { video_url: permanentUrl }),
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err) {

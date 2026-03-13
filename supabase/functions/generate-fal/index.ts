@@ -905,24 +905,60 @@ Deno.serve(async (req) => {
       )
     }
 
-    // --- hidream path (fast + full txt2img + full img2img) ---
-    if (slug === 'hidream-fast' || slug === 'hidream-full') {
+    // --- hidream-fast: synchronous ---
+    if (slug === 'hidream-fast') {
       const builtPrompt = buildPrompt(body)
       if (!builtPrompt.trim()) throw new Error('Prompt is empty')
-      const numImages = Math.min(Math.max(Number(num_images) || 1, 1), (slug === 'hidream-full' ? 2 : 4))
+      const numImages = Math.min(Math.max(Number(num_images) || 1, 1), 4)
       const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
       const arKey = (aspect_ratio && MODERN_ASPECT_DIMS[aspect_ratio]) ? aspect_ratio : '1:1'
       const [w, h] = MODERN_ASPECT_DIMS[arKey]
-      const endpointKey = (genType === 'img2img' && slug === 'hidream-full') ? 'hidream-full-i2i' : slug
+      const falPayload: Record<string, unknown> = {
+        prompt: builtPrompt, aspect_ratio: arKey, num_images: numImages,
+        ...(seedVal !== undefined ? { seed: seedVal } : {}),
+      }
+      const falRes = await falFetch(FAL_ENDPOINTS['hidream-fast'], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
+        body: JSON.stringify(falPayload),
+      })
+      if (!falRes.ok) throw new Error(`fal.ai error: ${await falRes.text()}`)
+      const falData = await falRes.json()
+      const falCost = falRes.headers.get('x-fal-billing-cost') ? parseFloat(falRes.headers.get('x-fal-billing-cost')!) : null
+      const costPerAsset = (falCost != null && numImages > 0) ? falCost / numImages : null
+      const images: { url: string }[] = falData.images ?? []
+      if (images.length === 0) throw new Error(`No images in fal.ai response: ${JSON.stringify(falData)}`)
+      const insertedAssets = await Promise.all(images.map(async (img) => {
+        const permanentUrl = await storeImage(adminClient, img.url, userId)
+        const { data } = await adminClient.from('assets').insert({
+          user_id: userId, prompt_id: prompt_id ?? null, model_id: model_id ?? null,
+          gen_type: 'txt2img', url: permanentUrl, width: w, height: h, cost_usd: costPerAsset,
+          metadata: { prompt: builtPrompt, model_slug: slug, aspect_ratio: arKey, seed: falData.seed ?? seedVal ?? null },
+        }).select().single()
+        return data
+      }))
+      const firstAsset = insertedAssets[0]
+      return new Response(
+        JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // --- hidream-full: async queue (slow model — avoids edge function timeout) ---
+    if (slug === 'hidream-full') {
+      const builtPrompt = buildPrompt(body)
+      if (!builtPrompt.trim()) throw new Error('Prompt is empty')
+      const numImages = Math.min(Math.max(Number(num_images) || 1, 1), 2)
+      const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
+      const arKey = (aspect_ratio && MODERN_ASPECT_DIMS[aspect_ratio]) ? aspect_ratio : '1:1'
+      const [w, h] = MODERN_ASPECT_DIMS[arKey]
 
       const falPayload: Record<string, unknown> = {
-        prompt: builtPrompt,
-        aspect_ratio: arKey,
-        num_images: numImages,
+        prompt: builtPrompt, aspect_ratio: arKey, num_images: numImages,
         ...(seedVal !== undefined ? { seed: seedVal } : {}),
       }
 
-      if (genType === 'img2img' && slug === 'hidream-full') {
+      if (genType === 'img2img') {
         if (!source_image) throw new Error('Source image is required')
         const src = source_image as string
         let imageUrl: string
@@ -944,30 +980,32 @@ Deno.serve(async (req) => {
         falPayload.strength = Math.min(Math.max(Number(strength) || 0.7, 0.1), 1.0)
       }
 
-      const falRes = await falFetch(FAL_ENDPOINTS[endpointKey], {
+      const queueRes = await fetch(`${FAL_QUEUE_BASE}/fal-ai/hidream-i1-full`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
         body: JSON.stringify(falPayload),
       })
-      if (!falRes.ok) throw new Error(`fal.ai error: ${await falRes.text()}`)
-      const falData = await falRes.json()
-      const falCostRaw = falRes.headers.get('x-fal-billing-cost')
-      const falCost = falCostRaw ? parseFloat(falCostRaw) : null
-      const costPerAsset = (falCost != null && numImages > 0) ? falCost / numImages : null
-      const images: { url: string }[] = falData.images ?? []
-      if (images.length === 0) throw new Error(`No images in fal.ai response: ${JSON.stringify(falData)}`)
-      const insertedAssets = await Promise.all(images.map(async (img) => {
-        const permanentUrl = await storeImage(adminClient, img.url, userId)
-        const { data } = await adminClient.from('assets').insert({
-          user_id: userId, prompt_id: prompt_id ?? null, model_id: model_id ?? null,
-          gen_type: genType === 'img2img' ? 'img2img' : 'txt2img', url: permanentUrl, width: w, height: h, cost_usd: costPerAsset,
-          metadata: { prompt: builtPrompt, model_slug: slug, aspect_ratio: arKey, seed: falData.seed ?? seedVal ?? null },
-        }).select().single()
-        return data
-      }))
-      const firstAsset = insertedAssets[0]
+      if (!queueRes.ok) throw new Error(`fal.ai queue error: ${await queueRes.text()}`)
+      const queueData = await queueRes.json()
+      const statusUrl: string = queueData.status_url ?? ''
+      if (!statusUrl) throw new Error(`No status_url in fal response: ${JSON.stringify(queueData)}`)
+
+      const { data: asset } = await adminClient.from('assets').insert({
+        user_id: userId,
+        prompt_id: prompt_id ?? null,
+        model_id: model_id ?? null,
+        gen_type: genType === 'img2img' ? 'img2img' : 'txt2img',
+        url: '',
+        metadata: {
+          prompt: builtPrompt, model_slug: slug, aspect_ratio: arKey,
+          status: 'pending', status_url: statusUrl,
+          response_url: queueData.response_url ?? '',
+          is_image: true, width: w, height: h,
+        },
+      }).select().single()
+
       return new Response(
-        JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt }),
+        JSON.stringify({ asset, operation_name: statusUrl, status: 'pending', prompt: builtPrompt, provider: 'fal.ai', is_image: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }

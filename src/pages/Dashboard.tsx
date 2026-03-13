@@ -129,7 +129,7 @@ export default function Dashboard() {
   const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string; isVideo?: boolean } | null>(null)
   const [lightboxAsset, setLightboxAsset] = useState<Asset | null>(null)
   const PENDING_VIDEO_KEY = 'prmptVAULT_pendingVideo'
-  const [pendingVideo, setPendingVideoRaw] = useState<{ assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number } | null>(() => {
+  const [pendingVideo, setPendingVideoRaw] = useState<{ assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number; isImage?: boolean } | null>(() => {
     try {
       const stored = localStorage.getItem('prmptVAULT_pendingVideo')
       if (!stored) return null
@@ -142,7 +142,7 @@ export default function Dashboard() {
       return parsed
     } catch { return null }
   })
-  function setPendingVideo(val: { assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number } | null) {
+  function setPendingVideo(val: { assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number; isImage?: boolean } | null) {
     setPendingVideoRaw(val)
     if (val) localStorage.setItem(PENDING_VIDEO_KEY, JSON.stringify(val))
     else localStorage.removeItem(PENDING_VIDEO_KEY)
@@ -464,10 +464,10 @@ export default function Dashboard() {
       const data = await res.json()
       if (!res.ok || data?.error) throw new Error(friendlyFalError(data?.error ?? data?.message ?? `HTTP ${res.status}`))
 
-      // Async video pending — start polling
-      if (isVideo && data.status === 'pending') {
+      // Async pending (video or slow image model like hidream-full) — start polling
+      if (data.status === 'pending') {
         const provider = data.provider === 'fal.ai' ? 'fal.ai' : 'google'
-        setPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, provider, startedAt: Date.now() })
+        setPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, provider, startedAt: Date.now(), isImage: !!data.is_image })
         setSubmitting(false)
         return
       }
@@ -544,20 +544,24 @@ export default function Dashboard() {
           setGenerateError(`Video generation failed: ${friendlyFalError(data.error)}`)
           return
         }
-        if (data.status === 'complete' && data.video_url) {
-          const vidAssetId = pendingVideo?.assetId
-          if (activeProjectId && vidAssetId) {
-            await supabase.from('assets').update({ project_id: activeProjectId }).eq('id', vidAssetId)
+        const completedUrl = data.video_url || data.image_url
+        const isImageResult = !!data.image_url && !data.video_url
+        if (data.status === 'complete' && completedUrl) {
+          const pendingAssetId = pendingVideo?.assetId
+          if (activeProjectId && pendingAssetId) {
+            await supabase.from('assets').update({ project_id: activeProjectId }).eq('id', pendingAssetId)
           }
           setPendingVideo(null)
           setRenderingModelSlug(null)
-          setResult({ url: data.video_url, prompt: '', isVideo: true })
+          setResult({ url: completedUrl, prompt: '', isVideo: !isImageResult })
           loadAssets()
-          pushNotification({ type: 'video_ready', message: 'Your video is ready!', modelName: selectedModel?.name ?? 'Video', assetUrl: data.video_url, assetId: vidAssetId })
+          const readyMsg = isImageResult ? 'Your image is ready!' : 'Your video is ready!'
+          const notifType = isImageResult ? 'image_ready' : 'video_ready'
+          pushNotification({ type: notifType, message: readyMsg, modelName: selectedModel?.name ?? 'Model', assetUrl: completedUrl, assetId: pendingAssetId })
           if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Your video is ready!', { body: `${selectedModel?.name ?? 'Video'} · prmptVAULT`, icon: '/favicon.ico' })
+            new Notification(readyMsg, { body: `${selectedModel?.name ?? 'Model'} · prmptVAULT`, icon: '/favicon.ico' })
           }
-          setRenderToast('Your video is ready!')
+          setRenderToast(readyMsg)
           setTimeout(() => setRenderToast(null), 6000)
         }
       } catch (_) { /* network hiccup — keep polling */ }
@@ -1071,7 +1075,7 @@ export default function Dashboard() {
                   <div className="relative z-10 flex flex-col items-center gap-4">
                     <div className="w-10 h-10 rounded-full pv-spin" style={{ border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'rgba(255,255,255,0.8)' }} />
                     <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: 500 }}>
-                      {pendingVideo ? 'Rendering video…' : 'Generating…'}
+                      {pendingVideo && !pendingVideo.isImage ? 'Rendering video…' : 'Generating…'}
                     </p>
                     <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>You can close this — we'll notify you when done</p>
                     {pendingVideo && (
