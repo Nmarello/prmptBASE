@@ -277,6 +277,24 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
+  // billing portal
+  const [portalLoading, setPortalLoading] = useState(false)
+
+  async function openBillingPortal() {
+    setPortalLoading(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-portal-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}`, apikey: ANON_KEY },
+      })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+    } catch {}
+    setPortalLoading(false)
+  }
+
   // timezone
   const [timezone, setTimezone] = useState<string>(() => {
     try { return localStorage.getItem(TZ_STORAGE_KEY) || Intl.DateTimeFormat().resolvedOptions().timeZone } catch { return 'America/New_York' }
@@ -656,15 +674,31 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--pv-border)' }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Plan &amp; billing</div>
-                <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>View plans, upgrade or manage subscription</div>
+                <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>
+                  {stats?.profile.tier && stats.profile.tier !== 'newbie'
+                    ? 'Manage your subscription, invoices, or cancel'
+                    : 'View plans and upgrade'}
+                </div>
               </div>
-              <a
-                href="/pricing"
-                style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, textDecoration: 'none', display: 'inline-block' }}
-                className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-text)] transition-colors"
-              >
-                View plans →
-              </a>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {stats?.profile.tier && stats.profile.tier !== 'newbie' && (
+                  <button
+                    onClick={openBillingPortal}
+                    disabled={portalLoading}
+                    style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                    className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-text)] transition-colors disabled:opacity-50"
+                  >
+                    {portalLoading ? 'Loading…' : 'Manage →'}
+                  </button>
+                )}
+                <a
+                  href="/pricing"
+                  style={{ padding: '6px 14px', borderRadius: 9, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, textDecoration: 'none', display: 'inline-block' }}
+                  className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-text)] transition-colors"
+                >
+                  {stats?.profile.tier && stats.profile.tier !== 'newbie' ? 'Plans →' : 'View plans →'}
+                </a>
+              </div>
             </div>
 
             {/* Admin link */}
