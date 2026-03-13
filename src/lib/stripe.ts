@@ -1,13 +1,25 @@
 import { supabase } from './supabase'
 
-const PRICE_IDS = {
-  creator: import.meta.env.VITE_STRIPE_PRICE_CREATOR as string,
-  studio: import.meta.env.VITE_STRIPE_PRICE_STUDIO as string,
-  pro: import.meta.env.VITE_STRIPE_PRICE_PRO as string,
+const PRICES = {
+  creator: {
+    monthly: import.meta.env.VITE_STRIPE_PRICE_CREATOR as string,
+    annual:  import.meta.env.VITE_STRIPE_PRICE_CREATOR_ANNUAL as string,
+  },
+  studio: {
+    monthly: import.meta.env.VITE_STRIPE_PRICE_STUDIO as string,
+    annual:  import.meta.env.VITE_STRIPE_PRICE_STUDIO_ANNUAL as string,
+  },
+  pro: {
+    monthly: import.meta.env.VITE_STRIPE_PRICE_PRO as string,
+    annual:  import.meta.env.VITE_STRIPE_PRICE_PRO_ANNUAL as string,
+  },
 }
 
-export async function createCheckoutSession(tier: 'creator' | 'studio' | 'pro') {
-  const priceId = PRICE_IDS[tier]
+export async function createCheckoutSession(
+  tier: 'creator' | 'studio' | 'pro',
+  billing: 'monthly' | 'annual' = 'monthly',
+) {
+  const priceId = PRICES[tier][billing]
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Not authenticated')
 
@@ -19,7 +31,7 @@ export async function createCheckoutSession(tier: 'creator' | 'studio' | 'pro') 
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ priceId, tier }),
+      body: JSON.stringify({ priceId, tier, billing }),
     }
   )
 

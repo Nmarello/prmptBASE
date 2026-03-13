@@ -30,6 +30,7 @@ export interface Model {
   supported_gen_types: GenType[]
   min_tier: string
   is_active: boolean
+  coming_soon: boolean
   sort_order: number
 }
 

@@ -64,7 +64,6 @@ type View = 'models' | 'builder' | 'assets' | 'projects'
 
 const COMING_SOON_IMAGE: Partial<Model>[] = [
   { slug: 'cs-midjourney', name: 'Midjourney', provider: 'Midjourney', description: 'The gold standard for artistic AI image generation. Unmatched aesthetic quality.', supported_gen_types: ['txt2img'] },
-  { slug: 'cs-ideogram', name: 'Ideogram', provider: 'Ideogram', description: 'Best-in-class text rendering inside images. Typography that actually works.', supported_gen_types: ['txt2img'] },
   { slug: 'cs-firefly', name: 'Adobe Firefly', provider: 'Adobe', description: 'Commercially safe image generation built for creative professionals.', supported_gen_types: ['txt2img', 'img2img'] },
 ]
 
@@ -235,7 +234,7 @@ export default function Dashboard() {
 
   const refreshModels = useCallback(async () => {
     if (!user) return
-    const { data } = await supabase.from('models').select('*').eq('is_active', true).order('sort_order')
+    const { data } = await supabase.from('models').select('*').or('is_active.eq.true,coming_soon.eq.true').order('sort_order')
     if (data) setModels(data as Model[])
   }, [user])
 
@@ -258,7 +257,7 @@ export default function Dashboard() {
     if (!user) return
     supabase.from('profiles').select('tier').eq('id', user.id).single()
       .then(({ data }) => { if (data) setUserTier(data.tier) })
-    supabase.from('models').select('*').eq('is_active', true).order('sort_order')
+    supabase.from('models').select('*').or('is_active.eq.true,coming_soon.eq.true').order('sort_order')
       .then(({ data }) => { if (data) setModels(data as Model[]) })
     supabase.from('showcase_assets').select('url,gen_type').order('created_at', { ascending: false }).limit(80)
       .then(({ data }) => { if (data) setShowcase(data as { url: string; gen_type: string | null }[]) })
@@ -801,6 +800,8 @@ export default function Dashboard() {
                     ? { ...m, supported_gen_types: [...new Set([...m.supported_gen_types, 'img2img'])] }
                     : m
                   )
+                // Mark DB coming_soon models + hardcoded ones
+                imgModels = imgModels.map(m => m.coming_soon ? { ...m, _comingSoon: true } : m)
                 imgModels.push(...COMING_SOON_IMAGE.map(m => ({ ...m, _comingSoon: true })))
                 if (modelSearch) imgModels = imgModels.filter(m => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
                 if (imgModels.length === 0) return null

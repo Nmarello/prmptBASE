@@ -6,15 +6,26 @@ const corsHeaders = {
 }
 
 const FAL_ENDPOINTS: Record<string, string> = {
-  'flux-schnell':      'https://fal.run/fal-ai/flux/schnell',
-  'flux-dev':          'https://fal.run/fal-ai/flux/dev',
-  'flux-pro':          'https://fal.run/fal-ai/flux-pro',
-  'flux-pro-ultra':    'https://fal.run/fal-ai/flux-pro/v1.1-ultra',
-  'flux-dev-img2img':  'https://fal.run/fal-ai/flux/dev/image-to-image',
-  'flux-kontext-pro':  'https://fal.run/fal-ai/flux-pro/kontext',
-  'recraft-v4-pro':    'https://fal.run/fal-ai/recraft/v4/pro/text-to-image',
-  'nano-banana':       'https://fal.run/fal-ai/nano-banana-2',
-  'nano-banana-edit':  'https://fal.run/fal-ai/nano-banana-2/edit',
+  'flux-schnell':       'https://fal.run/fal-ai/flux/schnell',
+  'flux-dev':           'https://fal.run/fal-ai/flux/dev',
+  'flux-pro':           'https://fal.run/fal-ai/flux-pro',
+  'flux-pro-ultra':     'https://fal.run/fal-ai/flux-pro/v1.1-ultra',
+  'flux-dev-img2img':   'https://fal.run/fal-ai/flux/dev/image-to-image',
+  'flux-kontext-pro':   'https://fal.run/fal-ai/flux-pro/kontext',
+  'recraft-v4-pro':     'https://fal.run/fal-ai/recraft/v4/pro/text-to-image',
+  'nano-banana':        'https://fal.run/fal-ai/nano-banana-2',
+  'nano-banana-edit':   'https://fal.run/fal-ai/nano-banana-2/edit',
+  // Active — new
+  'ideogram-v3':        'https://fal.run/fal-ai/ideogram/v3',
+  'hidream-fast':       'https://fal.run/fal-ai/hidream-i1-fast',
+  'hidream-full':       'https://fal.run/fal-ai/hidream-i1-full',
+  'hidream-full-i2i':   'https://fal.run/fal-ai/hidream-i1-full',
+  // Coming soon — wired but not exposed in UI yet
+  'flux2-pro':          'https://fal.run/fal-ai/flux-2-pro',
+  'flux-kontext-dev':   'https://fal.run/fal-ai/flux-kontext/dev',
+  'recraft-v3':         'https://fal.run/fal-ai/recraft/v3/text-to-image',
+  'seedream-45':        'https://fal.run/fal-ai/seedream-4-5',
+  'sd35-medium':        'https://fal.run/fal-ai/stable-diffusion-v35-medium',
 }
 
 const NANO_BANANA_ASPECT_DIMS: Record<string, [number, number]> = {
@@ -834,6 +845,129 @@ Deno.serve(async (req) => {
       const firstAsset = insertedAssets[0]
       return new Response(
         JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt, seed: falData.seed ?? null }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // Modern aspect_ratio format used by HiDream, Ideogram, etc.
+    const MODERN_ASPECT_DIMS: Record<string, [number, number]> = {
+      '1:1':  [1024, 1024],
+      '16:9': [1920, 1080],
+      '9:16': [1080, 1920],
+      '4:3':  [1365, 1024],
+      '3:4':  [1024, 1365],
+      '3:2':  [1536, 1024],
+      '2:3':  [1024, 1536],
+    }
+
+    // --- ideogram-v3 path ---
+    if (slug === 'ideogram-v3') {
+      const builtPrompt = buildPrompt(body)
+      if (!builtPrompt.trim()) throw new Error('Prompt is empty')
+      const numImages = Math.min(Math.max(Number(num_images) || 1, 1), 4)
+      const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
+      const arKey = (aspect_ratio && MODERN_ASPECT_DIMS[aspect_ratio]) ? aspect_ratio : '1:1'
+      const [w, h] = MODERN_ASPECT_DIMS[arKey]
+
+      const falPayload: Record<string, unknown> = {
+        prompt: builtPrompt,
+        aspect_ratio: arKey,
+        num_images: numImages,
+        magic_prompt_option: body.magic_prompt ?? 'AUTO',
+        ...(body.style ? { style_type: body.style } : {}),
+        ...(seedVal !== undefined ? { seed: seedVal } : {}),
+      }
+      const falRes = await falFetch(FAL_ENDPOINTS['ideogram-v3'], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
+        body: JSON.stringify(falPayload),
+      })
+      if (!falRes.ok) throw new Error(`fal.ai error: ${await falRes.text()}`)
+      const falData = await falRes.json()
+      const falCostRaw = falRes.headers.get('x-fal-billing-cost')
+      const falCost = falCostRaw ? parseFloat(falCostRaw) : null
+      const costPerAsset = (falCost != null && numImages > 0) ? falCost / numImages : null
+      const images: { url: string }[] = (falData.images ?? falData.data ?? [])
+      if (images.length === 0) throw new Error(`No images in fal.ai response: ${JSON.stringify(falData)}`)
+      const insertedAssets = await Promise.all(images.map(async (img) => {
+        const permanentUrl = await storeImage(adminClient, img.url, userId)
+        const { data } = await adminClient.from('assets').insert({
+          user_id: userId, prompt_id: prompt_id ?? null, model_id: model_id ?? null,
+          gen_type: 'txt2img', url: permanentUrl, width: w, height: h, cost_usd: costPerAsset,
+          metadata: { prompt: builtPrompt, model_slug: slug, aspect_ratio: arKey, seed: falData.seed ?? seedVal ?? null },
+        }).select().single()
+        return data
+      }))
+      const firstAsset = insertedAssets[0]
+      return new Response(
+        JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // --- hidream path (fast + full txt2img + full img2img) ---
+    if (slug === 'hidream-fast' || slug === 'hidream-full') {
+      const builtPrompt = buildPrompt(body)
+      if (!builtPrompt.trim()) throw new Error('Prompt is empty')
+      const numImages = Math.min(Math.max(Number(num_images) || 1, 1), (slug === 'hidream-full' ? 2 : 4))
+      const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
+      const arKey = (aspect_ratio && MODERN_ASPECT_DIMS[aspect_ratio]) ? aspect_ratio : '1:1'
+      const [w, h] = MODERN_ASPECT_DIMS[arKey]
+      const endpointKey = (genType === 'img2img' && slug === 'hidream-full') ? 'hidream-full-i2i' : slug
+
+      const falPayload: Record<string, unknown> = {
+        prompt: builtPrompt,
+        aspect_ratio: arKey,
+        num_images: numImages,
+        ...(seedVal !== undefined ? { seed: seedVal } : {}),
+      }
+
+      if (genType === 'img2img' && slug === 'hidream-full') {
+        if (!source_image) throw new Error('Source image is required')
+        const src = source_image as string
+        let imageUrl: string
+        if (src.startsWith('http')) {
+          imageUrl = src
+        } else {
+          const base64Data = src.replace(/^data:image\/\w+;base64,/, '')
+          const mimeMatch = src.match(/^data:(image\/\w+);base64,/)
+          const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+          const ext = mimeType.split('/')[1] ?? 'jpg'
+          const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+          const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
+          const { error: srcErr } = await adminClient.storage.from('assets').upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
+          if (srcErr) throw new Error(`Source upload failed: ${srcErr.message}`)
+          const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
+          imageUrl = publicUrl
+        }
+        falPayload.image_url = imageUrl
+        falPayload.strength = Math.min(Math.max(Number(strength) || 0.7, 0.1), 1.0)
+      }
+
+      const falRes = await falFetch(FAL_ENDPOINTS[endpointKey], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
+        body: JSON.stringify(falPayload),
+      })
+      if (!falRes.ok) throw new Error(`fal.ai error: ${await falRes.text()}`)
+      const falData = await falRes.json()
+      const falCostRaw = falRes.headers.get('x-fal-billing-cost')
+      const falCost = falCostRaw ? parseFloat(falCostRaw) : null
+      const costPerAsset = (falCost != null && numImages > 0) ? falCost / numImages : null
+      const images: { url: string }[] = falData.images ?? []
+      if (images.length === 0) throw new Error(`No images in fal.ai response: ${JSON.stringify(falData)}`)
+      const insertedAssets = await Promise.all(images.map(async (img) => {
+        const permanentUrl = await storeImage(adminClient, img.url, userId)
+        const { data } = await adminClient.from('assets').insert({
+          user_id: userId, prompt_id: prompt_id ?? null, model_id: model_id ?? null,
+          gen_type: genType === 'img2img' ? 'img2img' : 'txt2img', url: permanentUrl, width: w, height: h, cost_usd: costPerAsset,
+          metadata: { prompt: builtPrompt, model_slug: slug, aspect_ratio: arKey, seed: falData.seed ?? seedVal ?? null },
+        }).select().single()
+        return data
+      }))
+      const firstAsset = insertedAssets[0]
+      return new Response(
+        JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }

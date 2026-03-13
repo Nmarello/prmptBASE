@@ -38,6 +38,17 @@ const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
   'cs-firefly':         { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: 'FF' },
   'cs-runway':          { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: 'RW' },
   'cs-pika':            { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: 'PK' },
+  // New active models
+  'ideogram-v3':        { gradient: 'linear-gradient(145deg,#1a0040,#5500cc,#aa44ff)', initial: 'ID' },
+  'hidream-fast':       { gradient: 'linear-gradient(145deg,#002233,#005577,#00aabb)', initial: 'HF' },
+  'hidream-full':       { gradient: 'linear-gradient(145deg,#001a33,#003d66,#0077cc)', initial: 'HD' },
+  'gpt-image-1':        { gradient: 'linear-gradient(145deg,#0d1a0d,#1a4d1a,#22aa22)', initial: 'G1' },
+  // Coming soon
+  'flux2-pro':          { gradient: 'linear-gradient(145deg,#00004d,#001aff,#4466ff)', initial: 'F2' },
+  'flux-kontext-dev':   { gradient: 'linear-gradient(145deg,#110022,#330099,#6633cc)', initial: 'KD' },
+  'recraft-v3':         { gradient: 'linear-gradient(145deg,#2d1200,#7a3500,#cc6600)', initial: 'R3' },
+  'seedream-45':        { gradient: 'linear-gradient(145deg,#0a001a,#330055,#770099)', initial: 'SD' },
+  'sd35-medium':        { gradient: 'linear-gradient(145deg,#001133,#003388,#0055cc)', initial: 'S3' },
 }
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: '??' }
 
@@ -61,6 +72,15 @@ const slugBrandLabels: Record<string, string> = {
   'luma-txt2vid':     'Luma AI',
   'luma-img2vid':     'Luma AI',
   'minimax-txt2vid':  'MiniMax',
+  'ideogram-v3':      'Ideogram',
+  'hidream-fast':     'HiDream',
+  'hidream-full':     'HiDream',
+  'gpt-image-1':      'OpenAI',
+  'flux2-pro':        'Black Forest Labs',
+  'flux-kontext-dev': 'Black Forest Labs',
+  'recraft-v3':       'Recraft',
+  'seedream-45':      'ByteDance',
+  'sd35-medium':      'Stability AI',
 }
 
 // Provider logo mark — SVG or styled wordmark
