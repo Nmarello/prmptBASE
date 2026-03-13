@@ -41,7 +41,9 @@ Deno.serve(async (req) => {
     const status: string = statusData.status ?? ''
 
     if (status === 'FAILED') {
-      throw new Error(`fal.ai job failed: ${JSON.stringify(statusData).slice(0, 200)}`)
+      const falErr = statusData.error ?? statusData.detail ?? statusData.message ?? statusData.reason
+      const errMsg = typeof falErr === 'string' ? falErr : (falErr ? JSON.stringify(falErr) : JSON.stringify(statusData))
+      throw new Error(`fal.ai job failed: ${errMsg}`)
     }
 
     if (status !== 'COMPLETED') {

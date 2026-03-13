@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
 
 function friendlyFalError(raw: string): string {
+  // Strip "fal.ai job failed: " prefix so inner content can be checked/parsed
+  const stripped = typeof raw === 'string' ? raw.replace(/^fal\.ai job failed:\s*/, '') : raw
   try {
-    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+    const parsed = typeof stripped === 'string' ? JSON.parse(stripped) : stripped
     const detail = parsed?.detail?.[0] ?? parsed?.detail ?? parsed
     const type = detail?.type ?? parsed?.type ?? ''
     const msg  = detail?.msg  ?? parsed?.msg  ?? ''
@@ -15,18 +17,17 @@ function friendlyFalError(raw: string): string {
     }
     if (msg) return msg
   } catch {
-    // raw isn't JSON — fall through
+    // not JSON — fall through
   }
-  if (typeof raw === 'string') {
-    if (raw.toLowerCase().includes('overload') || raw.toLowerCase().includes('try again later')) {
-      return "The model's servers are under heavy load right now — not ours. We'll keep retrying for you — hit Generate again and we'll try a few more times automatically."
-    }
-    if (raw.toLowerCase().includes('compute resources') || raw.toLowerCase().includes('not enough compute') || raw.toLowerCase().includes('runner_scheduling_failure') || raw.toLowerCase().includes('failed after retries')) {
-      return "The model ran out of resources on their end, not ours. We'll keep retrying for you — hit Generate again and we'll try a few more times automatically."
-    }
-    if (raw.length > 200) return 'Generation failed. Please try again.'
+  const s = typeof stripped === 'string' ? stripped : ''
+  if (s.toLowerCase().includes('overload') || s.toLowerCase().includes('try again later')) {
+    return "The model's servers are under heavy load right now — not ours. We'll keep retrying for you — hit Generate again and we'll try a few more times automatically."
   }
-  return typeof raw === 'string' ? raw : 'Generation failed. Please try again.'
+  if (s.toLowerCase().includes('compute resources') || s.toLowerCase().includes('not enough compute') || s.toLowerCase().includes('runner_scheduling_failure') || s.toLowerCase().includes('failed after retries')) {
+    return "The model ran out of resources on their end, not ours. We'll keep retrying for you — hit Generate again and we'll try a few more times automatically."
+  }
+  if (s) return s
+  return 'Generation failed. Please try again.'
 }
 
 async function downloadFile(url: string, isVideo?: boolean) {
