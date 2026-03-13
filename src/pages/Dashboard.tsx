@@ -1254,6 +1254,11 @@ export default function Dashboard() {
                         </>
                       )}
                     </div>
+                    {template.description && (
+                      <p className="mb-5 text-sm leading-relaxed" style={{ color: 'var(--pv-text2)' }}>
+                        {template.description}
+                      </p>
+                    )}
                     <TemplateForm
                       template={template}
                       genType={selectedGenType}

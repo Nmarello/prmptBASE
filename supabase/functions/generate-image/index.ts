@@ -8,6 +8,9 @@ const corsHeaders = {
 function buildPrompt(values: Record<string, unknown>): string {
   const parts: string[] = []
 
+  // Direct prompt field (e.g. GPT Image 1, gpt-image-1 template)
+  if (values.prompt) parts.push(String(values.prompt))
+
   if (values.subject) parts.push(String(values.subject))
 
   if (values.style) {
