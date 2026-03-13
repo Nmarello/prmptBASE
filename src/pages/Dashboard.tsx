@@ -1331,11 +1331,13 @@ export default function Dashboard() {
 
                 {/* Result */}
                 {result && (
-                  <div className="absolute inset-0 flex flex-col">
+                  <div className="absolute inset-0 flex items-center justify-center p-2">
                     {result.isVideo ? (
-                      <video src={result.url} controls autoPlay loop className="w-full h-full object-contain rounded-[18px]" />
+                      <video src={result.url} controls autoPlay loop className="rounded-[18px]"
+                        style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto' }} />
                     ) : (
-                      <img src={result.url} alt={result.prompt} className="w-full h-full object-contain rounded-[18px]" />
+                      <img src={result.url} alt={result.prompt} className="rounded-[18px]"
+                        style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto' }} />
                     )}
                   </div>
                 )}
