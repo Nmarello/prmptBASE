@@ -333,12 +333,8 @@ export default function Dashboard() {
 
   async function handleAddModel(modelId: string) {
     if (!user) return
-    const isLocked = pickerLockedUntil !== null && pickerLockedUntil > new Date()
-    if (isLocked) {
-      setSettingsOpen(true)
-      return
-    }
-    await supabase.from('user_model_selections').upsert({ user_id: user.id, model_id: modelId })
+    // Empty slot fills are always free — no lock check
+    await supabase.from('user_model_selections').insert({ user_id: user.id, model_id: modelId, locked_until: null })
     setSelectedModelIds(prev => new Set([...prev, modelId]))
   }
 
