@@ -428,9 +428,10 @@ export default function Dashboard() {
             user_token: session?.access_token ?? null,
             values,
             model_id: selectedModel.id,
+            model_slug: selectedModel.slug,
             prompt_id: promptRecord?.id ?? null,
             size: values.size ?? '1024x1024',
-            quality: values.quality ?? 'standard',
+            quality: values.quality ?? (selectedModel.slug === 'gpt-image-1' ? 'auto' : 'standard'),
           }
 
       const res = await fetch(
