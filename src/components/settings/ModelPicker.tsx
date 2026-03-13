@@ -97,17 +97,23 @@ export default function ModelPicker({ tier, userId }: { tier: string; userId: st
     load()
   }, [userId, tier])
 
+  // Count of visible picker selections only — excludes deactivated/removed models
+  const pickerModelIds = new Set(pickerModels.map(m => m.id))
+  const visibleSelectedCount = [...selectedIds].filter(id => pickerModelIds.has(id)).length
+
   function toggle(modelId: string) {
     setSelectedIds(prev => {
       const next = new Set(prev)
       if (next.has(modelId)) {
         // Trying to uncheck — block if locked
         if (lockedMap.has(modelId)) return prev
-        // Block if it would drop below the saved floor
-        if (next.size - 1 < savedIds.size && savedIds.has(modelId)) return prev
+        // Block if it would drop below the saved floor (only counting visible models)
+        const visibleSavedCount = [...savedIds].filter(id => pickerModelIds.has(id)).length
+        const visibleNextCount = [...next].filter(id => pickerModelIds.has(id)).length - 1
+        if (visibleNextCount < visibleSavedCount && savedIds.has(modelId)) return prev
         next.delete(modelId)
       } else {
-        if (next.size >= limit) return prev
+        if (visibleSelectedCount >= limit) return prev
         next.add(modelId)
       }
       return next
@@ -194,7 +200,7 @@ export default function ModelPicker({ tier, userId }: { tier: string; userId: st
       <div className="flex items-center justify-between mb-4" style={{ gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--pv-text)' }}>
-            {selectedIds.size} / {limit} selected
+            {visibleSelectedCount} / {limit} selected
           </span>
           {latestLock && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--pv-text3)', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', borderRadius: 20, padding: '2px 8px' }}>
@@ -243,9 +249,10 @@ export default function ModelPicker({ tier, userId }: { tier: string; userId: st
             const sel = selectedIds.has(m.id)
             const modelLock = lockedMap.get(m.id)
             const isModelLocked = !!modelLock
-            const atLimit = !sel && selectedIds.size >= limit
+            const atLimit = !sel && visibleSelectedCount >= limit
+            const visibleSavedCount = [...savedIds].filter(id => pickerModelIds.has(id)).length
             const canToggle = sel
-              ? !isModelLocked && !(savedIds.has(m.id) && selectedIds.size - 1 < savedIds.size)
+              ? !isModelLocked && !(savedIds.has(m.id) && visibleSelectedCount - 1 < visibleSavedCount)
               : !atLimit
 
             return (
