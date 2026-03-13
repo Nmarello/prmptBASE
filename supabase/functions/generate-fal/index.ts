@@ -55,22 +55,16 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'txt2vid': 'fal-ai/sora-2/text-to-video',
     'img2vid': 'fal-ai/sora-2/image-to-video',
   },
-  'pika-txt2vid': {
+  'pika': {
     'txt2vid': 'fal-ai/pika/v2.2/text-to-video',
-  },
-  'pika-img2vid': {
     'img2vid': 'fal-ai/pika/v2.2/image-to-video',
   },
-  'runway-txt2vid': {
+  'runway': {
     'txt2vid': 'fal-ai/runway-gen3/alpha/text-to-video',
-  },
-  'runway-img2vid': {
     'img2vid': 'fal-ai/runway-gen3/alpha/image-to-video',
   },
-  'ltx-txt2vid': {
+  'ltx-video': {
     'txt2vid': 'fal-ai/ltx-video',
-  },
-  'ltx-img2vid': {
     'img2vid': 'fal-ai/ltx-video/image-to-video',
   },
 }
