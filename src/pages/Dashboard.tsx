@@ -59,6 +59,7 @@ import { useLearningMode } from '../contexts/LearningModeContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import ModelDrawer from '../components/dashboard/ModelDrawer'
+import ProviderLogo from '../components/dashboard/ProviderLogo'
 
 type View = 'models' | 'builder' | 'assets' | 'projects'
 
@@ -1053,8 +1054,8 @@ export default function Dashboard() {
                 {/* Empty state */}
                 {!result && !(selectedModel?.slug === renderingModelSlug && (pendingImage || pendingVideo)) && (
                   <div className="relative z-10 flex flex-col items-center gap-3 text-center">
-                    <div className="w-14 h-14 rounded-[14px] flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', fontSize: 24 }}>
-                      {(MODEL_ART_MAP as any)[selectedModel.slug]?.initial ?? '??'}
+                    <div className="w-14 h-14 rounded-[14px] flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>
+                      <ProviderLogo slug={selectedModel.slug} size={32} />
                     </div>
                     <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 16, fontWeight: 700, color: 'rgba(255,255,255,0.55)' }}>
                       {selectedModel.name}
@@ -1144,10 +1145,8 @@ export default function Dashboard() {
               {/* Model header */}
               <div className="px-4 sm:px-7 pt-4 sm:pt-6 pb-5 flex-shrink-0" style={{ borderBottom: '1px solid var(--pv-border)' }}>
                 <div className="flex items-center gap-3.5">
-                  <div className="rounded-[12px] overflow-hidden flex-shrink-0" style={{ width: 48, height: 48 }}>
-                    <div className="w-full h-full flex items-center justify-center text-xl" style={{ background: (MODEL_ART_MAP as any)[selectedModel.slug]?.gradient ?? 'linear-gradient(145deg,#222,#3a3a3a)' }}>
-                      {(MODEL_ART_MAP as any)[selectedModel.slug]?.initial ?? ''}
-                    </div>
+                  <div className="rounded-[12px] overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ width: 48, height: 48, background: (MODEL_ART_MAP as any)[selectedModel.slug]?.gradient ?? 'linear-gradient(145deg,#222,#3a3a3a)' }}>
+                    <ProviderLogo slug={selectedModel.slug} size={28} />
                   </div>
                   <div>
                     <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 20, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>

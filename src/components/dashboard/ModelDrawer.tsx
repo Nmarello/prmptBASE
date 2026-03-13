@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { Asset, Model } from '../../types'
+import ProviderLogo from './ProviderLogo'
 
 interface Props {
   model: Model
@@ -66,9 +67,9 @@ export default function ModelDrawer({
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--pv-border)' }}>
           {/* Model icon */}
-          <div className="rounded-[10px] flex-shrink-0 flex items-center justify-center text-base font-bold text-white"
+          <div className="rounded-[10px] flex-shrink-0 flex items-center justify-center"
             style={{ width: 40, height: 40, background: modelArt.gradient }}>
-            {modelArt.initial}
+            <ProviderLogo slug={model.slug} size={22} />
           </div>
 
           {/* Name + type */}
@@ -125,9 +126,9 @@ export default function ModelDrawer({
           {assets.length === 0 ? (
             /* Empty state */
             <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center" style={{ minHeight: 300 }}>
-              <div className="rounded-[16px] flex items-center justify-center text-2xl"
+              <div className="rounded-[16px] flex items-center justify-center"
                 style={{ width: 64, height: 64, background: modelArt.gradient, opacity: 0.7 }}>
-                {modelArt.initial}
+                <ProviderLogo slug={model.slug} size={32} />
               </div>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--pv-text)', marginBottom: 6 }}>
