@@ -890,27 +890,53 @@ export default function Dashboard() {
             {/* Scrollable model rows */}
             <div ref={generateScrollRef} className="flex-1 overflow-y-auto px-4 sm:px-7 pb-28 sm:pb-10 space-y-8">
               <PullIndicator distance={generatePullDist} refreshing={generateRefreshing} />
-              {/* Your Models row (active selections) */}
+              {/* Your Models row */}
               {(() => {
                 if (modelSearch) return null
-                // Pro/newbie: no picker, so this row is N/A. Creator/studio: show selected models.
-                if (!['creator', 'studio'].includes(userTier)) return null
-                const yourModels = models.filter(m =>
-                  selectedModelIds.has(m.id) && !m.coming_soon && m.slug !== 'flux-dev-img2img'
-                )
-                if (yourModels.length === 0) return null
+                if (userTier === 'pro') return null
+
+                let yourModels: Model[] = []
+                let showAddCard = false
+
+                if (userTier === 'newbie') {
+                  // Free: always DALL-E 3 + Flux Schnell
+                  yourModels = models.filter(m => ['dalle', 'flux-schnell'].includes(m.slug))
+                } else if (userTier === 'creator') {
+                  // Creator: selected image models + add card if under quota
+                  yourModels = models.filter(m =>
+                    selectedModelIds.has(m.id) && !m.coming_soon && m.slug !== 'flux-dev-img2img'
+                  )
+                  showAddCard = selectedModelIds.size < 10
+                } else if (userTier === 'studio') {
+                  // Studio: all image models + selected video models + add card if video under quota
+                  const imgModels = models.filter(m =>
+                    !m.coming_soon &&
+                    m.slug !== 'flux-dev-img2img' &&
+                    m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))
+                  )
+                  const selectedVidModels = models.filter(m =>
+                    selectedModelIds.has(m.id) && !m.coming_soon &&
+                    m.supported_gen_types.some(g => ['txt2vid','img2vid','vid2vid'].includes(g))
+                  )
+                  yourModels = [...imgModels, ...selectedVidModels]
+                  const selectedVidCount = selectedVidModels.length
+                  showAddCard = selectedVidCount < 5
+                }
+
                 return (
                   <div>
                     <div className="flex items-center gap-3 mb-4">
                       <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
                         Your Models
                       </h2>
-                      <button
-                        onClick={() => setSettingsOpen(true)}
-                        style={{ fontSize: 12, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
-                      >
-                        Manage →
-                      </button>
+                      {['creator', 'studio'].includes(userTier) && (
+                        <button
+                          onClick={() => setSettingsOpen(true)}
+                          style={{ fontSize: 12, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+                        >
+                          Manage →
+                        </button>
+                      )}
                     </div>
                     <div className="flex gap-3.5 overflow-x-auto pb-3">
                       {yourModels.map((m) => (
@@ -926,6 +952,32 @@ export default function Dashboard() {
                           modelStatus="active"
                         />
                       ))}
+                      {showAddCard && (
+                        <button
+                          onClick={() => setSettingsOpen(true)}
+                          style={{
+                            width: 230, flexShrink: 0, height: 260,
+                            background: 'var(--pv-surface)',
+                            border: '1.5px dashed var(--pv-border)',
+                            borderRadius: 18,
+                            display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', justifyContent: 'center', gap: 10,
+                            cursor: 'pointer', color: 'var(--pv-text3)',
+                            transition: 'all 0.15s',
+                            fontFamily: 'inherit',
+                          }}
+                          className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-accent)] group"
+                        >
+                          <div style={{ width: 40, height: 40, borderRadius: 12, border: '1.5px dashed currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                          </div>
+                          <span style={{ fontSize: 12, fontWeight: 600, textAlign: 'center', lineHeight: 1.4 }}>
+                            Add models<br/>to your account
+                          </span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 )
