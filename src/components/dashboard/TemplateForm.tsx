@@ -859,6 +859,19 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
   }
 
   function renderField(field: TemplateField) {
+    // Note field — renders as an inline info callout, no input
+    if (field.type === 'note') {
+      return (
+        <div key={field.id} className="flex gap-2 rounded-lg px-3 py-2.5" style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)' }}>
+          <svg className="w-3.5 h-3.5 mt-0.5 shrink-0 opacity-60" fill="none" viewBox="0 0 16 16" style={{ color: 'var(--pv-text2)' }}>
+            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M8 7v4M8 5.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--pv-text2)' }}>{field.label}</p>
+        </div>
+      )
+    }
+
     const fieldCustomOpts = customOptions[field.id] ?? []
     const showAddButton = CUSTOM_SUPPORTED.includes(field.type) && !CUSTOM_EXCLUDED_FIELDS.includes(field.id)
     const tooltipText = FIELD_TOOLTIPS[field.id] ?? field.tooltip
