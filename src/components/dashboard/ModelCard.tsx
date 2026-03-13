@@ -193,7 +193,7 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
           {model.name}
         </div>
         <div style={{ fontSize:'11.5px', color:'var(--pv-text3)' }}>{maker}</div>
-        <div style={{ fontSize:'12px', color:'var(--pv-text2)', lineHeight:1.45 }} className="line-clamp-2">
+        <div style={{ fontSize:'12px', color:'var(--pv-text2)', lineHeight:1.45 }} className="line-clamp-3">
           {model.description}
         </div>
         <div className="flex flex-wrap gap-1 mt-1">
