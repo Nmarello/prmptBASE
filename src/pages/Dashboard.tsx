@@ -801,9 +801,10 @@ export default function Dashboard() {
                     ? { ...m, supported_gen_types: [...new Set([...m.supported_gen_types, 'img2img'])] }
                     : m
                   )
-                // Mark DB coming_soon models + hardcoded ones
+                // Mark DB coming_soon models + hardcoded ones, live models first
                 imgModels = imgModels.map(m => m.coming_soon ? { ...m, _comingSoon: true } : m)
                 imgModels.push(...COMING_SOON_IMAGE.map(m => ({ ...m, _comingSoon: true })))
+                imgModels.sort((a, b) => (a._comingSoon ? 1 : 0) - (b._comingSoon ? 1 : 0))
                 if (modelSearch) imgModels = imgModels.filter(m => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
                 if (imgModels.length === 0) return null
                 return (
@@ -842,7 +843,7 @@ export default function Dashboard() {
                 let vidModels: any[] = [
                   ...models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid')),
                   ...COMING_SOON_VIDEO.map(m => ({ ...m, _comingSoon: true })),
-                ]
+                ].sort((a, b) => (a._comingSoon ? 1 : 0) - (b._comingSoon ? 1 : 0))
                 if (modelSearch) vidModels = vidModels.filter(m => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
                 if (vidModels.length === 0) return null
                 return (
