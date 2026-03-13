@@ -76,8 +76,8 @@ const COMING_SOON_IMAGE: Partial<Model>[] = [
 
 const COMING_SOON_VIDEO: Partial<Model>[] = [
   { slug: 'cs-veo3', name: 'Veo 3', provider: 'Google', description: "Google's flagship video model. State-of-the-art motion quality and prompt adherence.", supported_gen_types: ['txt2vid'] },
-  { slug: 'cs-runway', name: 'Runway Gen-4', provider: 'Runway', description: 'The leading creative video AI. Gen-4 sets the bar for motion and cinematic quality.', supported_gen_types: ['txt2vid', 'img2vid'] },
-  { slug: 'cs-pika', name: 'Pika', provider: 'Pika', description: 'Fast, expressive video generation built for social-first creators.', supported_gen_types: ['txt2vid', 'img2vid'] },
+  { slug: 'cs-wan21', name: 'Wan 2.1', provider: 'Alibaba', description: "Alibaba's state-of-the-art open video model. Exceptional at complex scene composition and realistic motion.", supported_gen_types: ['txt2vid', 'img2vid'] },
+  { slug: 'cs-seedance', name: 'Seedance 1 Pro', provider: 'ByteDance', description: 'ByteDance pro-grade video model. Cinematic quality with consistent characters across frames.', supported_gen_types: ['txt2vid', 'img2vid'] },
 ]
 
 function PullIndicator({ distance, refreshing }: { distance: number; refreshing: boolean }) {
@@ -259,6 +259,18 @@ export default function Dashboard() {
     'minimax-txt2vid':    { gradient: 'linear-gradient(145deg,#002b36,#007070,#00c9a7)', initial: 'MM' },
     'sora':               { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
     'sora2':              { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
+    'sora2-txt2vid':      { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
+    'sora2-img2vid':      { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
+    'pika-txt2vid':       { gradient: 'linear-gradient(145deg,#1a0033,#6600ff,#cc44ff)', initial: 'PK' },
+    'pika-img2vid':       { gradient: 'linear-gradient(145deg,#1a0033,#6600ff,#cc44ff)', initial: 'PK' },
+    'runway-txt2vid':     { gradient: 'linear-gradient(145deg,#0d0d0d,#1a1a1a,#2d6a6a)', initial: 'RW' },
+    'runway-img2vid':     { gradient: 'linear-gradient(145deg,#0d0d0d,#1a1a1a,#2d6a6a)', initial: 'RW' },
+    'ltx-txt2vid':        { gradient: 'linear-gradient(145deg,#001a40,#003d99,#4d8cff)', initial: 'LX' },
+    'ltx-img2vid':        { gradient: 'linear-gradient(145deg,#001a40,#003d99,#4d8cff)', initial: 'LX' },
+    'wan-21-txt2vid':     { gradient: 'linear-gradient(145deg,#1a1a00,#4d4d00,#cccc00)', initial: 'WN' },
+    'cs-wan21':           { gradient: 'linear-gradient(145deg,#1a1a00,#4d4d00,#cccc00)', initial: 'WN' },
+    'seedance-1-pro-txt2vid': { gradient: 'linear-gradient(145deg,#00001a,#00004d,#0033cc)', initial: 'SD' },
+    'cs-seedance':        { gradient: 'linear-gradient(145deg,#00001a,#00004d,#0033cc)', initial: 'SD' },
   } as const
 
   const SLUG_BRAND_MAP: Record<string, string> = {
@@ -293,7 +305,15 @@ export default function Dashboard() {
     'hidream-full':             'HiDream',
     'seedream-45':              'ByteDance',
     'seedance-1-pro':           'ByteDance',
+    'seedance-1-pro-txt2vid':   'ByteDance',
     'sd35-medium':              'Stability AI',
+    'pika-txt2vid':             'Pika',
+    'pika-img2vid':             'Pika',
+    'runway-txt2vid':           'Runway',
+    'runway-img2vid':           'Runway',
+    'ltx-txt2vid':              'Lightricks',
+    'ltx-img2vid':              'Lightricks',
+    'wan-21-txt2vid':           'Alibaba',
   }
 
   // Latest render per model slug (includes videos; showcase fallback for unused models)

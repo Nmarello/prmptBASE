@@ -55,6 +55,24 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'txt2vid': 'fal-ai/sora-2/text-to-video',
     'img2vid': 'fal-ai/sora-2/image-to-video',
   },
+  'pika-txt2vid': {
+    'txt2vid': 'fal-ai/pika/v2.2/text-to-video',
+  },
+  'pika-img2vid': {
+    'img2vid': 'fal-ai/pika/v2.2/image-to-video',
+  },
+  'runway-txt2vid': {
+    'txt2vid': 'fal-ai/runway-gen3/alpha/text-to-video',
+  },
+  'runway-img2vid': {
+    'img2vid': 'fal-ai/runway-gen3/alpha/image-to-video',
+  },
+  'ltx-txt2vid': {
+    'txt2vid': 'fal-ai/ltx-video',
+  },
+  'ltx-img2vid': {
+    'img2vid': 'fal-ai/ltx-video/image-to-video',
+  },
 }
 
 const FAL_QUEUE_BASE = 'https://queue.fal.run'
@@ -628,6 +646,16 @@ Deno.serve(async (req) => {
         if (body.model) falPayload.model = body.model
         // Always keep the video — API default is delete_video=true (auto-deletes after generation)
         falPayload.delete_video = false
+      } else if (slug.startsWith('pika')) {
+        if (body.aspect_ratio) falPayload.aspect_ratio = body.aspect_ratio
+        if (body.duration) falPayload.duration = Number(body.duration)
+        if (body.negative_prompt) falPayload.negative_prompt = body.negative_prompt
+      } else if (slug.startsWith('runway')) {
+        if (body.aspect_ratio) falPayload.ratio = body.aspect_ratio  // Runway uses "ratio" not "aspect_ratio"
+        if (body.duration) falPayload.duration = Number(body.duration)
+      } else if (slug.startsWith('ltx')) {
+        if (body.aspect_ratio) falPayload.aspect_ratio = body.aspect_ratio
+        if (body.negative_prompt) falPayload.negative_prompt = body.negative_prompt
       }
 
       // Submit to fal queue
