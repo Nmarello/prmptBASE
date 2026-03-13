@@ -751,7 +751,9 @@ export default function Dashboard() {
   }
 
   async function handleImg2VidPick(model: Model) {
+    const sourceUrl = img2vidPickerUrl
     setImg2vidPickerUrl(null)
+    setDrawerModel(null)
     const { data } = await supabase
       .from('templates')
       .select('*')
@@ -762,7 +764,7 @@ export default function Dashboard() {
       setSelectedModel(model)
       setSelectedGenType('img2vid')
       setTemplate(data as Template)
-      setImg2imgInitialValues({ source_image: img2vidPickerUrl })
+      setImg2imgInitialValues({ source_image: sourceUrl })
       setResult(null)
       setGenerateError(null)
       setView('models')
@@ -772,6 +774,7 @@ export default function Dashboard() {
 
   async function handleImg2ImgPick(model: Model) {
     setImg2imgPickerUrl(null)
+    setDrawerModel(null)
     const { data } = await supabase
       .from('templates')
       .select('*')
