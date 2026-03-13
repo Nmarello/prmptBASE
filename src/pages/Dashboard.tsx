@@ -860,7 +860,7 @@ export default function Dashboard() {
               <div className="flex items-end justify-between mb-4">
                 <div>
                   <h1 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em', lineHeight: 1 }}>
-                    prmpt<span style={{ color: '#3d7fff' }}>VAULT</span>
+                    prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
                   </h1>
                   <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 2 }}>Pick a model and start creating</p>
                 </div>

@@ -125,7 +125,7 @@ export default function Home() {
         minWidth: 600, justifyContent: 'space-between',
       }}>
         <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.3px', color: T.text }}>
-          prmpt<span style={{ color: '#3d7fff' }}>VAULT</span>
+          prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
         </span>
         <div style={{ display: 'flex', gap: 24 }}>
           {[{ label: 'Models', href: '#models' }, { label: 'Pricing', href: '/pricing' }, { label: 'Gallery', href: '#gallery' }].map(l => (
@@ -175,7 +175,7 @@ export default function Home() {
         borderBottom: `1px solid ${T.border}`,
       }}>
         <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.3px', color: T.text }}>
-          prmpt<span style={{ color: '#3d7fff' }}>VAULT</span>
+          prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button onClick={() => setDark(d => !d)} style={{
@@ -439,7 +439,7 @@ export default function Home() {
               <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
             </div>
             <span style={{ fontSize: 13, fontWeight: 800, color: T.text, marginLeft: 6 }}>
-              prmpt<span style={{ color: '#3d7fff' }}>VAULT</span>
+              prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
             </span>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
               {/* Notification toast */}
@@ -818,7 +818,7 @@ export default function Home() {
       <footer className="flex flex-col sm:flex-row gap-4 sm:gap-0 items-center justify-between px-5 sm:px-10 py-8"
         style={{ borderTop: '1px solid ' + T.border, color: T.text3, fontSize: 13 }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>
-          prmpt<span style={{ color: '#3d7fff' }}>VAULT</span>
+          prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
         </div>
         <div style={{ display: 'flex', gap: 24 }}>
           {['Privacy', 'Terms', 'Docs'].map(l => (

@@ -145,33 +145,33 @@ export default function Pricing() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f5f7', color: '#1d1d1f', fontFamily: "'Inter', -apple-system, sans-serif", padding: '80px 24px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--pv-bg)', color: 'var(--pv-text)', fontFamily: "'DM Sans', -apple-system, sans-serif", padding: '80px 24px' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           {user && (
-            <a href="/dashboard" style={{ display: 'inline-block', fontSize: 12, color: '#aeaeb2', marginBottom: 24, textDecoration: 'none', transition: 'color 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#6e6e73')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#aeaeb2')}
+            <a href="/dashboard" style={{ display: 'inline-block', fontSize: 12, color: 'var(--pv-text3)', marginBottom: 24, textDecoration: 'none', transition: 'color 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--pv-text2)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--pv-text3)')}
             >← Back to dashboard</a>
           )}
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#aeaeb2', marginBottom: 12 }}>Pricing</div>
-          <h1 style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 800, letterSpacing: '-2px', marginBottom: 12, color: '#1d1d1f' }}>
-            prmpt<span style={{ color: '#0071e3' }}>VAULT</span>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--pv-text3)', marginBottom: 12 }}>Pricing</div>
+          <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 800, letterSpacing: '-2px', marginBottom: 12, color: 'var(--pv-text)' }}>
+            prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
           </h1>
-          <p style={{ fontSize: 17, color: '#6e6e73', marginBottom: 32 }}>Start free. Scale when you're ready.</p>
+          <p style={{ fontSize: 17, color: 'var(--pv-text2)', marginBottom: 32 }}>Start free. Scale when you're ready.</p>
 
           {/* Billing toggle */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', background: '#e5e5ea', borderRadius: 100, padding: 4, gap: 2 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--pv-surface2)', borderRadius: 100, padding: 4, gap: 2 }}>
             <button
               onClick={() => setBilling('monthly')}
               style={{
                 padding: '6px 20px', borderRadius: 100, fontSize: 13, fontWeight: 600,
                 fontFamily: 'inherit', cursor: 'pointer', border: 'none', transition: 'all 0.15s',
-                background: billing === 'monthly' ? '#fff' : 'transparent',
-                color: billing === 'monthly' ? '#1d1d1f' : '#6e6e73',
-                boxShadow: billing === 'monthly' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                background: billing === 'monthly' ? 'var(--pv-surface)' : 'transparent',
+                color: billing === 'monthly' ? 'var(--pv-text)' : 'var(--pv-text2)',
+                boxShadow: billing === 'monthly' ? '0 1px 4px rgba(0,0,0,0.15)' : 'none',
               }}
             >Monthly</button>
             <button
@@ -180,9 +180,9 @@ export default function Pricing() {
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '6px 20px', borderRadius: 100, fontSize: 13, fontWeight: 600,
                 fontFamily: 'inherit', cursor: 'pointer', border: 'none', transition: 'all 0.15s',
-                background: billing === 'annual' ? '#fff' : 'transparent',
-                color: billing === 'annual' ? '#1d1d1f' : '#6e6e73',
-                boxShadow: billing === 'annual' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                background: billing === 'annual' ? 'var(--pv-surface)' : 'transparent',
+                color: billing === 'annual' ? 'var(--pv-text)' : 'var(--pv-text2)',
+                boxShadow: billing === 'annual' ? '0 1px 4px rgba(0,0,0,0.15)' : 'none',
               }}
             >
               Annual
@@ -202,9 +202,9 @@ export default function Pricing() {
               <div key={tier.name} style={{
                 position: 'relative', borderRadius: 20, padding: '28px 24px',
                 display: 'flex', flexDirection: 'column',
-                background: '#fff',
-                border: isCurrent ? '1px solid rgba(0,113,227,0.5)' : isHighlighted ? '2px solid #f59e0b' : tier.highlight ? '1px solid rgba(0,113,227,0.35)' : '1px solid #d2d2d7',
-                boxShadow: isCurrent ? '0 0 0 3px rgba(0,113,227,0.08)' : isHighlighted ? '0 0 0 4px rgba(245,158,11,0.15)' : tier.highlight ? '0 0 0 3px rgba(0,113,227,0.08)' : 'none',
+                background: 'var(--pv-surface)',
+                border: isCurrent ? '1px solid color-mix(in srgb, var(--pv-accent) 50%, transparent)' : isHighlighted ? '2px solid #f59e0b' : tier.highlight ? '1px solid color-mix(in srgb, var(--pv-accent) 35%, transparent)' : '1px solid var(--pv-border)',
+                boxShadow: isCurrent ? '0 0 0 3px color-mix(in srgb, var(--pv-accent) 8%, transparent)' : isHighlighted ? '0 0 0 4px rgba(245,158,11,0.15)' : tier.highlight ? '0 0 0 3px color-mix(in srgb, var(--pv-accent) 8%, transparent)' : 'none',
               }}>
                 {/* Highlighted (required for model) badge */}
                 {isHighlighted && !isCurrent && (
@@ -227,33 +227,33 @@ export default function Pricing() {
                 {/* Current plan / Most popular badges */}
                 {isCurrent && (
                   <div style={{ position: 'absolute', top: tier.trial ? 8 : -12, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>
-                    <span style={{ background: '#0071e3', color: '#fff', fontSize: 11, fontWeight: 600, padding: '3px 12px', borderRadius: 100 }}>Current plan</span>
+                    <span style={{ background: 'var(--pv-accent)', color: '#fff', fontSize: 11, fontWeight: 600, padding: '3px 12px', borderRadius: 100 }}>Current plan</span>
                   </div>
                 )}
                 {!isCurrent && tier.highlight && (
                   <div style={{ position: 'absolute', top: tier.trial ? 8 : -12, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>
-                    <span style={{ background: '#0071e3', color: '#fff', fontSize: 11, fontWeight: 600, padding: '3px 12px', borderRadius: 100 }}>Most popular</span>
+                    <span style={{ background: 'var(--pv-accent)', color: '#fff', fontSize: 11, fontWeight: 600, padding: '3px 12px', borderRadius: 100 }}>Most popular</span>
                   </div>
                 )}
 
                 {/* Tier name + price */}
                 <div style={{ marginBottom: 20, marginTop: (tier.trial || tier.highlight) ? 12 : 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: tier.highlight ? '#0071e3' : '#aeaeb2', marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: tier.highlight ? 'var(--pv-accent)' : 'var(--pv-text3)', marginBottom: 10 }}>
                     {tier.name}
                   </div>
-                  <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-2px', color: '#1d1d1f', lineHeight: 1 }}>
+                  <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-2px', color: 'var(--pv-text)', lineHeight: 1 }}>
                     {getPrice(tier)}
-                    {tier.price > 0 && <span style={{ fontSize: 15, fontWeight: 500, color: '#aeaeb2', letterSpacing: 0 }}>/mo</span>}
+                    {tier.price > 0 && <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--pv-text3)', letterSpacing: 0 }}>/mo</span>}
                   </div>
                   {getBillingNote(tier) && (
-                    <div style={{ fontSize: 11, color: '#aeaeb2', marginTop: 4 }}>{getBillingNote(tier)}</div>
+                    <div style={{ fontSize: 11, color: 'var(--pv-text3)', marginTop: 4 }}>{getBillingNote(tier)}</div>
                   )}
                 </div>
 
                 {/* Features */}
                 <ul style={{ flex: 1, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 22 }}>
                   {tier.features.map((f) => (
-                    <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#6e6e73' }}>
+                    <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: 'var(--pv-text2)' }}>
                       <span style={{ color: '#34c759', fontSize: 11, fontWeight: 700, marginTop: 1, flexShrink: 0 }}>✓</span>
                       {f}
                     </li>
@@ -267,9 +267,9 @@ export default function Pricing() {
                     width: '100%', padding: '10px', borderRadius: 10,
                     fontSize: 13, fontWeight: 600, cursor: isCurrent || isDowngrade ? 'default' : 'pointer',
                     fontFamily: 'inherit', transition: 'all 0.15s',
-                    background: isCurrent ? 'transparent' : isDowngrade ? 'transparent' : tier.highlight ? '#0071e3' : 'transparent',
-                    color: isCurrent ? '#aeaeb2' : isDowngrade ? '#aeaeb2' : tier.highlight ? '#fff' : '#6e6e73',
-                    border: tier.highlight && !isCurrent && !isDowngrade ? 'none' : '1.5px solid #d2d2d7',
+                    background: isCurrent ? 'transparent' : isDowngrade ? 'transparent' : tier.highlight ? 'var(--pv-accent)' : 'transparent',
+                    color: isCurrent ? 'var(--pv-text3)' : isDowngrade ? 'var(--pv-text3)' : tier.highlight ? '#fff' : 'var(--pv-text2)',
+                    border: tier.highlight && !isCurrent && !isDowngrade ? 'none' : '1.5px solid var(--pv-border)',
                   }}
                 >
                   {loading === tier.tier ? 'Redirecting…' : isCurrent ? 'Current plan' : isDowngrade ? 'Downgrade' : tier.cta}
@@ -282,15 +282,15 @@ export default function Pricing() {
           <div style={{
             borderRadius: 20, padding: '28px 24px',
             display: 'flex', flexDirection: 'column',
-            background: '#fff',
-            border: '1.5px dashed #d2d2d7',
-            opacity: 0.85,
+            background: 'var(--pv-surface)',
+            border: '1.5px dashed var(--pv-border)',
+            opacity: 0.75,
           }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aeaeb2', marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--pv-text3)', marginBottom: 10 }}>
               Teams
             </div>
-            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-1px', color: '#1d1d1f', marginBottom: 6 }}>Coming soon</div>
-            <p style={{ fontSize: 13, color: '#aeaeb2', marginBottom: 20, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-1px', color: 'var(--pv-text)', marginBottom: 6 }}>Coming soon</div>
+            <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginBottom: 20, lineHeight: 1.5 }}>
               Shared vaults, team billing, role-based access, and more.
             </p>
             <div style={{ marginTop: 'auto' }}>
@@ -301,8 +301,9 @@ export default function Pricing() {
                 placeholder="your@email.com"
                 style={{
                   width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 13,
-                  border: '1.5px solid #d2d2d7', fontFamily: 'inherit', marginBottom: 8,
+                  border: '1.5px solid var(--pv-border)', fontFamily: 'inherit', marginBottom: 8,
                   outline: 'none', boxSizing: 'border-box',
+                  background: 'var(--pv-bg)', color: 'var(--pv-text)',
                 }}
               />
               <button
@@ -310,10 +311,10 @@ export default function Pricing() {
                   width: '100%', padding: '10px', borderRadius: 10,
                   fontSize: 13, fontWeight: 600, cursor: 'pointer',
                   fontFamily: 'inherit', background: 'transparent',
-                  color: '#6e6e73', border: '1.5px solid #d2d2d7', transition: 'all 0.15s',
+                  color: 'var(--pv-text2)', border: '1.5px solid var(--pv-border)', transition: 'all 0.15s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#aeaeb2'; e.currentTarget.style.color = '#1d1d1f' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#d2d2d7'; e.currentTarget.style.color = '#6e6e73' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--pv-text3)'; e.currentTarget.style.color = 'var(--pv-text)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--pv-border)'; e.currentTarget.style.color = 'var(--pv-text2)' }}
                 onClick={() => setTeamsEmail('')}
               >
                 Notify me
