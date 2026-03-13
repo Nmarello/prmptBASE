@@ -273,7 +273,10 @@ export default function Admin() {
         const oldTier = users.find(u => u.id === targetUserId)?.tier
         if (oldTier) setStats(prev => prev ? { ...prev, by_tier: { ...prev.by_tier, [oldTier]: prev.by_tier[oldTier] - 1, [newTier]: prev.by_tier[newTier] + 1 } } : null)
       }
-    } catch (err) { console.error(err) }
+    } catch (err) {
+      console.error(err)
+      alert(`Tier update failed: ${err instanceof Error ? err.message : err}`)
+    }
     setUpdatingTier(null)
   }
 

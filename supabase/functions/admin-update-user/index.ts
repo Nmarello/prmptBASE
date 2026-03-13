@@ -50,15 +50,17 @@ Deno.serve(async (req) => {
       profileUpdate.tier = tier
     }
     if (Object.keys(profileUpdate).length > 0) {
-      await adminClient.from('profiles').update(profileUpdate).eq('id', target_user_id)
+      const { error: profileErr } = await adminClient.from('profiles').update(profileUpdate).eq('id', target_user_id)
+      if (profileErr) throw new Error(`Profile update failed: ${profileErr.message}`)
     }
 
     // Sync subscriptions if tier changed
     if (tier) {
-      await adminClient.from('subscriptions').upsert(
+      const { error: subErr } = await adminClient.from('subscriptions').upsert(
         { user_id: target_user_id, tier, status: 'active', updated_at: new Date().toISOString() },
         { onConflict: 'user_id' }
       )
+      if (subErr) throw new Error(`Subscription sync failed: ${subErr.message}`)
     }
 
     return new Response(JSON.stringify({ ok: true }), {
