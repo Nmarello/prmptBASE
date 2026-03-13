@@ -63,9 +63,13 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'txt2vid': 'fal-ai/ltx-video',
     'img2vid': 'fal-ai/ltx-video/image-to-video',
   },
-  'cogvideox': {
-    'txt2vid': 'fal-ai/cogvideox-5b',
-    'img2vid': 'fal-ai/cogvideox-5b/image-to-video',
+  'wan-21-txt2vid': {
+    'txt2vid': 'fal-ai/wan/t2v-turbo',
+    'img2vid': 'fal-ai/wan/i2v-480p',
+  },
+  'hunyuan-video': {
+    'txt2vid': 'fal-ai/hunyuan-video',
+    'img2vid': 'fal-ai/hunyuan-video/image-to-video',
   },
 }
 
@@ -655,7 +659,12 @@ Deno.serve(async (req) => {
         if (body.num_inference_steps) falPayload.num_inference_steps = Number(body.num_inference_steps)
         if (body.guidance_scale) falPayload.guidance_scale = Number(body.guidance_scale)
         if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
-      } else if (slug.startsWith('cogvideox')) {
+      } else if (slug.startsWith('wan')) {
+        if (body.aspect_ratio) falPayload.aspect_ratio = body.aspect_ratio
+        if (body.num_inference_steps) falPayload.num_inference_steps = Number(body.num_inference_steps)
+        if (body.guidance_scale) falPayload.guidance_scale = Number(body.guidance_scale)
+        if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
+      } else if (slug.startsWith('hunyuan')) {
         const VIDEO_SIZE_MAP: Record<string, string> = {
           '16:9': 'landscape_16_9',
           '9:16': 'portrait_16_9',
@@ -667,7 +676,7 @@ Deno.serve(async (req) => {
         falPayload.video_size = (ar && VIDEO_SIZE_MAP[ar]) ? VIDEO_SIZE_MAP[ar] : 'landscape_16_9'
         if (body.num_inference_steps) falPayload.num_inference_steps = Number(body.num_inference_steps)
         if (body.guidance_scale) falPayload.guidance_scale = Number(body.guidance_scale)
-        if (body.export_fps) falPayload.export_fps = Number(body.export_fps)
+        if (body.num_frames) falPayload.num_frames = Number(body.num_frames)
         if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
       }
 
