@@ -1,4 +1,4 @@
-export type GenType = 'txt2img' | 'img2img' | 'multi_img2img' | 'txt2vid' | 'img2vid'
+export type GenType = 'txt2img' | 'img2img' | 'multi_img2img' | 'txt2vid' | 'img2vid' | 'vid2vid'
 
 export type FieldType = 'textarea' | 'text' | 'number' | 'range' | 'pill_select' | 'select' | 'multi_select' | 'style_picker' | 'image_upload' | 'note'
 
@@ -72,6 +72,7 @@ export const GEN_TYPE_LABELS: Record<GenType, string> = {
   multi_img2img: 'Multi Image → Image',
   txt2vid: 'Text → Video',
   img2vid: 'Image → Video',
+  vid2vid: 'Video → Video',
 }
 
 export const TIER_ORDER = ['newbie', 'creator', 'studio', 'pro']

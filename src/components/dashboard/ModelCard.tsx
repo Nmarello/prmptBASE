@@ -51,6 +51,10 @@ const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
   'seedream-45':        { gradient: 'linear-gradient(145deg,#0a001a,#330055,#770099)', initial: 'SD' },
   'sd35-medium':        { gradient: 'linear-gradient(145deg,#001133,#003388,#0055cc)', initial: 'S3' },
   'seedance-1-pro':     { gradient: 'linear-gradient(145deg,#1a0a00,#663300,#cc6600)', initial: 'SC' },
+  // Vid2vid coming soon
+  'kling-o1-edit':      { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KE' },
+  'kling-o1-reference': { gradient: 'linear-gradient(145deg,#3d0030,#990055,#cc3377)', initial: 'KR' },
+  'luma-modify':        { gradient: 'linear-gradient(145deg,#05050f,#0d1a5c,#2952e3)', initial: 'LM' },
 }
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: '??' }
 
@@ -84,6 +88,9 @@ const slugBrandLabels: Record<string, string> = {
   'seedream-45':      'ByteDance',
   'sd35-medium':      'Stability AI',
   'seedance-1-pro':   'ByteDance',
+  'kling-o1-edit':    'Kuaishou',
+  'kling-o1-reference': 'Kuaishou',
+  'luma-modify':      'Luma AI',
 }
 
 // Provider logo mark — SVG or styled wordmark
@@ -93,7 +100,7 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
   const comingSoon = comingSoonProp || false
   const art = MODEL_ART[model.slug] ?? DEFAULT_ART
   const maker = slugBrandLabels[model.slug] ?? model.provider
-  const isVideo = model.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid')
+  const isVideo = model.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid' || g === 'vid2vid')
   const typeLabel = isVideo ? 'VIDEO' : 'IMAGE'
   const hasUserImage = !!latestRenderUrl
 
@@ -198,11 +205,20 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
           {model.description}
         </div>
         <div className="flex flex-wrap gap-1 mt-auto pt-3">
-          {model.supported_gen_types.map(gt => (
-            <span key={gt} style={{ fontSize:'10.5px', fontWeight:600, padding:'2px 7px', borderRadius:'5px', background:'var(--pv-surface2)', color:'var(--pv-text2)', border:'1px solid var(--pv-border)' }}>
-              {GEN_TYPE_LABELS[gt as GenType] ?? gt}
-            </span>
-          ))}
+          {model.supported_gen_types.map(gt => {
+            const pillStyle = gt.startsWith('txt')
+              ? { background:'rgba(251,191,36,0.13)', color:'#f59e0b', border:'1px solid rgba(251,191,36,0.28)' }
+              : gt.startsWith('img')
+              ? { background:'rgba(52,211,153,0.13)', color:'#10b981', border:'1px solid rgba(52,211,153,0.28)' }
+              : gt.startsWith('vid')
+              ? { background:'rgba(96,165,250,0.13)', color:'#60a5fa', border:'1px solid rgba(96,165,250,0.28)' }
+              : { background:'var(--pv-surface2)', color:'var(--pv-text2)', border:'1px solid var(--pv-border)' }
+            return (
+              <span key={gt} style={{ fontSize:'10.5px', fontWeight:600, padding:'2px 7px', borderRadius:'5px', ...pillStyle }}>
+                {GEN_TYPE_LABELS[gt as GenType] ?? gt}
+              </span>
+            )
+          })}
         </div>
       </div>
     </button>
