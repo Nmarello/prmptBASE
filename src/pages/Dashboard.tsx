@@ -899,8 +899,9 @@ export default function Dashboard() {
                 let showAddCard = false
 
                 if (userTier === 'newbie') {
-                  // Free: always DALL-E 3 + Flux Schnell
+                  // Free: always DALL-E 3 + Flux Schnell + upgrade card
                   yourModels = models.filter(m => ['dalle', 'flux-schnell'].includes(m.slug))
+                  showAddCard = true
                 } else if (userTier === 'creator') {
                   // Creator: selected image models + add card if under quota
                   yourModels = models.filter(m =>
@@ -954,7 +955,7 @@ export default function Dashboard() {
                       ))}
                       {showAddCard && (
                         <button
-                          onClick={() => setSettingsOpen(true)}
+                          onClick={() => userTier === 'newbie' ? navigate('/pricing') : setSettingsOpen(true)}
                           style={{
                             width: 230, flexShrink: 0, height: 260,
                             background: 'var(--pv-surface)',
@@ -966,7 +967,7 @@ export default function Dashboard() {
                             transition: 'all 0.15s',
                             fontFamily: 'inherit',
                           }}
-                          className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-accent)] group"
+                          className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-accent)]"
                         >
                           <div style={{ width: 40, height: 40, borderRadius: 12, border: '1.5px dashed currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -974,7 +975,10 @@ export default function Dashboard() {
                             </svg>
                           </div>
                           <span style={{ fontSize: 12, fontWeight: 600, textAlign: 'center', lineHeight: 1.4 }}>
-                            Add models<br/>to your account
+                            {userTier === 'newbie'
+                              ? <>Upgrade your account<br/>to get more models</>
+                              : <>Add models<br/>to your account</>
+                            }
                           </span>
                         </button>
                       )}
