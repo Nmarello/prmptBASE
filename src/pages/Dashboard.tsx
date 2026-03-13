@@ -375,6 +375,21 @@ export default function Dashboard() {
     supabase.from('user_projects').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
       .then(({ data }) => { if (data) setProjects(data as UserProject[]) })
     loadAssets()
+    // Resume polling for any pending video from the last 2 hours
+    supabase.from('assets')
+      .select('id, metadata')
+      .eq('user_id', user.id)
+      .eq('url', '')
+      .in('gen_type', ['txt2vid', 'img2vid'])
+      .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data?.metadata?.status_url) {
+          setPendingVideo({ assetId: data.id, operationName: data.metadata.status_url, provider: 'fal.ai', startedAt: Date.now() })
+        }
+      })
   }, [user, loadAssets])
 
   useEffect(() => {
