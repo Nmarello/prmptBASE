@@ -42,7 +42,9 @@ Deno.serve(async (req) => {
 
     if (status === 'FAILED') {
       const falErr = statusData.error ?? statusData.detail ?? statusData.message ?? statusData.reason
-      const errMsg = typeof falErr === 'string' ? falErr : (falErr ? JSON.stringify(falErr) : JSON.stringify(statusData))
+      const errMsg = (typeof falErr === 'string' && falErr)
+        ? falErr
+        : (falErr ? JSON.stringify(falErr) : JSON.stringify(statusData))
       throw new Error(`fal.ai job failed: ${errMsg}`)
     }
 

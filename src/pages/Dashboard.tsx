@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
 
-function friendlyFalError(raw: string): string {
+function friendlyFalError(raw: unknown): string {
+  // Coerce non-strings to something useful
+  const rawStr: string = typeof raw === 'string'
+    ? raw
+    : (raw ? JSON.stringify(raw) : '')
   // Strip "fal.ai job failed: " prefix so inner content can be checked/parsed
-  const stripped = typeof raw === 'string' ? raw.replace(/^fal\.ai job failed:\s*/, '') : raw
+  const stripped = rawStr.replace(/^fal\.ai job failed:\s*/, '')
   try {
-    const parsed = typeof stripped === 'string' ? JSON.parse(stripped) : stripped
+    const parsed = JSON.parse(stripped)
     const detail = parsed?.detail?.[0] ?? parsed?.detail ?? parsed
     const type = detail?.type ?? parsed?.type ?? ''
-    const msg  = detail?.msg  ?? parsed?.msg  ?? ''
+    const msg  = detail?.msg  ?? parsed?.msg  ?? detail?.message ?? parsed?.message ?? ''
     if (type === 'downstream_service_error' || msg.toLowerCase().includes('overloaded') || msg.toLowerCase().includes('try again')) {
       return "The model's servers are under heavy load right now — not ours. We'll keep retrying for you — hit Generate again and we'll try a few more times automatically."
     }
@@ -19,7 +23,7 @@ function friendlyFalError(raw: string): string {
   } catch {
     // not JSON — fall through
   }
-  const s = typeof stripped === 'string' ? stripped : ''
+  const s = stripped || rawStr
   if (s.toLowerCase().includes('overload') || s.toLowerCase().includes('try again later')) {
     return "The model's servers are under heavy load right now — not ours. We'll keep retrying for you — hit Generate again and we'll try a few more times automatically."
   }
