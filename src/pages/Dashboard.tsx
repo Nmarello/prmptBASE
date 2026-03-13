@@ -737,13 +737,13 @@ export default function Dashboard() {
       setImg2imgInitialValues({ source_image: img2vidPickerUrl })
       setResult(null)
       setGenerateError(null)
-      setView('builder')
+      setView('models')
+      setWorkspaceOpen(true)
     }
   }
 
   async function handleImg2ImgPick(model: Model) {
     setImg2imgPickerUrl(null)
-    // Load the img2img template for this model
     const { data } = await supabase
       .from('templates')
       .select('*')
@@ -756,7 +756,8 @@ export default function Dashboard() {
       setTemplate(data as Template)
       setResult(null)
       setGenerateError(null)
-      setView('builder')
+      setView('models')
+      setWorkspaceOpen(true)
     }
   }
 
