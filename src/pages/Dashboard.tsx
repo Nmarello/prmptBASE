@@ -850,10 +850,10 @@ export default function Dashboard() {
               {/* Video Models row */}
               {(() => {
                 if (modelFilter === 'images') return null
-                let vidModels: any[] = [
-                  ...models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid')),
-                  ...COMING_SOON_VIDEO.map(m => ({ ...m, _comingSoon: true })),
-                ].sort((a, b) => (a._comingSoon ? 1 : 0) - (b._comingSoon ? 1 : 0))
+                let vidModels: any[] = models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid'))
+                vidModels = vidModels.map(m => m.coming_soon ? { ...m, _comingSoon: true } : m)
+                vidModels.push(...COMING_SOON_VIDEO.map(m => ({ ...m, _comingSoon: true })))
+                vidModels.sort((a, b) => (a._comingSoon ? 1 : 0) - (b._comingSoon ? 1 : 0))
                 if (modelSearch) vidModels = vidModels.filter(m => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
                 if (vidModels.length === 0) return null
                 return (
