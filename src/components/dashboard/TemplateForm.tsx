@@ -578,8 +578,39 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
 
   if (field.type === 'image_upload') {
     const preview = value as string | undefined
-    const MAX_MB = 5
+    const MAX_MB = 20
     const MAX_BYTES = MAX_MB * 1024 * 1024
+    const [uploading, setUploading] = useState(false)
+    const [uploadError, setUploadError] = useState<string | null>(null)
+
+    async function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+      const file = e.target.files?.[0]
+      if (!file) return
+      setUploadError(null)
+
+      if (file.size > MAX_BYTES) {
+        setUploadError(`File is ${(file.size / 1024 / 1024).toFixed(1)}MB — max is ${MAX_MB}MB. Please resize or compress it first.`)
+        e.target.value = ''
+        return
+      }
+
+      setUploading(true)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        const ext = file.name.split('.').pop() ?? 'jpg'
+        const path = `uploads/${user?.id ?? 'anon'}/${Date.now()}.${ext}`
+        const { error } = await supabase.storage.from('assets').upload(path, file, { contentType: file.type, upsert: false })
+        if (error) throw new Error(error.message)
+        const { data: { publicUrl } } = supabase.storage.from('assets').getPublicUrl(path)
+        onChange(publicUrl)
+      } catch (err) {
+        setUploadError(`Upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      } finally {
+        setUploading(false)
+        e.target.value = ''
+      }
+    }
+
     return (
       <div>
         <label className="block cursor-pointer">
@@ -587,37 +618,39 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
             type="file"
             accept="image/png,image/jpeg,image/webp"
             className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (!file) return
-              if (file.size > MAX_BYTES) {
-                alert(`Image too large — maximum is ${MAX_MB}MB. Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB. Please resize or compress it before uploading.`)
-                e.target.value = ''
-                return
-              }
-              const reader = new FileReader()
-              reader.onload = () => onChange(reader.result as string)
-              reader.readAsDataURL(file)
-            }}
+            disabled={uploading}
+            onChange={handleImageFile}
           />
           {preview ? (
             <div className="relative group">
               <img src={preview} alt="Source" className="rounded-xl w-full max-h-48 object-cover border border-white/10" />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
-                <span className="text-sm text-white font-medium">Click to change</span>
+                <span className="text-sm text-white font-medium">{uploading ? 'Uploading…' : 'Click to change'}</span>
               </div>
             </div>
           ) : (
-            <div className="border-2 border-dashed hover:border-sky-500/50 rounded-xl p-8 text-center transition-all" style={{ borderColor: 'var(--pv-border)' }}>
-              <svg className="w-7 h-7 mx-auto mb-2" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
-              <p className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>Click to upload image</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>PNG, JPG, WEBP · Max {MAX_MB}MB</p>
+            <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${uploading ? 'opacity-60' : 'hover:border-sky-500/50'}`} style={{ borderColor: 'var(--pv-border)' }}>
+              {uploading ? (
+                <>
+                  <div className="w-6 h-6 rounded-full mx-auto mb-2 pv-spin" style={{ border: '2px solid var(--pv-border)', borderTopColor: 'var(--pv-accent)' }} />
+                  <p className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>Uploading…</p>
+                </>
+              ) : (
+                <>
+                  <svg className="w-7 h-7 mx-auto mb-2" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
+                  <p className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>Click to upload image</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>PNG, JPG, WEBP · Max {MAX_MB}MB</p>
+                </>
+              )}
             </div>
           )}
         </label>
-        <p className="text-xs mt-1.5" style={{ color: 'var(--pv-text3)' }}>
-          Max file size: {MAX_MB}MB. Large images cause upload failures.
-        </p>
+        {uploadError && (
+          <p className="text-xs mt-1.5 font-medium" style={{ color: '#c0392b' }}>{uploadError}</p>
+        )}
+        {!uploadError && (
+          <p className="text-xs mt-1.5" style={{ color: 'var(--pv-text3)' }}>Max {MAX_MB}MB · uploaded directly to storage</p>
+        )}
         {field.hint && <p className="text-xs mt-0.5" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
       </div>
     )
