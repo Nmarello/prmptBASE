@@ -59,13 +59,13 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'txt2vid': 'fal-ai/pika/v2.2/text-to-video',
     'img2vid': 'fal-ai/pika/v2.2/image-to-video',
   },
-  'runway': {
-    'txt2vid': 'fal-ai/runway-gen3/alpha/text-to-video',
-    'img2vid': 'fal-ai/runway-gen3/alpha/image-to-video',
-  },
   'ltx-video': {
     'txt2vid': 'fal-ai/ltx-video',
     'img2vid': 'fal-ai/ltx-video/image-to-video',
+  },
+  'cogvideox': {
+    'txt2vid': 'fal-ai/cogvideox-5b',
+    'img2vid': 'fal-ai/cogvideox-5b/image-to-video',
   },
 }
 
@@ -544,6 +544,7 @@ Deno.serve(async (req) => {
         falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
         falPayload.duration = body.duration ?? '5'
         if (body.cfg_scale) falPayload.cfg_scale = Number(body.cfg_scale)
+        if (isImgVid && body.tail_image_url) falPayload.tail_image_url = body.tail_image_url
 
         // Camera movement — map preset to camera_control object
         const camMove = body.camera_movement as string | undefined
@@ -566,6 +567,7 @@ Deno.serve(async (req) => {
         }
       } else if (slug.startsWith('luma')) {
         falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
+        if (isImgVid && body.end_image_url) falPayload.end_image_url = body.end_image_url
         if (body.loop) falPayload.loop = body.loop === 'true' || body.loop === true
         // resolution: "540p" | "720p" | "1080p"
         if (body.resolution) falPayload.resolution = body.resolution
@@ -641,15 +643,32 @@ Deno.serve(async (req) => {
         // Always keep the video — API default is delete_video=true (auto-deletes after generation)
         falPayload.delete_video = false
       } else if (slug.startsWith('pika')) {
-        if (body.aspect_ratio) falPayload.aspect_ratio = body.aspect_ratio
+        // aspect_ratio only applies to txt2vid; img2vid doesn't accept it
+        if (!isImgVid && body.aspect_ratio) falPayload.aspect_ratio = body.aspect_ratio
+        if (body.resolution) falPayload.resolution = body.resolution
         if (body.duration) falPayload.duration = Number(body.duration)
         if (body.negative_prompt) falPayload.negative_prompt = body.negative_prompt
-      } else if (slug.startsWith('runway')) {
-        if (body.aspect_ratio) falPayload.ratio = body.aspect_ratio  // Runway uses "ratio" not "aspect_ratio"
-        if (body.duration) falPayload.duration = Number(body.duration)
+        if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
       } else if (slug.startsWith('ltx')) {
         if (body.aspect_ratio) falPayload.aspect_ratio = body.aspect_ratio
         if (body.negative_prompt) falPayload.negative_prompt = body.negative_prompt
+        if (body.num_inference_steps) falPayload.num_inference_steps = Number(body.num_inference_steps)
+        if (body.guidance_scale) falPayload.guidance_scale = Number(body.guidance_scale)
+        if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
+      } else if (slug.startsWith('cogvideox')) {
+        const VIDEO_SIZE_MAP: Record<string, string> = {
+          '16:9': 'landscape_16_9',
+          '9:16': 'portrait_16_9',
+          '4:3':  'landscape_4_3',
+          '3:4':  'portrait_4_3',
+          '1:1':  'square_hd',
+        }
+        const ar = body.aspect_ratio as string | undefined
+        falPayload.video_size = (ar && VIDEO_SIZE_MAP[ar]) ? VIDEO_SIZE_MAP[ar] : 'landscape_16_9'
+        if (body.num_inference_steps) falPayload.num_inference_steps = Number(body.num_inference_steps)
+        if (body.guidance_scale) falPayload.guidance_scale = Number(body.guidance_scale)
+        if (body.export_fps) falPayload.export_fps = Number(body.export_fps)
+        if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
       }
 
       // Submit to fal queue

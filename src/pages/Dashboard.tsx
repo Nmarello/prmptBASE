@@ -264,6 +264,7 @@ export default function Dashboard() {
     'pika':               { gradient: 'linear-gradient(145deg,#1a0033,#6600ff,#cc44ff)', initial: 'PK' },
     'runway':             { gradient: 'linear-gradient(145deg,#0d0d0d,#1a1a1a,#2d6a6a)', initial: 'RW' },
     'ltx-video':          { gradient: 'linear-gradient(145deg,#001a40,#003d99,#4d8cff)', initial: 'LX' },
+    'cogvideox':          { gradient: 'linear-gradient(145deg,#001a1a,#004d3d,#00cc99)', initial: 'CV' },
     'wan-21-txt2vid':     { gradient: 'linear-gradient(145deg,#1a1a00,#4d4d00,#cccc00)', initial: 'WN' },
     'cs-wan21':           { gradient: 'linear-gradient(145deg,#1a1a00,#4d4d00,#cccc00)', initial: 'WN' },
     'seedance-1-pro-txt2vid': { gradient: 'linear-gradient(145deg,#00001a,#00004d,#0033cc)', initial: 'SD' },
@@ -307,6 +308,7 @@ export default function Dashboard() {
     'pika':                     'Pika',
     'runway':                   'Runway',
     'ltx-video':                'Lightricks',
+    'cogvideox':                'Zhipu AI',
     'wan-21-txt2vid':           'Alibaba',
   }
 
