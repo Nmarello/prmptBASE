@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
+import { useNavigate } from 'react-router-dom'
 
 function friendlyFalError(raw: unknown): string {
   // Coerce non-strings to something useful
@@ -110,10 +111,67 @@ function SbBtn({ tip, active, onClick, children }: { tip?: string; active?: bool
   )
 }
 
+const TIER_ORDER = ['newbie', 'creator', 'studio', 'pro']
+const PRO_ONLY_SLUGS = ['sora2', 'sora2-txt2vid', 'sora2-img2vid', 'kling', 'kling-txt2vid', 'kling-img2vid']
+const CREATOR_LIMIT = 10
+const STUDIO_VIDEO_LIMIT = 5
+
+type ModelStatus = 'active' | 'add' | 'next-month' | 'upgrade' | 'coming-soon'
+
+function getModelStatus(
+  model: Model,
+  userTier: string,
+  selectedIds: Set<string>,
+): { status: ModelStatus; upgradeTier?: string } {
+  if (model.coming_soon) return { status: 'coming-soon' }
+
+  const tierIdx = TIER_ORDER.indexOf(userTier)
+
+  // Pro-only models (sora2, kling) require pro even for studio
+  if (PRO_ONLY_SLUGS.includes(model.slug)) {
+    if (userTier !== 'pro') return { status: 'upgrade', upgradeTier: 'pro' }
+    return { status: 'active' }
+  }
+
+  const isVideo = model.supported_gen_types.some(g => ['txt2vid', 'img2vid', 'vid2vid'].includes(g))
+  const modelMinTierIdx = TIER_ORDER.indexOf(model.min_tier ?? 'newbie')
+
+  // Pro: everything active
+  if (userTier === 'pro') return { status: 'active' }
+
+  // Studio
+  if (userTier === 'studio') {
+    if (!isVideo) return { status: 'active' } // all image models always active
+    if (modelMinTierIdx > tierIdx) return { status: 'upgrade', upgradeTier: model.min_tier }
+    if (selectedIds.has(model.id)) return { status: 'active' }
+    // Count only selected video models for quota check
+    // (selectedIds may include image models from before; video check is approximate here)
+    if (selectedIds.size < STUDIO_VIDEO_LIMIT) return { status: 'add' }
+    return { status: 'next-month' }
+  }
+
+  // Creator
+  if (userTier === 'creator') {
+    if (isVideo) return { status: 'upgrade', upgradeTier: 'studio' }
+    if (modelMinTierIdx > tierIdx) return { status: 'upgrade', upgradeTier: model.min_tier }
+    if (selectedIds.has(model.id)) return { status: 'active' }
+    if (selectedIds.size < CREATOR_LIMIT) return { status: 'add' }
+    return { status: 'next-month' }
+  }
+
+  // Free (newbie)
+  if (modelMinTierIdx > tierIdx) {
+    const upgradeTier = isVideo ? 'studio' : 'creator'
+    return { status: 'upgrade', upgradeTier }
+  }
+  return { status: 'active' }
+}
+
 export default function Dashboard() {
   const { user } = useAuth()
   const { mode: learningMode } = useLearningMode()
   const { theme, setTheme } = useTheme()
+  const navigate = useNavigate()
   const userInitial = (user?.user_metadata?.full_name ?? user?.email ?? '?')[0].toUpperCase()
   const [view, setView] = useState<View>('models')
   const [tourActive, setTourActive] = useState(false)
@@ -124,6 +182,7 @@ export default function Dashboard() {
 
   const [models, setModels] = useState<Model[]>([])
   const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(new Set())
+  const [pickerLockedUntil, setPickerLockedUntil] = useState<Date | null>(null)
   const [modelFilter, setModelFilter] = useState<'all' | 'images' | 'videos'>('all')
   const [modelSearch, setModelSearch] = useState('')
   const [_mediaTab, _setMediaTab] = useState<'image' | 'video'>('image')
@@ -258,6 +317,17 @@ export default function Dashboard() {
     if (data) setModels(data as Model[])
   }, [user])
 
+  async function handleAddModel(modelId: string) {
+    if (!user) return
+    const isLocked = pickerLockedUntil !== null && pickerLockedUntil > new Date()
+    if (isLocked) {
+      setSettingsOpen(true)
+      return
+    }
+    await supabase.from('user_model_selections').upsert({ user_id: user.id, model_id: modelId })
+    setSelectedModelIds(prev => new Set([...prev, modelId]))
+  }
+
   // Pull-to-refresh for generate view (declared after refreshModels)
   const { scrollRef: generateScrollRef, distance: generatePullDist, refreshing: generateRefreshing } = usePullToRefresh(refreshModels)
 
@@ -275,11 +345,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return
-    supabase.from('profiles').select('tier').eq('id', user.id).single()
+    supabase.from('profiles').select('tier, model_picker_locked_until').eq('id', user.id).single()
       .then(({ data }) => {
         if (data) {
           setUserTier(data.tier)
-          // Load model selections for creator/studio
+          if (data.model_picker_locked_until) setPickerLockedUntil(new Date(data.model_picker_locked_until))
           if (data.tier === 'creator' || data.tier === 'studio') {
             supabase.from('user_model_selections').select('model_id').eq('user_id', user.id)
               .then(({ data: sels }) => {
@@ -820,28 +890,68 @@ export default function Dashboard() {
             {/* Scrollable model rows */}
             <div ref={generateScrollRef} className="flex-1 overflow-y-auto px-4 sm:px-7 pb-28 sm:pb-10 space-y-8">
               <PullIndicator distance={generatePullDist} refreshing={generateRefreshing} />
+              {/* Your Models row (active selections) */}
+              {(() => {
+                if (modelSearch) return null
+                // Pro/newbie: no picker, so this row is N/A. Creator/studio: show selected models.
+                if (!['creator', 'studio'].includes(userTier)) return null
+                const yourModels = models.filter(m =>
+                  selectedModelIds.has(m.id) && !m.coming_soon && m.slug !== 'flux-dev-img2img'
+                )
+                if (yourModels.length === 0) return null
+                return (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                        Your Models
+                      </h2>
+                      <button
+                        onClick={() => setSettingsOpen(true)}
+                        style={{ fontSize: 12, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+                      >
+                        Manage →
+                      </button>
+                    </div>
+                    <div className="flex gap-3.5 overflow-x-auto pb-3">
+                      {yourModels.map((m) => (
+                        <ModelCard
+                          key={m.id}
+                          model={m}
+                          userTier={userTier}
+                          selected={selectedModel?.id === m.id}
+                          onClick={() => setDrawerModel(m)}
+                          rendering={renderingModelSlug === m.slug}
+                          latestRenderUrl={latestRenderBySlug[m.slug]?.url}
+                          latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
+                          modelStatus="active"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+
               {/* Image Models row */}
               {(() => {
                 if (modelFilter === 'videos') return null
-                const rawImgModels = models.filter(m =>
-                  m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))
-                )
                 // Merge flux-dev-img2img into flux-dev as a single card
-                let imgModels: any[] = rawImgModels
+                let imgModels: any[] = models
+                  .filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g)))
                   .filter(m => m.slug !== 'flux-dev-img2img')
                   .map(m => m.slug === 'flux-dev'
                     ? { ...m, supported_gen_types: [...new Set([...m.supported_gen_types, 'img2img'])] }
                     : m
                   )
-                // Creator: filter to selected image models (if selection exists)
-                if (userTier === 'creator' && selectedModelIds.size > 0) {
-                  imgModels = imgModels.filter(m => m.coming_soon || selectedModelIds.has(m.id))
-                }
-                // Mark DB coming_soon models + hardcoded ones, live models first
                 imgModels = imgModels.map(m => m.coming_soon ? { ...m, _comingSoon: true } : m)
                 imgModels.push(...COMING_SOON_IMAGE.map(m => ({ ...m, _comingSoon: true })))
-                imgModels.sort((a, b) => (a._comingSoon ? 1 : 0) - (b._comingSoon ? 1 : 0))
-                if (modelSearch) imgModels = imgModels.filter(m => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
+                // active first, then add, then next-month, then upgrade, then coming-soon
+                const statusOrder = { active: 0, add: 1, 'next-month': 2, upgrade: 3, 'coming-soon': 4 }
+                imgModels.sort((a: any, b: any) => {
+                  const sa = getModelStatus(a, userTier, selectedModelIds).status
+                  const sb = getModelStatus(b, userTier, selectedModelIds).status
+                  return (statusOrder[sa] ?? 5) - (statusOrder[sb] ?? 5)
+                })
+                if (modelSearch) imgModels = imgModels.filter((m: any) => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
                 if (imgModels.length === 0) return null
                 return (
                   <div>
@@ -850,32 +960,31 @@ export default function Dashboard() {
                         Image Models
                       </h2>
                       <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pv-text3)', background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', padding: '2px 8px', borderRadius: 20 }}>
-                        {imgModels.filter(m => !(m as any)._comingSoon).length} available
+                        {imgModels.filter((m: any) => !m._comingSoon).length} available
                       </span>
-                      {userTier === 'creator' && selectedModelIds.size === 0 && (
-                        <button
-                          onClick={() => setSettingsOpen(true)}
-                          style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--pv-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
-                        >
-                          Pick your 10 models →
-                        </button>
-                      )}
                     </div>
                     <div className="flex gap-3.5 overflow-x-auto pb-3">
-                      {imgModels.map((m: any) => (
-                        <ModelCard
-                          key={m.id ?? m.slug}
-                          model={m as Model}
-                          userTier={userTier}
-                          selected={selectedModel?.id === m.id}
-                          onClick={() => setDrawerModel(m as Model)}
-                          comingSoon={m._comingSoon || m.comingSoon}
-                          rendering={renderingModelSlug === m.slug}
-                          latestRenderUrl={latestRenderBySlug[m.slug]?.url}
-                          latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
-                          dataTour={m.slug === 'dalle' ? 'dalle-card' : undefined}
-                        />
-                      ))}
+                      {imgModels.map((m: any) => {
+                        const { status, upgradeTier } = m._comingSoon ? { status: 'coming-soon' as const, upgradeTier: undefined } : getModelStatus(m as Model, userTier, selectedModelIds)
+                        return (
+                          <ModelCard
+                            key={m.id ?? m.slug}
+                            model={m as Model}
+                            userTier={userTier}
+                            selected={selectedModel?.id === m.id}
+                            onClick={() => setDrawerModel(m as Model)}
+                            comingSoon={m._comingSoon || m.comingSoon}
+                            rendering={renderingModelSlug === m.slug}
+                            latestRenderUrl={latestRenderBySlug[m.slug]?.url}
+                            latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
+                            dataTour={m.slug === 'dalle' ? 'dalle-card' : undefined}
+                            modelStatus={status}
+                            upgradeTier={upgradeTier}
+                            onAdd={() => handleAddModel(m.id)}
+                            onUpgrade={() => navigate(`/pricing?highlight=${upgradeTier ?? 'creator'}`)}
+                          />
+                        )
+                      })}
                     </div>
                   </div>
                 )
@@ -884,21 +993,16 @@ export default function Dashboard() {
               {/* Video Models row */}
               {(() => {
                 if (modelFilter === 'images') return null
-                const STUDIO_VIDEO_EXCLUDED_SLUGS = ['sora2', 'sora2-txt2vid', 'sora2-img2vid', 'kling', 'kling-txt2vid', 'kling-img2vid']
                 let vidModels: any[] = models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid' || g === 'vid2vid'))
-                // Studio: filter video to selected (excl. Sora2+Kling); free/creator: no video
-                if (userTier === 'studio') {
-                  vidModels = vidModels.filter(m =>
-                    m.coming_soon ||
-                    (!STUDIO_VIDEO_EXCLUDED_SLUGS.includes(m.slug) && (selectedModelIds.size === 0 || selectedModelIds.has(m.id)))
-                  )
-                } else if (userTier === 'creator' || userTier === 'newbie') {
-                  vidModels = [] // no video for free/creator
-                }
                 vidModels = vidModels.map(m => m.coming_soon ? { ...m, _comingSoon: true } : m)
                 vidModels.push(...COMING_SOON_VIDEO.map(m => ({ ...m, _comingSoon: true })))
-                vidModels.sort((a, b) => (a._comingSoon ? 1 : 0) - (b._comingSoon ? 1 : 0))
-                if (modelSearch) vidModels = vidModels.filter(m => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
+                const statusOrder = { active: 0, add: 1, 'next-month': 2, upgrade: 3, 'coming-soon': 4 }
+                vidModels.sort((a: any, b: any) => {
+                  const sa = getModelStatus(a, userTier, selectedModelIds).status
+                  const sb = getModelStatus(b, userTier, selectedModelIds).status
+                  return (statusOrder[sa] ?? 5) - (statusOrder[sb] ?? 5)
+                })
+                if (modelSearch) vidModels = vidModels.filter((m: any) => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
                 if (vidModels.length === 0) return null
                 return (
                   <div>
@@ -907,35 +1011,35 @@ export default function Dashboard() {
                         Video Models
                       </h2>
                       <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pv-text3)', background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', padding: '2px 8px', borderRadius: 20 }}>
-                        {vidModels.filter(m => !(m as any)._comingSoon).length} available
+                        {vidModels.filter((m: any) => !m._comingSoon).length} available
                       </span>
-                      {userTier === 'studio' && selectedModelIds.size === 0 && (
-                        <button
-                          onClick={() => setSettingsOpen(true)}
-                          style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--pv-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
-                        >
-                          Pick your 5 video models →
-                        </button>
-                      )}
                     </div>
                     <div className="flex gap-3.5 overflow-x-auto pb-3">
-                      {vidModels.map((m: any) => (
-                        <ModelCard
-                          key={m.id ?? m.slug}
-                          model={m as Model}
-                          userTier={userTier}
-                          selected={selectedModel?.id === m.id}
-                          onClick={() => setDrawerModel(m as Model)}
-                          comingSoon={m._comingSoon || m.comingSoon}
-                          rendering={renderingModelSlug === m.slug}
-                          latestRenderUrl={latestRenderBySlug[m.slug]?.url}
-                          latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
-                        />
-                      ))}
+                      {vidModels.map((m: any) => {
+                        const { status, upgradeTier } = m._comingSoon ? { status: 'coming-soon' as const, upgradeTier: undefined } : getModelStatus(m as Model, userTier, selectedModelIds)
+                        return (
+                          <ModelCard
+                            key={m.id ?? m.slug}
+                            model={m as Model}
+                            userTier={userTier}
+                            selected={selectedModel?.id === m.id}
+                            onClick={() => setDrawerModel(m as Model)}
+                            comingSoon={m._comingSoon || m.comingSoon}
+                            rendering={renderingModelSlug === m.slug}
+                            latestRenderUrl={latestRenderBySlug[m.slug]?.url}
+                            latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
+                            modelStatus={status}
+                            upgradeTier={upgradeTier}
+                            onAdd={() => handleAddModel(m.id)}
+                            onUpgrade={() => navigate(`/pricing?highlight=${upgradeTier ?? 'studio'}`)}
+                          />
+                        )
+                      })}
                     </div>
                   </div>
                 )
               })()}
+
               {/* Featured row */}
               {!modelSearch && (() => {
                 const FEATURED_SLUGS = ['flux-pro-ultra', 'recraft-v4-pro', 'luma-txt2vid', 'flux-kontext-pro']
@@ -954,18 +1058,25 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <div className="flex gap-3.5 overflow-x-auto pb-3">
-                      {featuredModels.map((m) => (
-                        <ModelCard
-                          key={m.id}
-                          model={m}
-                          userTier={userTier}
-                          selected={selectedModel?.id === m.id}
-                          onClick={() => setDrawerModel(m)}
-                          rendering={renderingModelSlug === m.slug}
-                          latestRenderUrl={latestRenderBySlug[m.slug]?.url}
-                          latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
-                        />
-                      ))}
+                      {featuredModels.map((m) => {
+                        const { status, upgradeTier } = getModelStatus(m, userTier, selectedModelIds)
+                        return (
+                          <ModelCard
+                            key={m.id}
+                            model={m}
+                            userTier={userTier}
+                            selected={selectedModel?.id === m.id}
+                            onClick={() => setDrawerModel(m)}
+                            rendering={renderingModelSlug === m.slug}
+                            latestRenderUrl={latestRenderBySlug[m.slug]?.url}
+                            latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
+                            modelStatus={status}
+                            upgradeTier={upgradeTier}
+                            onAdd={() => handleAddModel(m.id)}
+                            onUpgrade={() => navigate(`/pricing?highlight=${upgradeTier ?? 'creator'}`)}
+                          />
+                        )
+                      })}
                     </div>
                   </div>
                 )

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { createCheckoutSession } from '../lib/stripe'
@@ -95,6 +96,8 @@ const tiers = [
 
 export default function Pricing() {
   const { user } = useAuth()
+  const location = useLocation()
+  const highlightTier = new URLSearchParams(location.search).get('highlight')
   const [showAuth, setShowAuth] = useState(false)
   const [loading, setLoading] = useState<string | null>(null)
   const [userTier, setUserTier] = useState<string | null>(null)
@@ -194,16 +197,26 @@ export default function Pricing() {
             const isCurrent = userTier === tier.tier
             const tierIndex = tierOrder.indexOf(tier.tier)
             const isDowngrade = userTierIndex > tierIndex
+            const isHighlighted = highlightTier === tier.tier
             return (
               <div key={tier.name} style={{
                 position: 'relative', borderRadius: 20, padding: '28px 24px',
                 display: 'flex', flexDirection: 'column',
                 background: '#fff',
-                border: isCurrent ? '1px solid rgba(0,113,227,0.5)' : tier.highlight ? '1px solid rgba(0,113,227,0.35)' : '1px solid #d2d2d7',
-                boxShadow: isCurrent || tier.highlight ? '0 0 0 3px rgba(0,113,227,0.08)' : 'none',
+                border: isCurrent ? '1px solid rgba(0,113,227,0.5)' : isHighlighted ? '2px solid #f59e0b' : tier.highlight ? '1px solid rgba(0,113,227,0.35)' : '1px solid #d2d2d7',
+                boxShadow: isCurrent ? '0 0 0 3px rgba(0,113,227,0.08)' : isHighlighted ? '0 0 0 4px rgba(245,158,11,0.15)' : tier.highlight ? '0 0 0 3px rgba(0,113,227,0.08)' : 'none',
               }}>
+                {/* Highlighted (required for model) badge */}
+                {isHighlighted && !isCurrent && (
+                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>
+                    <span style={{ background: '#f59e0b', color: '#fff', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100 }}>
+                      Required for this model
+                    </span>
+                  </div>
+                )}
+
                 {/* Trial badge */}
-                {tier.trial && !isCurrent && (
+                {tier.trial && !isCurrent && !isHighlighted && (
                   <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>
                     <span style={{ background: '#ff9500', color: '#fff', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100 }}>
                       3-day free trial

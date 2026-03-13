@@ -1,6 +1,8 @@
 import type { Model, GenType } from '../../types'
 import { tierCanAccess, GEN_TYPE_LABELS } from '../../types'
 
+type ModelStatus = 'active' | 'add' | 'next-month' | 'upgrade' | 'coming-soon'
+
 interface Props {
   model: Model
   userTier: string
@@ -11,6 +13,10 @@ interface Props {
   latestRenderUrl?: string
   latestRenderIsVideo?: boolean
   dataTour?: string
+  modelStatus?: ModelStatus
+  upgradeTier?: string
+  onAdd?: () => void
+  onUpgrade?: () => void
 }
 
 const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
@@ -95,23 +101,41 @@ const slugBrandLabels: Record<string, string> = {
 
 // Provider logo mark — SVG or styled wordmark
 
-export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering, latestRenderUrl, latestRenderIsVideo, dataTour }: Props) {
+export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering, latestRenderUrl, latestRenderIsVideo, dataTour, modelStatus, upgradeTier, onAdd, onUpgrade }: Props) {
   const accessible = tierCanAccess(userTier, model.min_tier)
-  const comingSoon = comingSoonProp || false
+  const comingSoon = comingSoonProp || modelStatus === 'coming-soon' || false
   const art = MODEL_ART[model.slug] ?? DEFAULT_ART
   const maker = slugBrandLabels[model.slug] ?? model.provider
   const isVideo = model.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid' || g === 'vid2vid')
   const typeLabel = isVideo ? 'VIDEO' : 'IMAGE'
   const hasUserImage = !!latestRenderUrl
 
+  const effectiveStatus = modelStatus ?? (comingSoon ? 'coming-soon' : accessible ? 'active' : 'upgrade')
+
+  function handleClick() {
+    if (effectiveStatus === 'coming-soon') return
+    if (effectiveStatus === 'upgrade') { onUpgrade?.(); return }
+    if (effectiveStatus === 'add') { onAdd?.(); return }
+    if (effectiveStatus === 'next-month') return
+    onClick()
+  }
+
+  const STATUS_LABEL: Partial<Record<ModelStatus, string>> = {
+    'add':        'Add to Your Account',
+    'next-month': 'Select for Next Month',
+    'upgrade':    upgradeTier ? `Upgrade to ${upgradeTier.charAt(0).toUpperCase() + upgradeTier.slice(1)}` : 'Upgrade to Access',
+  }
+
   return (
     <button
-      onClick={!comingSoon && accessible ? onClick : undefined}
+      onClick={handleClick}
       data-tour={dataTour}
       style={{ width: '230px', flexShrink: 0, background: 'var(--pv-surface)' }}
       className={`group relative text-left rounded-[18px] border overflow-hidden flex flex-col transition-all duration-200 ${
         comingSoon
           ? 'opacity-40 cursor-not-allowed border-[var(--pv-border)]'
+          : effectiveStatus === 'next-month'
+          ? 'opacity-60 cursor-default border-[var(--pv-border)]'
           : selected
           ? 'border-[var(--pv-accent)] shadow-lg cursor-pointer'
           : 'border-[var(--pv-border)] hover:-translate-y-0.5 hover:shadow-md hover:border-transparent cursor-pointer'
@@ -177,18 +201,19 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
           </div>
         )}
 
-        {/* Tier lock — top left (only when no rendering LED) */}
-        {!comingSoon && !accessible && !rendering && (
-          <div className="absolute top-2.5 left-2.5 text-[10px] font-bold capitalize px-2 py-0.5 rounded z-10" style={{ background:'rgba(0,0,0,0.45)', color:'rgba(255,255,255,0.8)', border:'1px solid rgba(255,255,255,0.15)' }}>
-            {model.min_tier}
-          </div>
-        )}
-
         {/* Hover CTA */}
-        {!comingSoon && accessible && (
+        {!comingSoon && effectiveStatus !== 'next-month' && (
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10" style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(4px)' }}>
-            <span className="text-[12.5px] font-bold px-4 py-1.5 rounded-full" style={{ background:'#fff', color:'#18140e' }}>
-              Use this model →
+            <span className="text-[12.5px] font-bold px-4 py-1.5 rounded-full" style={{
+              background: effectiveStatus === 'upgrade' ? '#f59e0b' : effectiveStatus === 'add' ? 'var(--pv-accent)' : '#fff',
+              color: effectiveStatus === 'upgrade' || effectiveStatus === 'add' ? '#fff' : '#18140e',
+            }}>
+              {effectiveStatus === 'upgrade'
+                ? (upgradeTier ? `Upgrade to ${upgradeTier.charAt(0).toUpperCase() + upgradeTier.slice(1)} →` : 'Upgrade to Access →')
+                : effectiveStatus === 'add'
+                ? 'Add to Your Account →'
+                : 'Use this model →'
+              }
             </span>
           </div>
         )}
@@ -220,6 +245,35 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
             )
           })}
         </div>
+
+        {/* Status label */}
+        {effectiveStatus !== 'active' && effectiveStatus !== 'coming-soon' && STATUS_LABEL[effectiveStatus] && (
+          <div style={{
+            marginTop: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            padding: '4px 8px',
+            borderRadius: 6,
+            textAlign: 'center',
+            background: effectiveStatus === 'upgrade'
+              ? 'rgba(245,158,11,0.12)'
+              : effectiveStatus === 'add'
+              ? 'rgba(var(--pv-accent-rgb,0,113,227),0.1)'
+              : 'var(--pv-surface2)',
+            color: effectiveStatus === 'upgrade'
+              ? '#f59e0b'
+              : effectiveStatus === 'add'
+              ? 'var(--pv-accent)'
+              : 'var(--pv-text3)',
+            border: '1px solid ' + (effectiveStatus === 'upgrade'
+              ? 'rgba(245,158,11,0.25)'
+              : effectiveStatus === 'add'
+              ? 'rgba(var(--pv-accent-rgb,0,113,227),0.2)'
+              : 'var(--pv-border)'),
+          }}>
+            {STATUS_LABEL[effectiveStatus]}
+          </div>
+        )}
       </div>
     </button>
   )
