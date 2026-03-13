@@ -578,6 +578,8 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
 
   if (field.type === 'image_upload') {
     const preview = value as string | undefined
+    const MAX_MB = 5
+    const MAX_BYTES = MAX_MB * 1024 * 1024
     return (
       <div>
         <label className="block cursor-pointer">
@@ -588,6 +590,11 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
             onChange={(e) => {
               const file = e.target.files?.[0]
               if (!file) return
+              if (file.size > MAX_BYTES) {
+                alert(`Image too large — maximum is ${MAX_MB}MB. Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB. Please resize or compress it before uploading.`)
+                e.target.value = ''
+                return
+              }
               const reader = new FileReader()
               reader.onload = () => onChange(reader.result as string)
               reader.readAsDataURL(file)
@@ -604,11 +611,14 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
             <div className="border-2 border-dashed hover:border-sky-500/50 rounded-xl p-8 text-center transition-all" style={{ borderColor: 'var(--pv-border)' }}>
               <svg className="w-7 h-7 mx-auto mb-2" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
               <p className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>Click to upload image</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>PNG, JPG, WEBP</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>PNG, JPG, WEBP · Max {MAX_MB}MB</p>
             </div>
           )}
         </label>
-        {field.hint && <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
+        <p className="text-xs mt-1.5" style={{ color: 'var(--pv-text3)' }}>
+          Max file size: {MAX_MB}MB. Large images cause upload failures.
+        </p>
+        {field.hint && <p className="text-xs mt-0.5" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
       </div>
     )
   }
