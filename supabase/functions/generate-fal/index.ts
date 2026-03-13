@@ -558,9 +558,11 @@ Deno.serve(async (req) => {
         // resolution: "540p" | "720p" | "1080p"
         if (body.resolution) falPayload.resolution = body.resolution
         // duration: "5s" | "9s" — ensure "s" suffix
+        // Luma constraint: 9s is not supported at 1080p — cap to 5s
         if (body.duration) {
           const d = String(body.duration).replace(/s$/, '')
-          falPayload.duration = `${d}s`
+          const res = body.resolution as string | undefined
+          falPayload.duration = (d === '9' && res === '1080p') ? '5s' : `${d}s`
         }
 
         // Camera motion — append as prompt modifier for Luma

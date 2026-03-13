@@ -493,7 +493,7 @@ UPDATE templates SET fields = '[
     {"value":"720p","label":"720p — Balanced"},
     {"value":"1080p","label":"1080p — High Quality"}
   ]},
-  {"id":"duration","label":"Duration","type":"select","options":[
+  {"id":"duration","label":"Duration","type":"select","hint":"9s is automatically reduced to 5s at 1080p resolution","options":[
     {"value":"5s","label":"5 seconds"},
     {"value":"9s","label":"9 seconds"}
   ]},
@@ -536,7 +536,7 @@ UPDATE templates SET fields = '[
     {"value":"720p","label":"720p — Balanced"},
     {"value":"1080p","label":"1080p — High Quality"}
   ]},
-  {"id":"duration","label":"Duration","type":"select","options":[
+  {"id":"duration","label":"Duration","type":"select","hint":"9s is automatically reduced to 5s at 1080p resolution","options":[
     {"value":"5s","label":"5 seconds"},
     {"value":"9s","label":"9 seconds"}
   ]},
