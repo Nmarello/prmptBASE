@@ -1023,8 +1023,8 @@ export default function Dashboard() {
                 // active first, then add, then next-month, then upgrade, then coming-soon
                 const statusOrder = { active: 0, add: 1, 'next-month': 2, upgrade: 3, 'coming-soon': 4 }
                 imgModels.sort((a: any, b: any) => {
-                  const sa = getModelStatus(a, userTier, selectedModelIds).status
-                  const sb = getModelStatus(b, userTier, selectedModelIds).status
+                  const sa = a._comingSoon ? 'coming-soon' : getModelStatus(a, userTier, selectedModelIds).status
+                  const sb = b._comingSoon ? 'coming-soon' : getModelStatus(b, userTier, selectedModelIds).status
                   return (statusOrder[sa] ?? 5) - (statusOrder[sb] ?? 5)
                 })
                 if (modelSearch) imgModels = imgModels.filter((m: any) => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
@@ -1074,8 +1074,8 @@ export default function Dashboard() {
                 vidModels.push(...COMING_SOON_VIDEO.map(m => ({ ...m, _comingSoon: true })))
                 const statusOrder = { active: 0, add: 1, 'next-month': 2, upgrade: 3, 'coming-soon': 4 }
                 vidModels.sort((a: any, b: any) => {
-                  const sa = getModelStatus(a, userTier, selectedModelIds).status
-                  const sb = getModelStatus(b, userTier, selectedModelIds).status
+                  const sa = a._comingSoon ? 'coming-soon' : getModelStatus(a, userTier, selectedModelIds).status
+                  const sb = b._comingSoon ? 'coming-soon' : getModelStatus(b, userTier, selectedModelIds).status
                   return (statusOrder[sa] ?? 5) - (statusOrder[sb] ?? 5)
                 })
                 if (modelSearch) vidModels = vidModels.filter((m: any) => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
