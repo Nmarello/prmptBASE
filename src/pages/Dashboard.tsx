@@ -226,6 +226,7 @@ export default function Dashboard() {
     'hidream-fast':             'HiDream',
     'hidream-full':             'HiDream',
     'seedream-45':              'ByteDance',
+    'seedance-1-pro':           'ByteDance',
     'sd35-medium':              'Stability AI',
   }
 
@@ -800,12 +801,9 @@ export default function Dashboard() {
               {/* Image Models row */}
               {(() => {
                 if (modelFilter === 'videos') return null
-                const STANDALONE = ['nano-banana', 'recraft-v4-pro']
-                const rawImgModels = [
-                  ...models.filter(m => m.provider === 'OpenAI' && !STANDALONE.includes(m.slug) && m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))),
-                  ...models.filter(m => m.provider === 'fal.ai' && !STANDALONE.includes(m.slug) && m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))),
-                  ...models.filter(m => STANDALONE.includes(m.slug)),
-                ]
+                const rawImgModels = models.filter(m =>
+                  m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))
+                )
                 // Merge flux-dev-img2img into flux-dev as a single card
                 let imgModels: any[] = rawImgModels
                   .filter(m => m.slug !== 'flux-dev-img2img')

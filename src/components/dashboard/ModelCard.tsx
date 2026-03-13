@@ -49,6 +49,7 @@ const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
   'recraft-v3':         { gradient: 'linear-gradient(145deg,#2d1200,#7a3500,#cc6600)', initial: 'R3' },
   'seedream-45':        { gradient: 'linear-gradient(145deg,#0a001a,#330055,#770099)', initial: 'SD' },
   'sd35-medium':        { gradient: 'linear-gradient(145deg,#001133,#003388,#0055cc)', initial: 'S3' },
+  'seedance-1-pro':     { gradient: 'linear-gradient(145deg,#1a0a00,#663300,#cc6600)', initial: 'SC' },
 }
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: '??' }
 
@@ -81,6 +82,7 @@ const slugBrandLabels: Record<string, string> = {
   'recraft-v3':       'Recraft',
   'seedream-45':      'ByteDance',
   'sd35-medium':      'Stability AI',
+  'seedance-1-pro':   'ByteDance',
 }
 
 // Provider logo mark — SVG or styled wordmark
