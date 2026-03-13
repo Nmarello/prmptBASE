@@ -259,15 +259,9 @@ export default function Admin() {
 
   async function changeTier(targetUserId: string, newTier: Tier) {
     setUpdatingTier(targetUserId)
-    const { data: { session } } = await supabase.auth.getSession()
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-user`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-        body: JSON.stringify({ target_user_id: targetUserId, tier: newTier }),
-      })
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
+      const { error } = await supabase.rpc('admin_set_tier', { target_user_id: targetUserId, new_tier: newTier })
+      if (error) throw new Error(error.message)
       setUsers(prev => prev.map(u => u.id === targetUserId ? { ...u, tier: newTier } : u))
       if (stats) {
         const oldTier = users.find(u => u.id === targetUserId)?.tier
