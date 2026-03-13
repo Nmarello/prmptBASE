@@ -515,8 +515,11 @@ export default function Dashboard() {
       }).select().single()
 
       const { data: { session } } = await supabase.auth.getSession()
-      const isFal = selectedModel.provider === 'fal.ai'
-      const isGoogle = selectedModel.provider === 'Google'
+      // Routing: only these slugs call direct APIs; everything else routes through fal
+      const DIRECT_API_SLUGS = new Set(['dalle', 'gpt-image-1', 'imagen-4.0-generate-001', 'veo-2.0-generate-001'])
+      const GOOGLE_DIRECT_SLUGS = new Set(['imagen-4.0-generate-001', 'veo-2.0-generate-001'])
+      const isFal = !DIRECT_API_SLUGS.has(selectedModel.slug)
+      const isGoogle = GOOGLE_DIRECT_SLUGS.has(selectedModel.slug)
       const isImg2Img = selectedGenType === 'img2img'
       const isVideo = selectedGenType === 'txt2vid' || selectedGenType === 'img2vid'
 
@@ -582,7 +585,7 @@ export default function Dashboard() {
 
       // Async pending (video or slow image model like hidream-full) — start polling
       if (data.status === 'pending') {
-        const provider = data.provider === 'fal.ai' ? 'fal.ai' : 'google'
+        const provider = data.provider === 'google' ? 'google' : 'fal.ai'
         setPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, provider, startedAt: Date.now(), isImage: !!data.is_image })
         setSubmitting(false)
         return
