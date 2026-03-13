@@ -182,7 +182,7 @@ export default function Dashboard() {
 
   const [models, setModels] = useState<Model[]>([])
   const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(new Set())
-  const [pickerLockedUntil, setPickerLockedUntil] = useState<Date | null>(null)
+  const [_pickerLockedUntil, setPickerLockedUntil] = useState<Date | null>(null)
   const [modelFilter, setModelFilter] = useState<'all' | 'images' | 'videos'>('all')
   const [modelSearch, setModelSearch] = useState('')
   const [_mediaTab, _setMediaTab] = useState<'image' | 'video'>('image')

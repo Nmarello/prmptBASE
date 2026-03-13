@@ -47,7 +47,6 @@ export default function ModelPicker({ tier, userId }: { tier: string; userId: st
   const [saved, setSaved] = useState(false)
 
   const limit = tier === 'creator' ? CREATOR_LIMIT : STUDIO_VIDEO_LIMIT
-  const label = tier === 'creator' ? 'image' : 'video'
 
   const pickerModels = allModels.filter(m => {
     if (tier === 'creator') {
