@@ -188,15 +188,16 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
       </div>
 
       {/* Card info */}
-      <div className="p-3.5 flex flex-col gap-1.5 flex-1">
+      <div className="p-3.5 flex flex-col flex-1">
         <div style={{ fontFamily:"'Bricolage Grotesque',sans-serif", fontSize:'14px', fontWeight:800, color:'var(--pv-text)', letterSpacing:'-0.02em', lineHeight:1.2 }}>
           {model.name}
         </div>
-        <div style={{ fontSize:'11.5px', color:'var(--pv-text3)' }}>{maker}</div>
-        <div style={{ fontSize:'12px', color:'var(--pv-text2)', lineHeight:1.45 }} className="line-clamp-3">
+        <div style={{ fontSize:'11.5px', color:'var(--pv-text3)', marginTop:'4px' }}>{maker}</div>
+        {/* Fixed 3-line height so all cards are uniform */}
+        <div style={{ fontSize:'12px', color:'var(--pv-text2)', lineHeight:1.45, marginTop:'6px', minHeight:'calc(1.45em * 3)' }} className="line-clamp-3">
           {model.description}
         </div>
-        <div className="flex flex-wrap gap-1 mt-1">
+        <div className="flex flex-wrap gap-1 mt-auto pt-3">
           {model.supported_gen_types.map(gt => (
             <span key={gt} style={{ fontSize:'10.5px', fontWeight:600, padding:'2px 7px', borderRadius:'5px', background:'var(--pv-surface2)', color:'var(--pv-text2)', border:'1px solid var(--pv-border)' }}>
               {GEN_TYPE_LABELS[gt as GenType] ?? gt}
