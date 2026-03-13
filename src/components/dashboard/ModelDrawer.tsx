@@ -206,12 +206,12 @@ function AssetThumb({ asset, isVideo, onView, onDelete, onSendToImg2Img, onSendT
         </div>
       )}
 
-      {/* Hover overlay */}
+      {/* Hover overlay — clicking the overlay opens the asset; buttons stop propagation */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex flex-col justify-end p-1.5 gap-1"
         style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%)' }}
-        onClick={e => e.stopPropagation()}
+        onClick={onView}
       >
-        <div className="flex gap-1">
+        <div className="flex gap-1" onClick={e => e.stopPropagation()}>
           {!isVideo && (
             <button
               onClick={onSendToImg2Img}

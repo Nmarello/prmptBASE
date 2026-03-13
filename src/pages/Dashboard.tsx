@@ -1314,7 +1314,7 @@ export default function Dashboard() {
       {lightboxAsset && (() => {
         const isVideo = lightboxAsset.gen_type === 'txt2vid' || lightboxAsset.gen_type === 'img2vid'
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setLightboxAsset(null)}>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setLightboxAsset(null)}>
             <div className="relative rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-2xl" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }} onClick={e => e.stopPropagation()}>
               <button onClick={() => setLightboxAsset(null)} className="absolute top-4 right-4 text-xl leading-none cursor-pointer transition-colors" style={{ color: 'var(--pv-text3)' }}>×</button>
               <div className="mb-5">
