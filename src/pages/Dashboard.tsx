@@ -213,6 +213,8 @@ export default function Dashboard() {
     else localStorage.removeItem(PENDING_VIDEO_KEY)
   }
   const videoPollerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const selectedModelRef = useRef(selectedModel)
+  useEffect(() => { selectedModelRef.current = selectedModel }, [selectedModel])
   function pushNotification(n: Parameters<typeof addNotification>[0]) {
     addNotification(n)
     setNotifTick((t) => t + 1)
@@ -621,6 +623,9 @@ export default function Dashboard() {
       if (videoPollerRef.current) clearInterval(videoPollerRef.current)
       return
     }
+    // Capture the model slug at the moment polling starts — used to decide
+    // whether to show the result in the canvas or just silently update assets
+    const pollingForSlug = renderingModelSlug
     async function poll() {
       if (!pendingVideo) return
       // 30-minute timeout
@@ -667,7 +672,10 @@ export default function Dashboard() {
           }
           setPendingVideo(null)
           setRenderingModelSlug(null)
-          setResult({ url: completedUrl, prompt: '', isVideo: !isImageResult })
+          // Only paint the canvas if the user is still on the model that was rendering
+          if (pollingForSlug && selectedModelRef.current?.slug === pollingForSlug) {
+            setResult({ url: completedUrl, prompt: '', isVideo: !isImageResult })
+          }
           loadAssets()
           const readyMsg = isImageResult ? 'Your image is ready!' : 'Your video is ready!'
           const notifType = isImageResult ? 'image_ready' : 'video_ready'
