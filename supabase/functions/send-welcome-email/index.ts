@@ -1,6 +1,6 @@
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
 const RESEND_WELCOME_TEMPLATE_ID = Deno.env.get('RESEND_WELCOME_TEMPLATE_ID')!
-const FROM_EMAIL = 'hello@prmptvault.ai'
+const FROM_EMAIL = 'noreply@prmptvault.ai'
 
 Deno.serve(async (req) => {
   try {
