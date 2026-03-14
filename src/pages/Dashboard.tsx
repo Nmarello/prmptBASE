@@ -193,25 +193,35 @@ export default function Dashboard() {
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string; isVideo?: boolean } | null>(null)
   const [lightboxAsset, setLightboxAsset] = useState<Asset | null>(null)
+  type PendingVideo = { assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number; isImage?: boolean; slug: string }
   const PENDING_VIDEO_KEY = 'prmptVAULT_pendingVideo'
-  const [pendingVideo, setPendingVideoRaw] = useState<{ assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number; isImage?: boolean } | null>(() => {
+  const [pendingVideos, setPendingVideosRaw] = useState<PendingVideo[]>(() => {
     try {
-      const stored = localStorage.getItem('prmptVAULT_pendingVideo')
-      if (!stored) return null
+      const stored = localStorage.getItem(PENDING_VIDEO_KEY)
+      if (!stored) return []
       const parsed = JSON.parse(stored)
-      // Discard if already expired (30-min window)
-      if (Date.now() - parsed.startedAt > 30 * 60 * 1000) {
-        localStorage.removeItem('prmptVAULT_pendingVideo')
-        return null
-      }
-      return parsed
-    } catch { return null }
+      const arr: PendingVideo[] = Array.isArray(parsed) ? parsed : (parsed ? [{ ...parsed, slug: parsed.slug ?? 'unknown' }] : [])
+      const now = Date.now()
+      return arr.filter(v => now - v.startedAt < 30 * 60 * 1000)
+    } catch { return [] }
   })
-  function setPendingVideo(val: { assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number; isImage?: boolean } | null) {
-    setPendingVideoRaw(val)
-    if (val) localStorage.setItem(PENDING_VIDEO_KEY, JSON.stringify(val))
-    else localStorage.removeItem(PENDING_VIDEO_KEY)
+  const pendingVideosRef = useRef<PendingVideo[]>(pendingVideos)
+  useEffect(() => {
+    pendingVideosRef.current = pendingVideos
+    if (pendingVideos.length === 0) localStorage.removeItem(PENDING_VIDEO_KEY)
+    else localStorage.setItem(PENDING_VIDEO_KEY, JSON.stringify(pendingVideos))
+  }, [pendingVideos])
+  function addPendingVideo(v: PendingVideo) {
+    setPendingVideosRaw(prev => {
+      // Replace existing entry for same slug (restart if resubmitting same model)
+      return [...prev.filter(p => p.slug !== v.slug), v]
+    })
   }
+  function removePendingVideo(assetId: string) {
+    setPendingVideosRaw(prev => prev.filter(p => p.assetId !== assetId))
+  }
+  // Derived: pending video for the currently selected model (for canvas spinner)
+  const pendingVideo = pendingVideos.find(v => v.slug === (renderingModelSlug ?? selectedModel?.slug)) ?? null
   const videoPollerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const selectedModelRef = useRef(selectedModel)
   useEffect(() => { selectedModelRef.current = selectedModel }, [selectedModel])
@@ -222,6 +232,8 @@ export default function Dashboard() {
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [pendingImage, setPendingImage] = useState<{ modelName: string } | null>(null)
   const [renderingModelSlug, setRenderingModelSlug] = useState<string | null>(null)
+  const renderingModelSlugRef = useRef<string | null>(null)
+  useEffect(() => { renderingModelSlugRef.current = renderingModelSlug }, [renderingModelSlug])
   const [renderToast, setRenderToast] = useState<string | null>(null)
   const [, setNotifTick] = useState(0) // forces bell re-render after addNotification
 
@@ -391,7 +403,7 @@ export default function Dashboard() {
       .single()
       .then(({ data }) => {
         if (data?.metadata?.status_url) {
-          setPendingVideo({ assetId: data.id, operationName: data.metadata.status_url, provider: 'fal.ai', startedAt: Date.now() })
+          addPendingVideo({ assetId: data.id, operationName: data.metadata.status_url, provider: 'fal.ai', startedAt: Date.now(), slug: (data.metadata.model_slug as string) ?? 'unknown' })
         }
       })
   }, [user, loadAssets])
@@ -586,7 +598,7 @@ export default function Dashboard() {
       // Async pending (video or slow image model like hidream-full) — start polling
       if (data.status === 'pending') {
         const provider = data.provider === 'google' ? 'google' : 'fal.ai'
-        setPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, provider, startedAt: Date.now(), isImage: !!data.is_image })
+        addPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, provider, startedAt: Date.now(), isImage: !!data.is_image, slug: selectedModel?.slug ?? 'unknown' })
         setSubmitting(false)
         return
       }
@@ -620,80 +632,69 @@ export default function Dashboard() {
     }
   }
 
-  // Video polling (Veo + fal.ai)
+  // Video polling — single persistent interval that polls ALL pending videos in parallel
   useEffect(() => {
-    if (!pendingVideo) {
-      if (videoPollerRef.current) clearInterval(videoPollerRef.current)
-      return
-    }
-    // Capture the model slug at the moment polling starts — used to decide
-    // whether to show the result in the canvas or just silently update assets
-    const pollingForSlug = renderingModelSlug
-    async function poll() {
-      if (!pendingVideo) return
-      // 30-minute timeout
-      if (Date.now() - pendingVideo.startedAt > 30 * 60 * 1000) {
-        if (videoPollerRef.current) clearInterval(videoPollerRef.current)
-        setPendingVideo(null)
-        setRenderingModelSlug(null)
-        setGenerateError('Video generation timed out after 30 minutes. Please try again.')
-        return
-      }
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        const endpoint = pendingVideo.provider === 'fal.ai' ? 'check-fal-video' : 'check-veo-job'
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({
-              user_token: session?.access_token ?? null,
-              asset_id: pendingVideo.assetId,
-              operation_name: pendingVideo.operationName,
-            }),
-          },
-        )
-        const data = await res.json()
-        if (data.error) {
-          if (videoPollerRef.current) clearInterval(videoPollerRef.current)
-          setPendingVideo(null)
-          setRenderingModelSlug(null)
-          setGenerateError(`Video generation failed: ${friendlyFalError(data.error)}`)
+    async function pollAll() {
+      const pending = pendingVideosRef.current
+      if (pending.length === 0) return
+      const { data: { session } } = await supabase.auth.getSession()
+      await Promise.all(pending.map(async (pv) => {
+        // 30-minute timeout
+        if (Date.now() - pv.startedAt > 30 * 60 * 1000) {
+          removePendingVideo(pv.assetId)
+          if (pv.slug === renderingModelSlugRef.current) {
+            setRenderingModelSlug(null)
+            setGenerateError('Video generation timed out after 30 minutes.')
+          }
           return
         }
-        const completedUrl = data.video_url || data.image_url
-        const isImageResult = !!data.image_url && !data.video_url
-        if (data.status === 'complete' && completedUrl) {
-          const pendingAssetId = pendingVideo?.assetId
-          if (activeProjectId && pendingAssetId) {
-            await supabase.from('assets').update({ project_id: activeProjectId }).eq('id', pendingAssetId)
+        try {
+          const endpoint = pv.provider === 'fal.ai' ? 'check-fal-video' : 'check-veo-job'
+          const res = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+              body: JSON.stringify({ user_token: session?.access_token ?? null, asset_id: pv.assetId, operation_name: pv.operationName }),
+            },
+          )
+          const data = await res.json()
+          if (data.error) {
+            removePendingVideo(pv.assetId)
+            if (pv.slug === renderingModelSlugRef.current) {
+              setRenderingModelSlug(null)
+              setGenerateError(`Generation failed: ${friendlyFalError(data.error)}`)
+            }
+            return
           }
-          setPendingVideo(null)
-          setRenderingModelSlug(null)
-          // Only paint the canvas if the user is still on the model that was rendering
-          if (pollingForSlug && selectedModelRef.current?.slug === pollingForSlug) {
-            setResult({ url: completedUrl, prompt: '', isVideo: !isImageResult })
+          const completedUrl = data.video_url || data.image_url
+          const isImageResult = !!data.image_url && !data.video_url
+          if (data.status === 'complete' && completedUrl) {
+            if (activeProjectId && pv.assetId) {
+              await supabase.from('assets').update({ project_id: activeProjectId }).eq('id', pv.assetId)
+            }
+            removePendingVideo(pv.assetId)
+            if (pv.slug === renderingModelSlugRef.current) setRenderingModelSlug(null)
+            // Paint canvas only if still on that model
+            if (selectedModelRef.current?.slug === pv.slug) {
+              setResult({ url: completedUrl, prompt: '', isVideo: !isImageResult })
+            }
+            loadAssets()
+            const readyMsg = isImageResult ? 'Your image is ready!' : 'Your video is ready!'
+            const modelName = pv.slug
+            pushNotification({ type: isImageResult ? 'image_ready' : 'video_ready', message: readyMsg, modelName, assetUrl: completedUrl, assetId: pv.assetId })
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification(readyMsg, { body: `${modelName} · prmptVAULT`, icon: '/favicon.ico' })
+            }
+            setRenderToast(readyMsg)
+            setTimeout(() => setRenderToast(null), 6000)
           }
-          loadAssets()
-          const readyMsg = isImageResult ? 'Your image is ready!' : 'Your video is ready!'
-          const notifType = isImageResult ? 'image_ready' : 'video_ready'
-          pushNotification({ type: notifType, message: readyMsg, modelName: selectedModel?.name ?? 'Model', assetUrl: completedUrl, assetId: pendingAssetId })
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(readyMsg, { body: `${selectedModel?.name ?? 'Model'} · prmptVAULT`, icon: '/favicon.ico' })
-          }
-          setRenderToast(readyMsg)
-          setTimeout(() => setRenderToast(null), 6000)
-        }
-      } catch (_) { /* network hiccup — keep polling */ }
+        } catch (_) { /* network hiccup — keep polling */ }
+      }))
     }
-    videoPollerRef.current = setInterval(poll, 5000)
+    videoPollerRef.current = setInterval(pollAll, 5000)
     return () => { if (videoPollerRef.current) clearInterval(videoPollerRef.current) }
-  }, [pendingVideo])
+  }, [])
 
   async function deleteAsset(id: string) {
     await supabase.from('assets').delete().eq('id', id)
@@ -1335,7 +1336,7 @@ export default function Dashboard() {
                     </p>
                     <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>You can close this — we'll notify you when done</p>
                     {pendingVideo && (
-                      <button onClick={() => { if (videoPollerRef.current) clearInterval(videoPollerRef.current); setPendingVideo(null); setGenerateError(null) }}
+                      <button onClick={() => { removePendingVideo(pendingVideo.assetId); setGenerateError(null) }}
                         style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', cursor: 'pointer', marginTop: 4 }}>
                         Cancel render
                       </button>
