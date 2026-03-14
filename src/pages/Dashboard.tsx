@@ -971,7 +971,7 @@ export default function Dashboard() {
             </div>
 
             {/* Scrollable model rows */}
-            <div ref={generateScrollRef} className="flex-1 overflow-y-auto px-4 sm:px-7 pb-28 sm:pb-10 space-y-8">
+            <div ref={generateScrollRef} className="flex-1 overflow-y-auto px-4 sm:px-7 pb-28 sm:pb-10 space-y-5">
               <PullIndicator distance={generatePullDist} refreshing={generateRefreshing} />
               {/* Your Models row */}
               {(() => {
@@ -1009,7 +1009,7 @@ export default function Dashboard() {
 
                 return (
                   <div>
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 mb-2">
                       <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
                         Your Models
                       </h2>
@@ -1094,7 +1094,7 @@ export default function Dashboard() {
                 if (imgModels.length === 0) return null
                 return (
                   <div>
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 mb-2">
                       <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
                         Image Models
                       </h2>
@@ -1145,7 +1145,7 @@ export default function Dashboard() {
                 if (vidModels.length === 0) return null
                 return (
                   <div>
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 mb-2">
                       <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
                         Video Models
                       </h2>
@@ -1188,7 +1188,7 @@ export default function Dashboard() {
                 if (featuredModels.length === 0) return null
                 return (
                   <div>
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 mb-2">
                       <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
                         Featured
                       </h2>
@@ -1287,45 +1287,66 @@ export default function Dashboard() {
       {settingsOpen && <SettingsDrawer onClose={() => setSettingsOpen(false)} section={settingsSection} />}
 
       {/* ── Mobile Bottom Tab Bar ── */}
-      <nav
-        className="sm:hidden fixed bottom-0 left-0 right-0 z-20 flex items-center justify-around flex-shrink-0"
-        style={{ background: 'var(--pv-surface)', borderTop: '1px solid var(--pv-border)', height: 'calc(56px + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      <div
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-20 flex justify-center pointer-events-none"
+        style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
       >
-        {([
-          { id: 'models', tip: 'Generate', icon: <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/> },
-          { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
-          { id: 'projects', tip: 'Projects', icon: <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/> },
-        ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (
-          <button
-            key={id}
-            onClick={() => setView(id)}
-            className="flex flex-col items-center gap-0.5 py-1 px-4 cursor-pointer transition-opacity"
-            style={{ color: view === id ? 'var(--pv-accent)' : 'var(--pv-text3)' }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
-            <span className="text-[10px] font-medium">{tip}</span>
-          </button>
-        ))}
-        <NotificationBell
-          inBottomNav
-          onViewAsset={(assetId, _assetUrl, _isVideo) => {
-            const asset = assets.find((a) => a.id === assetId)
-            if (asset) { setLightboxAsset(asset) } else { setView('assets'); loadAssets() }
+        <nav
+          className="pointer-events-auto flex items-center gap-1 px-2 py-2"
+          style={{
+            background: 'var(--pv-surface)',
+            border: '1px solid var(--pv-border)',
+            borderRadius: 9999,
+            boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
           }}
-        />
-        <button
-          onClick={() => setSettingsOpen(true)}
-          aria-label="Settings"
-          data-tour="settings-btn"
-          className="flex flex-col items-center gap-0.5 py-1 px-4 cursor-pointer transition-opacity"
-          style={{ color: settingsOpen ? 'var(--pv-accent)' : 'var(--pv-text3)', background: 'none', border: 'none', fontFamily: 'inherit' }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-          </svg>
-          <span className="text-[10px] font-medium">Account</span>
-        </button>
-      </nav>
+          {([
+            { id: 'models', tip: 'Generate', icon: <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/> },
+            { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
+            { id: 'projects', tip: 'Projects', icon: <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/> },
+          ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (
+            <button
+              key={id}
+              onClick={() => setView(id)}
+              className="flex flex-col items-center gap-0.5 cursor-pointer transition-all rounded-full"
+              style={{
+                color: view === id ? 'var(--pv-accent)' : 'var(--pv-text3)',
+                background: view === id ? 'color-mix(in srgb, var(--pv-accent) 12%, transparent)' : 'none',
+                border: 'none',
+                padding: '7px 16px',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+              <span className="text-[10px] font-medium">{tip}</span>
+            </button>
+          ))}
+          <NotificationBell
+            inBottomNav
+            onViewAsset={(assetId, _assetUrl, _isVideo) => {
+              const asset = assets.find((a) => a.id === assetId)
+              if (asset) { setLightboxAsset(asset) } else { setView('assets'); loadAssets() }
+            }}
+          />
+          <button
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            data-tour="settings-btn"
+            className="flex flex-col items-center gap-0.5 cursor-pointer transition-all rounded-full"
+            style={{
+              color: settingsOpen ? 'var(--pv-accent)' : 'var(--pv-text3)',
+              background: settingsOpen ? 'color-mix(in srgb, var(--pv-accent) 12%, transparent)' : 'none',
+              border: 'none',
+              fontFamily: 'inherit',
+              padding: '7px 16px',
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+            <span className="text-[10px] font-medium">Account</span>
+          </button>
+        </nav>
+      </div>
 
       {/* ── WORKSPACE OVERLAY ── */}
       {workspaceOpen && selectedModel && (
