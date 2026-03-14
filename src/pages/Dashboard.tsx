@@ -933,30 +933,49 @@ export default function Dashboard() {
               <div className="flex items-center">
                 {/* Logo — left */}
                 <Logo height={28} style={{ marginBottom: 2, flexShrink: 0 }} />
-                {/* Filter pills — centered */}
-                <div className="flex-1 flex justify-center gap-1.5">
-                  {(['all', 'images', 'videos'] as const).map(f => {
-                    const counts = {
-                      all: models.length,
-                      images: models.filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))).length,
-                      videos: models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid')).length,
-                    }
-                    const active = modelFilter === f
-                    return (
-                      <button
-                        key={f}
-                        onClick={() => setModelFilter(f)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer"
-                        style={active
-                          ? { background: 'var(--pv-accent)', color: '#fff' }
-                          : { background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)' }
-                        }
-                      >
-                        {f.charAt(0).toUpperCase() + f.slice(1)}
-                        <span className="text-xs opacity-70">{counts[f]}</span>
-                      </button>
-                    )
-                  })}
+                {/* Filter — dropdown on mobile, pills on desktop */}
+                <div className="flex-1 flex justify-center">
+                  {/* Mobile dropdown */}
+                  <div className="sm:hidden relative">
+                    <select
+                      value={modelFilter}
+                      onChange={e => setModelFilter(e.target.value as 'all' | 'images' | 'videos')}
+                      className="appearance-none text-sm font-medium pl-3 pr-7 py-1.5 rounded-full cursor-pointer outline-none"
+                      style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}
+                    >
+                      <option value="all">All</option>
+                      <option value="images">Images</option>
+                      <option value="videos">Videos</option>
+                    </select>
+                    <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </div>
+                  {/* Desktop pills */}
+                  <div className="hidden sm:flex gap-1.5">
+                    {(['all', 'images', 'videos'] as const).map(f => {
+                      const counts = {
+                        all: models.length,
+                        images: models.filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))).length,
+                        videos: models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid')).length,
+                      }
+                      const active = modelFilter === f
+                      return (
+                        <button
+                          key={f}
+                          onClick={() => setModelFilter(f)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer"
+                          style={active
+                            ? { background: 'var(--pv-accent)', color: '#fff' }
+                            : { background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)' }
+                          }
+                        >
+                          {f.charAt(0).toUpperCase() + f.slice(1)}
+                          <span className="text-xs opacity-70">{counts[f]}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
                 {/* Search — right */}
                 <div className="relative flex items-center flex-shrink-0">
