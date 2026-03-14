@@ -224,6 +224,9 @@ export default function Dashboard() {
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [pendingImage, setPendingImage] = useState<{ modelName: string } | null>(null)
   const [renderingModelSlug, setRenderingModelSlug] = useState<string | null>(null)
+  const [recentModelSlugs, setRecentModelSlugs] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('pv_recent_models') ?? '[]') } catch { return [] }
+  })
   const renderingModelSlugRef = useRef<string | null>(null)
   useEffect(() => { renderingModelSlugRef.current = renderingModelSlug }, [renderingModelSlug])
   // Derived: pending video for the currently selected model (for canvas spinner)
@@ -517,6 +520,11 @@ export default function Dashboard() {
     const isImageGen = selectedGenType !== 'txt2vid' && selectedGenType !== 'img2vid'
     if (isImageGen) setPendingImage({ modelName: selectedModel.name })
     setRenderingModelSlug(selectedModel.slug)
+    setRecentModelSlugs(prev => {
+      const updated = [selectedModel.slug, ...prev.filter(s => s !== selectedModel.slug)].slice(0, 4)
+      localStorage.setItem('pv_recent_models', JSON.stringify(updated))
+      return updated
+    })
     // Request notification permission for all generation types
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission()
@@ -973,6 +981,45 @@ export default function Dashboard() {
             {/* Scrollable model rows */}
             <div ref={generateScrollRef} className="flex-1 overflow-y-auto px-4 sm:px-7 pb-28 sm:pb-10 space-y-5">
               <PullIndicator distance={generatePullDist} refreshing={generateRefreshing} />
+
+              {/* Recently Used row */}
+              {!modelSearch && recentModelSlugs.length > 0 && (() => {
+                const recentModels = recentModelSlugs
+                  .map(slug => models.find(m => m.slug === slug))
+                  .filter(Boolean) as Model[]
+                if (recentModels.length === 0) return null
+                return (
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                        Recently Used
+                      </h2>
+                    </div>
+                    <div className="flex gap-3.5 overflow-x-auto pb-3">
+                      {recentModels.map((m) => {
+                        const { status, upgradeTier } = getModelStatus(m, userTier, selectedModelIds)
+                        return (
+                          <ModelCard
+                            key={m.id}
+                            model={m}
+                            userTier={userTier}
+                            selected={selectedModel?.id === m.id}
+                            onClick={() => setDrawerModel(m)}
+                            rendering={renderingModelSlug === m.slug}
+                            latestRenderUrl={latestRenderBySlug[m.slug]?.url}
+                            latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
+                            modelStatus={status}
+                            upgradeTier={upgradeTier}
+                            onAdd={() => handleAddModel(m.id)}
+                            onUpgrade={() => navigate(`/pricing?highlight=${upgradeTier ?? 'creator'}`)}
+                          />
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })()}
+
               {/* Your Models row */}
               {(() => {
                 if (modelSearch) return null
