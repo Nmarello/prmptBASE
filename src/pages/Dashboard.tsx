@@ -886,7 +886,7 @@ export default function Dashboard() {
 
         {/* Main nav buttons */}
         {([
-          { id: 'models', tip: 'Generate', icon: <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/> },
+          { id: 'models', tip: 'Generate', icon: <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/></> },
           { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
           { id: 'projects', tip: 'Projects', icon: <><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></> },
         ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (
@@ -930,15 +930,11 @@ export default function Dashboard() {
           <div className="flex flex-col h-full overflow-hidden">
             {/* Header */}
             <div className="px-4 sm:px-7 pt-4 sm:pt-6 pb-4 flex-shrink-0">
-              <div className="flex items-end justify-between mb-4">
-                <div>
-                  <Logo height={28} style={{ marginBottom: 2 }} />
-                  <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 2 }}>Pick a model and start creating</p>
-                </div>
-              </div>
-              {/* Filter pills + search */}
-              <div className="flex items-center justify-between">
-                <div className="flex gap-1.5">
+              <div className="flex items-center">
+                {/* Logo — left */}
+                <Logo height={28} style={{ marginBottom: 2, flexShrink: 0 }} />
+                {/* Filter pills — centered */}
+                <div className="flex-1 flex justify-center gap-1.5">
                   {(['all', 'images', 'videos'] as const).map(f => {
                     const counts = {
                       all: models.length,
@@ -962,7 +958,8 @@ export default function Dashboard() {
                     )
                   })}
                 </div>
-                <div className="relative flex items-center">
+                {/* Search — right */}
+                <div className="relative flex items-center flex-shrink-0">
                   <svg className="absolute left-2.5 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
                   </svg>
@@ -1348,7 +1345,7 @@ export default function Dashboard() {
           }}
         >
           {([
-            { id: 'models', tip: 'Generate', icon: <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/> },
+            { id: 'models', tip: 'Generate', icon: <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/></> },
             { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
             { id: 'projects', tip: 'Projects', icon: <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/> },
           ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (

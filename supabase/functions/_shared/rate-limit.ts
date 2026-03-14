@@ -34,7 +34,7 @@ export async function checkImageRateLimit(
     .single()
 
   const tier = (profile?.tier as string | undefined) ?? 'free'
-  const limit = TIER_LIMITS[tier] ?? TIER_LIMITS.free ?? 15
+  const limit = tier in TIER_LIMITS ? TIER_LIMITS[tier] : (TIER_LIMITS.free ?? 25)
 
   // Unlimited tier — skip count query
   if (limit === null) return { allowed: true, tier, used: 0, limit: null }
