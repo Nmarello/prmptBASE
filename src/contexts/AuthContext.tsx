@@ -9,8 +9,11 @@ interface AuthContextType {
   isAdmin: boolean
   adminLoading: boolean
   signInWithGoogle: () => Promise<void>
+  signInWithApple: () => Promise<void>
   signInWithMicrosoft: () => Promise<void>
   signInWithFacebook: () => Promise<void>
+  signInWithDiscord: () => Promise<void>
+  signInWithGithub: () => Promise<void>
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>
   signUp: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
@@ -60,6 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  const signInWithApple = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'apple',
+      options: { redirectTo: `${window.location.origin}/dashboard` },
+    })
+  }
+
   const signInWithMicrosoft = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'azure',
@@ -70,6 +80,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithFacebook = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'facebook',
+      options: { redirectTo: `${window.location.origin}/dashboard` },
+    })
+  }
+
+  const signInWithDiscord = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'discord',
+      options: { redirectTo: `${window.location.origin}/dashboard` },
+    })
+  }
+
+  const signInWithGithub = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'github',
       options: { redirectTo: `${window.location.origin}/dashboard` },
     })
   }
@@ -91,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, session, loading, isAdmin, adminLoading,
-      signInWithGoogle, signInWithMicrosoft, signInWithFacebook,
+      signInWithGoogle, signInWithApple, signInWithMicrosoft, signInWithFacebook, signInWithDiscord, signInWithGithub,
       signInWithEmail, signUp, signOut,
     }}>
       {children}
