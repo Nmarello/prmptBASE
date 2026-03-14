@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
+import { checkImageRateLimit } from '../_shared/rate-limit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -340,6 +341,21 @@ Deno.serve(async (req) => {
 
     const slug = (model_slug as string) ?? 'flux-schnell'
     const genType = (body.gen_type as string | undefined) ?? ''
+
+    // Only apply image rate limit for image generations (not video)
+    const isVideoGen = genType === 'txt2vid' || genType === 'img2vid'
+    if (!isVideoGen) {
+      const rateLimit = await checkImageRateLimit(adminClient, userId)
+      if (!rateLimit.allowed) {
+        return new Response(JSON.stringify({
+          error: `Monthly limit reached. You've used ${rateLimit.used} of ${rateLimit.limit} images on the ${rateLimit.tier} plan.`,
+          rate_limited: true,
+          used: rateLimit.used,
+          limit: rateLimit.limit,
+          tier: rateLimit.tier,
+        }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+    }
     const isImg2Img = slug === 'flux-dev-img2img'
     const isKontext = slug === 'flux-kontext-pro'
     const isRecraft = slug === 'recraft-v4-pro'

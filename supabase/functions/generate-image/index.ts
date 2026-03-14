@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
+import { checkImageRateLimit } from '../_shared/rate-limit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -174,6 +175,17 @@ Deno.serve(async (req) => {
     if (user_token) {
       const { data: { user } } = await adminClient.auth.getUser(user_token)
       userId = user?.id ?? null
+    }
+
+    const rateLimit = await checkImageRateLimit(adminClient, userId)
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify({
+        error: `Monthly limit reached. You've used ${rateLimit.used} of ${rateLimit.limit} images on the ${rateLimit.tier} plan.`,
+        rate_limited: true,
+        used: rateLimit.used,
+        limit: rateLimit.limit,
+        tier: rateLimit.tier,
+      }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     const prompt = buildPrompt(values)

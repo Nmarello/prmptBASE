@@ -390,6 +390,13 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
   const revisedPrompt = (asset.metadata as Record<string, unknown>)?.revised_prompt as string | undefined
   const [selectedProjectId, setSelectedProjectId] = useState<string>(asset.project_id ?? '')
   const [savedToast, setSavedToast] = useState(false)
+  const [copiedUrl, setCopiedUrl] = useState(false)
+
+  async function handleCopyUrl() {
+    await navigator.clipboard.writeText(asset.url)
+    setCopiedUrl(true)
+    setTimeout(() => setCopiedUrl(false), 2000)
+  }
 
   async function handleProjectChange(newId: string) {
     setSelectedProjectId(newId)
@@ -497,6 +504,14 @@ function Lightbox({ asset, projects, projectName, projectColor, modelName, onClo
                 style={{ background: 'var(--pv-accent)' }}
               >
                 Download
+              </button>
+              <button
+                onClick={handleCopyUrl}
+                style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: copiedUrl ? 'var(--pv-accent)' : 'var(--pv-text2)' }}
+                className="px-3 py-2.5 border rounded-xl text-sm font-medium transition-all cursor-pointer"
+                title="Copy URL"
+              >
+                {copiedUrl ? 'Copied!' : 'Copy URL'}
               </button>
               {(asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid') && (
                 <button

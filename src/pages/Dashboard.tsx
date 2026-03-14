@@ -596,6 +596,9 @@ export default function Dashboard() {
       )
 
       const data = await res.json()
+      if (data?.rate_limited) {
+        throw new Error(`__RATE_LIMITED__:${data.used}:${data.limit}:${data.tier}`)
+      }
       if (!res.ok || data?.error) throw new Error(friendlyFalError(data?.error ?? data?.message ?? `HTTP ${res.status}`))
 
       // Async pending (video or slow image model like hidream-full) — start polling
@@ -1492,11 +1495,24 @@ export default function Dashboard() {
                 {/* Template form */}
                 {selectedGenType && template && (
                   <>
-                    {generateError && (
-                      <div className="mb-4 p-3 rounded-[10px] text-sm" style={{ background: '#fff1f0', border: '1px solid #ffc9c9', color: '#c0392b' }}>
-                        {generateError}
-                      </div>
-                    )}
+                    {generateError && (() => {
+                      const isRateLimited = generateError.startsWith('__RATE_LIMITED__')
+                      if (isRateLimited) {
+                        const [, used, limit, tier] = generateError.split(':')
+                        return (
+                          <div className="mb-4 p-3 rounded-[10px] text-sm" style={{ background: '#fff8e6', border: '1px solid #f5c842', color: '#7a5c00' }}>
+                            <div className="font-semibold mb-1">Monthly limit reached</div>
+                            <div className="mb-2">You've used <strong>{used}</strong> of <strong>{limit}</strong> images on the <strong>{tier}</strong> plan. Limits reset on the 1st of each month.</div>
+                            <a href="/pricing" className="inline-block px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: 'var(--pv-accent)' }}>Upgrade plan →</a>
+                          </div>
+                        )
+                      }
+                      return (
+                        <div className="mb-4 p-3 rounded-[10px] text-sm" style={{ background: '#fff1f0', border: '1px solid #ffc9c9', color: '#c0392b' }}>
+                          {generateError}
+                        </div>
+                      )
+                    })()}
                     <div className="mb-4 flex items-center gap-2">
                       <span className="text-xs flex-shrink-0" style={{ color: 'var(--pv-text3)' }}>Save to</span>
                       {addingProject ? (

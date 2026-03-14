@@ -1,8 +1,13 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
 const FROM_EMAIL = 'noreply@prmptvault.ai'
-const SHOWCASE_USER_ID = Deno.env.get('SHOWCASE_USER_ID') ?? 'f9965304-4af9-4eba-a762-7b7c892473e1'
+
+const SHOWCASE_IMAGE_URLS = [
+  'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773373758999-l9uvrjwo7b.png',
+  'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773365831134.png',
+  'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773353025401.png',
+  'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773276565870-gc1ziwuizgu.webp',
+]
 
 function buildEmailHtml(firstName: string, imageUrls: string[], unsubscribeUrl: string): string {
   const gridHtml = imageUrls.length >= 4 ? `
@@ -151,31 +156,8 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'No email in payload' }), { status: 400 })
     }
 
-    // Fetch 4 recent public assets to populate the image grid
-    const db = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
-
-    const { data: assets } = await db
-      .from('assets')
-      .select('url, width, height')
-      .eq('user_id', SHOWCASE_USER_ID)
-      .in('gen_type', ['txt2img', 'img2img'])
-      .gt('width', 0)
-      .gt('height', 0)
-      .order('created_at', { ascending: false })
-      .limit(20)
-
-    // Keep only landscape images (width > height), take 4
-    const landscapeAssets = (assets ?? [])
-      .filter((a: { width: number; height: number }) => a.width > a.height)
-      .slice(0, 4)
-
-    const imageUrls = landscapeAssets.map((a: { url: string }) => a.url)
-
     const unsubscribeUrl = `https://prmptvault.ai/unsubscribe?email=${encodeURIComponent(email)}`
-    const html = buildEmailHtml(firstName, imageUrls, unsubscribeUrl)
+    const html = buildEmailHtml(firstName, SHOWCASE_IMAGE_URLS, unsubscribeUrl)
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
