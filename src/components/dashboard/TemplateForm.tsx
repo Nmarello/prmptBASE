@@ -54,6 +54,7 @@ interface Props {
   userTier?: string
   modelMinTier?: string
   // First-run tour callbacks
+  generateError?: string | null
   onTourSubjectTyped?: () => void
   onTourAiAssistClicked?: () => void
   onTourAiSuggestionReceived?: () => void
@@ -768,7 +769,7 @@ function LivePromptPanel({
 
 // ─── Main form ───────────────────────────────────────────────────────────────
 
-export default function TemplateForm({ template, genType: _genType, onSubmit, submitting, initialValues, userTier, modelMinTier, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted }: Props) {
+export default function TemplateForm({ template, genType: _genType, onSubmit, submitting, initialValues, userTier, modelMinTier, generateError, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted }: Props) {
   const { mode: learningMode } = useLearningMode()
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
   const [customOptions, setCustomOptions] = useState<Record<string, FieldOption[]>>({})
@@ -997,6 +998,26 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
             onReset={() => setLivePromptOverride(null)}
           />
         </div>
+
+        {/* Error / rate-limit banner — sits right above generate button */}
+        {generateError && (() => {
+          const isRateLimited = generateError.startsWith('__RATE_LIMITED__')
+          if (isRateLimited) {
+            const [, used, limit, tier] = generateError.split(':')
+            return (
+              <div className="mb-3 p-3 rounded-[10px] text-sm" style={{ background: '#fff8e6', border: '1px solid #f5c842', color: '#7a5c00' }}>
+                <div className="font-semibold mb-1">Monthly limit reached</div>
+                <div className="mb-2">You've used <strong>{used}</strong> of <strong>{limit}</strong> generations on the <strong>{tier}</strong> plan. Limits reset on the 1st of each month.</div>
+                <a href="/pricing" className="inline-block px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: 'var(--pv-accent)' }}>Upgrade plan →</a>
+              </div>
+            )
+          }
+          return (
+            <div className="mb-3 p-3 rounded-[10px] text-sm" style={{ background: '#fff1f0', border: '1px solid #ffc9c9', color: '#c0392b' }}>
+              {generateError}
+            </div>
+          )
+        })()}
 
         {/* Generate button at bottom */}
         <div className="pt-1">
