@@ -89,7 +89,7 @@ export default function OnboardingModal({ onDone }: OnboardingModalProps) {
       >
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <Logo height={28} />
+          <Logo height={32} />
         </div>
 
         <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--pv-text)', marginBottom: 8, textAlign: 'center' }}>

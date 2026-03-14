@@ -113,7 +113,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
 
         {/* Logo + heading */}
         <div className="text-center mb-8">
-          <Logo height={30} theme="dark" style={{ marginBottom: 4 }} />
+          <Logo height={35} theme="dark" style={{ marginBottom: 4 }} />
           {mode === 'signin' && <p className="text-sm text-slate-400">Sign in to start building better prompts</p>}
           {mode === 'signup' && <p className="text-sm text-slate-400">Create your account</p>}
           {mode === 'verify' && <p className="text-sm text-slate-400">Almost there!</p>}

@@ -460,7 +460,7 @@ export default function Admin() {
         {/* Mobile top bar */}
         <div className="sm:hidden flex items-center justify-between px-4 flex-shrink-0" style={{ height: 52, background: 'var(--pv-surface)', borderBottom: '1px solid var(--pv-border)' }}>
           <div className="flex items-center gap-2">
-            <Logo height={18} />
+            <Logo height={21} />
             <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 99, background: 'rgba(245,200,66,0.12)', color: '#f5c842', border: '1px solid rgba(245,200,66,0.2)' }}>ADMIN</span>
           </div>
           <div className="flex items-center gap-3">

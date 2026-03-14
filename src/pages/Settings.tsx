@@ -895,7 +895,7 @@ export default function Settings({ asDrawer = false, onClose, scrollTo }: { asDr
 
         {/* Mobile top bar */}
         <div className="sm:hidden flex items-center justify-between px-4 flex-shrink-0" style={{ height: 52, background: 'var(--pv-surface)', borderBottom: '1px solid var(--pv-border)' }}>
-          <Logo height={18} />
+          <Logo height={21} />
           <div className="flex items-center gap-3">
             <a href="/dashboard" style={{ fontSize: 12, color: 'var(--pv-text3)', textDecoration: 'none' }}>← Dashboard</a>
             <button onClick={signOut} style={{ fontSize: 12, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button>

@@ -158,7 +158,7 @@ export default function Pricing() {
             >← Back to dashboard</a>
           )}
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--pv-text3)', marginBottom: 12 }}>Pricing</div>
-          <Logo height={48} style={{ marginBottom: 12 }} />
+          <Logo height={55} style={{ marginBottom: 12 }} />
           <p style={{ fontSize: 17, color: 'var(--pv-text2)', marginBottom: 32 }}>Start free. Scale when you're ready.</p>
 
           {/* Billing toggle */}
