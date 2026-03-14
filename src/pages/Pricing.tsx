@@ -32,7 +32,7 @@ const tiers = [
     tier: 'newbie' as const,
     price: 0,
     features: [
-      '15 images / month',
+      '25 generations / month',
       'DALL-E 3 + Flux Schnell',
       'Core models only',
       'No video models',
@@ -47,7 +47,7 @@ const tiers = [
     tier: 'creator' as const,
     price: 12,
     features: [
-      '500 images / month',
+      '500 generations / month',
       'Pick up to 10 image models',
       'No video models',
       'Priority queue',
@@ -63,7 +63,7 @@ const tiers = [
     tier: 'studio' as const,
     price: 29,
     features: [
-      '2,000 images / month',
+      '2,000 generations / month',
       'All image models',
       'Pick up to 5 video models',
       'Priority queue',
@@ -80,7 +80,7 @@ const tiers = [
     tier: 'pro' as const,
     price: 59,
     features: [
-      'Unlimited images',
+      'Unlimited generations',
       'All image models',
       'All video models (incl. Sora 2 + Kling)',
       'Priority queue',

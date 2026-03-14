@@ -685,7 +685,7 @@ export default function Home() {
             {
               name: 'Free', price: '$0', period: '', desc: 'Try it out — no card needed', featured: false, trial: false,
               features: [
-                { text: '15 images / month', inc: true }, { text: 'DALL-E 3 + Flux Schnell', inc: true },
+                { text: '25 generations / month', inc: true }, { text: 'DALL-E 3 + Flux Schnell', inc: true },
                 { text: 'Core models only', inc: true }, { text: 'No video models', inc: false },
                 { text: 'Assets saved to vault', inc: true },
               ],
@@ -694,7 +694,7 @@ export default function Home() {
             {
               name: 'Creator', price: '$12', period: '/mo', desc: 'For growing creators', featured: false, trial: true,
               features: [
-                { text: '500 images / month', inc: true }, { text: 'Pick up to 10 image models', inc: true },
+                { text: '500 generations / month', inc: true }, { text: 'Pick up to 10 image models', inc: true },
                 { text: 'No video models', inc: false }, { text: 'Priority queue', inc: true },
                 { text: 'AI Assist', inc: true },
               ],
@@ -703,7 +703,7 @@ export default function Home() {
             {
               name: 'Studio', price: '$29', period: '/mo', desc: 'For serious creators', featured: true, trial: true,
               features: [
-                { text: '2,000 images / month', inc: true }, { text: 'All image models', inc: true },
+                { text: '2,000 generations / month', inc: true }, { text: 'All image models', inc: true },
                 { text: 'Pick up to 5 video models', inc: true }, { text: 'Priority queue', inc: true },
                 { text: 'AI Assist + Export', inc: true },
               ],
@@ -712,7 +712,7 @@ export default function Home() {
             {
               name: 'Pro', price: '$59', period: '/mo', desc: 'Teams and power users', featured: false, trial: true,
               features: [
-                { text: 'Unlimited images', inc: true }, { text: 'All image models', inc: true },
+                { text: 'Unlimited generations', inc: true }, { text: 'All image models', inc: true },
                 { text: 'All video models (incl. Sora 2 + Kling)', inc: true }, { text: 'Unlimited storage', inc: true },
                 { text: 'API access', inc: true },
               ],

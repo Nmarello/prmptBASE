@@ -1502,7 +1502,7 @@ export default function Dashboard() {
                         return (
                           <div className="mb-4 p-3 rounded-[10px] text-sm" style={{ background: '#fff8e6', border: '1px solid #f5c842', color: '#7a5c00' }}>
                             <div className="font-semibold mb-1">Monthly limit reached</div>
-                            <div className="mb-2">You've used <strong>{used}</strong> of <strong>{limit}</strong> images on the <strong>{tier}</strong> plan. Limits reset on the 1st of each month.</div>
+                            <div className="mb-2">You've used <strong>{used}</strong> of <strong>{limit}</strong> generations on the <strong>{tier}</strong> plan. Limits reset on the 1st of each month.</div>
                             <a href="/pricing" className="inline-block px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: 'var(--pv-accent)' }}>Upgrade plan →</a>
                           </div>
                         )

@@ -55,17 +55,15 @@ Deno.serve(async (req) => {
 
     const isVideo = gen_type === 'txt2vid' || gen_type === 'img2vid'
 
-    if (!isVideo) {
-      const rateLimit = await checkImageRateLimit(adminClient, userId)
-      if (!rateLimit.allowed) {
-        return new Response(JSON.stringify({
-          error: `Monthly limit reached. You've used ${rateLimit.used} of ${rateLimit.limit} images on the ${rateLimit.tier} plan.`,
-          rate_limited: true,
-          used: rateLimit.used,
-          limit: rateLimit.limit,
-          tier: rateLimit.tier,
-        }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-      }
+    const rateLimit = await checkImageRateLimit(adminClient, userId)
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify({
+        error: `Monthly limit reached. You've used ${rateLimit.used} of ${rateLimit.limit} generations on the ${rateLimit.tier} plan.`,
+        rate_limited: true,
+        used: rateLimit.used,
+        limit: rateLimit.limit,
+        tier: rateLimit.tier,
+      }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     // ── VIDEO: Veo 2 ──────────────────────────────────────────────────────────

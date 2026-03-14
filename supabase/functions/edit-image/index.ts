@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     const rateLimit = await checkImageRateLimit(adminClient, userId)
     if (!rateLimit.allowed) {
       return new Response(JSON.stringify({
-        error: `Monthly limit reached. You've used ${rateLimit.used} of ${rateLimit.limit} images on the ${rateLimit.tier} plan.`,
+        error: `Monthly limit reached. You've used ${rateLimit.used} of ${rateLimit.limit} generations on the ${rateLimit.tier} plan.`,
         rate_limited: true,
         used: rateLimit.used,
         limit: rateLimit.limit,

@@ -97,10 +97,10 @@ export default function Tos() {
           <H3>6.1 Plans</H3>
           <P>We offer the following plans:</P>
           <UL items={[
-            'Free: Core models, 15 images per month',
-            'Creator ($12/month): All image models, 500 images per month',
-            'Studio ($29/month): All image and video models, 2,000 images per month',
-            'Pro ($59/month): Unlimited images, all models, API access',
+            'Free: Core models, 25 generations per month',
+            'Creator ($12/month): All image models, 500 generations per month',
+            'Studio ($29/month): All image and video models, 2,000 generations per month',
+            'Pro ($59/month): Unlimited generations, all models, API access',
           ]} />
           <P>Generation limits reset monthly. Unused generations do not roll over.</P>
           <H3>6.2 Billing</H3>
