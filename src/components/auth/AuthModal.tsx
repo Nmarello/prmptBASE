@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
+import Logo from '../Logo'
 
 type Mode = 'signin' | 'signup' | 'verify'
 
@@ -112,9 +113,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
 
         {/* Logo + heading */}
         <div className="text-center mb-8">
-          <div className="text-3xl font-black tracking-tight text-white mb-1">
-            prmpt<span className="text-sky-400">VAULT</span>
-          </div>
+          <Logo height={30} theme="dark" style={{ marginBottom: 4 }} />
           {mode === 'signin' && <p className="text-sm text-slate-400">Sign in to start building better prompts</p>}
           {mode === 'signup' && <p className="text-sm text-slate-400">Create your account</p>}
           {mode === 'verify' && <p className="text-sm text-slate-400">Almost there!</p>}

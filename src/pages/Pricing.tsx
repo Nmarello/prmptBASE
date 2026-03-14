@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import Logo from '../components/Logo'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { createCheckoutSession } from '../lib/stripe'
@@ -157,9 +158,7 @@ export default function Pricing() {
             >← Back to dashboard</a>
           )}
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--pv-text3)', marginBottom: 12 }}>Pricing</div>
-          <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 800, letterSpacing: '-2px', marginBottom: 12, color: 'var(--pv-text)' }}>
-            prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
-          </h1>
+          <Logo height={48} style={{ marginBottom: 12 }} />
           <p style={{ fontSize: 17, color: 'var(--pv-text2)', marginBottom: 32 }}>Start free. Scale when you're ready.</p>
 
           {/* Billing toggle */}

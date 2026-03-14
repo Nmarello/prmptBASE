@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Logo from '../components/Logo'
 import type React from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -920,9 +921,7 @@ export default function Dashboard() {
             <div className="px-4 sm:px-7 pt-4 sm:pt-6 pb-4 flex-shrink-0">
               <div className="flex items-end justify-between mb-4">
                 <div>
-                  <h1 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em', lineHeight: 1 }}>
-                    prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
-                  </h1>
+                  <Logo height={24} style={{ marginBottom: 2 }} />
                   <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 2 }}>Pick a model and start creating</p>
                 </div>
               </div>

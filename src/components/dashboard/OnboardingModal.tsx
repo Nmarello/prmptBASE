@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
+import Logo from '../Logo'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -88,9 +89,7 @@ export default function OnboardingModal({ onDone }: OnboardingModalProps) {
       >
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-1px', color: 'var(--pv-text)' }}>
-            prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
-          </div>
+          <Logo height={28} />
         </div>
 
         <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--pv-text)', marginBottom: 8, textAlign: 'center' }}>

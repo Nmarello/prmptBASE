@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import Logo from '../components/Logo'
 import { supabase } from '../lib/supabase'
 import ModelPicker from '../components/settings/ModelPicker'
 
@@ -894,9 +895,7 @@ export default function Settings({ asDrawer = false, onClose, scrollTo }: { asDr
 
         {/* Mobile top bar */}
         <div className="sm:hidden flex items-center justify-between px-4 flex-shrink-0" style={{ height: 52, background: 'var(--pv-surface)', borderBottom: '1px solid var(--pv-border)' }}>
-          <span style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--pv-text)' }}>
-            prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
-          </span>
+          <Logo height={18} />
           <div className="flex items-center gap-3">
             <a href="/dashboard" style={{ fontSize: 12, color: 'var(--pv-text3)', textDecoration: 'none' }}>← Dashboard</a>
             <button onClick={signOut} style={{ fontSize: 12, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button>

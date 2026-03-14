@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Logo from '../components/Logo'
 import AuthModal from '../components/auth/AuthModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
@@ -124,9 +125,7 @@ export default function Home() {
         boxShadow: '0 2px 32px rgba(0,0,0,0.15)',
         minWidth: 600, justifyContent: 'space-between',
       }}>
-        <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.3px', color: T.text }}>
-          prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
-        </span>
+        <Logo height={18} theme={dark ? 'dark' : 'light'} />
         <div style={{ display: 'flex', gap: 24 }}>
           {[{ label: 'Models', href: '#models' }, { label: 'Pricing', href: '/pricing' }, { label: 'Gallery', href: '#gallery' }].map(l => (
             <a key={l.label} href={l.href} style={{ color: T.text2, textDecoration: 'none', fontSize: 13, fontWeight: 500, transition: 'color 0.15s' }}
@@ -174,9 +173,7 @@ export default function Home() {
         background: T.navBg, backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${T.border}`,
       }}>
-        <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.3px', color: T.text }}>
-          prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
-        </span>
+        <Logo height={18} theme={dark ? 'dark' : 'light'} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button onClick={() => setDark(d => !d)} style={{
             background: T.surface, border: `1px solid ${T.border}`, color: T.text2,
@@ -438,9 +435,7 @@ export default function Home() {
               <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#ffbd2e' }} />
               <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
             </div>
-            <span style={{ fontSize: 13, fontWeight: 800, color: T.text, marginLeft: 6 }}>
-              prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
-            </span>
+            <Logo height={14} theme={dark ? 'dark' : 'light'} style={{ marginLeft: 6 }} />
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
               {/* Notification toast */}
               <div style={{
@@ -817,9 +812,7 @@ export default function Home() {
       {/* ── FOOTER ───────────────────────────────────── */}
       <footer className="flex flex-col sm:flex-row gap-4 sm:gap-0 items-center justify-between px-5 sm:px-10 py-8"
         style={{ borderTop: '1px solid ' + T.border, color: T.text3, fontSize: 13 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>
-          prmpt<span style={{ color: 'var(--pv-accent)' }}>VAULT</span>
-        </div>
+        <Logo height={18} theme={dark ? 'dark' : 'light'} />
         <div style={{ display: 'flex', gap: 24 }}>
           {['Privacy', 'Terms', 'Docs'].map(l => (
             <a key={l} href="#" style={{ color: T.text3, textDecoration: 'none', transition: 'color 0.15s' }}
