@@ -220,6 +220,11 @@ export default function Dashboard() {
   function removePendingVideo(assetId: string) {
     setPendingVideosRaw(prev => prev.filter(p => p.assetId !== assetId))
   }
+  const [generateError, setGenerateError] = useState<string | null>(null)
+  const [pendingImage, setPendingImage] = useState<{ modelName: string } | null>(null)
+  const [renderingModelSlug, setRenderingModelSlug] = useState<string | null>(null)
+  const renderingModelSlugRef = useRef<string | null>(null)
+  useEffect(() => { renderingModelSlugRef.current = renderingModelSlug }, [renderingModelSlug])
   // Derived: pending video for the currently selected model (for canvas spinner)
   const pendingVideo = pendingVideos.find(v => v.slug === (renderingModelSlug ?? selectedModel?.slug)) ?? null
   const videoPollerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -229,11 +234,6 @@ export default function Dashboard() {
     addNotification(n)
     setNotifTick((t) => t + 1)
   }
-  const [generateError, setGenerateError] = useState<string | null>(null)
-  const [pendingImage, setPendingImage] = useState<{ modelName: string } | null>(null)
-  const [renderingModelSlug, setRenderingModelSlug] = useState<string | null>(null)
-  const renderingModelSlugRef = useRef<string | null>(null)
-  useEffect(() => { renderingModelSlugRef.current = renderingModelSlug }, [renderingModelSlug])
   const [renderToast, setRenderToast] = useState<string | null>(null)
   const [, setNotifTick] = useState(0) // forces bell re-render after addNotification
 
