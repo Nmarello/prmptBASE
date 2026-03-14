@@ -252,6 +252,8 @@ export default function Dashboard() {
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const [drawerModel, setDrawerModel] = useState<Model | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [navExpanded, setNavExpanded] = useState(false)
+  const [settingsSection, setSettingsSection] = useState('profile')
 
   const MODEL_ART_MAP = {
     'dalle':              { gradient: 'linear-gradient(145deg,#c0392b,#e8570a,#f5a623)', initial: 'D3' },
@@ -817,14 +819,60 @@ export default function Dashboard() {
 
       {/* ── Icon Sidebar ── */}
       <aside className="hidden sm:flex flex-col items-center py-4 gap-1 flex-shrink-0 relative z-10" style={{ width: '60px', background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}>
-        {/* Logo */}
-        <div className="mb-3 flex-shrink-0 rounded-[10px] flex items-center justify-center cursor-pointer" style={{ width: 36, height: 36, background: '#18140e' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-        </div>
 
-        {/* Nav buttons */}
+        {/* User avatar at top */}
+        <button
+          onClick={() => setNavExpanded(v => !v)}
+          aria-label="Account"
+          data-tour="settings-btn"
+          className="flex items-center justify-center rounded-full cursor-pointer transition-all hover:opacity-80 flex-shrink-0 mb-1"
+          style={{ width: 30, height: 30, background: navExpanded ? 'var(--pv-text)' : 'var(--pv-accent)', color: navExpanded ? 'var(--pv-bg)' : '#fff', fontSize: 12, fontWeight: 700, userSelect: 'none', border: 'none' }}
+        >
+          {userInitial}
+        </button>
+
+        {/* Settings section icons (expanded inline) */}
+        {navExpanded && (<>
+          <SbBtn tip="Profile" active={settingsOpen && settingsSection === 'profile'} onClick={() => { setSettingsSection('profile'); setSettingsOpen(true) }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </SbBtn>
+          <SbBtn tip="Stats" active={settingsOpen && settingsSection === 'stats'} onClick={() => { setSettingsSection('stats'); setSettingsOpen(true) }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </SbBtn>
+          <SbBtn tip="Preferences" active={settingsOpen && settingsSection === 'preferences'} onClick={() => { setSettingsSection('preferences'); setSettingsOpen(true) }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+              <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+              <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+            </svg>
+          </SbBtn>
+          <SbBtn tip="Account" active={settingsOpen && settingsSection === 'account'} onClick={() => { setSettingsSection('account'); setSettingsOpen(true) }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </SbBtn>
+          <SbBtn tip="Data" active={settingsOpen && settingsSection === 'data'} onClick={() => { setSettingsSection('data'); setSettingsOpen(true) }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </SbBtn>
+          <SbBtn tip="Danger Zone" active={settingsOpen && settingsSection === 'danger'} onClick={() => { setSettingsSection('danger'); setSettingsOpen(true) }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </SbBtn>
+          {/* Divider — doesn't reach sidebar edges */}
+          <div style={{ width: '55%', height: '1px', background: 'var(--pv-border)', margin: '4px 0', flexShrink: 0 }} />
+        </>)}
+
+        {/* Main nav buttons */}
         {([
           { id: 'models', tip: 'Generate', icon: <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/> },
           { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
@@ -835,41 +883,31 @@ export default function Dashboard() {
           </SbBtn>
         ))}
 
-        {/* Bottom actions */}
-        <div className="mt-auto flex flex-col items-center gap-1">
-          {/* Theme toggle */}
-          <SbBtn tip={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-            {theme === 'dark' ? (
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-              </svg>
-            ) : (
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            )}
-          </SbBtn>
-          <NotificationBell
-            onViewAsset={(assetId, _assetUrl, _isVideo) => {
-              const asset = assets.find((a) => a.id === assetId)
-              if (asset) {
-                setLightboxAsset(asset)
-              } else {
-                setView('assets')
-                loadAssets()
-              }
-            }}
-          />
-          <button
-            onClick={() => setSettingsOpen(true)}
-            aria-label="Settings"
-            data-tour="settings-btn"
-            className="flex items-center justify-center rounded-full cursor-pointer transition-opacity hover:opacity-80 flex-shrink-0"
-            style={{ width: 30, height: 30, background: 'var(--pv-accent)', color: '#fff', fontSize: 12, fontWeight: 700, userSelect: 'none', border: 'none' }}
-          >
-            {userInitial}
-          </button>
-        </div>
+        {/* Notification Bell — below Projects */}
+        <NotificationBell
+          onViewAsset={(assetId, _assetUrl, _isVideo) => {
+            const asset = assets.find((a) => a.id === assetId)
+            if (asset) {
+              setLightboxAsset(asset)
+            } else {
+              setView('assets')
+              loadAssets()
+            }
+          }}
+        />
+
+        {/* Theme toggle — below Bell */}
+        <SbBtn tip={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+          {theme === 'dark' ? (
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          ) : (
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          )}
+        </SbBtn>
       </aside>
 
       {/* ── Main Content ── */}
@@ -1244,7 +1282,7 @@ export default function Dashboard() {
       })()}
 
       {/* ── Settings Drawer ── */}
-      {settingsOpen && <SettingsDrawer onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <SettingsDrawer onClose={() => setSettingsOpen(false)} section={settingsSection} />}
 
       {/* ── Mobile Bottom Tab Bar ── */}
       <nav

@@ -252,7 +252,7 @@ function AvatarMenu({ onUpload, onPickGallery, onRemove, hasAvatar, onClose }: {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boolean; onClose?: () => void } = {}) {
+export default function Settings({ asDrawer = false, onClose, scrollTo }: { asDrawer?: boolean; onClose?: () => void; scrollTo?: string } = {}) {
   const { user, signOut, isAdmin } = useAuth()
   const { theme, setTheme } = useTheme()
   const [stats, setStats] = useState<UserStats | null>(null)
@@ -421,13 +421,22 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
 
   const initial = (stats?.profile.display_name ?? user?.email ?? '?')[0].toUpperCase()
 
+  useEffect(() => {
+    if (!scrollTo || !asDrawer) return
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`settings-${scrollTo}`)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 280)
+    return () => clearTimeout(timer)
+  }, [scrollTo, asDrawer])
+
   // ── Shared scrollable content ─────────────────────────────────────────────
   const settingsBody = (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
         {/* ── Profile card ── */}
-        <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 16, padding: '20px 22px', marginBottom: 24 }}>
+        <div id="settings-profile" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 16, padding: '20px 22px', marginBottom: 24 }}>
 
           {/* Avatar + name row */}
           <div className="flex items-center gap-4 mb-4">
@@ -534,6 +543,7 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
         </div>
 
         {/* ── Stats ── */}
+        <div id="settings-stats" />
         {loading ? (
           <div className="flex items-center justify-center py-20 animate-pulse" style={{ color: 'var(--pv-text3)', fontSize: 13 }}>Loading…</div>
         ) : stats ? (
@@ -614,7 +624,7 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
         )}
 
         {/* ── Preferences ── */}
-        <div style={{ borderTop: '1px solid var(--pv-border)', paddingTop: 24, marginTop: 8 }}>
+        <div id="settings-preferences" style={{ borderTop: '1px solid var(--pv-border)', paddingTop: 24, marginTop: 8 }}>
           <SectionLabel>Preferences</SectionLabel>
           <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
 
@@ -655,7 +665,7 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
         </div>
 
         {/* ── Account ── */}
-        <div style={{ paddingTop: 8, marginTop: 8 }}>
+        <div id="settings-account" style={{ paddingTop: 8, marginTop: 8 }}>
           <SectionLabel>Account</SectionLabel>
           <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
 
@@ -758,7 +768,7 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
         </div>
 
         {/* ── Data ── */}
-        <div style={{ marginTop: 8 }}>
+        <div id="settings-data" style={{ marginTop: 8 }}>
           <SectionLabel>Data</SectionLabel>
           <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px' }}>
@@ -780,7 +790,7 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
         </div>
 
         {/* ── Danger zone ── */}
-        <div style={{ marginTop: 8, marginBottom: 32 }}>
+        <div id="settings-danger" style={{ marginTop: 8, marginBottom: 32 }}>
           <SectionLabel>Danger zone</SectionLabel>
           <div style={{ background: 'rgba(248,113,113,0.04)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 14, padding: '14px 18px' }}>
             <div className="flex items-center justify-between">
@@ -836,9 +846,10 @@ export default function Settings({ asDrawer = false, onClose }: { asDrawer?: boo
                 style={{ width: 32, height: 32, background: 'var(--pv-surface2)', color: 'var(--pv-text3)', border: 'none' }}
                 onMouseEnter={e => (e.currentTarget.style.color = 'var(--pv-text)')}
                 onMouseLeave={e => (e.currentTarget.style.color = 'var(--pv-text3)')}
+                aria-label="Close"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                  <polygon points="15,4 15,20 5,12"/>
                 </svg>
               </button>
             )}
