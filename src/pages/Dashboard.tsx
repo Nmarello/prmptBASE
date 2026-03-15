@@ -1492,6 +1492,22 @@ export default function Dashboard() {
                     <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: 500 }}>
                       {pendingVideo && !pendingVideo.isImage ? 'Rendering video…' : 'Generating…'}
                     </p>
+                    {pendingVideo && !pendingVideo.isImage && (() => {
+                      const RENDER_HINTS: Record<string, string> = {
+                        'hunyuan-video':   'HunyuanVideo typically takes 5–15 min',
+                        'wan-21-txt2vid':  'Wan 2.1 typically takes 3–8 min',
+                        'kling':           'Kling typically takes 3–6 min',
+                        'minimax-txt2vid': 'Minimax typically takes 2–5 min',
+                        'minimax':         'Minimax typically takes 2–5 min',
+                        'ltx-video':       'LTX typically takes 1–3 min',
+                        'luma':            'Luma typically takes 2–5 min',
+                        'pika':            'Pika typically takes 2–4 min',
+                        'sora2':           'Sora 2 typically takes 3–8 min',
+                        'runway':          'Runway typically takes 2–5 min',
+                      }
+                      const hint = RENDER_HINTS[pendingVideo.slug]
+                      return hint ? <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>{hint}</p> : null
+                    })()}
                     <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>You can close this — we'll notify you when done</p>
                     {pendingVideo && (
                       <button onClick={() => { removePendingVideo(pendingVideo.assetId); setGenerateError(null) }}
