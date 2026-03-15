@@ -11,6 +11,8 @@ import Admin from './pages/Admin'
 import Settings from './pages/Settings'
 import Tos from './pages/Tos'
 import Privacy from './pages/Privacy'
+import FeedbackWidget from './components/support/FeedbackWidget'
+import SupportWidget from './components/support/SupportWidget'
 
 export default function App() {
   return (
@@ -48,6 +50,8 @@ export default function App() {
             }
           />
         </Routes>
+        <FeedbackWidget />
+        <SupportWidget />
       </LearningModeProvider>
       </ThemeProvider>
       </AuthProvider>

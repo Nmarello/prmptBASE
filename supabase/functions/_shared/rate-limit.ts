@@ -50,6 +50,14 @@ export async function checkImageRateLimit(
     .eq('user_id', userId)
     .gte('created_at', startOfMonth.toISOString())
 
-  const used = count ?? 0
+  // Subtract support refunds issued this month (each refund offsets one generation)
+  const startOfMonthDate = startOfMonth.toISOString().slice(0, 10)
+  const { count: refundCount } = await adminClient
+    .from('support_refunds')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('refunded_at', startOfMonthDate)
+
+  const used = Math.max(0, (count ?? 0) - (refundCount ?? 0))
   return { allowed: used < limit, tier, used, limit }
 }

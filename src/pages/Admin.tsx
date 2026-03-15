@@ -187,7 +187,32 @@ function SbBtn({ tip, active, onClick, children }: { tip?: string; active?: bool
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-type AdminView = 'stats' | 'users'
+type AdminView = 'stats' | 'users' | 'feedback' | 'support'
+
+interface FeedbackRow {
+  id: string
+  user_id: string | null
+  email: string | null
+  category: 'bug' | 'feature' | 'general'
+  message: string
+  status: 'new' | 'reviewed' | 'closed'
+  created_at: string
+}
+
+interface SupportMessage {
+  role: string
+  content: string | Array<{ type: string; text?: string }>
+}
+
+interface SupportConversation {
+  id: string
+  user_id: string | null
+  email: string | null
+  messages: SupportMessage[]
+  status: 'open' | 'resolved' | 'escalated'
+  created_at: string
+  updated_at: string
+}
 
 export default function Admin() {
   const { user, signOut } = useAuth()
@@ -223,8 +248,21 @@ export default function Admin() {
   const [deletingUser, setDeletingUser] = useState(false)
   const [deleteUserError, setDeleteUserError] = useState<string | null>(null)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [feedbackRows, setFeedbackRows] = useState<FeedbackRow[]>([])
+  const [feedbackLoading, setFeedbackLoading] = useState(false)
+  const [feedbackCategoryFilter, setFeedbackCategoryFilter] = useState<'all' | 'bug' | 'feature' | 'general'>('all')
+  const [feedbackStatusFilter, setFeedbackStatusFilter] = useState<'all' | 'new' | 'reviewed' | 'closed'>('all')
+  const [expandedFeedback, setExpandedFeedback] = useState<string | null>(null)
+  const [supportConvs, setSupportConvs] = useState<SupportConversation[]>([])
+  const [supportLoading, setSupportLoading] = useState(false)
+  const [expandedConv, setExpandedConv] = useState<string | null>(null)
 
   useEffect(() => { loadAll() }, [])
+
+  useEffect(() => {
+    if (view === 'feedback') loadFeedback()
+    else if (view === 'support') loadSupport()
+  }, [view])
 
   async function loadAll() {
     setLoading(true)
@@ -256,6 +294,31 @@ export default function Admin() {
       image_by_model: data.image_by_model ?? [],
     })
     setLoading(false)
+  }
+
+  async function loadFeedback() {
+    setFeedbackLoading(true)
+    const { data } = await supabase.from('feedback').select('*').order('created_at', { ascending: false })
+    setFeedbackRows(data as FeedbackRow[] ?? [])
+    setFeedbackLoading(false)
+  }
+
+  async function loadSupport() {
+    setSupportLoading(true)
+    const { data } = await supabase.from('support_conversations').select('*').order('created_at', { ascending: false })
+    setSupportConvs(data as SupportConversation[] ?? [])
+    setSupportLoading(false)
+  }
+
+  async function cycleFeedbackStatus(id: string, current: string) {
+    const next = current === 'new' ? 'reviewed' : current === 'reviewed' ? 'closed' : 'new'
+    await supabase.from('feedback').update({ status: next }).eq('id', id)
+    setFeedbackRows(prev => prev.map(r => r.id === id ? { ...r, status: next as FeedbackRow['status'] } : r))
+  }
+
+  async function resolveConversation(id: string) {
+    await supabase.from('support_conversations').update({ status: 'resolved', updated_at: new Date().toISOString() }).eq('id', id)
+    setSupportConvs(prev => prev.map(c => c.id === id ? { ...c, status: 'resolved' } : c))
   }
 
   async function changeTier(targetUserId: string, newTier: Tier) {
@@ -425,6 +488,20 @@ export default function Admin() {
           </svg>
         </SbBtn>
 
+        {/* Nav: Feedback */}
+        <SbBtn tip="Feedback" active={view === 'feedback'} onClick={() => setView('feedback')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </SbBtn>
+
+        {/* Nav: Support */}
+        <SbBtn tip="Support" active={view === 'support'} onClick={() => setView('support')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </SbBtn>
+
         {/* Bottom actions */}
         <div className="mt-auto flex flex-col items-center gap-1">
           {/* Theme toggle */}
@@ -476,7 +553,7 @@ export default function Admin() {
             {/* Page header */}
             <div className="mb-6">
               <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em', lineHeight: 1.1 }}>
-                {view === 'stats' ? 'Stats' : 'Users'}
+                {view === 'stats' ? 'Stats' : view === 'users' ? 'Users' : view === 'feedback' ? 'Feedback' : 'Support'}
               </h1>
               <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 3 }}>{user?.email}</p>
             </div>
@@ -783,6 +860,144 @@ export default function Admin() {
                 </div>
               )}
             </Card></>}
+
+            {/* ── Feedback view ── */}
+            {view === 'feedback' && (
+              <>
+                <div className="flex gap-2 mb-4 flex-wrap items-center">
+                  {(['all', 'bug', 'feature', 'general'] as const).map(c => (
+                    <button key={c} onClick={() => setFeedbackCategoryFilter(c)}
+                      style={feedbackCategoryFilter === c
+                        ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)', borderRadius: 8, padding: '4px 12px', fontSize: 12, fontWeight: 600, border: '1px solid var(--pv-border)', cursor: 'pointer', fontFamily: 'inherit' }
+                        : { color: 'var(--pv-text3)', borderRadius: 8, padding: '4px 12px', fontSize: 12, fontWeight: 500, background: 'none', border: '1px solid transparent', cursor: 'pointer', fontFamily: 'inherit' }
+                      }
+                      className="capitalize transition-colors hover:text-[var(--pv-text)]"
+                    >{c}</button>
+                  ))}
+                  <div style={{ width: 1, height: 16, background: 'var(--pv-border)' }} />
+                  {(['all', 'new', 'reviewed', 'closed'] as const).map(s => (
+                    <button key={s} onClick={() => setFeedbackStatusFilter(s)}
+                      style={feedbackStatusFilter === s
+                        ? { background: 'var(--pv-surface2)', color: 'var(--pv-text)', borderRadius: 8, padding: '4px 12px', fontSize: 12, fontWeight: 600, border: '1px solid var(--pv-border)', cursor: 'pointer', fontFamily: 'inherit' }
+                        : { color: 'var(--pv-text3)', borderRadius: 8, padding: '4px 12px', fontSize: 12, fontWeight: 500, background: 'none', border: '1px solid transparent', cursor: 'pointer', fontFamily: 'inherit' }
+                      }
+                      className="capitalize transition-colors hover:text-[var(--pv-text)]"
+                    >{s}</button>
+                  ))}
+                </div>
+                <Card>
+                  {feedbackLoading ? (
+                    <div className="flex items-center justify-center py-20 text-sm animate-pulse" style={{ color: 'var(--pv-text3)' }}>Loading feedback…</div>
+                  ) : (() => {
+                    const filtered = feedbackRows.filter(r =>
+                      (feedbackCategoryFilter === 'all' || r.category === feedbackCategoryFilter) &&
+                      (feedbackStatusFilter === 'all' || r.status === feedbackStatusFilter)
+                    )
+                    if (filtered.length === 0) return (
+                      <div className="flex items-center justify-center py-20 text-sm" style={{ color: 'var(--pv-text3)' }}>No feedback yet</div>
+                    )
+                    const catColors: Record<string, string> = { bug: 'bg-red-500/10 text-red-400 border-red-500/20', feature: 'bg-blue-500/10 text-[#6699ff] border-blue-500/20', general: 'bg-[var(--pv-surface2)] text-[var(--pv-text2)] border-[var(--pv-border)]' }
+                    const statusColors: Record<string, string> = { new: 'bg-amber-500/10 text-amber-400 border-amber-500/20', reviewed: 'bg-blue-500/10 text-[#6699ff] border-blue-500/20', closed: 'bg-[var(--pv-surface2)] text-[var(--pv-text3)] border-[var(--pv-border)]' }
+                    return (
+                      <div>
+                        {filtered.map(r => (
+                          <div key={r.id} style={{ borderBottom: '1px solid var(--pv-border)' }}>
+                            <div
+                              className="flex items-start gap-3 px-5 py-3.5 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                              onClick={() => setExpandedFeedback(expandedFeedback === r.id ? null : r.id)}
+                            >
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>{new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border capitalize ${catColors[r.category]}`}>{r.category}</span>
+                                  {r.email && <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>{r.email}</span>}
+                                </div>
+                                <div style={{ fontSize: 13, color: 'var(--pv-text)', lineHeight: 1.4 }}>
+                                  {expandedFeedback === r.id ? r.message : (r.message.length > 100 ? r.message.slice(0, 100) + '…' : r.message)}
+                                </div>
+                              </div>
+                              <button
+                                onClick={e => { e.stopPropagation(); cycleFeedbackStatus(r.id, r.status) }}
+                                className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize flex-shrink-0 cursor-pointer transition-opacity hover:opacity-70 ${statusColors[r.status]}`}
+                                style={{ background: 'transparent' }}
+                                title="Click to cycle status"
+                              >{r.status}</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
+                </Card>
+              </>
+            )}
+
+            {/* ── Support view ── */}
+            {view === 'support' && (
+              <Card>
+                {supportLoading ? (
+                  <div className="flex items-center justify-center py-20 text-sm animate-pulse" style={{ color: 'var(--pv-text3)' }}>Loading conversations…</div>
+                ) : supportConvs.length === 0 ? (
+                  <div className="flex items-center justify-center py-20 text-sm" style={{ color: 'var(--pv-text3)' }}>No support conversations yet</div>
+                ) : (
+                  <div>
+                    {supportConvs.map(conv => {
+                      const statusColors: Record<string, string> = { open: 'bg-blue-500/10 text-[#6699ff] border-blue-500/20', resolved: 'bg-[var(--pv-surface2)] text-[var(--pv-text3)] border-[var(--pv-border)]', escalated: 'bg-amber-500/10 text-amber-400 border-amber-500/20' }
+                      const preview = conv.messages.find(m => m.role === 'user')
+                      const previewText = typeof preview?.content === 'string' ? preview.content : (preview?.content as Array<{ type: string; text?: string }>)?.[0]?.text ?? ''
+                      return (
+                        <div key={conv.id} style={{ borderBottom: '1px solid var(--pv-border)', background: conv.status === 'escalated' ? 'rgba(245,200,66,0.03)' : 'transparent' }}>
+                          <div
+                            className="flex items-start gap-3 px-5 py-3.5 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                            onClick={() => setExpandedConv(expandedConv === conv.id ? null : conv.id)}
+                          >
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>{new Date(conv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                {conv.email && <span style={{ fontSize: 12, color: 'var(--pv-text2)', fontWeight: 500 }}>{conv.email}</span>}
+                              </div>
+                              <div style={{ fontSize: 13, color: 'var(--pv-text)', lineHeight: 1.4 }}>
+                                {previewText.length > 100 ? previewText.slice(0, 100) + '…' : previewText}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${statusColors[conv.status]}`}>{conv.status}</span>
+                              {conv.status !== 'resolved' && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); resolveConversation(conv.id) }}
+                                  style={{ fontSize: 11, color: 'var(--pv-text3)', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', borderRadius: 7, padding: '3px 8px', cursor: 'pointer', fontFamily: 'inherit' }}
+                                  className="hover:text-[var(--pv-text)] hover:border-[var(--pv-accent)] transition-colors"
+                                >Resolve</button>
+                              )}
+                            </div>
+                          </div>
+                          {expandedConv === conv.id && conv.messages.length > 0 && (
+                            <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              {conv.messages.map((msg, i) => {
+                                const text = typeof msg.content === 'string' ? msg.content : (msg.content as Array<{ type: string; text?: string }>)?.[0]?.text ?? ''
+                                return (
+                                  <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                                    <div style={{
+                                      maxWidth: '70%', padding: '7px 12px', borderRadius: msg.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                                      background: msg.role === 'user' ? 'var(--pv-accent)' : 'var(--pv-surface2)',
+                                      color: msg.role === 'user' ? '#fff' : 'var(--pv-text)',
+                                      fontSize: 12.5, lineHeight: 1.5,
+                                      border: msg.role !== 'user' ? '1px solid var(--pv-border)' : 'none',
+                                    }}>
+                                      {text}
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </Card>
+            )}
 
           </div>
         </div>
