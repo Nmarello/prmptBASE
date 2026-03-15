@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { user_token, field_id, field_label, current_value, form_values, source_image_url } = await req.json()
+    const { user_token, field_id, field_label, current_value, form_values, source_image_url, is_negative_prompt, gen_type } = await req.json()
 
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -50,23 +50,41 @@ Deno.serve(async (req) => {
     const context = contextParts.length ? `\n\nOther selected settings:\n${contextParts.join('\n')}` : ''
 
     const isSubject = field_id === 'subject'
+    const isNegativePrompt = !!is_negative_prompt
     const hasSourceImage = !!source_image_url
+    const genTypeStr = gen_type ?? 'image'
+    const isVideo = genTypeStr.includes('vid')
 
-    const systemPrompt = isSubject
-      ? hasSourceImage
-        ? `You are an expert at writing image generation prompts. The user is working with a source image (shown). Your job is to write a vivid, detailed prompt that describes what to transform or extend from that image. Consider the visual content you can see. Keep it to 2-3 sentences max. Return only the improved prompt text, no explanation, no quotes.`
-        : `You are an expert at writing image generation prompts. When given a rough subject or scene description, expand it into a vivid, detailed prompt that will produce a stunning image. Be specific about subjects, environment, atmosphere, and interesting details. Keep it to 2-3 sentences max. Return only the improved prompt text, no explanation, no quotes.`
-      : hasSourceImage
-        ? `You are an expert at writing image generation prompts. The user is working with a source image (shown). Refine the given details to be more specific and evocative, taking into account the visual content of the source image. Keep it concise. Return only the improved text, no explanation, no quotes.`
-        : `You are an expert at writing image generation prompts. When given additional details for an image, refine and expand them to be more specific and evocative for an AI image generator. Keep it concise. Return only the improved text, no explanation, no quotes.`
+    // For vid2vid the source asset is a video — skip vision (GPT-4o-mini can't analyze video)
+    const useVision = hasSourceImage && !isNegativePrompt || (hasSourceImage && isNegativePrompt && !isVideo)
 
-    const textContent = current_value?.trim()
-      ? `Improve this ${field_label} for an image generation prompt:\n\n${current_value}${context}`
-      : `Generate a compelling ${field_label} for an image generation prompt.${context}`
+    let systemPrompt: string
+    let textContent: string
 
-    // Build the user message — use vision if source image is available
+    if (isNegativePrompt) {
+      systemPrompt = hasSourceImage && !isVideo
+        ? `You are an expert at writing negative prompts for AI image and video generation models. The user has uploaded a source image (shown). Based on the positive prompt, form settings, and visible content in the source image, generate a concise comma-separated list of terms that describe what to EXCLUDE from the output. Focus on: visible artifacts or quality issues in the source image, content that conflicts with the desired style or mood, and common model weak-spots (e.g. blurry, low quality, watermark, deformed, extra limbs). Return only comma-separated terms, no explanation, no quotes.`
+        : `You are an expert at writing negative prompts for AI ${isVideo ? 'video' : 'image'} generation models. Based on the positive prompt and form settings provided, generate a concise comma-separated list of terms that describe what to EXCLUDE from the output. Focus on: common artifacts (blurry, noise, low quality, watermark), content that conflicts with the described style or mood, and model-specific weak-spots (deformed, extra limbs, bad anatomy). Return only comma-separated terms, no explanation, no quotes.`
+
+      const positivePrompt = (form_values?.prompt as string) || (form_values?.subject as string) || ''
+      textContent = `Generate negative prompt terms for this ${genTypeStr} generation.\nPositive prompt: "${positivePrompt}"${context}`
+    } else {
+      systemPrompt = isSubject
+        ? hasSourceImage
+          ? `You are an expert at writing image generation prompts. The user is working with a source image (shown). Your job is to write a vivid, detailed prompt that describes what to transform or extend from that image. Consider the visual content you can see. Keep it to 2-3 sentences max. Return only the improved prompt text, no explanation, no quotes.`
+          : `You are an expert at writing image generation prompts. When given a rough subject or scene description, expand it into a vivid, detailed prompt that will produce a stunning image. Be specific about subjects, environment, atmosphere, and interesting details. Keep it to 2-3 sentences max. Return only the improved prompt text, no explanation, no quotes.`
+        : hasSourceImage
+          ? `You are an expert at writing image generation prompts. The user is working with a source image (shown). Refine the given details to be more specific and evocative, taking into account the visual content of the source image. Keep it concise. Return only the improved text, no explanation, no quotes.`
+          : `You are an expert at writing image generation prompts. When given additional details for an image, refine and expand them to be more specific and evocative for an AI image generator. Keep it concise. Return only the improved text, no explanation, no quotes.`
+
+      textContent = current_value?.trim()
+        ? `Improve this ${field_label} for an image generation prompt:\n\n${current_value}${context}`
+        : `Generate a compelling ${field_label} for an image generation prompt.${context}`
+    }
+
+    // Build the user message — use vision if source image is available and applicable
     type MessageContent = string | Array<{ type: string; text?: string; image_url?: { url: string } }>
-    const userMessage: MessageContent = source_image_url
+    const userMessage: MessageContent = useVision
       ? [
           { type: 'image_url', image_url: { url: source_image_url } },
           { type: 'text', text: textContent },
@@ -82,8 +100,8 @@ Deno.serve(async (req) => {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
         ],
-        max_tokens: 300,
-        temperature: 0.8,
+        max_tokens: isNegativePrompt ? 150 : 300,
+        temperature: isNegativePrompt ? 0.5 : 0.8,
       }),
     })
 

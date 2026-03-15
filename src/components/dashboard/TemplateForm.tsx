@@ -20,6 +20,7 @@ const FIELD_TOOLTIPS: Record<string, string> = {
   quality:             'Technical quality phrases appended to the prompt. "Highly detailed" pushes the model to render fine textures. "Ultra HD" signals maximum resolution detail. Stack multiple for stronger effect.',
   additional_details:  'A freeform field for anything else you want in the image. This text is appended verbatim to the end of the final prompt — use it for specific details, props, or context that don\'t fit the other fields.',
   aspect_ratio:        'The shape of the output canvas. 1:1 square for social media. 16:9 landscape for presentations and YouTube thumbnails. 9:16 portrait for phone screens and Instagram Stories. 21:9 ultra-wide for cinematic banners.',
+  negative_prompt:     'Words or phrases that tell the model what to exclude from the output — e.g. "blurry, low quality, extra limbs." Use "Auto-suggest" to have AI analyze your prompt (and source image, if provided) and generate a tailored list of exclusion terms automatically.',
   resolution:          'Output pixel dimensions. 1K (1024px) is fast and great for previews. 2K is a good balance. 4K is best when you need to print large or crop heavily into the image.',
   num_images:          'How many variations to generate at once. More options lets you pick the best one, but each image costs credits. Start with 1–2 when testing a prompt, bump up to 4 when you\'re close to the final look.',
   output_format:       'The file format for the downloaded image. JPEG is smaller and loads faster — ideal for web. PNG is lossless with no compression artifacts — best for logos and anything with fine edges. WebP is a modern middle ground.',
@@ -778,7 +779,7 @@ function LivePromptPanel({
 
 // ─── Main form ───────────────────────────────────────────────────────────────
 
-export default function TemplateForm({ template, genType: _genType, onSubmit, submitting, initialValues, userTier, modelMinTier, generateError, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted, subjectOverride, sourceImageOriginUrl }: Props) {
+export default function TemplateForm({ template, genType, onSubmit, submitting, initialValues, userTier, modelMinTier, generateError, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted, subjectOverride, sourceImageOriginUrl }: Props) {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
 
   useEffect(() => {
@@ -825,6 +826,8 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
               if (src.startsWith('http')) return src
               return sourceImageOriginUrl ?? undefined
             })(),
+            is_negative_prompt: fieldId === 'negative_prompt',
+            gen_type: genType ?? null,
           }),
         }
       )
@@ -927,7 +930,7 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
             )}
           </div>
           <div className="flex items-center gap-3">
-            {field.ai_assist && (
+            {(field.ai_assist || field.id === 'negative_prompt') && (
               <button
                 type="button"
                 data-tour={field.id === 'subject' ? 'ai-assist-subject' : undefined}
@@ -936,7 +939,7 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
                 className="text-xs disabled:opacity-40 flex items-center gap-1 transition-opacity hover:opacity-70 cursor-pointer"
                 style={{ color: 'var(--pv-accent)' }}
               >
-                {assisting === field.id ? 'Thinking…' : 'AI assist'}
+                {assisting === field.id ? 'Thinking…' : field.id === 'negative_prompt' ? 'Auto-suggest' : 'AI assist'}
               </button>
             )}
             {showAddButton && field.type === 'select' && (
