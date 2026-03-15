@@ -682,22 +682,25 @@ Deno.serve(async (req) => {
         if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
       } else if (slug.startsWith('wan')) {
         if (body.aspect_ratio) falPayload.aspect_ratio = body.aspect_ratio
+        if (body.negative_prompt) falPayload.negative_prompt = body.negative_prompt
+        if (body.resolution) falPayload.resolution = body.resolution
         if (body.num_inference_steps) falPayload.num_inference_steps = Number(body.num_inference_steps)
-        if (body.guidance_scale) falPayload.guidance_scale = Number(body.guidance_scale)
+        // img2vid uses guide_scale; txt2vid does not support guidance at all
+        if (isImgVid && body.guide_scale) falPayload.guide_scale = Number(body.guide_scale)
         if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
       } else if (slug.startsWith('hunyuan')) {
-        const VIDEO_SIZE_MAP: Record<string, string> = {
-          '16:9': 'landscape_16_9',
-          '9:16': 'portrait_16_9',
-          '4:3':  'landscape_4_3',
-          '3:4':  'portrait_4_3',
-          '1:1':  'square_hd',
+        // Both models use aspect_ratio directly (16:9 or 9:16 only)
+        if (body.aspect_ratio) falPayload.aspect_ratio = body.aspect_ratio
+        // txt2vid only: negative_prompt, num_frames, pro_mode
+        if (!isImgVid) {
+          if (body.negative_prompt) falPayload.negative_prompt = body.negative_prompt
+          if (body.num_frames) falPayload.num_frames = Number(body.num_frames)
+          if (body.pro_mode != null && body.pro_mode !== '') falPayload.pro_mode = body.pro_mode === 'true' || body.pro_mode === true
         }
-        const ar = body.aspect_ratio as string | undefined
-        falPayload.video_size = (ar && VIDEO_SIZE_MAP[ar]) ? VIDEO_SIZE_MAP[ar] : 'landscape_16_9'
-        if (body.num_inference_steps) falPayload.num_inference_steps = Number(body.num_inference_steps)
-        if (body.guidance_scale) falPayload.guidance_scale = Number(body.guidance_scale)
-        if (body.num_frames) falPayload.num_frames = Number(body.num_frames)
+        // img2vid only: i2v_stability
+        if (isImgVid && body.i2v_stability != null && body.i2v_stability !== '') {
+          falPayload.i2v_stability = body.i2v_stability === 'true' || body.i2v_stability === true
+        }
         if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
       }
 
