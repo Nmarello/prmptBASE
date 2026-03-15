@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { useLearningMode, type LearningMode } from '../contexts/LearningModeContext'
+import { clearTourSeen } from '../components/dashboard/GuidedTour'
 import Logo from '../components/Logo'
 import { supabase } from '../lib/supabase'
 import ModelPicker from '../components/settings/ModelPicker'
@@ -256,6 +258,7 @@ function AvatarMenu({ onUpload, onPickGallery, onRemove, hasAvatar, onClose }: {
 export default function Settings({ asDrawer = false, onClose, scrollTo }: { asDrawer?: boolean; onClose?: () => void; scrollTo?: string } = {}) {
   const { user, signOut, isAdmin } = useAuth()
   const { theme, setTheme } = useTheme()
+  const { mode: learningMode, setMode: setLearningMode } = useLearningMode()
   const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -646,6 +649,41 @@ export default function Settings({ asDrawer = false, onClose, scrollTo }: { asDr
                   <div style={{ position: 'absolute', top: 2, width: 14, height: 14, background: '#fff', borderRadius: '50%', transition: 'left 0.2s', left: theme === 'dark' ? 22 : 2 }} />
                 </div>
               </button>
+            </div>
+
+            {/* Learning mode */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--pv-border)' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>Learning mode</div>
+                <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Guidance shown while building prompts</div>
+              </div>
+              <div style={{ display: 'flex', gap: 2, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', borderRadius: 10, padding: 2 }}>
+                {([
+                  { value: 'none', label: 'Off' },
+                  { value: 'tooltips', label: 'Field hints' },
+                  { value: 'guided', label: 'Tour' },
+                ] as { value: LearningMode; label: string }[]).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => { if (value === 'guided') clearTourSeen(); setLearningMode(value) }}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 7,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      transition: 'all 0.15s',
+                      background: learningMode === value ? 'var(--pv-accent)' : 'transparent',
+                      color: learningMode === value ? '#fff' : 'var(--pv-text3)',
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Timezone */}

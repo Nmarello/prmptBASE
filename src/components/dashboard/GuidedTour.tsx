@@ -198,3 +198,7 @@ export function shouldAutoTriggerTour(mode: string): boolean {
 export function markTourSeen() {
   try { localStorage.setItem(TOUR_SEEN_KEY, '1') } catch {}
 }
+
+export function clearTourSeen() {
+  try { localStorage.removeItem(TOUR_SEEN_KEY) } catch {}
+}
