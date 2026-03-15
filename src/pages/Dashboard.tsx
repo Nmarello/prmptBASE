@@ -1726,7 +1726,7 @@ export default function Dashboard() {
       {/* Existing overlays — keep exactly as-is */}
       {img2imgPickerUrl && (
         <Img2ImgPicker
-          models={models.filter(m => m.supported_gen_types.includes('img2img'))}
+          models={models.filter(m => m.supported_gen_types.includes('img2img') && !m.coming_soon)}
           onPick={handleImg2ImgPick}
           onClose={() => setImg2imgPickerUrl(null)}
         />
@@ -1736,7 +1736,7 @@ export default function Dashboard() {
           title="Animate this image"
           subtitle="Choose a video model to animate your image"
           genLabel="img2vid"
-          models={models.filter(m => m.supported_gen_types.includes('img2vid'))}
+          models={models.filter(m => m.supported_gen_types.includes('img2vid') && !m.coming_soon)}
           onPick={handleImg2VidPick}
           onClose={() => setImg2vidPickerUrl(null)}
         />
