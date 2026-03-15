@@ -54,7 +54,7 @@ import type { Asset, Model, Template, GenType, UserProject } from '../types'
 import { GEN_TYPE_LABELS } from '../types'
 import ModelCard from '../components/dashboard/ModelCard'
 import TemplateForm from '../components/dashboard/TemplateForm'
-import AssetGrid from '../components/dashboard/AssetGrid'
+import AssetGrid, { Lightbox } from '../components/dashboard/AssetGrid'
 import ProjectsView from '../components/dashboard/ProjectsView'
 import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
 import NotificationBell, { addNotification } from '../components/dashboard/NotificationBell'
@@ -1726,27 +1726,20 @@ export default function Dashboard() {
           onClose={() => setImg2vidPickerUrl(null)}
         />
       )}
-      {lightboxAsset && (() => {
-        const isVideo = lightboxAsset.gen_type === 'txt2vid' || lightboxAsset.gen_type === 'img2vid'
-        return (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setLightboxAsset(null)}>
-            <div className="relative rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-2xl" style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setLightboxAsset(null)} className="absolute top-4 right-4 text-xl leading-none cursor-pointer transition-colors" style={{ color: 'var(--pv-text3)' }}>×</button>
-              <div className="mb-5">
-                {isVideo
-                  ? <video src={lightboxAsset.url} controls autoPlay loop className="rounded-xl w-full" />
-                  : <img src={lightboxAsset.url} alt="" className="rounded-xl w-full" />
-                }
-              </div>
-              <div className="flex gap-3 flex-wrap">
-                <button onClick={() => downloadFile(lightboxAsset.url, isVideo)} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer" style={{ background: '#18140e' }}>Download</button>
-                {!isVideo && <button onClick={() => { setLightboxAsset(null); sendToImg2Img(lightboxAsset.url) }} className="px-5 py-2.5 rounded-xl text-sm font-medium cursor-pointer" style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)' }}>img2img →</button>}
-                {!isVideo && <button onClick={() => { setLightboxAsset(null); sendToImg2Vid(lightboxAsset.url) }} className="px-5 py-2.5 rounded-xl text-sm font-medium cursor-pointer" style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)' }}>img2vid →</button>}
-              </div>
-            </div>
-          </div>
-        )
-      })()}
+      {lightboxAsset && (
+        <Lightbox
+          asset={lightboxAsset}
+          projects={projects}
+          projectName={null}
+          projectColor={null}
+          modelName={models.find(m => m.id === lightboxAsset.model_id)?.name ?? null}
+          onClose={() => setLightboxAsset(null)}
+          onDelete={(id) => { deleteAsset(id); setLightboxAsset(null) }}
+          onSendToImg2Img={(url) => { setLightboxAsset(null); sendToImg2Img(url) }}
+          onSendToImg2Vid={(url) => { setLightboxAsset(null); sendToImg2Vid(url) }}
+          onMoveToProject={moveAssetToProject}
+        />
+      )}
       <GuidedTour active={tourActive} onFinish={() => { markTourSeen(); setTourActive(false) }} />
       {showOnboarding && (
         <OnboardingModal onDone={() => setShowOnboarding(false)} />

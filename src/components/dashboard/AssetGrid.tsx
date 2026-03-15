@@ -373,7 +373,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
   )
 }
 
-function Lightbox({ asset, projects, projectName, projectColor, modelName, onClose, onDelete, onSendToImg2Img, onSendToImg2Vid, onMoveToProject }: {
+export function Lightbox({ asset, projects, projectName, projectColor, modelName, onClose, onDelete, onSendToImg2Img, onSendToImg2Vid, onMoveToProject }: {
   asset: Asset
   projects: UserProject[]
   projectName: string | null
