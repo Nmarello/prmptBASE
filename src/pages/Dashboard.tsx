@@ -60,7 +60,7 @@ import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
 import NotificationBell, { addNotification } from '../components/dashboard/NotificationBell'
 import SettingsDrawer from '../components/dashboard/SettingsDrawer'
 import GuidedTour, { markTourSeen, shouldAutoTriggerTour } from '../components/dashboard/GuidedTour'
-import FirstRunTour, { hasSeenFirstRun, markFirstRunSeen, clearFirstRun } from '../components/dashboard/FirstRunTour'
+import FirstRunTour, { hasSeenFirstRun, markFirstRunSeen, clearFirstRun, NAV_TOUR_START, DECLINE_STEP } from '../components/dashboard/FirstRunTour'
 import OnboardingModal from '../components/dashboard/OnboardingModal'
 import { useLearningMode } from '../contexts/LearningModeContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -439,6 +439,11 @@ export default function Dashboard() {
       clearFirstRun()
       window.history.replaceState({}, '', '/dashboard')
     }
+    if (params.get('tour') === 'nav') {
+      window.history.replaceState({}, '', '/dashboard')
+      setFirstRunStep(NAV_TOUR_START)
+      return
+    }
     if (!hasSeenFirstRun()) setFirstRunStep(0)
   }, [onboardingChecked, showOnboarding])
 
@@ -466,6 +471,24 @@ export default function Dashboard() {
   useEffect(() => {
     if (firstRunStep === 10 && result) setFirstRunStep(11)
   }, [result, firstRunStep])
+
+  // Nav tour: step 13 → close workspace, back to models
+  useEffect(() => {
+    if (firstRunStep === NAV_TOUR_START) {
+      closeWorkspace()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstRunStep])
+
+  // Nav tour: step 14 → switch to assets view
+  useEffect(() => {
+    if (firstRunStep === 14) setView('assets')
+  }, [firstRunStep])
+
+  // Nav tour: step 16 → switch back to models
+  useEffect(() => {
+    if (firstRunStep === 16) setView('models')
+  }, [firstRunStep])
 
   async function selectModel(model: Model) {
     setSidebarOpen(false)
@@ -891,7 +914,10 @@ export default function Dashboard() {
           { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
           { id: 'projects', tip: 'Projects', icon: <><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></> },
         ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (
-          <SbBtn key={id} tip={tip} active={view === id} onClick={() => setView(id as View)} dataTour={id === 'assets' ? 'assets-nav' : undefined}>
+          <SbBtn
+            key={id} tip={tip} active={view === id} onClick={() => setView(id as View)}
+            dataTour={id === 'models' ? 'sidebar-generate' : id === 'assets' ? 'assets-nav' : id === 'projects' ? 'sidebar-projects' : undefined}
+          >
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
           </SbBtn>
         ))}
@@ -1486,6 +1512,7 @@ export default function Dashboard() {
                 {/* Close button */}
                 <button
                   onClick={closeWorkspace}
+                  data-tour="workspace-close"
                   className="absolute top-4 right-4 z-10 flex items-center justify-center rounded-[8px] transition-all hover:opacity-90"
                   style={{ width: 32, height: 32, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.85)' }}
                 >
@@ -1723,6 +1750,7 @@ export default function Dashboard() {
           onNext={() => setFirstRunStep(s => s + 1)}
           onSkip={() => { markFirstRunSeen(); setFirstRunStep(-1) }}
           onDone={() => { markFirstRunSeen(); setFirstRunStep(-1) }}
+          onExplore={() => setFirstRunStep(DECLINE_STEP)}
         />
       )}
       {renderToast && (

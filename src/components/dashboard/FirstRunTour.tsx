@@ -14,6 +14,9 @@ export function clearFirstRun(): void {
   try { localStorage.removeItem(FIRST_RUN_KEY) } catch {}
 }
 
+export const NAV_TOUR_START = 13
+export const DECLINE_STEP   = 18
+
 // ── Step definitions ──────────────────────────────────────────────────────────
 
 interface Step {
@@ -21,13 +24,13 @@ interface Step {
   position: 'center' | 'right' | 'left' | 'bottom' | 'top'
   title: string
   body?: string
-  special?: 'subject' | 'thinking' | 'generating' | 'settings'
+  special?: 'subject' | 'thinking' | 'generating' | 'settings' | 'post_gen_choice'
   hasButton?: boolean
   buttonLabel?: string
 }
 
-// Total: 12 steps (0–11)
 const STEPS: Step[] = [
+  // ── Gen tour (0–11) ─────────────────────────────────────────────────────────
   // 0
   {
     target: null,
@@ -111,21 +114,87 @@ const STEPS: Step[] = [
     title: 'Generating your image…',
     special: 'generating',
   },
-  // 11 – done
+  // 11 – point out close button
+  {
+    target: '[data-tour="workspace-close"]',
+    position: 'left',
+    title: 'Done? Use this to go back',
+    body: 'Hit × to close the builder and return to the model browser. Your image is already saved to Assets.',
+    hasButton: true,
+    buttonLabel: 'Next →',
+  },
+  // 12 – post-gen choice
   {
     target: null,
     position: 'center',
-    title: 'Your first generation',
-    body: "It's been saved to your Assets automatically. You can download it, use it as a reference, or keep generating.",
+    title: 'Nice work — what\'s next?',
+    special: 'post_gen_choice',
+  },
+
+  // ── Nav tour (13–17) — NAV_TOUR_START = 13 ─────────────────────────────────
+  // 13
+  {
+    target: '[data-tour="sidebar-generate"]',
+    position: 'right',
+    title: 'Generate — your home base',
+    body: 'This is where you start. Browse AI models organized by capability and create new images or videos.',
     hasButton: true,
-    buttonLabel: 'Start exploring →',
+    buttonLabel: 'Next →',
+  },
+  // 14 – Dashboard switches to assets view when this step is reached
+  {
+    target: '[data-tour="assets-nav"]',
+    position: 'right',
+    title: 'Assets — your library',
+    body: 'Every image and video you generate is saved here automatically. Let\'s take a look.',
+    hasButton: true,
+    buttonLabel: 'Show me →',
+  },
+  // 15 – spotlight assets header
+  {
+    target: '[data-tour="assets-header"]',
+    position: 'bottom',
+    title: 'Browse your generations',
+    body: 'Your creations appear as a grid. Use the Filters button to sort by model, media type, or project.',
+    hasButton: true,
+    buttonLabel: 'Next →',
+  },
+  // 16 – Dashboard switches back to models when this step is reached
+  {
+    target: '[data-tour="sidebar-projects"]',
+    position: 'right',
+    title: 'Projects — stay organized',
+    body: 'Group your generations into folders — by client, campaign, or concept. Drag any asset from the library into a project.',
+    hasButton: true,
+    buttonLabel: 'Next →',
+  },
+  // 17 – nav tour end
+  {
+    target: null,
+    position: 'center',
+    title: 'You know the lay of the land',
+    body: "That's the full tour. You can restart any walkthrough from Account → Onboarding tour in Settings.",
+    hasButton: true,
+    buttonLabel: 'Let\'s go →',
+  },
+
+  // ── Decline / explore own (18) — DECLINE_STEP = 18 ─────────────────────────
+  // 18
+  {
+    target: null,
+    position: 'center',
+    title: 'You\'re all set',
+    body: 'Whenever you want to revisit the tour, go to Account → Onboarding tour in Settings.',
+    hasButton: true,
+    buttonLabel: 'Got it',
   },
 ]
 
-const PAD = 12
+const PAD    = 12
 const CARD_W = 300
 const CARD_W_CENTER = 420
 const GAP = 16
+const OVERLAY_ALPHA = 0.15
 
 interface Rect { top: number; left: number; width: number; height: number }
 
@@ -143,14 +212,24 @@ interface Props {
   onNext: () => void
   onSkip: () => void
   onDone: () => void
+  onExplore: () => void
 }
 
-export default function FirstRunTour({ step, onNext, onSkip, onDone }: Props) {
+export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore }: Props) {
   const [rect, setRect] = useState<Rect | null>(null)
   const current = STEPS[step]
   if (!current) return null
 
   const isCentered = current.position === 'center' || !current.target
+  const isGenTour  = step >= 0 && step <= 11
+  const isNavTour  = step >= NAV_TOUR_START && step < DECLINE_STEP
+  const showPhase  = isGenTour || isNavTour
+  const phaseLabel = isGenTour ? 'Image generation tour' : 'Navigation tour'
+  const phaseProgress = isGenTour
+    ? (step + 1) / 12
+    : isNavTour
+      ? (step - NAV_TOUR_START + 1) / 5
+      : null
 
   // Scroll generate button into view when we reach that step
   useEffect(() => {
@@ -180,12 +259,14 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone }: Props) {
     }
     const centerY = Math.min(Math.max(rect.top + rect.height / 2, 120), window.innerHeight - 260)
     const pos = current.position
-    if (pos === 'right') return { ...base, top: centerY, left: rect.left + rect.width + GAP, transform: 'translateY(-50%)' }
-    if (pos === 'left')  return { ...base, top: centerY, left: Math.max(rect.left - GAP - CARD_W, 12), transform: 'translateY(-50%)' }
+    if (pos === 'right')  return { ...base, top: centerY, left: rect.left + rect.width + GAP, transform: 'translateY(-50%)' }
+    if (pos === 'left')   return { ...base, top: centerY, left: Math.max(rect.left - GAP - CARD_W, 12), transform: 'translateY(-50%)' }
     if (pos === 'bottom') return { ...base, top: rect.top + rect.height + PAD + GAP, left: rect.left + rect.width / 2, transform: 'translateX(-50%)' }
-    if (pos === 'top')   return { ...base, top: rect.top - GAP, left: rect.left + rect.width / 2, transform: 'translate(-50%, -100%)' }
+    if (pos === 'top')    return { ...base, top: rect.top - GAP, left: rect.left + rect.width / 2, transform: 'translate(-50%, -100%)' }
     return { ...base, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
   }
+
+  const overlayColor = `rgba(0,0,0,${OVERLAY_ALPHA})`
 
   return (
     <>
@@ -194,10 +275,12 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone }: Props) {
         @keyframes frPulseDot { 0%, 100% { opacity: 1; transform: scale(1) } 50% { opacity: 0.45; transform: scale(0.8) } }
       `}</style>
 
-      {/* Backdrop — lighter so the UI is still visible */}
-      <div className="fixed inset-0 z-[9990] pointer-events-none" style={{ background: 'rgba(0,0,0,0.48)' }} />
+      {/* Backdrop — light tint only, no spotlight */}
+      {!rect && (
+        <div className="fixed inset-0 z-[9990] pointer-events-none" style={{ background: overlayColor }} />
+      )}
 
-      {/* Spotlight cutout */}
+      {/* Spotlight cutout — darkens everything except the target */}
       {rect && (
         <div
           className="fixed z-[9991] rounded-xl pointer-events-none"
@@ -206,7 +289,7 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone }: Props) {
             left: rect.left - PAD,
             width: rect.width + PAD * 2,
             height: rect.height + PAD * 2,
-            boxShadow: '0 0 0 9999px rgba(0,0,0,0.48)',
+            boxShadow: `0 0 0 9999px ${overlayColor}`,
             border: '1.5px solid var(--pv-accent)',
             transition: 'top 0.25s, left 0.25s, width 0.25s, height 0.25s',
           }}
@@ -220,21 +303,23 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone }: Props) {
           background: 'var(--pv-surface)',
           border: '1px solid var(--pv-border)',
           borderRadius: 18,
-          boxShadow: '0 16px 60px rgba(0,0,0,0.65)',
+          boxShadow: '0 16px 60px rgba(0,0,0,0.45)',
           padding: '20px 20px 16px',
           pointerEvents: 'all',
           animation: 'frTourIn 0.18s ease',
         }}
       >
-        {/* Step counter */}
-        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--pv-accent)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-          Step {step + 1} of {STEPS.length}
-        </div>
-
-        {/* Progress bar */}
-        <div style={{ height: 3, background: 'var(--pv-surface2)', borderRadius: 99, marginBottom: 14, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${((step + 1) / STEPS.length) * 100}%`, background: 'var(--pv-accent)', borderRadius: 99, transition: 'width 0.3s' }} />
-        </div>
+        {/* Phase label + progress */}
+        {showPhase && phaseProgress !== null && (
+          <>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--pv-accent)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+              {phaseLabel}
+            </div>
+            <div style={{ height: 3, background: 'var(--pv-surface2)', borderRadius: 99, marginBottom: 14, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${phaseProgress * 100}%`, background: 'var(--pv-accent)', borderRadius: 99, transition: 'width 0.3s' }} />
+            </div>
+          </>
+        )}
 
         {/* Title */}
         <div style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 15, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.02em', marginBottom: 8 }}>
@@ -284,14 +369,38 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone }: Props) {
           </div>
         )}
 
+        {current.special === 'post_gen_choice' && (
+          <div>
+            <p style={{ fontSize: 13, color: 'var(--pv-text2)', lineHeight: 1.6, marginBottom: 20 }}>
+              Would you like to explore on your own, or get a quick tour of the navigation and features?
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={onExplore}
+                style={{ flex: 1, padding: '9px 8px', borderRadius: 10, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                className="hover:border-[var(--pv-accent)] transition-colors"
+              >
+                Explore on my own
+              </button>
+              <button
+                onClick={onNext}
+                style={{ flex: 1, padding: '9px 8px', borderRadius: 10, background: 'var(--pv-accent)', border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+                className="hover:opacity-90 transition-opacity"
+              >
+                Tour the nav →
+              </button>
+            </div>
+          </div>
+        )}
+
         {!current.special && current.body && (
           <div style={{ fontSize: 13, color: 'var(--pv-text2)', lineHeight: 1.6, marginBottom: current.hasButton ? 16 : 8, whiteSpace: 'pre-line' }}>
             {current.body}
           </div>
         )}
 
-        {/* Waiting indicator */}
-        {!current.hasButton && current.special !== 'thinking' && current.special !== 'generating' && (
+        {/* Waiting indicator — shown when there's no button and not a special that has its own UI */}
+        {!current.hasButton && current.special !== 'thinking' && current.special !== 'generating' && current.special !== 'post_gen_choice' && (
           <div className="flex items-center gap-2 mt-2" style={{ fontSize: 11, color: 'var(--pv-text3)' }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--pv-accent)', animation: 'frPulseDot 1.4s ease-in-out infinite' }} />
             Waiting for you…
@@ -299,7 +408,7 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone }: Props) {
         )}
 
         {/* Action button */}
-        {current.hasButton && (
+        {current.hasButton && current.special !== 'post_gen_choice' && (
           <div className="flex items-center justify-between mt-2">
             {step === 0 && (
               <button
@@ -312,7 +421,7 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone }: Props) {
             )}
             <div className="ml-auto">
               <button
-                onClick={step === STEPS.length - 1 ? onDone : onNext}
+                onClick={step === STEPS.length - 1 || step === 17 ? onDone : onNext}
                 style={{ padding: '8px 18px', borderRadius: 10, background: 'var(--pv-accent)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
                 className="hover:opacity-90 transition-opacity"
               >
@@ -323,7 +432,7 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone }: Props) {
         )}
 
         {/* Skip link on action-waiting steps */}
-        {!current.hasButton && current.special !== 'thinking' && current.special !== 'generating' && step > 0 && (
+        {!current.hasButton && current.special !== 'thinking' && current.special !== 'generating' && current.special !== 'post_gen_choice' && step > 0 && (
           <button
             onClick={onSkip}
             style={{ fontSize: 11, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', marginTop: 6, display: 'block' }}
