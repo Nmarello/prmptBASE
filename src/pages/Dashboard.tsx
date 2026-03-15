@@ -1186,7 +1186,7 @@ export default function Dashboard() {
                   const sb = b._comingSoon ? 'coming-soon' : getModelStatus(b, userTier, selectedModelIds).status
                   return (statusOrder[sa] ?? 5) - (statusOrder[sb] ?? 5)
                 })
-                if (modelSearch) imgModels = imgModels.filter((m: any) => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
+                if (modelSearch) { const q = modelSearch.toLowerCase(); imgModels = imgModels.filter((m: any) => m.name?.toLowerCase().includes(q) || m.provider?.toLowerCase().includes(q) || m.description?.toLowerCase().includes(q)) }
                 if (imgModels.length === 0) return null
                 return (
                   <div>
@@ -1237,7 +1237,7 @@ export default function Dashboard() {
                   const sb = b._comingSoon ? 'coming-soon' : getModelStatus(b, userTier, selectedModelIds).status
                   return (statusOrder[sa] ?? 5) - (statusOrder[sb] ?? 5)
                 })
-                if (modelSearch) vidModels = vidModels.filter((m: any) => m.name?.toLowerCase().includes(modelSearch.toLowerCase()) || m.provider?.toLowerCase().includes(modelSearch.toLowerCase()))
+                if (modelSearch) { const q = modelSearch.toLowerCase(); vidModels = vidModels.filter((m: any) => m.name?.toLowerCase().includes(q) || m.provider?.toLowerCase().includes(q) || m.description?.toLowerCase().includes(q)) }
                 if (vidModels.length === 0) return null
                 return (
                   <div>
