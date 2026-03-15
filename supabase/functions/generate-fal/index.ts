@@ -286,13 +286,13 @@ function buildPrompt(body: Record<string, unknown>): string {
   return parts.filter(Boolean).join(', ')
 }
 
-// Rewrite a Supabase storage URL through the image transform endpoint to cap dimensions.
-// Falls back to original URL if not a Supabase /object/public/ URL.
-function capSupabaseImageUrl(url: string, maxDim: number): string {
-  const match = url.match(/^(https?:\/\/[^/]+)\/storage\/v1\/object\/public\/(.+)$/)
-  if (!match) return url
-  const [, baseUrl, pathPart] = match
-  return `${baseUrl}/storage/v1/render/image/public/${pathPart}?width=${maxDim}&height=${maxDim}&resize=contain`
+// Return the direct /object/public/ URL for external services like fal.ai.
+// The /render/image/ transform endpoint is not accessible to external downloaders.
+function capSupabaseImageUrl(url: string, _maxDim: number): string {
+  // Strip any existing render/transform query params and normalize to object URL
+  const renderMatch = url.match(/^(https?:\/\/[^/]+)\/storage\/v1\/render\/image\/public\/(.+?)(\?.*)?$/)
+  if (renderMatch) return `${renderMatch[1]}/storage/v1/object/public/${renderMatch[2]}`
+  return url
 }
 
 async function storeImage(adminClient: ReturnType<typeof createClient>, tempUrl: string, userId: string | null, fmt = 'jpeg'): Promise<string> {
