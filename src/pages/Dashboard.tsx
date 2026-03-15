@@ -1699,6 +1699,7 @@ export default function Dashboard() {
                       onTourAiSuggestionReceived={() => { setFirstRunStep(s => (s === 5 || s === 6) ? 7 : s) }}
                       onTourAiSuggestionAccepted={() => { setFirstRunStep(s => s === 7 ? 8 : s) }}
                       subjectOverride={tourSubjectFill}
+                      sourceImageOriginUrl={img2imgPickerUrl ?? undefined}
                     />
                   </>
                 )}

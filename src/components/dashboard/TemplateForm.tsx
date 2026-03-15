@@ -60,6 +60,7 @@ interface Props {
   onTourAiSuggestionReceived?: () => void
   onTourAiSuggestionAccepted?: () => void
   subjectOverride?: string
+  sourceImageOriginUrl?: string
 }
 
 const CUSTOM_SUPPORTED = ['select', 'multi_select', 'style_picker']
@@ -770,7 +771,7 @@ function LivePromptPanel({
 
 // ─── Main form ───────────────────────────────────────────────────────────────
 
-export default function TemplateForm({ template, genType: _genType, onSubmit, submitting, initialValues, userTier, modelMinTier, generateError, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted, subjectOverride }: Props) {
+export default function TemplateForm({ template, genType: _genType, onSubmit, submitting, initialValues, userTier, modelMinTier, generateError, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted, subjectOverride, sourceImageOriginUrl }: Props) {
   const { mode: learningMode } = useLearningMode()
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
 
@@ -812,6 +813,12 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
             field_label: template.fields.find((f) => f.id === fieldId)?.label ?? fieldId,
             current_value: values[fieldId] ?? '',
             form_values: values,
+            source_image_url: (() => {
+              const src = values.source_image as string | undefined
+              if (!src) return undefined
+              if (src.startsWith('http')) return src
+              return sourceImageOriginUrl ?? undefined
+            })(),
           }),
         }
       )

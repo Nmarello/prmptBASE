@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { user_token, field_id, field_label, current_value, form_values } = await req.json()
+    const { user_token, field_id, field_label, current_value, form_values, source_image_url } = await req.json()
 
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -29,16 +29,49 @@ Deno.serve(async (req) => {
     if (form_values?.lens) contextParts.push(`Lens: ${form_values.lens}`)
     if (form_values?.time_of_day) contextParts.push(`Time of day: ${form_values.time_of_day}`)
     if (form_values?.weather) contextParts.push(`Weather: ${form_values.weather}`)
+
+    // If a source image URL is present, try to look up the original prompt from the assets table
+    let sourceAssetPrompt: string | null = null
+    if (source_image_url) {
+      const { data: asset } = await adminClient
+        .from('assets')
+        .select('metadata')
+        .eq('url', source_image_url)
+        .maybeSingle()
+      if (asset?.metadata?.prompt) {
+        sourceAssetPrompt = asset.metadata.prompt as string
+      }
+    }
+
+    if (sourceAssetPrompt) {
+      contextParts.push(`Source image was generated with this prompt: "${sourceAssetPrompt}"`)
+    }
+
     const context = contextParts.length ? `\n\nOther selected settings:\n${contextParts.join('\n')}` : ''
 
     const isSubject = field_id === 'subject'
-    const systemPrompt = isSubject
-      ? `You are an expert at writing image generation prompts. When given a rough subject or scene description, expand it into a vivid, detailed prompt that will produce a stunning image. Be specific about subjects, environment, atmosphere, and interesting details. Keep it to 2-3 sentences max. Return only the improved prompt text, no explanation, no quotes.`
-      : `You are an expert at writing image generation prompts. When given additional details for an image, refine and expand them to be more specific and evocative for an AI image generator. Keep it concise. Return only the improved text, no explanation, no quotes.`
+    const hasSourceImage = !!source_image_url
 
-    const userMessage = current_value?.trim()
+    const systemPrompt = isSubject
+      ? hasSourceImage
+        ? `You are an expert at writing image generation prompts. The user is working with a source image (shown). Your job is to write a vivid, detailed prompt that describes what to transform or extend from that image. Consider the visual content you can see. Keep it to 2-3 sentences max. Return only the improved prompt text, no explanation, no quotes.`
+        : `You are an expert at writing image generation prompts. When given a rough subject or scene description, expand it into a vivid, detailed prompt that will produce a stunning image. Be specific about subjects, environment, atmosphere, and interesting details. Keep it to 2-3 sentences max. Return only the improved prompt text, no explanation, no quotes.`
+      : hasSourceImage
+        ? `You are an expert at writing image generation prompts. The user is working with a source image (shown). Refine the given details to be more specific and evocative, taking into account the visual content of the source image. Keep it concise. Return only the improved text, no explanation, no quotes.`
+        : `You are an expert at writing image generation prompts. When given additional details for an image, refine and expand them to be more specific and evocative for an AI image generator. Keep it concise. Return only the improved text, no explanation, no quotes.`
+
+    const textContent = current_value?.trim()
       ? `Improve this ${field_label} for an image generation prompt:\n\n${current_value}${context}`
       : `Generate a compelling ${field_label} for an image generation prompt.${context}`
+
+    // Build the user message — use vision if source image is available
+    type MessageContent = string | Array<{ type: string; text?: string; image_url?: { url: string } }>
+    const userMessage: MessageContent = source_image_url
+      ? [
+          { type: 'image_url', image_url: { url: source_image_url } },
+          { type: 'text', text: textContent },
+        ]
+      : textContent
 
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
