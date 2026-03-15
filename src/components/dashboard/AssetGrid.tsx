@@ -386,11 +386,14 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
   onMoveToProject?: (assetId: string, projectId: string | null) => void
 }) {
   const { convertToGif, converting: gifConverting, progress: gifProgress } = useVideoToGif()
-  const prompt = (asset.metadata as Record<string, unknown>)?.prompt as string | undefined
-  const revisedPrompt = (asset.metadata as Record<string, unknown>)?.revised_prompt as string | undefined
+  const meta = asset.metadata as Record<string, unknown> | undefined
+  const prompt = meta?.prompt as string | undefined
+  const revisedPrompt = meta?.revised_prompt as string | undefined
+  const seed = meta?.seed != null ? String(meta.seed) : undefined
   const [selectedProjectId, setSelectedProjectId] = useState<string>(asset.project_id ?? '')
   const [savedToast, setSavedToast] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState(false)
+  const [copiedSeed, setCopiedSeed] = useState(false)
 
   async function handleCopyUrl() {
     await navigator.clipboard.writeText(asset.url)
@@ -478,6 +481,26 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
 
           {asset.width && asset.height && (
             <div className="text-xs" style={{ color: 'var(--pv-text3)' }}>{asset.width} × {asset.height}px</div>
+          )}
+
+          {seed && (
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--pv-text3)' }}>Seed</div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono" style={{ color: 'var(--pv-text2)' }}>{seed}</span>
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(seed)
+                    setCopiedSeed(true)
+                    setTimeout(() => setCopiedSeed(false), 2000)
+                  }}
+                  style={{ color: copiedSeed ? 'var(--pv-accent)' : 'var(--pv-text3)', background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)' }}
+                  className="text-xs px-2 py-0.5 border rounded-lg transition-colors cursor-pointer"
+                >
+                  {copiedSeed ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+            </div>
           )}
 
           <div className="flex flex-col gap-2 mt-auto pt-2">
