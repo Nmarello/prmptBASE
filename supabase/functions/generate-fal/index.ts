@@ -65,8 +65,8 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'img2vid': 'fal-ai/ltx-video/image-to-video',
   },
   'wan-21-txt2vid': {
-    'txt2vid': 'fal-ai/wan/t2v-turbo',
-    'img2vid': 'fal-ai/wan/i2v-480p',
+    'txt2vid': 'fal-ai/wan-t2v',
+    'img2vid': 'fal-ai/wan-i2v',
   },
   'hunyuan-video': {
     'txt2vid': 'fal-ai/hunyuan-video',
