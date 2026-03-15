@@ -77,8 +77,6 @@ const COMING_SOON_IMAGE: Partial<Model>[] = [
 
 const COMING_SOON_VIDEO: Partial<Model>[] = [
   { slug: 'cs-veo3', name: 'Veo 3', provider: 'Google', description: "Google's flagship video model. State-of-the-art motion quality and prompt adherence.", supported_gen_types: ['txt2vid'] },
-  { slug: 'cs-wan21', name: 'Wan 2.1', provider: 'Alibaba', description: "Alibaba's state-of-the-art open video model. Exceptional at complex scene composition and realistic motion.", supported_gen_types: ['txt2vid', 'img2vid'] },
-  { slug: 'cs-seedance', name: 'Seedance 1 Pro', provider: 'ByteDance', description: 'ByteDance pro-grade video model. Cinematic quality with consistent characters across frames.', supported_gen_types: ['txt2vid', 'img2vid'] },
 ]
 
 function PullIndicator({ distance, refreshing }: { distance: number; refreshing: boolean }) {
