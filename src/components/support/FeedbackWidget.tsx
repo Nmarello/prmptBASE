@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 
+const PILL_W = 130
+
 type Category = 'bug' | 'feature' | 'general'
 
 const CATEGORIES: { value: Category; label: string }[] = [
@@ -12,6 +14,7 @@ const CATEGORIES: { value: Category; label: string }[] = [
 export default function FeedbackWidget() {
   const { session } = useAuth()
   const [open, setOpen] = useState(false)
+  const [hovered, setHovered] = useState(false)
   const [category, setCategory] = useState<Category>('bug')
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -139,19 +142,33 @@ export default function FeedbackWidget() {
       {/* Trigger button */}
       <button
         onClick={() => setOpen(v => !v)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         title="Send feedback"
         style={{
-          width: 40, height: 40, borderRadius: '50%',
+          height: 40,
+          width: (!open && hovered) ? PILL_W : 40,
+          borderRadius: 9999,
           background: open ? 'var(--pv-surface2)' : 'var(--pv-surface)',
-          border: '1px solid var(--pv-border)',
+          border: `1px solid ${(!open && hovered) ? 'var(--pv-accent)' : 'var(--pv-border)'}`,
           boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--pv-text3)', transition: 'all 0.15s',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+          paddingRight: 11, paddingLeft: (!open && hovered) ? 14 : 11,
+          overflow: 'hidden', whiteSpace: 'nowrap',
+          color: (!open && hovered) ? 'var(--pv-accent)' : 'var(--pv-text3)',
+          transition: 'width 0.22s ease, padding-left 0.22s ease, border-color 0.15s, color 0.15s',
         }}
-        className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-accent)] transition-all"
       >
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        <span style={{
+          flex: 1, fontSize: 12.5, fontWeight: 600, minWidth: 0,
+          opacity: (!open && hovered) ? 1 : 0,
+          transition: 'opacity 0.12s 0.08s',
+          overflow: 'hidden',
+        }}>Feedback</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: (!open && hovered) ? 7 : 0, transition: 'margin-left 0.22s ease' }}>
+          <line x1="9" y1="18" x2="15" y2="18"/>
+          <line x1="10" y1="22" x2="14" y2="22"/>
+          <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
         </svg>
       </button>
     </div>

@@ -17,6 +17,7 @@ export default function SupportWidget() {
   const [sending, setSending] = useState(false)
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [escalated, setEscalated] = useState(false)
+  const [hovered, setHovered] = useState(false)
   const [pendingImage, setPendingImage] = useState<string | null>(null) // base64 data URL
   const fileRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -276,24 +277,40 @@ export default function SupportWidget() {
       {/* Trigger button */}
       <button
         onClick={() => setOpen(v => !v)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         title="Support"
         style={{
-          width: 48, height: 48, borderRadius: '50%',
-          background: open ? 'var(--pv-accent)' : 'var(--pv-accent)',
+          height: 44,
+          width: (!open && hovered) ? 122 : 44,
+          borderRadius: 9999,
+          background: 'var(--pv-accent)',
           border: 'none',
           boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', transition: 'all 0.15s',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+          paddingRight: 12, paddingLeft: (!open && hovered) ? 14 : 12,
+          overflow: 'hidden', whiteSpace: 'nowrap',
+          color: '#fff',
+          transition: 'width 0.22s ease, padding-left 0.22s ease',
         }}
-        className="hover:opacity-90 transition-opacity"
       >
+        {!open && (
+          <span style={{
+            flex: 1, fontSize: 12.5, fontWeight: 600, minWidth: 0,
+            opacity: hovered ? 1 : 0,
+            transition: 'opacity 0.12s 0.08s',
+            overflow: 'hidden',
+          }}>Support</span>
+        )}
         {open ? (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         ) : (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: hovered ? 7 : 0, transition: 'margin-left 0.22s ease' }}>
+            <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/>
+            <path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
           </svg>
         )}
       </button>
