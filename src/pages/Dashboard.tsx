@@ -60,7 +60,7 @@ import Img2ImgPicker from '../components/dashboard/Img2ImgPicker'
 import NotificationBell, { addNotification } from '../components/dashboard/NotificationBell'
 import SettingsDrawer from '../components/dashboard/SettingsDrawer'
 import GuidedTour, { markTourSeen, shouldAutoTriggerTour } from '../components/dashboard/GuidedTour'
-import FirstRunTour, { hasSeenFirstRun, markFirstRunSeen, clearFirstRun, NAV_TOUR_START, DECLINE_STEP } from '../components/dashboard/FirstRunTour'
+import FirstRunTour, { hasSeenFirstRun, markFirstRunSeen, clearFirstRun, NAV_TOUR_START, DECLINE_STEP, SUBJECT_SAMPLE } from '../components/dashboard/FirstRunTour'
 import OnboardingModal from '../components/dashboard/OnboardingModal'
 import { useLearningMode } from '../contexts/LearningModeContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -178,6 +178,7 @@ export default function Dashboard() {
   const [view, setView] = useState<View>('models')
   const [tourActive, setTourActive] = useState(false)
   const [firstRunStep, setFirstRunStep] = useState<number>(-1)
+  const [tourSubjectFill, setTourSubjectFill] = useState<string | undefined>()
   const [userTier, setUserTier] = useState('newbie')
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [onboardingChecked, setOnboardingChecked] = useState(false)
@@ -488,6 +489,11 @@ export default function Dashboard() {
   // Nav tour: step 16 → switch back to models
   useEffect(() => {
     if (firstRunStep === 16) setView('models')
+  }, [firstRunStep])
+
+  // Nav tour: step 17 → expand avatar nav so settings items are visible
+  useEffect(() => {
+    if (firstRunStep === 17) setNavExpanded(true)
   }, [firstRunStep])
 
   async function selectModel(model: Model) {
@@ -1692,6 +1698,7 @@ export default function Dashboard() {
                       onTourAiAssistClicked={() => { setFirstRunStep(s => s === 5 ? 6 : s) }}
                       onTourAiSuggestionReceived={() => { setFirstRunStep(s => (s === 5 || s === 6) ? 7 : s) }}
                       onTourAiSuggestionAccepted={() => { setFirstRunStep(s => s === 7 ? 8 : s) }}
+                      subjectOverride={tourSubjectFill}
                     />
                   </>
                 )}
@@ -1751,6 +1758,7 @@ export default function Dashboard() {
           onSkip={() => { markFirstRunSeen(); setFirstRunStep(-1) }}
           onDone={() => { markFirstRunSeen(); setFirstRunStep(-1) }}
           onExplore={() => setFirstRunStep(DECLINE_STEP)}
+          onAutoFillSubject={() => { setTourSubjectFill(SUBJECT_SAMPLE); setFirstRunStep(5) }}
         />
       )}
       {renderToast && (

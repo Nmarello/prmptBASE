@@ -15,7 +15,8 @@ export function clearFirstRun(): void {
 }
 
 export const NAV_TOUR_START = 13
-export const DECLINE_STEP   = 18
+export const DECLINE_STEP   = 19
+export const SUBJECT_SAMPLE = 'A 2 story building on a city street'
 
 // ── Step definitions ──────────────────────────────────────────────────────────
 
@@ -61,7 +62,7 @@ const STEPS: Step[] = [
     title: 'Select Text to Image',
     body: "DALL-E 3 can create from text or transform an existing image. Select Text to Image to get started.",
   },
-  // 4 – type in subject
+  // 4 – type in subject (or use auto-fill)
   {
     target: '[data-tour="field-subject"]',
     position: 'left',
@@ -127,11 +128,11 @@ const STEPS: Step[] = [
   {
     target: null,
     position: 'center',
-    title: 'Nice work — what\'s next?',
+    title: "Nice work — what's next?",
     special: 'post_gen_choice',
   },
 
-  // ── Nav tour (13–17) — NAV_TOUR_START = 13 ─────────────────────────────────
+  // ── Nav tour (13–18) — NAV_TOUR_START = 13 ─────────────────────────────────
   // 13
   {
     target: '[data-tour="sidebar-generate"]',
@@ -141,12 +142,12 @@ const STEPS: Step[] = [
     hasButton: true,
     buttonLabel: 'Next →',
   },
-  // 14 – Dashboard switches to assets view when this step is reached
+  // 14 – Dashboard switches to assets view
   {
     target: '[data-tour="assets-nav"]',
     position: 'right',
     title: 'Assets — your library',
-    body: 'Every image and video you generate is saved here automatically. Let\'s take a look.',
+    body: "Every image and video you generate is saved here automatically. Let's take a look.",
     hasButton: true,
     buttonLabel: 'Show me →',
   },
@@ -159,31 +160,40 @@ const STEPS: Step[] = [
     hasButton: true,
     buttonLabel: 'Next →',
   },
-  // 16 – Dashboard switches back to models when this step is reached
+  // 16 – Dashboard switches back to models
   {
     target: '[data-tour="sidebar-projects"]',
     position: 'right',
     title: 'Projects — stay organized',
-    body: 'Group your generations into folders — by client, campaign, or concept. Drag any asset from the library into a project.',
+    body: 'Group your generations into folders — by client, campaign, or concept.',
     hasButton: true,
     buttonLabel: 'Next →',
   },
-  // 17 – nav tour end
+  // 17 – settings button — Dashboard expands nav
+  {
+    target: '[data-tour="settings-btn"]',
+    position: 'right',
+    title: 'Account & settings',
+    body: "Your avatar opens the settings panel — tap it any time to access your plan, preferences, and buttons to restart either tour.",
+    hasButton: true,
+    buttonLabel: 'Next →',
+  },
+  // 18 – nav tour end
   {
     target: null,
     position: 'center',
     title: 'You know the lay of the land',
     body: "That's the full tour. You can restart any walkthrough from Account → Onboarding tour in Settings.",
     hasButton: true,
-    buttonLabel: 'Let\'s go →',
+    buttonLabel: "Let's go →",
   },
 
-  // ── Decline / explore own (18) — DECLINE_STEP = 18 ─────────────────────────
-  // 18
+  // ── Decline / explore own (19) — DECLINE_STEP = 19 ─────────────────────────
+  // 19
   {
     target: null,
     position: 'center',
-    title: 'You\'re all set',
+    title: "You're all set",
     body: 'Whenever you want to revisit the tour, go to Account → Onboarding tour in Settings.',
     hasButton: true,
     buttonLabel: 'Got it',
@@ -194,7 +204,7 @@ const PAD    = 12
 const CARD_W = 300
 const CARD_W_CENTER = 420
 const GAP = 16
-const OVERLAY_ALPHA = 0.15
+const OVERLAY_ALPHA = 0.25
 
 interface Rect { top: number; left: number; width: number; height: number }
 
@@ -213,25 +223,26 @@ interface Props {
   onSkip: () => void
   onDone: () => void
   onExplore: () => void
+  onAutoFillSubject?: () => void
 }
 
-export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore }: Props) {
+export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, onAutoFillSubject }: Props) {
   const [rect, setRect] = useState<Rect | null>(null)
   const current = STEPS[step]
   if (!current) return null
 
-  const isCentered = current.position === 'center' || !current.target
-  const isGenTour  = step >= 0 && step <= 11
-  const isNavTour  = step >= NAV_TOUR_START && step < DECLINE_STEP
-  const showPhase  = isGenTour || isNavTour
-  const phaseLabel = isGenTour ? 'Image generation tour' : 'Navigation tour'
+  const isCentered    = current.position === 'center' || !current.target
+  const isGenTour     = step >= 0 && step <= 11
+  const isNavTour     = step >= NAV_TOUR_START && step < DECLINE_STEP
+  const showPhase     = isGenTour || isNavTour
+  const phaseLabel    = isGenTour ? 'Image generation tour' : 'Navigation tour'
+  const navSteps      = DECLINE_STEP - NAV_TOUR_START - 1  // steps 13–18 = 6
   const phaseProgress = isGenTour
     ? (step + 1) / 12
     : isNavTour
-      ? (step - NAV_TOUR_START + 1) / 5
+      ? (step - NAV_TOUR_START + 1) / navSteps
       : null
 
-  // Scroll generate button into view when we reach that step
   useEffect(() => {
     if (step === 9) {
       const el = document.querySelector('[data-tour="generate-btn"]')
@@ -239,7 +250,6 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore }
     }
   }, [step])
 
-  // Keep spotlight rect in sync
   useEffect(() => {
     if (!current.target) { setRect(null); return }
     function update() {
@@ -268,6 +278,8 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore }
 
   const overlayColor = `rgba(0,0,0,${OVERLAY_ALPHA})`
 
+  const isLastStep = step === STEPS.length - 1 || step === 18  // 18 = nav tour end
+
   return (
     <>
       <style>{`
@@ -275,12 +287,12 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore }
         @keyframes frPulseDot { 0%, 100% { opacity: 1; transform: scale(1) } 50% { opacity: 0.45; transform: scale(0.8) } }
       `}</style>
 
-      {/* Backdrop — light tint only, no spotlight */}
+      {/* Backdrop — only when no spotlight target */}
       {!rect && (
         <div className="fixed inset-0 z-[9990] pointer-events-none" style={{ background: overlayColor }} />
       )}
 
-      {/* Spotlight cutout — darkens everything except the target */}
+      {/* Spotlight cutout */}
       {rect && (
         <div
           className="fixed z-[9991] rounded-xl pointer-events-none"
@@ -326,17 +338,28 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore }
           {current.title}
         </div>
 
-        {/* Body content */}
+        {/* Special: subject */}
         {current.special === 'subject' && (
           <div style={{ fontSize: 13, color: 'var(--pv-text2)', lineHeight: 1.6, marginBottom: 8 }}>
-            Type this in the Subject field:
-            <div style={{ margin: '8px 0', padding: '8px 12px', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', borderRadius: 10, fontFamily: 'monospace', fontSize: 13, color: 'var(--pv-text)', letterSpacing: '-0.01em' }}>
-              A 2 story building on a city street
+            Type a description in the Subject field, or use this sample:
+            <div style={{ margin: '8px 0', padding: '8px 10px 8px 12px', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--pv-text)', letterSpacing: '-0.01em', flex: 1 }}>{SUBJECT_SAMPLE}</span>
+              {onAutoFillSubject && (
+                <button
+                  type="button"
+                  onClick={onAutoFillSubject}
+                  style={{ padding: '4px 10px', borderRadius: 7, background: 'var(--pv-accent)', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
+                  className="hover:opacity-90 transition-opacity"
+                >
+                  Use this →
+                </button>
+              )}
             </div>
-            Then we'll use AI to make it much better.
+            Then we'll use AI to expand it.
           </div>
         )}
 
+        {/* Special: thinking */}
         {current.special === 'thinking' && (
           <div>
             <div style={{ fontSize: 13, color: 'var(--pv-text2)', lineHeight: 1.6, marginBottom: 14 }}>
@@ -349,6 +372,7 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore }
           </div>
         )}
 
+        {/* Special: generating */}
         {current.special === 'generating' && (
           <div>
             <div style={{ fontSize: 13, color: 'var(--pv-text2)', lineHeight: 1.6, marginBottom: 14 }}>
@@ -361,14 +385,16 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore }
           </div>
         )}
 
+        {/* Special: optional settings explainer */}
         {current.special === 'settings' && (
           <div style={{ fontSize: 13, color: 'var(--pv-text2)', lineHeight: 1.6, marginBottom: 16 }}>
             Below the Subject you'll find optional settings — <strong style={{ color: 'var(--pv-text)' }}>Style, Lighting, Mood, Lens,</strong> and more.
             <br /><br />
-            You don't need to touch any of these right now. They're there for when you're ready to go deeper and shape your images more precisely.
+            You don't need to touch any of these right now. They're there for when you're ready to go deeper.
           </div>
         )}
 
+        {/* Special: post-gen choice */}
         {current.special === 'post_gen_choice' && (
           <div>
             <p style={{ fontSize: 13, color: 'var(--pv-text2)', lineHeight: 1.6, marginBottom: 20 }}>
@@ -393,13 +419,14 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore }
           </div>
         )}
 
+        {/* Regular body */}
         {!current.special && current.body && (
           <div style={{ fontSize: 13, color: 'var(--pv-text2)', lineHeight: 1.6, marginBottom: current.hasButton ? 16 : 8, whiteSpace: 'pre-line' }}>
             {current.body}
           </div>
         )}
 
-        {/* Waiting indicator — shown when there's no button and not a special that has its own UI */}
+        {/* Waiting indicator */}
         {!current.hasButton && current.special !== 'thinking' && current.special !== 'generating' && current.special !== 'post_gen_choice' && (
           <div className="flex items-center gap-2 mt-2" style={{ fontSize: 11, color: 'var(--pv-text3)' }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--pv-accent)', animation: 'frPulseDot 1.4s ease-in-out infinite' }} />
@@ -421,7 +448,7 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore }
             )}
             <div className="ml-auto">
               <button
-                onClick={step === STEPS.length - 1 || step === 17 ? onDone : onNext}
+                onClick={isLastStep ? onDone : onNext}
                 style={{ padding: '8px 18px', borderRadius: 10, background: 'var(--pv-accent)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
                 className="hover:opacity-90 transition-opacity"
               >

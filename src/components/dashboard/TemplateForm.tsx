@@ -59,6 +59,7 @@ interface Props {
   onTourAiAssistClicked?: () => void
   onTourAiSuggestionReceived?: () => void
   onTourAiSuggestionAccepted?: () => void
+  subjectOverride?: string
 }
 
 const CUSTOM_SUPPORTED = ['select', 'multi_select', 'style_picker']
@@ -769,9 +770,15 @@ function LivePromptPanel({
 
 // ─── Main form ───────────────────────────────────────────────────────────────
 
-export default function TemplateForm({ template, genType: _genType, onSubmit, submitting, initialValues, userTier, modelMinTier, generateError, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted }: Props) {
+export default function TemplateForm({ template, genType: _genType, onSubmit, submitting, initialValues, userTier, modelMinTier, generateError, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted, subjectOverride }: Props) {
   const { mode: learningMode } = useLearningMode()
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
+
+  useEffect(() => {
+    if (subjectOverride !== undefined) {
+      setValues(v => ({ ...v, subject: subjectOverride }))
+    }
+  }, [subjectOverride])
   const [customOptions, setCustomOptions] = useState<Record<string, FieldOption[]>>({})
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [assisting, setAssisting] = useState<string | null>(null)
