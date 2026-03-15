@@ -2,40 +2,47 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Template, TemplateField, GenType, FieldOption } from '../../types'
 import { tierCanAccess } from '../../types'
 import { supabase } from '../../lib/supabase'
-import { useLearningMode } from '../../contexts/LearningModeContext'
 
 // ─── Tooltip content — universal fields ─────────────────────────────────────
 const FIELD_TOOLTIPS: Record<string, string> = {
-  prompt:              'The main description of what you want to generate. Be specific — include subject, setting, and mood. The more detail, the better the result.',
-  style:               'The broad visual category for the output. Each style activates a different internal rendering mode in the model.',
-  lighting:            'The dominant light source and quality in the scene. Golden hour adds warmth and drama. Volumetric adds god rays. Studio is clean and commercial.',
-  lens:                'The focal length changes perspective and depth of field. 85mm is flattering for portraits. 14mm is dramatic for landscapes. Anamorphic gives a cinematic movie look.',
-  depth_of_field:      'How much of the scene is in sharp focus. Shallow = blurry background, subject pops. Deep = everything sharp — good for landscapes and architecture.',
-  composition:         'How the subject is framed in the image. Rule of thirds feels natural. Dutch angle creates tension. Aerial gives a god\'s-eye view.',
-  mood:                'Emotional tone injected into the prompt. Select multiple to layer feelings. These become descriptive phrases like "epic, grand scale, awe-inspiring."',
-  color_palette:       'Dominant color temperature and saturation. These are injected as descriptive phrases — "warm color palette, amber and orange tones."',
-  time_of_day:         'Time of day affects light quality dramatically. Golden hour and blue hour are the most cinematic. Midday is harsh and high-contrast.',
-  weather:             'Environmental atmosphere. Fog adds mystery, storm clouds add drama, rain creates wet reflective surfaces.',
-  camera_medium:       'The physical recording medium to emulate. 35mm film adds grain and warmth. VHS gives a retro lo-fi look. Digital is clean and modern.',
-  quality:             'Technical quality descriptors appended to the prompt. "Highly detailed" pushes the model to render fine textures and crisp edges.',
-  additional_details:  'Anything extra you want added to the final prompt — appended verbatim after all other fields.',
-  aspect_ratio:        'The shape of the output. Square for social media. 16:9 for presentations and thumbnails. 9:16 for mobile Stories. 21:9 for cinematic ultra-wide.',
-  resolution:          'Output image resolution. Higher = more detail but slower. Start at 1K, go to 4K if you need to print large or crop heavily.',
-  num_images:          'How many variations to generate in one shot. More options to pick from, but costs more credits per generation.',
-  output_format:       'JPEG is smaller and loads faster. PNG is lossless — best for logos, design work, or anything with fine edges. WebP is a good middle ground.',
-  seed:                'A number that locks in the randomness. Same seed + same prompt = same result every time. Great for iterating on a composition you like.',
-  guidance_scale:      'How strictly the model follows your prompt. Low (1–3) = loose and creative. High (7+) = literal and precise. 3.5 is a solid default.',
-  steps:               'How many refinement passes the model makes. More steps = more detail and coherence, but slower. 28 is the sweet spot for most use cases.',
-  thinking_level:      'Enables Gemini\'s internal reasoning before generating. "High" is significantly better at complex scenes, text in images, and spatial relationships.',
-  enable_web_search:   'Lets the model search the web before generating. Useful for current brands, logos, real places, or anything needing up-to-date visual reference.',
-  safety_tolerance:    'How strict the content filter is. 1 = very restrictive. 6 = most permissive. Default (4) works for most creative work.',
-  duration:            'How long the generated video will be. Longer clips cost more credits and take longer to render.',
-  model:               'Pin to a specific model checkpoint. "Latest" always gives you the newest version. Pinning is useful if you need consistent results over time.',
-  camera_movement:     'The physical camera motion during the shot. Zoom in creates tension. Orbit creates a cinematic 3D feel. Static keeps the frame locked off.',
-  camera_motion:       'The physical camera motion during the shot. Zoom in creates tension. Orbit creates a cinematic 3D feel. Static keeps the frame locked off.',
-  negative_prompt:     'Describe what you do NOT want in the output. Common values: blurry, low quality, watermark, extra limbs, distorted face.',
-  source_image:        'The input image this model will use as a reference, starting point, or first frame. The closer your source is to what you want, the better.',
-  strength:            'How much the model transforms the source image. 0.1 = barely changes it. 1.0 = completely reimagines it using your prompt.',
+  prompt:              'The main description of what you want to generate. Be specific — include subject, setting, lighting, and mood. The more detail, the better the result. Use AI Assist to expand a rough idea.',
+  subject:             'What you want the image to be about — the main character, object, or scene. Keep it concise here; use the other fields to add style and detail. Example: "a lighthouse at the edge of a cliff."',
+  style:               'The broad visual category for the output. Each style activates a different rendering mode. Photorealistic produces photo-like results; Cinematic adds film grain and dramatic lighting; Digital Art gives an illustrated look.',
+  lighting:            'The dominant light source and quality in the scene. Golden hour adds warm, low-angle sunlight. Volumetric creates god-ray shafts of light. Studio is clean and shadowless — great for product shots.',
+  lens:                'The focal length changes how subjects appear. 85mm is flattering for portraits with soft background blur. 14mm is dramatic for landscapes and architecture. Anamorphic gives a widescreen cinematic look with lens flares.',
+  depth_of_field:      'Controls how much of the scene is in sharp focus. Shallow = subject is sharp, background goes blurry (portrait look). Deep = everything sharp from front to back — best for landscapes and wide establishing shots.',
+  composition:         'How the subject is framed and positioned. Rule of thirds puts the subject slightly off-center for a natural feel. Dutch angle tilts the frame to create unease or tension. Aerial looks straight down from above.',
+  mood:                'The emotional feeling of the image. Select multiple to layer them — they get injected as descriptive phrases like "melancholy, overcast, quiet." Great for fine-tuning atmosphere without rewriting your prompt.',
+  color_palette:       'The dominant colors and tone. These get added as descriptive phrases — "warm golden tones, amber and orange." Leave unset to let the model choose colors naturally from your prompt.',
+  time_of_day:         'Affects the light quality more than anything else. Golden hour (just after sunrise/before sunset) is the most flattering. Blue hour (right after sunset) gives a moody twilight look. Midday is harsh and high-contrast.',
+  weather:             'Environmental atmosphere added to the scene. Fog and mist create mystery and depth. Storm clouds add drama. Rain creates wet reflective surfaces and a moody, noir feel.',
+  camera_medium:       'The physical recording medium to emulate. 35mm film adds grain, halation, and natural warmth. VHS gives a degraded, retro lo-fi look. Digital is clean, sharp, and neutral.',
+  quality:             'Technical quality phrases appended to the prompt. "Highly detailed" pushes the model to render fine textures. "Ultra HD" signals maximum resolution detail. Stack multiple for stronger effect.',
+  additional_details:  'A freeform field for anything else you want in the image. This text is appended verbatim to the end of the final prompt — use it for specific details, props, or context that don\'t fit the other fields.',
+  aspect_ratio:        'The shape of the output canvas. 1:1 square for social media. 16:9 landscape for presentations and YouTube thumbnails. 9:16 portrait for phone screens and Instagram Stories. 21:9 ultra-wide for cinematic banners.',
+  resolution:          'Output pixel dimensions. 1K (1024px) is fast and great for previews. 2K is a good balance. 4K is best when you need to print large or crop heavily into the image.',
+  num_images:          'How many variations to generate at once. More options lets you pick the best one, but each image costs credits. Start with 1–2 when testing a prompt, bump up to 4 when you\'re close to the final look.',
+  output_format:       'The file format for the downloaded image. JPEG is smaller and loads faster — ideal for web. PNG is lossless with no compression artifacts — best for logos and anything with fine edges. WebP is a modern middle ground.',
+  seed:                'A number that pins the random starting point of the generation. Same seed + same prompt = same result every time — useful for iterating on small changes without the whole image shifting. To get started: leave it blank and generate once. When you get a result you like, copy its seed (shown in the asset details) and paste it here. Now you can tweak your prompt while keeping the same basic composition. Try any number between 1 and 4294967295 — there\'s no "right" seed, just explore.',
+  guidance_scale:      'How literally the model interprets your prompt. Low (1–3) = loose and painterly, the model takes creative liberties. Medium (3.5–5) = balanced, follows the prompt while staying natural. High (7+) = very literal and precise, but can look over-processed. Start at 3.5 and adjust from there.',
+  steps:               'How many refinement passes the model makes internally. More steps = more detail and coherence, but slower generation. 20 steps is fine for quick drafts. 28–35 is the sweet spot for quality. Going above 50 rarely adds value and increases generation time.',
+  thinking_level:      'Enables Gemini\'s internal reasoning pass before generating. "High" is noticeably better at complex multi-subject scenes, text rendered in images, and precise spatial relationships. Slower but worth it for demanding prompts.',
+  enable_web_search:   'Lets the model search the web before generating. Useful when your prompt references real-world things — current brand logos, real buildings, specific products, or public figures — that the model may not have in its training data.',
+  safety_tolerance:    'How strict the content filter is. 1 = very restrictive (safest for professional/public use). 4 = default, suitable for most creative work. 6 = most permissive. Increase only if your creative project is being blocked incorrectly.',
+  duration:            'How long the generated video clip will be. Longer clips cost more credits and take longer to process. Start with the shortest option to test your prompt, then go longer once you\'re happy with the result.',
+  model:               'Pin to a specific model version. "Latest" always gives you the newest and usually best version. Pin to a specific version if you\'ve found a result you love and need to reproduce it consistently over time.',
+  camera_movement:     'The physical camera motion during the video. Zoom In builds tension and draws focus. Orbit creates a cinematic 3D effect. Static keeps the frame locked — great when the subject\'s own movement is the focus.',
+  camera_motion:       'The physical camera motion during the video. Zoom In builds tension and draws focus. Orbit creates a cinematic 3D effect. Static keeps the frame locked — great when the subject\'s own movement is the focus.',
+  negative_prompt:     'Tell the model what NOT to include. Common values: blurry, low quality, watermark, extra limbs, distorted face, text, signature, oversaturated. Helps clean up recurring issues without rewriting your main prompt.',
+  source_image:        'The reference image this model will use as its starting point or first frame. For img2img: upload an image and your prompt transforms it. For video: this becomes the first frame of the generated clip. Higher quality source = better results.',
+  strength:            'How aggressively the model transforms your source image. 0.1–0.3 = subtle changes, source image mostly preserved. 0.5–0.7 = balanced transformation, recognizable but reimagined. 0.9–1.0 = nearly complete reimagining using only the prompt. Start at 0.6 and adjust based on results.',
+  acceleration:        'A speed boost that reduces generation time. "None" is slower but highest quality. Hyper mode can cut time significantly with a minor quality tradeoff — worth enabling for quick iteration and drafts.',
+  cfg_scale:           'Similar to guidance scale — controls how strictly the model follows your prompt for video generation. Higher values stick more closely to your description. Lower values give the model more creative freedom. Start at the default and increase if the output doesn\'t match your prompt.',
+  loop:                'When enabled, the video is generated so the last frame seamlessly connects back to the first — useful for ambient loops, background video, and social media content that plays on repeat.',
+  prompt_optimizer:    'When on, the model rewrites your prompt behind the scenes to get better results. Useful if you\'re new to prompt writing or want a quick improvement without editing manually. Turn off if you want the model to follow your exact wording.',
+  raw:                 'Reduces the model\'s internal post-processing for a more natural, unpolished photographic look. Off = the model applies its default enhancements (sharper, more saturated, polished). On = minimally processed output, closer to how a real camera capture might look. Best for documentary or naturalistic styles.',
+  size:                'The output dimensions in pixels. Larger sizes produce more detail but take longer and cost more credits. For quick tests use a smaller size; go large when preparing final output for print or high-res display.',
+  video_style:         'The visual treatment applied to the generated video. Realistic produces natural, photographic footage. Anime gives a stylized illustrated look. Each style uses a different rendering approach internally, so the same prompt can produce very different results.',
 }
 
 interface CustomOption {
@@ -772,7 +779,6 @@ function LivePromptPanel({
 // ─── Main form ───────────────────────────────────────────────────────────────
 
 export default function TemplateForm({ template, genType: _genType, onSubmit, submitting, initialValues, userTier, modelMinTier, generateError, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted, subjectOverride, sourceImageOriginUrl }: Props) {
-  const { mode: learningMode } = useLearningMode()
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
 
   useEffect(() => {
@@ -890,7 +896,6 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
     const fieldCustomOpts = customOptions[field.id] ?? []
     const showAddButton = CUSTOM_SUPPORTED.includes(field.type) && !CUSTOM_EXCLUDED_FIELDS.includes(field.id)
     const tooltipText = FIELD_TOOLTIPS[field.id] ?? field.tooltip
-    const showTooltips = learningMode === 'tooltips'
     const isTooltipOpen = tooltipOpen === field.id
 
     return (
@@ -900,21 +905,21 @@ export default function TemplateForm({ template, genType: _genType, onSubmit, su
             <label className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>
               {field.label}
             </label>
-            {/* Tooltip ℹ️ icon — only in tooltips mode */}
-            {showTooltips && tooltipText && (
+            {/* Tooltip ? icon — always visible when tooltip text exists */}
+            {tooltipText && (
               <div className="relative">
                 <button
                   type="button"
                   onMouseEnter={() => setTooltipOpen(field.id)}
                   onMouseLeave={() => setTooltipOpen(null)}
-                  style={{ background: 'var(--pv-surface2)', color: 'var(--pv-text2)' }}
-                  className="w-4 h-4 rounded-full hover:bg-sky-500/20 hover:text-sky-400 flex items-center justify-center transition-all cursor-default text-[10px] font-bold leading-none"
+                  style={{ background: 'var(--pv-surface2)', color: 'var(--pv-text3)' }}
+                  className="w-4 h-4 rounded-full hover:bg-sky-500/20 hover:text-sky-400 flex items-center justify-center transition-all cursor-default text-[9px] font-bold leading-none"
                   tabIndex={-1}
                 >
-                  i
+                  ?
                 </button>
                 {isTooltipOpen && (
-                  <div style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }} className="absolute left-0 top-full mt-1.5 w-64 border rounded-xl p-3 shadow-2xl z-50 animate-fade-in pointer-events-none">
+                  <div style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)' }} className="absolute left-0 top-full mt-1.5 w-72 border rounded-xl p-3 shadow-2xl z-50 animate-fade-in pointer-events-none">
                     <p className="text-xs leading-relaxed" style={{ color: 'var(--pv-text2)' }}>{tooltipText}</p>
                   </div>
                 )}
