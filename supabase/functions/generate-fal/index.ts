@@ -286,6 +286,15 @@ function buildPrompt(body: Record<string, unknown>): string {
   return parts.filter(Boolean).join(', ')
 }
 
+// Rewrite a Supabase storage URL through the image transform endpoint to cap dimensions.
+// Falls back to original URL if not a Supabase /object/public/ URL.
+function capSupabaseImageUrl(url: string, maxDim: number): string {
+  const match = url.match(/^(https?:\/\/[^/]+)\/storage\/v1\/object\/public\/(.+)$/)
+  if (!match) return url
+  const [, baseUrl, pathPart] = match
+  return `${baseUrl}/storage/v1/render/image/public/${pathPart}?width=${maxDim}&height=${maxDim}&resize=contain`
+}
+
 async function storeImage(adminClient: ReturnType<typeof createClient>, tempUrl: string, userId: string | null, fmt = 'jpeg'): Promise<string> {
   try {
     const imgRes = await fetch(tempUrl)
@@ -534,8 +543,8 @@ Deno.serve(async (req) => {
         if (!source_image) throw new Error('Source image is required for image-to-video')
         const src = source_image as string
         if (src.startsWith('http')) {
-          // Already a public URL (e.g. from Supabase storage) — use directly
-          falPayload.image_url = src
+          // Already a public URL — cap to 1920x1920 via Supabase image transform
+          falPayload.image_url = capSupabaseImageUrl(src, 1920)
         } else {
           // base64 data URL — upload to storage first
           const base64Data = src.replace(/^data:image\/\w+;base64,/, '')
@@ -548,7 +557,7 @@ Deno.serve(async (req) => {
             .from('assets').upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
           if (srcErr) throw new Error(`Source upload failed: ${srcErr.message}`)
           const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
-          falPayload.image_url = publicUrl
+          falPayload.image_url = capSupabaseImageUrl(publicUrl, 1920)
         }
       }
 
@@ -798,12 +807,12 @@ Deno.serve(async (req) => {
             cost_usd: costPerAsset,
             metadata: { prompt: builtPrompt, model_slug: slug, aspect_ratio: aspectRatio, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
           }).select().single()
-          return data
+          return { asset: data, permanentUrl }
         }))
 
-        const firstAsset = insertedAssets[0]
+        const firstResult = insertedAssets[0]
         return new Response(
-          JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt, seed: falData.seed ?? null }),
+          JSON.stringify({ asset: firstResult?.asset, image_url: firstResult?.asset?.url ?? firstResult?.permanentUrl ?? images[0].url, all_assets: insertedAssets.map(r => r.asset), prompt: builtPrompt, seed: falData.seed ?? null }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         )
       }
@@ -845,12 +854,12 @@ Deno.serve(async (req) => {
           cost_usd: costPerAsset,
           metadata: { prompt: builtPrompt, model_slug: slug, aspect_ratio: aspectRatio, output_format: fmt, seed: falData.seed ?? seedVal ?? null },
         }).select().single()
-        return data
+        return { asset: data, permanentUrl }
       }))
 
-      const firstAsset = insertedAssets[0]
+      const firstResult = insertedAssets[0]
       return new Response(
-        JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt, seed: falData.seed ?? null }),
+        JSON.stringify({ asset: firstResult?.asset, image_url: firstResult?.asset?.url ?? firstResult?.permanentUrl ?? images[0].url, all_assets: insertedAssets.map(r => r.asset), prompt: builtPrompt, seed: falData.seed ?? null }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
