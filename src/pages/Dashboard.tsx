@@ -963,7 +963,7 @@ export default function Dashboard() {
             <div className="px-4 sm:px-7 pt-4 sm:pt-6 pb-4 flex-shrink-0">
               <div className="flex items-center">
                 {/* Logo — left */}
-                <Logo height={28} style={{ marginBottom: 2, flexShrink: 0 }} />
+                <Logo height={42} style={{ marginBottom: 2, flexShrink: 0 }} />
                 {/* Filter — dropdown on mobile, pills on desktop */}
                 <div className="flex-1 flex justify-center">
                   {/* Mobile dropdown */}
