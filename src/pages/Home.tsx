@@ -587,10 +587,12 @@ export default function Home() {
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'none'; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)' }}
           >
             <img src="https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773105432147.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,9,8,0.92) 0%, rgba(10,9,8,0.1) 60%)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,9,8,0.7) 0%, rgba(10,9,8,0.05) 50%)' }} />
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 22 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.text3, marginBottom: 6 }}>Featured · DALL-E 3</div>
               <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.2, color: T.text }}>State-of-the-art<br />image generation</div>
+            </div>
+            <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: '3px 8px' }}>
+              <span style={{ fontSize: 11, fontWeight: 500, color: '#fff', fontFamily: '-apple-system, system-ui, sans-serif' }}>DALL-E 3</span>
             </div>
           </div>
 
