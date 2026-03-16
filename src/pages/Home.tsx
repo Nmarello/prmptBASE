@@ -272,8 +272,9 @@ export default function Home() {
                     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: 10, padding: '10px 12px', fontSize: 12,
                     color: '#f0ede8', lineHeight: 1.6, minHeight: 60,
+                    display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                   }}>
-                    Cinematic wide shot of a lone lighthouse on volcanic cliffs, golden hour, crashing waves, atmospheric haze, film grain, Kodak portra 400
+                    Luxury penthouse dinner for two, couple in formal attire, floor-to-ceiling windows overlooking city skyline at night, warm candlelight, bokeh city lights, cinematic photography, golden ambient glow
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
