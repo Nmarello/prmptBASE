@@ -219,12 +219,16 @@ export default function Home() {
           </span>
         </h1>
 
-        <p style={{ fontSize: 18, color: T.text2, maxWidth: 520, margin: '0 auto 44px', fontWeight: 400, lineHeight: 1.65 }}>
-          Structured prompt templates tuned for every model — purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No guesswork.
-        </p>
+        {/* Text + Mockup row */}
+        <div className="flex flex-col sm:flex-row sm:items-center" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%' }}>
+          <div style={{ flexShrink: 0, width: '100%', maxWidth: 260 }}>
+            <p style={{ fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0 }}>
+              Structured prompt templates tuned for every model — purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No guesswork.
+            </p>
+          </div>
 
         {/* APP WINDOW — product mockup */}
-        <div style={{ marginTop: 48, textAlign: 'left', width: '100%', maxWidth: 940, margin: '48px auto 0' }}>
+        <div style={{ flex: 1, minWidth: 0, textAlign: 'left', width: '100%' }}>
           <div style={{
             background: '#131210', border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: 18, overflow: 'hidden',
@@ -322,6 +326,7 @@ export default function Home() {
             </div>
           </div>
         </div>
+        </div>{/* end text+mockup row */}
 
       </section>
 
