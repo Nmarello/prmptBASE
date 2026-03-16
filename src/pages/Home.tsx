@@ -192,7 +192,7 @@ export default function Home() {
       </nav>
 
       {/* ── HERO ─────────────────────────────────────── */}
-      <section className="px-5 sm:px-10 pt-32 sm:pt-40 pb-12 sm:pb-20" style={{ textAlign: 'center', maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
+      <section className="px-5 sm:px-10 pt-20 sm:pt-24 pb-12 sm:pb-20" style={{ textAlign: 'center', maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
 
         {/* Glow behind headline */}
         <div style={{
@@ -302,6 +302,9 @@ export default function Home() {
                     { label: 'Quality', val: 'Ultra' },
                     { label: 'Steps', val: '28' },
                     { label: 'Guidance', val: '3.5' },
+                    { label: 'Lighting', val: 'Golden hour' },
+                    { label: 'Camera', val: 'Handheld' },
+                    { label: 'Lens', val: '24mm wide' },
                   ].map(s => (
                     <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 10px' }}>
                       <div style={{ fontSize: 9, color: 'rgba(240,237,232,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>{s.label}</div>
