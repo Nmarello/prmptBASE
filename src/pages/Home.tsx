@@ -228,7 +228,7 @@ export default function Home() {
             <p style={{ position: 'absolute', top: 190, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right', display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               Structured prompt templates tuned for every model. Purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No guesswork.
             </p>
-            <p style={{ position: 'absolute', top: 340, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
+            <p style={{ position: 'absolute', top: 390, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
               Over 20 models to choose from
             </p>
           </div>
