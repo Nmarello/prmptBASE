@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import type { Asset, Model, UserProject } from '../../types'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
-import { useVideoToGif } from '../../hooks/useVideoToGif'
+import ExportDialog from './ExportDialog'
 
 async function downloadAsset(url: string, filename: string) {
   try {
@@ -385,7 +385,7 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
   onSendToImg2Vid: (url: string) => void
   onMoveToProject?: (assetId: string, projectId: string | null) => void
 }) {
-  const { convertToGif, converting: gifConverting, progress: gifProgress } = useVideoToGif()
+  const [exportOpen, setExportOpen] = useState(false)
   const meta = asset.metadata as Record<string, unknown> | undefined
   const prompt = meta?.prompt as string | undefined
   const revisedPrompt = meta?.revised_prompt as string | undefined
@@ -394,6 +394,16 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
   const [savedToast, setSavedToast] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState(false)
   const [copiedSeed, setCopiedSeed] = useState(false)
+
+  async function handleShare() {
+    try {
+      if (navigator.share) {
+        await navigator.share({ url: asset.url, title: 'prmptVAULT asset' })
+      } else {
+        downloadAsset(asset.url, `asset-${asset.id}`)
+      }
+    } catch (_) { /* cancelled */ }
+  }
 
   async function handleCopyUrl() {
     await navigator.clipboard.writeText(asset.url)
@@ -410,6 +420,7 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
   }
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6"
       onClick={onClose}
@@ -521,43 +532,69 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
               Send to img2img →
             </button>
             <div className="flex gap-2">
+              {/* Share / Download */}
               <button
-                onClick={() => downloadAsset(asset.url, `asset-${asset.id}`)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white text-center transition-all cursor-pointer"
+                onClick={handleShare}
+                title={navigator.share ? 'Share' : 'Download'}
+                className="flex items-center justify-center w-10 h-10 rounded-xl text-white transition-all cursor-pointer hover:opacity-85 flex-shrink-0"
                 style={{ background: 'var(--pv-accent)' }}
               >
-                Download
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                </svg>
               </button>
+              {/* Copy URL */}
               <button
                 onClick={handleCopyUrl}
-                style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: copiedUrl ? 'var(--pv-accent)' : 'var(--pv-text2)' }}
-                className="px-3 py-2.5 border rounded-xl text-sm font-medium transition-all cursor-pointer"
-                title="Copy URL"
+                title={copiedUrl ? 'Copied!' : 'Copy URL'}
+                className="flex items-center justify-center w-10 h-10 rounded-xl border transition-all cursor-pointer hover:border-[var(--pv-accent)]"
+                style={{
+                  background: 'var(--pv-surface)',
+                  borderColor: copiedUrl ? 'var(--pv-accent)' : 'var(--pv-border)',
+                  color: copiedUrl ? 'var(--pv-accent)' : 'var(--pv-text2)',
+                }}
               >
-                {copiedUrl ? 'Copied!' : 'Copy URL'}
+                {copiedUrl ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                  </svg>
+                )}
               </button>
-              {(asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid') && (
-                <button
-                  onClick={() => convertToGif(asset.url, `asset-${asset.id}`)}
-                  disabled={gifConverting}
-                  className="px-3 py-2.5 border rounded-xl text-sm font-medium transition-all cursor-pointer disabled:opacity-60"
-                  style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
-                  title="Convert to GIF and download"
-                >
-                  {gifConverting ? `GIF ${gifProgress}%` : 'GIF'}
-                </button>
-              )}
+              {/* Export */}
+              <button
+                onClick={() => setExportOpen(true)}
+                title="Export"
+                className="flex items-center justify-center w-10 h-10 rounded-xl border transition-all cursor-pointer hover:border-[var(--pv-accent)] hover:text-[var(--pv-accent)]"
+                style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </button>
+              {/* Delete */}
               <button
                 onClick={() => onDelete(asset.id)}
+                title="Delete"
+                className="flex items-center justify-center w-10 h-10 rounded-xl border transition-all cursor-pointer hover:border-red-400 hover:text-red-400 ml-auto"
                 style={{ background: 'var(--pv-surface)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}
-                className="px-3 py-2.5 border rounded-xl text-sm hover:text-red-500 hover:border-red-200 transition-all cursor-pointer"
               >
-                Delete
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
               </button>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    {exportOpen && (
+      <ExportDialog asset={asset} onClose={() => setExportOpen(false)} />
+    )}
+    </>
   )
 }

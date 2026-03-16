@@ -67,8 +67,9 @@ import { useTheme } from '../contexts/ThemeContext'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import ModelDrawer from '../components/dashboard/ModelDrawer'
 import ProviderLogo from '../components/dashboard/ProviderLogo'
+import ToolsPanel from '../components/dashboard/ToolsPanel'
 
-type View = 'models' | 'builder' | 'assets' | 'projects'
+type View = 'models' | 'builder' | 'assets' | 'projects' | 'tools'
 
 const COMING_SOON_IMAGE: Partial<Model>[] = [
   { slug: 'cs-midjourney', name: 'Midjourney', provider: 'Midjourney', description: 'The gold standard for artistic AI image generation. Unmatched aesthetic quality.', supported_gen_types: ['txt2img'] },
@@ -917,6 +918,7 @@ export default function Dashboard() {
           { id: 'models', tip: 'Generate', icon: <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/></> },
           { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
           { id: 'projects', tip: 'Projects', icon: <><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></> },
+          { id: 'tools', tip: 'Tools', icon: <><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></> },
         ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (
           <SbBtn
             key={id} tip={tip} active={view === id} onClick={() => setView(id as View)}
@@ -1353,6 +1355,10 @@ export default function Dashboard() {
             onSendToImg2Vid={sendToImg2Vid}
           />
         )}
+
+        {view === 'tools' && (
+          <ToolsPanel onGenerate={() => { setView('assets'); loadAssets() }} />
+        )}
       </div>
 
       {/* ── Model Drawer ── */}
@@ -1398,6 +1404,7 @@ export default function Dashboard() {
             { id: 'models', tip: 'Generate', icon: <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/></> },
             { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
             { id: 'projects', tip: 'Projects', icon: <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/> },
+            { id: 'tools', tip: 'Tools', icon: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/> },
           ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (
             <button
               key={id}

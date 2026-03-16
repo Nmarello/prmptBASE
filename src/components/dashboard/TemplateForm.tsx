@@ -592,18 +592,14 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
     const MAX_BYTES = MAX_MB * 1024 * 1024
     const [uploading, setUploading] = useState(false)
     const [uploadError, setUploadError] = useState<string | null>(null)
+    const [dragging, setDragging] = useState(false)
 
-    async function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
-      const file = e.target.files?.[0]
-      if (!file) return
+    async function processFile(file: File) {
       setUploadError(null)
-
       if (file.size > MAX_BYTES) {
         setUploadError(`File is ${(file.size / 1024 / 1024).toFixed(1)}MB — max is ${MAX_MB}MB. Please resize or compress it first.`)
-        e.target.value = ''
         return
       }
-
       setUploading(true)
       try {
         const { data: { user } } = await supabase.auth.getUser()
@@ -617,7 +613,6 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
         setUploadError(`Upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
       } finally {
         setUploading(false)
-        e.target.value = ''
       }
     }
 
@@ -629,7 +624,7 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
             accept="image/png,image/jpeg,image/webp"
             className="hidden"
             disabled={uploading}
-            onChange={handleImageFile}
+            onChange={e => { const f = e.target.files?.[0]; if (f) processFile(f); e.target.value = '' }}
           />
           {preview ? (
             <div className="relative group">
@@ -639,7 +634,16 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
               </div>
             </div>
           ) : (
-            <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${uploading ? 'opacity-60' : 'hover:border-sky-500/50'}`} style={{ borderColor: 'var(--pv-border)' }}>
+            <div
+              onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) processFile(f) }}
+              onDragOver={e => { e.preventDefault(); setDragging(true) }}
+              onDragLeave={() => setDragging(false)}
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${uploading ? 'opacity-60' : ''}`}
+              style={{
+                borderColor: dragging ? 'var(--pv-accent)' : 'var(--pv-border)',
+                background: dragging ? 'color-mix(in srgb, var(--pv-accent) 6%, transparent)' : 'transparent',
+              }}
+            >
               {uploading ? (
                 <>
                   <div className="w-6 h-6 rounded-full mx-auto mb-2 pv-spin" style={{ border: '2px solid var(--pv-border)', borderTopColor: 'var(--pv-accent)' }} />
@@ -647,8 +651,10 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
                 </>
               ) : (
                 <>
-                  <svg className="w-7 h-7 mx-auto mb-2" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
-                  <p className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>Click to upload image</p>
+                  <svg className="w-7 h-7 mx-auto mb-2" style={{ color: dragging ? 'var(--pv-accent)' : 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.5}/><circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 15l-5-5L5 21"/></svg>
+                  <p className="text-sm font-medium" style={{ color: dragging ? 'var(--pv-accent)' : 'var(--pv-text2)' }}>
+                    {dragging ? 'Drop to upload' : 'Drop or click to upload'}
+                  </p>
                   <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>PNG, JPG, WEBP · Max {MAX_MB}MB</p>
                 </>
               )}
