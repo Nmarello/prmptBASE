@@ -212,7 +212,7 @@ export default function Home() {
           12 models · 0 API keys needed · Free to start
         </div>
 
-        <h1 style={{ fontSize: 'clamp(48px, 7vw, 92px)', fontWeight: 800, lineHeight: 1.02, letterSpacing: '-3px', marginBottom: 24, color: T.text }}>
+        <h1 style={{ fontSize: 'clamp(36px, 5vw, 72px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-2px', marginBottom: 24, color: T.text }}>
           Every top AI model.<br />
           <span style={{ background: 'linear-gradient(135deg, #3d7fff 0%, #9b7aff 50%, #ff7a9b 100%)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
             One studio.
