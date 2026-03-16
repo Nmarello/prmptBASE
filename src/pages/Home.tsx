@@ -220,9 +220,9 @@ export default function Home() {
         </h1>
 
         {/* Text + Mockup row */}
-        <div className="flex flex-col sm:flex-row sm:items-center" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%' }}>
-          <div style={{ flexShrink: 0, width: '100%', maxWidth: 260 }}>
-            <p style={{ fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0 }}>
+        <div className="flex flex-col sm:flex-row sm:items-start" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%' }}>
+          <div style={{ flexShrink: 0, width: '100%', maxWidth: 260, paddingTop: 172 }}>
+            <p style={{ fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
               Structured prompt templates tuned for every model — purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No guesswork.
             </p>
           </div>
