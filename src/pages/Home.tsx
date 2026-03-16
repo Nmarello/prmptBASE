@@ -222,8 +222,8 @@ export default function Home() {
         {/* Text + Mockup row */}
         <div className="flex flex-col sm:flex-row sm:items-start" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%' }}>
           <div style={{ flexShrink: 0, width: '100%', maxWidth: 260, paddingTop: 80, display: 'flex', flexDirection: 'column' }}>
-            <p style={{ fontSize: 14, color: T.text2, fontWeight: 500, lineHeight: 1.5, margin: 0, textAlign: 'right', marginBottom: 68 }}>
-              AI Assisted prompt creation.
+            <p style={{ fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right', marginBottom: 68 }}>
+              Rough idea in. Polished prompt out. AI does the heavy lifting.
             </p>
             <p style={{ fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
               Structured prompt templates tuned for every model. Purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No guesswork.
