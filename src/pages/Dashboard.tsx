@@ -103,12 +103,19 @@ function SbBtn({ tip, active, onClick, children, dataTour }: { tip?: string; act
   return (
     <button
       onClick={onClick}
-      title={tip}
       data-tour={dataTour}
       className="relative flex items-center justify-center rounded-[11px] transition-all cursor-pointer group"
       style={{ width: 40, height: 40, color: active ? 'var(--pv-accent)' : 'var(--pv-text3)', background: active ? 'var(--pv-surface2)' : 'transparent' }}
     >
       {children}
+      {tip && (
+        <span
+          className="pointer-events-none absolute left-full ml-2 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-all duration-150 translate-x-[-4px] group-hover:translate-x-0"
+          style={{ background: 'var(--pv-surface2)', color: 'var(--pv-text)', border: '1px solid var(--pv-border)', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 50 }}
+        >
+          {tip}
+        </span>
+      )}
     </button>
   )
 }
@@ -872,10 +879,12 @@ export default function Dashboard() {
           onClick={() => setNavExpanded(v => !v)}
           aria-label="Account"
           data-tour="settings-btn"
-          className="flex items-center justify-center rounded-full cursor-pointer transition-all hover:opacity-80 flex-shrink-0 mb-1"
+          className="flex items-center justify-center rounded-full cursor-pointer transition-all hover:opacity-80 flex-shrink-0 mb-1 overflow-hidden"
           style={{ width: 30, height: 30, background: navExpanded ? 'var(--pv-text)' : 'var(--pv-accent)', color: navExpanded ? 'var(--pv-bg)' : '#fff', fontSize: 12, fontWeight: 700, userSelect: 'none', border: 'none' }}
         >
-          {userInitial}
+          {user?.user_metadata?.avatar_url
+            ? <img src={user.user_metadata.avatar_url} alt={userInitial} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : userInitial}
         </button>
 
         {/* Settings section icons (expanded inline) */}
