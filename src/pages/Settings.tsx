@@ -343,11 +343,14 @@ export default function Settings({ asDrawer = false, onClose, scrollTo }: { asDr
     if (!user || !stats) return
     setSavingProfile(true)
     try {
-      await supabase.from('profiles').update({
-        display_name: editName.trim() || null,
-        avatar_url: avatarUrl,
-        updated_at: new Date().toISOString(),
-      }).eq('id', user.id)
+      await Promise.all([
+        supabase.from('profiles').update({
+          display_name: editName.trim() || null,
+          avatar_url: avatarUrl,
+          updated_at: new Date().toISOString(),
+        }).eq('id', user.id),
+        supabase.auth.updateUser({ data: { avatar_url: avatarUrl, full_name: editName.trim() || null } }),
+      ])
       setStats(prev => prev ? { ...prev, profile: { ...prev.profile, display_name: editName.trim() || null, avatar_url: avatarUrl } } : null)
       setProfileDirty(false)
       setProfileSaved(true)
@@ -381,6 +384,11 @@ export default function Settings({ asDrawer = false, onClose, scrollTo }: { asDr
       })
       const data = await res.json()
       if (data.url) {
+        // Persist immediately: profiles table + auth metadata (so nav avatar updates)
+        await Promise.all([
+          supabase.from('profiles').update({ avatar_url: data.url, updated_at: new Date().toISOString() }).eq('id', user.id),
+          supabase.auth.updateUser({ data: { avatar_url: data.url } }),
+        ])
         setAvatarUrl(data.url)
         setStats(prev => prev ? { ...prev, profile: { ...prev.profile, avatar_url: data.url } } : null)
         setProfileDirty(false)
