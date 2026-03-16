@@ -222,13 +222,13 @@ export default function Home() {
         {/* Text + Mockup row */}
         <div className="flex flex-col sm:flex-row sm:items-start" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%' }}>
           <div className="hidden sm:block" style={{ flexShrink: 0, width: 260, position: 'relative', alignSelf: 'stretch' }}>
-            <p style={{ position: 'absolute', top: 84, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
+            <p style={{ position: 'absolute', top: 112, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
               Rough idea in. Polished prompt out. AI does the heavy lifting.
             </p>
-            <p style={{ position: 'absolute', top: 186, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
+            <p style={{ position: 'absolute', top: 220, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
               Structured prompt templates tuned for every model. Purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No guesswork.
             </p>
-            <p style={{ position: 'absolute', top: 343, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
+            <p style={{ position: 'absolute', top: 370, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
               over 20 models to choose from
             </p>
           </div>
@@ -271,8 +271,9 @@ export default function Home() {
                   <div style={{
                     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: 10, padding: '10px 12px', fontSize: 12,
-                    color: '#f0ede8', lineHeight: 1.6, minHeight: 60,
-                    display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                    color: '#f0ede8', lineHeight: 1.6,
+                    height: 78, overflow: 'hidden',
+                    display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
                   }}>
                     Luxury penthouse dinner for two, couple in formal attire, floor-to-ceiling windows overlooking city skyline at night, warm candlelight, bokeh city lights, cinematic photography, golden ambient glow
                   </div>
