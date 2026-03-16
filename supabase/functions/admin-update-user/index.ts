@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
       .from('profiles').select('is_admin').eq('id', caller.id).single()
     if (!callerProfile?.is_admin) throw new Error('Forbidden')
 
-    const { target_user_id, tier, email, display_name, password } = await req.json()
+    const { target_user_id, tier, email, display_name, password, is_banned } = await req.json()
     if (!target_user_id) throw new Error('Missing target_user_id')
 
     // Update auth (email and/or password) via admin API
@@ -40,6 +40,7 @@ Deno.serve(async (req) => {
     // Update profile
     const profileUpdate: Record<string, unknown> = {}
     if (display_name !== undefined) profileUpdate.display_name = display_name
+    if (is_banned !== undefined) profileUpdate.is_banned = Boolean(is_banned)
     if (tier) {
       const VALID_TIERS = ['newbie', 'creator', 'studio', 'pro']
       if (!VALID_TIERS.includes(tier)) throw new Error('Invalid tier')

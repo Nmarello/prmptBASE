@@ -26,12 +26,16 @@ export async function checkImageRateLimit(
 ): Promise<RateLimitResult> {
   if (!userId) return { allowed: true, tier: 'free', used: 0, limit: TIER_LIMITS.free }
 
-  // Get user tier
+  // Get user tier + ban status
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('tier')
+    .select('tier, is_banned')
     .eq('id', userId)
     .single()
+
+  if (profile?.is_banned) {
+    return { allowed: false, tier: 'banned', used: 0, limit: 0 }
+  }
 
   const tier = (profile?.tier as string | undefined) ?? 'free'
   const limit = tier in TIER_LIMITS ? TIER_LIMITS[tier] : (TIER_LIMITS.free ?? 25)

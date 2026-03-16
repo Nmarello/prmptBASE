@@ -19,6 +19,7 @@ interface UserRow {
   email: string
   display_name: string | null
   tier: Tier
+  is_banned: boolean
   created_at: string
   asset_count: number
 }
@@ -275,7 +276,7 @@ export default function Admin() {
     )
     const data = await res.json()
     if (data.error) { setLoading(false); return }
-    const rows: UserRow[] = data.users.map((p: UserRow) => ({ ...p, tier: p.tier as Tier }))
+    const rows: UserRow[] = data.users.map((p: UserRow) => ({ ...p, tier: p.tier as Tier, is_banned: p.is_banned ?? false }))
     setUsers(rows)
     const byTier = { newbie: 0, creator: 0, studio: 0, pro: 0 } as Record<Tier, number>
     rows.forEach(r => { byTier[r.tier] = (byTier[r.tier] ?? 0) + 1 })
@@ -319,6 +320,24 @@ export default function Admin() {
   async function resolveConversation(id: string) {
     await supabase.from('support_conversations').update({ status: 'resolved', updated_at: new Date().toISOString() }).eq('id', id)
     setSupportConvs(prev => prev.map(c => c.id === id ? { ...c, status: 'resolved' } : c))
+  }
+
+  async function toggleBan(u: UserRow) {
+    const next = !u.is_banned
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body: JSON.stringify({ user_token: token, target_user_id: u.id, is_banned: next }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`)
+      setUsers(prev => prev.map(r => r.id === u.id ? { ...r, is_banned: next } : r))
+    } catch (err) {
+      alert(`Ban toggle failed: ${err instanceof Error ? err.message : err}`)
+    }
   }
 
   async function changeTier(targetUserId: string, newTier: Tier) {
@@ -847,11 +866,19 @@ export default function Admin() {
                             </div>
                           </td>
                           <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
-                            <button
-                              onClick={() => openEdit(u)}
-                              style={{ color: 'var(--pv-text3)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-                              className="hover:bg-white/5 hover:text-[var(--pv-text)] transition-colors"
-                            >Edit</button>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => openEdit(u)}
+                                style={{ color: 'var(--pv-text3)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                                className="hover:bg-white/5 hover:text-[var(--pv-text)] transition-colors"
+                              >Edit</button>
+                              <button
+                                onClick={() => toggleBan(u)}
+                                title={u.is_banned ? 'Unban user' : 'Ban user'}
+                                style={{ color: u.is_banned ? '#f87171' : 'var(--pv-text3)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: u.is_banned ? 700 : 500, background: u.is_banned ? 'rgba(239,68,68,0.1)' : 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                                className="hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                              >{u.is_banned ? 'Banned' : 'Ban'}</button>
+                            </div>
                           </td>
                         </tr>
                       ))}
