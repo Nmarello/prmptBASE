@@ -249,54 +249,21 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            {/* App body — 3 columns */}
-            <div className="grid grid-cols-1 sm:grid-cols-[200px_300px_1fr]" style={{ minHeight: 460 }}>
-              {/* Sidebar */}
-              <div className="hidden sm:block" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: '16px 12px', background: '#0f0e0c' }}>
-                <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(240,237,232,0.28)', marginBottom: 8, padding: '0 6px' }}>Image Models</div>
-                {[
-                  { name: 'Flux Pro Ultra', tag: 'txt2img', active: true, dot: '#3d7fff' },
-                  { name: 'DALL-E 3', tag: 'txt2img', active: false, dot: '#10b981' },
-                  { name: 'Flux Dev', tag: 'txt2img', active: false, dot: '#3d7fff' },
-                  { name: 'Flux Schnell', tag: 'txt2img', active: false, dot: '#3d7fff' },
-                ].map(m => (
-                  <div key={m.name} style={{
-                    padding: '7px 10px', borderRadius: 8, marginBottom: 2, cursor: 'pointer',
-                    background: m.active ? 'rgba(61,127,255,0.12)' : 'transparent',
-                    border: m.active ? '1px solid rgba(61,127,255,0.2)' : '1px solid transparent',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: m.active ? m.dot : 'rgba(240,237,232,0.2)', flexShrink: 0 }} />
-                      <span style={{ fontSize: 11, fontWeight: 600, color: m.active ? '#7aabff' : 'rgba(240,237,232,0.45)' }}>{m.name}</span>
-                    </div>
-                    <div style={{ fontSize: 9, color: 'rgba(240,237,232,0.2)', marginTop: 2, paddingLeft: 12 }}>{m.tag}</div>
-                  </div>
-                ))}
-                <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(240,237,232,0.28)', margin: '16px 0 8px', padding: '0 6px' }}>Video Models</div>
-                {[
-                  { name: 'Luma Ray-2', tag: 'txt2vid · img2vid' },
-                  { name: 'Kling 1.6', tag: 'txt2vid · img2vid' },
-                  { name: 'Minimax', tag: 'txt2vid' },
-                ].map(m => (
-                  <div key={m.name} style={{ padding: '7px 10px', borderRadius: 8, marginBottom: 2, cursor: 'pointer' }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(240,237,232,0.5)' }}>{m.name}</div>
-                    <div style={{ fontSize: 9, color: 'rgba(240,237,232,0.28)', marginTop: 2 }}>{m.tag}</div>
-                  </div>
-                ))}
-              </div>
+            {/* App body — 2 columns */}
+            <div className="grid grid-cols-1 sm:grid-cols-[380px_1fr]" style={{ minHeight: 340 }}>
               {/* Form panel */}
-              <div className="hidden sm:flex" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: 20, flexDirection: 'column', gap: 14, background: '#111009' }}>
+              <div className="hidden sm:flex" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: 20, flexDirection: 'column', gap: 12, background: '#111009' }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(240,237,232,0.28)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prompt</div>
                   <div style={{
                     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: 10, padding: '10px 12px', fontSize: 12,
-                    color: '#f0ede8', lineHeight: 1.6, minHeight: 80,
+                    color: '#f0ede8', lineHeight: 1.6, minHeight: 60,
                   }}>
                     Cinematic wide shot of a lone lighthouse on volcanic cliffs, golden hour, crashing waves, atmospheric haze, film grain, Kodak portra 400
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                   {[
                     { label: 'Aspect', val: '16:9' },
                     { label: 'Quality', val: 'Ultra' },
@@ -305,6 +272,8 @@ export default function Home() {
                     { label: 'Lighting', val: 'Golden hour' },
                     { label: 'Camera', val: 'Handheld' },
                     { label: 'Lens', val: '24mm wide' },
+                    { label: 'Mood', val: 'Dramatic' },
+                    { label: 'Style', val: 'Cinematic' },
                   ].map(s => (
                     <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 10px' }}>
                       <div style={{ fontSize: 9, color: 'rgba(240,237,232,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>{s.label}</div>
