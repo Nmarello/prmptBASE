@@ -21,6 +21,7 @@ interface UserRow {
   tier: Tier
   is_banned: boolean
   created_at: string
+  last_sign_in_at: string | null
   asset_count: number
 }
 
@@ -276,7 +277,7 @@ export default function Admin() {
     )
     const data = await res.json()
     if (data.error) { setLoading(false); return }
-    const rows: UserRow[] = data.users.map((p: UserRow) => ({ ...p, tier: p.tier as Tier, is_banned: p.is_banned ?? false }))
+    const rows: UserRow[] = data.users.map((p: UserRow) => ({ ...p, tier: p.tier as Tier, is_banned: p.is_banned ?? false, last_sign_in_at: p.last_sign_in_at ?? null }))
     setUsers(rows)
     const byTier = { newbie: 0, creator: 0, studio: 0, pro: 0 } as Record<Tier, number>
     rows.forEach(r => { byTier[r.tier] = (byTier[r.tier] ?? 0) + 1 })
@@ -820,7 +821,7 @@ export default function Admin() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--pv-border)' }}>
-                        {['User', 'Tier', 'Assets', 'Joined', 'Change Tier', 'Edit'].map(h => (
+                        {['User', 'Tier', 'Assets', 'Joined', 'Last Seen', 'Change Tier', 'Edit'].map(h => (
                           <th key={h} className="px-5 py-3 text-left" style={{ fontSize: 11, fontWeight: 600, color: 'var(--pv-text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                         ))}
                       </tr>
@@ -848,6 +849,11 @@ export default function Admin() {
                           <td className="px-5 py-3.5" style={{ color: 'var(--pv-text2)', fontSize: 13 }}>{u.asset_count}</td>
                           <td className="px-5 py-3.5" style={{ color: 'var(--pv-text3)', fontSize: 12 }}>
                             {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </td>
+                          <td className="px-5 py-3.5" style={{ color: 'var(--pv-text3)', fontSize: 12, whiteSpace: 'nowrap' }}>
+                            {u.last_sign_in_at
+                              ? new Date(u.last_sign_in_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                              : '—'}
                           </td>
                           <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
                             <div className="flex gap-1">

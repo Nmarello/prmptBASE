@@ -23,10 +23,21 @@ Deno.serve(async (req) => {
       .from('profiles').select('is_admin').eq('id', caller.id).single()
     if (!callerProfile?.is_admin) throw new Error('Forbidden')
 
+    // Fetch last_sign_in_at from auth.users via admin API
+    const authUsers: Record<string, string | null> = {}
+    let page = 1
+    while (true) {
+      const { data: { users: batch } } = await adminClient.auth.admin.listUsers({ page, perPage: 1000 })
+      if (!batch || batch.length === 0) break
+      batch.forEach((u: any) => { authUsers[u.id] = u.last_sign_in_at ?? null })
+      if (batch.length < 1000) break
+      page++
+    }
+
     // Fetch all profiles + asset counts using service role (bypasses RLS)
     const { data: profiles } = await adminClient
       .from('profiles')
-      .select('id, email, display_name, tier, created_at, is_admin')
+      .select('id, email, display_name, tier, created_at, is_admin, is_banned')
       .order('created_at', { ascending: false })
 
     const { data: assetRows } = await adminClient
@@ -108,7 +119,7 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().slice(0, 10)
     const assets_today = assetRows?.filter((a: any) => a.created_at?.startsWith(today)).length ?? 0
 
-    const users = (profiles ?? []).map(p => ({ ...p, asset_count: countMap[p.id] ?? 0 }))
+    const users = (profiles ?? []).map(p => ({ ...p, asset_count: countMap[p.id] ?? 0, last_sign_in_at: authUsers[p.id] ?? null }))
 
     return new Response(JSON.stringify({ users, cost_by_model, period_spend, total_spend, gen_type_totals: genTypeTotals, video_by_model, image_by_model, assets_today }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
