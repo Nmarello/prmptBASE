@@ -84,6 +84,8 @@ const GALLERY_ASSETS: GalleryItem[] = [
   { url: `${S}/${U}/1773286040352-cy3jf9c873m.mp4`,        video: true  },
 ]
 
+const GALLERY_MODELS = ['Imagen 4', 'Flux Pro Ultra', 'DALL-E 3', 'Veo 2', 'Flux Pro', 'Kling', 'Luma', 'Flux Dev']
+
 // Theme tokens for landing page
 const DARK = {
   bg: '#0f0e0c', surface: 'rgba(255,255,255,0.04)', surfaceHover: 'rgba(255,255,255,0.07)',
@@ -163,7 +165,7 @@ export default function Home() {
           }}
             onMouseEnter={e => (e.currentTarget.style.background = '#5590ff')}
             onMouseLeave={e => (e.currentTarget.style.background = '#3d7fff')}
-          >Start free</button>
+          >Try 12 models free</button>
         </div>
       </nav>
 
@@ -185,7 +187,7 @@ export default function Home() {
             background: '#3d7fff', border: 'none', color: '#fff',
             padding: '7px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
-          }}>Start free</button>
+          }}>Try 12 models free</button>
         </div>
       </nav>
 
@@ -207,7 +209,7 @@ export default function Home() {
           fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', marginBottom: 28,
         }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3d7fff', display: 'inline-block' }} />
-          12 models · Images · Video
+          12 models · 0 API keys needed · Free to start
         </div>
 
         <h1 style={{ fontSize: 'clamp(48px, 7vw, 92px)', fontWeight: 800, lineHeight: 1.02, letterSpacing: '-3px', marginBottom: 24, color: T.text }}>
@@ -218,34 +220,135 @@ export default function Home() {
         </h1>
 
         <p style={{ fontSize: 18, color: T.text2, maxWidth: 520, margin: '0 auto 44px', fontWeight: 400, lineHeight: 1.65 }}>
-          Generate images and video with DALL-E, Flux, Kling, Luma and more. Save every prompt. Pick up where you left off.
+          Structured prompt templates tuned for every model — purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No guesswork.
         </p>
 
-        {/* PROMPT BAR */}
-        <div style={{
-          width: '100%', maxWidth: 640, margin: '0 auto 48px',
-          background: T.surface, border: '1px solid ' + T.border,
-          borderRadius: 14, padding: '6px 6px 6px 16px',
-          display: 'flex', alignItems: 'center', gap: 8,
-          boxShadow: '0 0 0 1px rgba(61,127,255,0.08), 0 8px 40px rgba(0,0,0,0.3)',
-        }}>
-          <input readOnly placeholder="A lone lighthouse at stormy dusk, cinematic…" onClick={() => setShowAuth(true)} style={{
-            flex: 1, background: 'none', border: 'none', outline: 'none', minWidth: 0,
-            color: T.text, fontFamily: 'inherit', fontSize: 14, cursor: 'text',
-          }} />
-          <div className="hidden sm:block" style={{
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-            color: T.text2, padding: '6px 12px', borderRadius: 8,
-            fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer',
-          }}>Flux Pro Ultra ▾</div>
-          <button onClick={() => setShowAuth(true)} style={{
-            background: '#3d7fff', color: '#fff', border: 'none',
-            padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700,
-            cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'background 0.15s', flexShrink: 0,
-          }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#5590ff')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#3d7fff')}
-          >Generate →</button>
+        {/* APP WINDOW — product mockup */}
+        <div style={{ marginTop: 48, textAlign: 'left', width: '100%', maxWidth: 940, margin: '48px auto 0' }}>
+          <div style={{
+            background: '#131210', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 18, overflow: 'hidden',
+            boxShadow: '0 0 0 1px rgba(0,0,0,0.5), 0 60px 140px rgba(0,0,0,0.7), 0 0 80px rgba(61,127,255,0.06)',
+          }}>
+            {/* Window chrome */}
+            <div style={{ background: '#0d0c0a', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '11px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#ff5f57' }} />
+                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#ffbd2e' }} />
+                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
+              </div>
+              <Logo height={24} theme={dark ? 'dark' : 'light'} style={{ marginLeft: 6 }} />
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  background: 'rgba(52,199,89,0.12)', border: '1px solid rgba(52,199,89,0.25)',
+                  borderRadius: 100, padding: '4px 10px',
+                }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#34c759' }} />
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#34c759' }}>Render complete · 8s</span>
+                </div>
+              </div>
+            </div>
+            {/* App body — 3 columns */}
+            <div className="grid grid-cols-1 sm:grid-cols-[200px_300px_1fr]" style={{ minHeight: 460 }}>
+              {/* Sidebar */}
+              <div className="hidden sm:block" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: '16px 12px', background: '#0f0e0c' }}>
+                <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(240,237,232,0.28)', marginBottom: 8, padding: '0 6px' }}>Image Models</div>
+                {[
+                  { name: 'Flux Pro Ultra', tag: 'txt2img', active: true, dot: '#3d7fff' },
+                  { name: 'DALL-E 3', tag: 'txt2img', active: false, dot: '#10b981' },
+                  { name: 'Flux Dev', tag: 'txt2img', active: false, dot: '#3d7fff' },
+                  { name: 'Flux Schnell', tag: 'txt2img', active: false, dot: '#3d7fff' },
+                ].map(m => (
+                  <div key={m.name} style={{
+                    padding: '7px 10px', borderRadius: 8, marginBottom: 2, cursor: 'pointer',
+                    background: m.active ? 'rgba(61,127,255,0.12)' : 'transparent',
+                    border: m.active ? '1px solid rgba(61,127,255,0.2)' : '1px solid transparent',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: m.active ? m.dot : 'rgba(240,237,232,0.2)', flexShrink: 0 }} />
+                      <span style={{ fontSize: 11, fontWeight: 600, color: m.active ? '#7aabff' : 'rgba(240,237,232,0.45)' }}>{m.name}</span>
+                    </div>
+                    <div style={{ fontSize: 9, color: 'rgba(240,237,232,0.2)', marginTop: 2, paddingLeft: 12 }}>{m.tag}</div>
+                  </div>
+                ))}
+                <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(240,237,232,0.28)', margin: '16px 0 8px', padding: '0 6px' }}>Video Models</div>
+                {[
+                  { name: 'Luma Ray-2', tag: 'txt2vid · img2vid' },
+                  { name: 'Kling 1.6', tag: 'txt2vid · img2vid' },
+                  { name: 'Minimax', tag: 'txt2vid' },
+                ].map(m => (
+                  <div key={m.name} style={{ padding: '7px 10px', borderRadius: 8, marginBottom: 2, cursor: 'pointer' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(240,237,232,0.5)' }}>{m.name}</div>
+                    <div style={{ fontSize: 9, color: 'rgba(240,237,232,0.28)', marginTop: 2 }}>{m.tag}</div>
+                  </div>
+                ))}
+              </div>
+              {/* Form panel */}
+              <div className="hidden sm:flex" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: 20, flexDirection: 'column', gap: 14, background: '#111009' }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(240,237,232,0.28)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prompt</div>
+                  <div style={{
+                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 10, padding: '10px 12px', fontSize: 12,
+                    color: '#f0ede8', lineHeight: 1.6, minHeight: 80,
+                  }}>
+                    Cinematic wide shot of a lone lighthouse on volcanic cliffs, golden hour, crashing waves, atmospheric haze, film grain, Kodak portra 400
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {[
+                    { label: 'Aspect', val: '16:9' },
+                    { label: 'Quality', val: 'Ultra' },
+                    { label: 'Steps', val: '28' },
+                    { label: 'Guidance', val: '3.5' },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 10px' }}>
+                      <div style={{ fontSize: 9, color: 'rgba(240,237,232,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>{s.label}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(240,237,232,0.5)' }}>{s.val}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 9, color: 'rgba(240,237,232,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Model</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#7aabff' }}>Flux Pro Ultra</div>
+                </div>
+                <button style={{
+                  marginTop: 'auto', width: '100%', padding: '11px',
+                  background: '#3d7fff', color: '#fff', border: 'none',
+                  borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                }}>Generate →</button>
+              </div>
+              {/* Output / canvas */}
+              <div style={{ position: 'relative', background: '#0a0908', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+                <img
+                  src={SHOWCASE_ASSET}
+                  alt="AI-generated output in prmptVAULT workspace"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', position: 'absolute', inset: 0 }}
+                />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 100, background: 'linear-gradient(to top, rgba(10,9,8,0.9), transparent)', pointerEvents: 'none' }} />
+                <div style={{
+                  position: 'absolute', bottom: 14, left: 14,
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'rgba(15,14,12,0.75)', backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px',
+                }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3d7fff' }} />
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(240,237,232,0.8)' }}>Flux Pro Ultra</span>
+                  <span style={{ fontSize: 10, color: 'rgba(240,237,232,0.28)' }}>· 8s</span>
+                </div>
+                <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', gap: 6 }}>
+                  {['↓', '→ img2img'].map(lbl => (
+                    <div key={lbl} style={{
+                      background: 'rgba(15,14,12,0.75)', backdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
+                      padding: '5px 9px', fontSize: 11, fontWeight: 600, color: 'rgba(240,237,232,0.5)', cursor: 'pointer',
+                    }}>{lbl}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
       </section>
@@ -258,36 +361,47 @@ export default function Home() {
           width: 'max-content', padding: '0 10px',
         }}>
           {/* Double the array for seamless infinite loop — no repeats in the original set */}
-          {[...GALLERY_ASSETS, ...GALLERY_ASSETS].map((item, i) => (
-            <div key={i} style={{
-              width: 220, height: 160, borderRadius: 14, overflow: 'hidden', flexShrink: 0,
-              border: '1px solid rgba(255,255,255,0.06)', position: 'relative',
-            }}>
-              {item.video ? (
-                <>
-                  <video
-                    src={item.url}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  />
-                  <div style={{
-                    position: 'absolute', top: 6, left: 6,
-                    width: 18, height: 18, borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <svg width="7" height="7" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                  </div>
-                </>
-              ) : (
-                <img src={item.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
-              )}
-            </div>
-          ))}
+          {[...GALLERY_ASSETS, ...GALLERY_ASSETS].map((item, i) => {
+            const modelName = GALLERY_MODELS[(i % GALLERY_ASSETS.length) % GALLERY_MODELS.length]
+            return (
+              <div key={i} style={{
+                width: 220, height: 160, borderRadius: 14, overflow: 'hidden', flexShrink: 0,
+                border: '1px solid rgba(255,255,255,0.06)', position: 'relative',
+              }}>
+                {item.video ? (
+                  <>
+                    <video
+                      src={item.url}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                    <div style={{
+                      position: 'absolute', top: 6, left: 6,
+                      width: 18, height: 18, borderRadius: '50%',
+                      background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="7" height="7" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    </div>
+                  </>
+                ) : (
+                  <img src={item.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                )}
+                <div style={{
+                  position: 'absolute', bottom: 8, left: 8,
+                  background: 'rgba(0,0,0,0.6)', borderRadius: 4,
+                  padding: '3px 8px', display: 'flex', alignItems: 'center', gap: 4,
+                }}>
+                  {item.video && <span style={{ fontSize: 9, color: '#fff' }}>▶</span>}
+                  <span style={{ fontSize: 11, fontWeight: 500, color: '#fff', fontFamily: '-apple-system, system-ui, sans-serif' }}>{modelName}</span>
+                </div>
+              </div>
+            )
+          })}
         </div>
         <style>{`@keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }`}</style>
       </section>
@@ -402,161 +516,6 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* ── STUDIO WORKSPACE ──────────────────────────── */}
-      <section id="workspace" className="px-5 sm:px-10 py-20 sm:py-28">
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: T.text3, marginBottom: 14 }}>
-            The Generator
-          </div>
-          <h2 style={{ fontSize: 'clamp(30px, 5vw, 52px)', fontWeight: 800, letterSpacing: '-1.5px', color: T.text, marginBottom: 14 }}>
-            A studio-grade workspace.
-          </h2>
-          <p style={{ fontSize: 16, color: T.text2, maxWidth: 480, margin: '0 auto' }}>
-            Every model, every setting, one clean interface built for high-volume creative work.
-          </p>
-        </div>
-
-        {/* APP WINDOW */}
-        <div style={{
-          maxWidth: 1080, margin: '0 auto',
-          background: '#131210', border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 18, overflow: 'hidden',
-          boxShadow: '0 0 0 1px rgba(0,0,0,0.5), 0 60px 140px rgba(0,0,0,0.7), 0 0 80px rgba(61,127,255,0.06)',
-        }}>
-
-          {/* Window chrome */}
-          <div style={{ background: '#0d0c0a', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '11px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#ff5f57' }} />
-              <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#ffbd2e' }} />
-              <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
-            </div>
-            <Logo height={24} theme={dark ? 'dark' : 'light'} style={{ marginLeft: 6 }} />
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-              {/* Notification toast */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 7,
-                background: 'rgba(52,199,89,0.12)', border: '1px solid rgba(52,199,89,0.25)',
-                borderRadius: 100, padding: '4px 10px',
-              }}>
-                <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#34c759' }} />
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#34c759' }}>Render complete · 8s</span>
-              </div>
-            </div>
-          </div>
-
-          {/* App body — 3 columns */}
-          <div className="grid grid-cols-1 sm:grid-cols-[200px_300px_1fr]" style={{ minHeight: 460 }}>
-
-            {/* Sidebar */}
-            <div className="hidden sm:block" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: '16px 12px', background: '#0f0e0c' }}>
-              <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.text3, marginBottom: 8, padding: '0 6px' }}>Image Models</div>
-              {[
-                { name: 'Flux Pro Ultra', tag: 'txt2img', active: true, dot: '#3d7fff' },
-                { name: 'DALL-E 3', tag: 'txt2img', active: false, dot: '#10b981' },
-                { name: 'Flux Dev', tag: 'txt2img', active: false, dot: '#3d7fff' },
-                { name: 'Flux Schnell', tag: 'txt2img', active: false, dot: '#3d7fff' },
-              ].map(m => (
-                <div key={m.name} style={{
-                  padding: '7px 10px', borderRadius: 8, marginBottom: 2, cursor: 'pointer',
-                  background: m.active ? 'rgba(61,127,255,0.12)' : 'transparent',
-                  border: m.active ? '1px solid rgba(61,127,255,0.2)' : '1px solid transparent',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: m.active ? m.dot : 'rgba(240,237,232,0.2)', flexShrink: 0 }} />
-                    <span style={{ fontSize: 11, fontWeight: 600, color: m.active ? '#7aabff' : 'rgba(240,237,232,0.45)' }}>{m.name}</span>
-                  </div>
-                  <div style={{ fontSize: 9, color: 'rgba(240,237,232,0.2)', marginTop: 2, paddingLeft: 12 }}>{m.tag}</div>
-                </div>
-              ))}
-              <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.text3, margin: '16px 0 8px', padding: '0 6px' }}>Video Models</div>
-              {[
-                { name: 'Luma Ray-2', tag: 'txt2vid · img2vid' },
-                { name: 'Kling 1.6', tag: 'txt2vid · img2vid' },
-                { name: 'Minimax', tag: 'txt2vid' },
-              ].map(m => (
-                <div key={m.name} style={{ padding: '7px 10px', borderRadius: 8, marginBottom: 2, cursor: 'pointer' }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: T.text2 }}>{m.name}</div>
-                  <div style={{ fontSize: 9, color: T.text3, marginTop: 2 }}>{m.tag}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Form panel */}
-            <div className="hidden sm:flex" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: 20, flexDirection: 'column', gap: 14, background: '#111009' }}>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: T.text3, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prompt</div>
-                <div style={{
-                  background: T.surface, border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 10, padding: '10px 12px', fontSize: 12,
-                  color: T.text, lineHeight: 1.6, minHeight: 80,
-                }}>
-                  Cinematic wide shot of a lone lighthouse on volcanic cliffs, golden hour, crashing waves, atmospheric haze, film grain, Kodak portra 400
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {[
-                  { label: 'Aspect', val: '16:9' },
-                  { label: 'Quality', val: 'Ultra' },
-                  { label: 'Steps', val: '28' },
-                  { label: 'Guidance', val: '3.5' },
-                ].map(s => (
-                  <div key={s.label} style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 8, padding: '8px 10px' }}>
-                    <div style={{ fontSize: 9, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>{s.label}</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: T.text2 }}>{s.val}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 8, padding: '8px 10px' }}>
-                <div style={{ fontSize: 9, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Model</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#7aabff' }}>Flux Pro Ultra</div>
-              </div>
-
-              <button style={{
-                marginTop: 'auto', width: '100%', padding: '11px',
-                background: '#3d7fff', color: '#fff', border: 'none',
-                borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-              }}>Generate →</button>
-            </div>
-
-            {/* Output / canvas */}
-            <div style={{ position: 'relative', background: '#0a0908', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
-              <img
-                src={SHOWCASE_ASSET}
-                alt="AI-generated output in prmptVAULT workspace"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', position: 'absolute', inset: 0 }}
-              />
-              {/* Overlay gradient at bottom */}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 100, background: 'linear-gradient(to top, rgba(10,9,8,0.9), transparent)', pointerEvents: 'none' }} />
-              {/* Model badge */}
-              <div style={{
-                position: 'absolute', bottom: 14, left: 14,
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: 'rgba(15,14,12,0.75)', backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px',
-              }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3d7fff' }} />
-                <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(240,237,232,0.8)' }}>Flux Pro Ultra</span>
-                <span style={{ fontSize: 10, color: T.text3 }}>· 8s</span>
-              </div>
-              {/* Actions */}
-              <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', gap: 6 }}>
-                {['↓', '→ img2img'].map(lbl => (
-                  <div key={lbl} style={{
-                    background: 'rgba(15,14,12,0.75)', backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
-                    padding: '5px 9px', fontSize: 11, fontWeight: 600, color: T.text2, cursor: 'pointer',
-                  }}>{lbl}</div>
-                ))}
-              </div>
-            </div>
-
           </div>
         </div>
       </section>
@@ -797,7 +756,7 @@ export default function Home() {
           }}
             onMouseEnter={e => { e.currentTarget.style.background = '#5590ff'; e.currentTarget.style.boxShadow = '0 0 56px rgba(61,127,255,0.45)' }}
             onMouseLeave={e => { e.currentTarget.style.background = '#3d7fff'; e.currentTarget.style.boxShadow = '0 0 40px rgba(61,127,255,0.3)' }}
-          >Start for free →</button>
+          >Try 12 models free →</button>
           <a href="/pricing" style={{
             background: 'transparent', border: '1px solid ' + T.border, color: T.text2,
             padding: '14px 28px', borderRadius: 100, fontSize: 15, fontWeight: 600,
