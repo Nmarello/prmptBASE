@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
+import { useAnalytics } from '../../hooks/useAnalytics'
 
 type UpscaleScale = 2 | 4
 
@@ -96,6 +97,7 @@ function UpscaleTool({
   anonKey: string
   onDone: () => void
 }) {
+  const analytics = useAnalytics()
   const fileRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
@@ -151,6 +153,7 @@ function UpscaleTool({
       let data: Record<string, unknown>
       try { data = JSON.parse(text) } catch { throw new Error(`Bad response (${res.status}): ${text.slice(0, 200)}`) }
       if (!res.ok || data.error) throw new Error(String(data.error ?? `HTTP ${res.status}`))
+      analytics.upscaleUsed({ scale, source: 'tools' })
       setResult(data.upscaled_url as string)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Upscale failed')

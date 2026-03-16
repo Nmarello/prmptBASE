@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { createCheckoutSession } from '../lib/stripe'
 import AuthModal from '../components/auth/AuthModal'
+import { useAnalytics } from '../hooks/useAnalytics'
 
 type BillingCycle = 'monthly' | 'annual'
 
@@ -98,6 +99,7 @@ const tiers = [
 export default function Pricing() {
   const { user } = useAuth()
   const location = useLocation()
+  const analytics = useAnalytics()
   const highlightTier = new URLSearchParams(location.search).get('highlight')
   const [showAuth, setShowAuth] = useState(false)
   const [loading, setLoading] = useState<string | null>(null)
@@ -122,6 +124,7 @@ export default function Pricing() {
       return
     }
     setLoading(tier.tier)
+    analytics.checkoutStarted({ tier: tier.tier, billing })
     try {
       await createCheckoutSession(tier.tier as 'creator' | 'studio' | 'pro', billing)
     } catch (err) {

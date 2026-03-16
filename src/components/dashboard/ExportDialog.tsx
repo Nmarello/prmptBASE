@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useExport, type ImageFormat, type VideoFormat } from '../../hooks/useExport'
+import { useAnalytics } from '../../hooks/useAnalytics'
 
 interface Asset {
   id: string
@@ -44,6 +45,7 @@ const VIDEO_PRESETS: { value: SizePreset; label: string }[] = [
 
 export default function ExportDialog({ asset, onClose }: { asset: Asset; onClose: () => void }) {
   const { session } = useAuth()
+  const analytics = useAnalytics()
   const isVideo = asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid'
   const { exportAsset, processing, progress, phase } = useExport()
 
@@ -112,6 +114,8 @@ export default function ExportDialog({ asset, onClose }: { asset: Asset; onClose
         import.meta.env.VITE_SUPABASE_URL,
         import.meta.env.VITE_SUPABASE_ANON_KEY,
       )
+      analytics.exportUsed({ format: format as string, size: sizePreset, is_video: isVideo })
+      if (upscale) analytics.upscaleUsed({ scale: upscale, source: 'lightbox' })
       onClose()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Export failed')

@@ -68,6 +68,7 @@ import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import ModelDrawer from '../components/dashboard/ModelDrawer'
 import ProviderLogo from '../components/dashboard/ProviderLogo'
 import ToolsPanel from '../components/dashboard/ToolsPanel'
+import { useAnalytics, useIdentify } from '../hooks/useAnalytics'
 
 type View = 'models' | 'builder' | 'assets' | 'projects' | 'tools'
 
@@ -172,6 +173,7 @@ export default function Dashboard() {
   const { user } = useAuth()
   const { mode: learningMode } = useLearningMode()
   const { theme, setTheme } = useTheme()
+  const analytics = useAnalytics()
   const navigate = useNavigate()
   const userInitial = (user?.user_metadata?.full_name ?? user?.email ?? '?')[0].toUpperCase()
   const [view, setView] = useState<View>('models')
@@ -179,6 +181,7 @@ export default function Dashboard() {
   const [firstRunStep, setFirstRunStep] = useState<number>(-1)
   const [tourSubjectFill, setTourSubjectFill] = useState<string | undefined>()
   const [userTier, setUserTier] = useState('newbie')
+  useIdentify(user?.id ?? null, { email: user?.email, tier: userTier })
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [onboardingChecked, setOnboardingChecked] = useState(false)
 
@@ -546,6 +549,7 @@ export default function Dashboard() {
     setSubmitting(true)
     setResult(null)
     setGenerateError(null)
+    analytics.generationStarted({ model: selectedModel.slug, gen_type: selectedGenType, tier: userTier })
     const isImageGen = selectedGenType !== 'txt2vid' && selectedGenType !== 'img2vid'
     if (isImageGen) setPendingImage({ modelName: selectedModel.name })
     setRenderingModelSlug(selectedModel.slug)
@@ -634,6 +638,7 @@ export default function Dashboard() {
 
       const data = await res.json()
       if (data?.rate_limited) {
+        analytics.rateLimitHit({ tier: data.tier ?? userTier, used: data.used ?? 0, limit: data.limit ?? 0 })
         throw new Error(`__RATE_LIMITED__:${data.used}:${data.limit}:${data.tier}`)
       }
       if (!res.ok || data?.error) throw new Error(friendlyFalError(data?.error ?? data?.message ?? `HTTP ${res.status}`))
@@ -656,6 +661,7 @@ export default function Dashboard() {
         await supabase.from('assets').update({ project_id: activeProjectId }).eq('id', assetId)
       }
 
+      analytics.generationCompleted({ model: selectedModel.slug, gen_type: isVideo ? 'txt2vid' : (selectedGenType === 'img2img' ? 'img2img' : 'txt2img'), tier: userTier, success: true })
       setPendingImage(null)
       setRenderingModelSlug(null)
       setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt, isVideo })
@@ -1060,7 +1066,7 @@ export default function Dashboard() {
                             modelStatus={status}
                             upgradeTier={upgradeTier}
                             onAdd={() => handleAddModel(m.id)}
-                            onUpgrade={() => navigate(`/pricing?highlight=${upgradeTier ?? 'creator'}`)}
+                            onUpgrade={() => { analytics.upgradeClicked({ tier: userTier, source: 'model_card' }); navigate(`/pricing?highlight=${upgradeTier ?? 'creator'}`) }}
                           />
                         )
                       })}
@@ -1216,7 +1222,7 @@ export default function Dashboard() {
                             modelStatus={status}
                             upgradeTier={upgradeTier}
                             onAdd={() => handleAddModel(m.id)}
-                            onUpgrade={() => navigate(`/pricing?highlight=${upgradeTier ?? 'creator'}`)}
+                            onUpgrade={() => { analytics.upgradeClicked({ tier: userTier, source: 'your_models' }); navigate(`/pricing?highlight=${upgradeTier ?? 'creator'}`) }}
                           />
                         )
                       })}
@@ -1266,7 +1272,7 @@ export default function Dashboard() {
                             modelStatus={status}
                             upgradeTier={upgradeTier}
                             onAdd={() => handleAddModel(m.id)}
-                            onUpgrade={() => navigate(`/pricing?highlight=${upgradeTier ?? 'studio'}`)}
+                            onUpgrade={() => { analytics.upgradeClicked({ tier: userTier, source: 'video_models' }); navigate(`/pricing?highlight=${upgradeTier ?? 'studio'}`) }}
                           />
                         )
                       })}
@@ -1308,7 +1314,7 @@ export default function Dashboard() {
                             modelStatus={status}
                             upgradeTier={upgradeTier}
                             onAdd={() => handleAddModel(m.id)}
-                            onUpgrade={() => navigate(`/pricing?highlight=${upgradeTier ?? 'creator'}`)}
+                            onUpgrade={() => { analytics.upgradeClicked({ tier: userTier, source: 'featured' }); navigate(`/pricing?highlight=${upgradeTier ?? 'creator'}`) }}
                           />
                         )
                       })}

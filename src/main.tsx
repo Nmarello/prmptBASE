@@ -2,6 +2,7 @@ import { StrictMode, Component, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { PostHogProvider } from '@posthog/react'
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null }
@@ -23,7 +24,12 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <App />
+      <PostHogProvider
+        apiKey="phc_WEJbV8oUtGzKQJ4v6PIaq9qs3OViMQMh90omUDpgpZA"
+        options={{ api_host: 'https://us.i.posthog.com', person_profiles: 'identified_only' }}
+      >
+        <App />
+      </PostHogProvider>
     </ErrorBoundary>
   </StrictMode>,
 )
