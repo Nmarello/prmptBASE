@@ -54,7 +54,7 @@ export default function FeedbackWidget() {
   }
 
   return (
-    <div style={{ position: 'fixed', bottom: 90, right: 20, zIndex: 9998 }}>
+    <div className="pv-fab-feedback" style={{ position: 'fixed', bottom: 90, right: 20, zIndex: 9998 }}>
       {/* Panel */}
       {open && (
         <div

@@ -244,6 +244,7 @@ export default function Dashboard() {
   const pendingVideo = pendingVideos.find(v => v.slug === (renderingModelSlug ?? selectedModel?.slug)) ?? null
   const videoPollerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const selectedModelRef = useRef(selectedModel)
+  const workspaceScrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => { selectedModelRef.current = selectedModel }, [selectedModel])
   function pushNotification(n: Parameters<typeof addNotification>[0]) {
     addNotification(n)
@@ -466,6 +467,21 @@ export default function Dashboard() {
   useEffect(() => {
     if (firstRunStep === 2 && workspaceOpen) setFirstRunStep(3)
   }, [workspaceOpen, firstRunStep])
+
+  // Body class + lock scroll on mobile when workspace is open
+  useEffect(() => {
+    if (workspaceOpen) {
+      document.body.classList.add('pv-workspace-open')
+    } else {
+      document.body.classList.remove('pv-workspace-open')
+    }
+    return () => document.body.classList.remove('pv-workspace-open')
+  }, [workspaceOpen])
+
+  // Scroll workspace to top when image result arrives (mobile UX)
+  useEffect(() => {
+    if (result) workspaceScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [result])
 
   // Step 3 → 4: gen type selected (txt2img chosen)
   useEffect(() => {
@@ -1474,12 +1490,13 @@ export default function Dashboard() {
           <div className="absolute inset-0" onClick={closeWorkspace} />
 
           <div
+            ref={workspaceScrollRef}
             data-tour="builder-area"
             className="relative z-10 flex flex-col sm:flex-row w-full animate-fade-in overflow-y-auto sm:overflow-hidden"
             style={{ transform: 'none' }}
           >
             {/* Left: canvas / output */}
-            <div className="flex-1 flex flex-col p-4 sm:p-8 min-h-[45vw] sm:min-h-0">
+            <div className={`flex-1 flex flex-col p-4 sm:p-8 sm:min-h-0 ${result ? 'min-h-[70vw]' : 'min-h-[45vw]'}`}>
               <div
                 className="flex-1 rounded-[20px] overflow-hidden relative flex items-center justify-center"
                 style={{ border: '1.5px solid rgba(255,255,255,0.08)' }}

@@ -145,3 +145,14 @@ input[type='range']::-moz-range-track {
 .overflow-x-auto::-webkit-scrollbar {
   display: none;
 }
+
+/* Mobile: lift FABs above the bottom nav bar */
+@media (max-width: 639px) {
+  .pv-fab-support { bottom: calc(76px + env(safe-area-inset-bottom)) !important; }
+  .pv-fab-feedback { bottom: calc(132px + env(safe-area-inset-bottom)) !important; }
+}
+/* Hide FABs when workspace overlay is open on mobile */
+@media (max-width: 639px) {
+  body.pv-workspace-open .pv-fab-support,
+  body.pv-workspace-open .pv-fab-feedback { display: none !important; }
+}

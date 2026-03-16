@@ -175,7 +175,7 @@ export default function SupportWidget() {
   }
 
   return (
-    <div style={{ position: 'fixed', bottom: 24, right: 20, zIndex: 9999 }}>
+    <div className="pv-fab-support" style={{ position: 'fixed', bottom: 24, right: 20, zIndex: 9999 }}>
       {/* Chat panel */}
       {open && (
         <div
