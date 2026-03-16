@@ -376,7 +376,7 @@ export default function SupportWidget() {
               className="pv-placeholder focus:border-[var(--pv-accent)] transition-colors disabled:opacity-40"
             />
             <button
-              onClick={send}
+              onClick={() => send()}
               disabled={(!input.trim() && !pendingImage) || sending || escalated}
               style={{
                 width: 32, height: 32, background: 'var(--pv-accent)', border: 'none',

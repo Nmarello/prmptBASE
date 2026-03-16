@@ -397,7 +397,7 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
 
   async function handleShare() {
     try {
-      if (navigator.share) {
+      if ('share' in navigator) {
         await navigator.share({ url: asset.url, title: 'prmptVAULT asset' })
       } else {
         downloadAsset(asset.url, `asset-${asset.id}`)
@@ -535,7 +535,7 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
               {/* Share / Download */}
               <button
                 onClick={handleShare}
-                title={navigator.share ? 'Share' : 'Download'}
+                title={'share' in navigator ? 'Share' : 'Download'}
                 className="flex items-center justify-center w-10 h-10 rounded-xl text-white transition-all cursor-pointer hover:opacity-85 flex-shrink-0"
                 style={{ background: 'var(--pv-accent)' }}
               >
