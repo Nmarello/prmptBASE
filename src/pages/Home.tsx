@@ -84,7 +84,9 @@ const GALLERY_ASSETS: GalleryItem[] = [
   { url: `${S}/${U}/1773286040352-cy3jf9c873m.mp4`,        video: true  },
 ]
 
-const GALLERY_MODELS = ['Imagen 4', 'Flux Pro Ultra', 'DALL-E 3', 'Veo 2', 'Flux Pro', 'Kling', 'Luma', 'Flux Dev']
+const IMAGE_MODELS = ['Imagen 4', 'Flux Pro Ultra', 'DALL-E 3', 'Flux Pro', 'Flux Dev', 'Imagen 4', 'Flux Pro Ultra', 'DALL-E 3']
+const MOCKUP_MODELS = ['Flux Pro Ultra', 'Flux Dev', 'Imagen 4', 'DALL-E 3']
+const VIDEO_MODELS = ['Veo 2', 'Kling', 'Luma', 'Veo 2', 'Kling', 'Luma', 'Veo 2', 'Kling']
 
 // Theme tokens for landing page
 const DARK = {
@@ -108,6 +110,38 @@ export default function Home() {
   const [dark, setDark] = useState(true)
   const T = dark ? DARK : LIGHT
   const navigate = useNavigate()
+
+  // Mockup cursor animation
+  const [animCursor, setAnimCursor] = useState({ x: 185, y: 81 })
+  const [animDropdown, setAnimDropdown] = useState(false)
+  const [animHovered, setAnimHovered] = useState<string | null>(null)
+  const [animModel, setAnimModel] = useState('Flux Pro Ultra')
+  const [animClicking, setAnimClicking] = useState(false)
+  const [animMs, setAnimMs] = useState(1200)
+
+  useEffect(() => {
+    const ids: ReturnType<typeof setTimeout>[] = []
+    let dead = false
+    const q = (fn: () => void, ms: number) => { const id = setTimeout(() => { if (!dead) fn() }, ms); ids.push(id) }
+    const cycle = () => {
+      if (dead) return
+      setAnimCursor({ x: 185, y: 81 }); setAnimModel('Flux Pro Ultra')
+      setAnimDropdown(false); setAnimHovered(null); setAnimClicking(false); setAnimMs(1200)
+      q(() => setAnimCursor({ x: 185, y: 324 }), 600)                                     // move to model field
+      q(() => setAnimClicking(true), 1900)                                                   // click down
+      q(() => { setAnimClicking(false); setAnimDropdown(true) }, 2120)                      // dropdown opens
+      q(() => { setAnimMs(380); setAnimCursor({ x: 185, y: 249 }) }, 2700)                 // move to Imagen 4
+      q(() => setAnimHovered('Imagen 4'), 3080)
+      q(() => { setAnimCursor({ x: 185, y: 217 }); setAnimHovered('Flux Dev') }, 3500)     // browse to Flux Dev
+      q(() => { setAnimCursor({ x: 185, y: 249 }); setAnimHovered('Imagen 4') }, 3950)     // back to Imagen 4
+      q(() => setAnimClicking(true), 4400)                                                   // click
+      q(() => { setAnimClicking(false); setAnimModel('Imagen 4'); setAnimDropdown(false); setAnimHovered(null) }, 4620)
+      q(() => { setAnimMs(1200); setAnimCursor({ x: 185, y: 81 }) }, 4950)                 // return to prompt
+      q(cycle, 10200)                                                                        // 4950 + ~1200 travel + 4050 idle
+    }
+    cycle()
+    return () => { dead = true; ids.forEach(clearTimeout) }
+  }, [])
 
   useEffect(() => {
     GALLERY_ASSETS.filter(a => !a.video).forEach(a => { new Image().src = a.url })
@@ -165,7 +199,7 @@ export default function Home() {
           }}
             onMouseEnter={e => (e.currentTarget.style.background = '#5590ff')}
             onMouseLeave={e => (e.currentTarget.style.background = '#3d7fff')}
-          >Try 12 models free</button>
+          >Try 20+ models free</button>
         </div>
       </nav>
 
@@ -187,7 +221,7 @@ export default function Home() {
             background: '#3d7fff', border: 'none', color: '#fff',
             padding: '7px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
-          }}>Try 12 models free</button>
+          }}>Try 20+ models free</button>
         </div>
       </nav>
 
@@ -209,7 +243,7 @@ export default function Home() {
           fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', marginBottom: 28,
         }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3d7fff', display: 'inline-block' }} />
-          12 models · 0 API keys needed · Free to start
+          20+ models · 0 API keys needed · Free to start
         </div>
 
         <h1 style={{ fontSize: 'clamp(36px, 5vw, 72px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-2px', marginBottom: 24, color: T.text }}>
@@ -222,13 +256,13 @@ export default function Home() {
         {/* Text + Mockup row */}
         <div className="flex flex-col sm:flex-row sm:items-start" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%' }}>
           <div className="hidden sm:block" style={{ flexShrink: 0, width: 260, position: 'relative', alignSelf: 'stretch' }}>
-            <p style={{ position: 'absolute', top: 88, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
+            <p style={{ position: 'absolute', top: 102, right: 0, width: '100%', fontSize: 17, color: T.text, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
               Rough idea in. Polished prompt out. AI does the heavy lifting.
             </p>
-            <p style={{ position: 'absolute', top: 190, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right', display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-              Structured prompt templates tuned for every model. Purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No guesswork.
+            <p style={{ position: 'absolute', top: 184, right: 0, width: '100%', fontSize: 17, color: T.text, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right', display: '-webkit-box', WebkitLineClamp: 7, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              Structured prompt templates tuned for every model. Purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No&nbsp;guesswork.
             </p>
-            <p style={{ position: 'absolute', top: 390, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
+            <p style={{ position: 'absolute', top: 380, right: 0, width: '100%', fontSize: 17, color: T.text, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
               Over 20 models to choose from
             </p>
           </div>
@@ -262,7 +296,7 @@ export default function Home() {
             {/* App body — 2 columns */}
             <div className="grid grid-cols-1 sm:grid-cols-[380px_1fr]" style={{ minHeight: 340 }}>
               {/* Form panel */}
-              <div className="hidden sm:flex" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: 20, flexDirection: 'column', gap: 12, background: '#111009' }}>
+              <div className="hidden sm:flex" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: 20, flexDirection: 'column', gap: 12, background: '#111009', position: 'relative' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                     <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(240,237,232,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prompt</div>
@@ -296,15 +330,33 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 10px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${animDropdown ? 'rgba(61,127,255,0.4)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 8, padding: '8px 10px', position: 'relative' }}>
                   <div style={{ fontSize: 9, color: 'rgba(240,237,232,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Model</div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#7aabff' }}>Flux Pro Ultra</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#7aabff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {animModel}
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ opacity: 0.4, transition: 'transform 0.2s', transform: animDropdown ? 'rotate(180deg)' : 'none', flexShrink: 0 }}>
+                      <path d="M1 1L5 5L9 1" stroke="rgba(240,237,232,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  {animDropdown && (
+                    <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: -1, right: -1, background: '#1c1a16', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, overflow: 'hidden', zIndex: 20, boxShadow: '0 -8px 24px rgba(0,0,0,0.6)' }}>
+                      {MOCKUP_MODELS.map(m => (
+                        <div key={m} style={{ padding: '8px 10px', fontSize: 11, fontWeight: 500, color: animHovered === m ? '#f0ede8' : m === animModel ? '#7aabff' : 'rgba(240,237,232,0.45)', background: animHovered === m ? 'rgba(255,255,255,0.07)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.15s' }}>{m}</div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <button style={{
                   marginTop: 'auto', width: '100%', padding: '11px',
                   background: '#3d7fff', color: '#fff', border: 'none',
                   borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                 }}>Generate →</button>
+                {/* Animated cursor */}
+                <div style={{ position: 'absolute', left: animCursor.x, top: animCursor.y, transition: `left ${animMs}ms cubic-bezier(0.4,0,0.2,1), top ${animMs}ms cubic-bezier(0.4,0,0.2,1)`, zIndex: 30, pointerEvents: 'none', transformOrigin: '3px 2px', transform: `scale(${animClicking ? 0.8 : 1})`, filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.9))' }}>
+                  <svg width="16" height="20" viewBox="0 0 16 20" fill="none">
+                    <path d="M3 1L3 17L6.5 13.5L9 19L11.2 18.2L8.5 12.5L14 12.5Z" fill="white" stroke="rgba(0,0,0,0.55)" strokeWidth="1.5" strokeLinejoin="round"/>
+                  </svg>
+                </div>
               </div>
               {/* Output / canvas */}
               <div style={{ position: 'relative', background: '#0a0908', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
@@ -350,7 +402,8 @@ export default function Home() {
         }}>
           {/* Double the array for seamless infinite loop — no repeats in the original set */}
           {[...GALLERY_ASSETS, ...GALLERY_ASSETS].map((item, i) => {
-            const modelName = GALLERY_MODELS[(i % GALLERY_ASSETS.length) % GALLERY_MODELS.length]
+            const models = item.video ? VIDEO_MODELS : IMAGE_MODELS
+            const modelName = models[i % models.length]
             return (
               <div key={i} style={{
                 width: 220, height: 160, borderRadius: 14, overflow: 'hidden', flexShrink: 0,
@@ -744,7 +797,7 @@ export default function Home() {
           }}
             onMouseEnter={e => { e.currentTarget.style.background = '#5590ff'; e.currentTarget.style.boxShadow = '0 0 56px rgba(61,127,255,0.45)' }}
             onMouseLeave={e => { e.currentTarget.style.background = '#3d7fff'; e.currentTarget.style.boxShadow = '0 0 40px rgba(61,127,255,0.3)' }}
-          >Try 12 models free →</button>
+          >Try 20+ models free →</button>
           <a href="/pricing" style={{
             background: 'transparent', border: '1px solid ' + T.border, color: T.text2,
             padding: '14px 28px', borderRadius: 100, fontSize: 15, fontWeight: 600,
