@@ -872,7 +872,7 @@ export default function Dashboard() {
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--pv-bg)', color: 'var(--pv-text)', fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── Icon Sidebar ── */}
-      <aside className="hidden sm:flex flex-col items-center py-4 gap-1 flex-shrink-0 relative z-10" style={{ width: '60px', background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}>
+      <aside className="hidden sm:flex flex-col items-center py-4 gap-1 flex-shrink-0 relative z-20" style={{ width: '60px', background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}>
 
         {/* User avatar at top */}
         <button
