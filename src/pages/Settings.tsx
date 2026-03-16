@@ -142,7 +142,7 @@ function GalleryPicker({ userId, onPick, onClose }: { userId: string; onPick: (u
       .eq('user_id', userId)
       .in('gen_type', ['txt2img', 'img2img'])
       .order('created_at', { ascending: false })
-      .limit(16)
+      .limit(200)
       .then(({ data }) => { setAssets((data ?? []) as RecentAsset[]); setLoading(false) })
   }, [userId])
 
