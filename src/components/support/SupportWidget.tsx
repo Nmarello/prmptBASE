@@ -7,6 +7,8 @@ interface ChatMessage {
   role: 'user' | 'bot'
   content: string
   imagePreview?: string
+  isError?: boolean
+  showResolution?: boolean
 }
 
 export default function SupportWidget() {
@@ -19,6 +21,8 @@ export default function SupportWidget() {
   const [escalated, setEscalated] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [pendingImage, setPendingImage] = useState<string | null>(null) // base64 data URL
+  const [awaitingResolution, setAwaitingResolution] = useState(false)
+  const [lastErrorContext, setLastErrorContext] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -58,6 +62,23 @@ export default function SupportWidget() {
     }
   }, [open])
 
+  function detectError(text: string): boolean {
+    if (text.trim().length < 20) return false
+    const patterns = [
+      /\b(TypeError|SyntaxError|ReferenceError|RangeError|ValueError|KeyError|AttributeError|ImportError):/,
+      /\bError:\s+\S/,
+      /^\s+at\s+\S+\s*\(/m,
+      /HTTP\s+[45]\d\d\b/i,
+      /status(?:\s+code)?[:\s]+[45]\d\d\b/i,
+      /\b(ENOENT|ECONNREFUSED|ETIMEDOUT|EACCES|EPERM)\b/,
+      /"(?:error|code)":\s*(?:"[^"]*"|[45]\d\d)/i,
+      /Traceback \(most recent call last\)/i,
+      /Exception in thread/i,
+      /\buncaught\b.+\berror\b/i,
+    ]
+    return patterns.some(p => p.test(text))
+  }
+
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -67,13 +88,23 @@ export default function SupportWidget() {
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  async function send() {
-    if ((!input.trim() && !pendingImage) || sending || escalated) return
-    const userText = input.trim() || '(screenshot attached)'
+  async function send(overrideText?: string, opts?: { forceEscalate?: boolean }) {
+    const textToSend = overrideText ?? input.trim()
+    if ((!textToSend && !pendingImage) || sending || escalated) return
+    const userText = textToSend || '(screenshot attached)'
     const imageToSend = pendingImage
+    const isError = !opts?.forceEscalate && !overrideText && detectError(userText)
 
-    setMessages(prev => [...prev, { role: 'user', content: userText, imagePreview: imageToSend ?? undefined }])
-    setInput('')
+    if (isError) {
+      setLastErrorContext(userText)
+      setAwaitingResolution(false)
+    }
+
+    setMessages(prev => [
+      ...prev,
+      { role: 'user', content: userText, imagePreview: imageToSend ?? undefined, isError },
+    ])
+    if (!overrideText) setInput('')
     setPendingImage(null)
     setSending(true)
 
@@ -92,18 +123,37 @@ export default function SupportWidget() {
             message: userText,
             image_url: imageToSend ?? null,
             user_token: session?.access_token ?? null,
+            is_error: isError || undefined,
+            force_escalate: opts?.forceEscalate || undefined,
           }),
         }
       )
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       if (data.conversation_id) setConversationId(data.conversation_id)
-      if (data.escalated) setEscalated(true)
-      setMessages(prev => [...prev, { role: 'bot', content: data.reply }])
+      if (data.escalated) { setEscalated(true); setAwaitingResolution(false) }
+      setMessages(prev => [
+        ...prev,
+        { role: 'bot', content: data.reply, showResolution: isError && !data.escalated },
+      ])
+      if (isError && !data.escalated) setAwaitingResolution(true)
     } catch (err) {
       setMessages(prev => [...prev, { role: 'bot', content: "Sorry, I'm having trouble connecting right now. Please try again in a moment." }])
     }
     setSending(false)
+  }
+
+  async function handleResolution(fixed: boolean) {
+    setAwaitingResolution(false)
+    // Clear showResolution flag from the last bot message
+    setMessages(prev => prev.map((m, i) => i === prev.length - 1 ? { ...m, showResolution: false } : m))
+    if (fixed) {
+      setMessages(prev => [...prev, { role: 'user', content: 'Yes, that fixed it!' }])
+      setMessages(prev => [...prev, { role: 'bot', content: "Great! Glad we got that sorted. Let me know if anything else comes up." }])
+    } else {
+      const errorText = lastErrorContext ?? 'No error text captured'
+      await send(`The fix didn't work. Original error:\n${errorText}`, { forceEscalate: true })
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -114,6 +164,8 @@ export default function SupportWidget() {
     setMessages([])
     setConversationId(null)
     setEscalated(false)
+    setAwaitingResolution(false)
+    setLastErrorContext(null)
     localStorage.removeItem(`${STORAGE_KEY_PREFIX}id`)
     localStorage.removeItem(`${STORAGE_KEY_PREFIX}messages`)
     localStorage.removeItem(`${STORAGE_KEY_PREFIX}escalated`)
@@ -179,26 +231,72 @@ export default function SupportWidget() {
           {/* Messages */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 4px' }}>
             {messages.map((msg, i) => (
-              <div key={i} style={{ marginBottom: 10, display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+              <div key={i} style={{ marginBottom: 10, display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                {msg.isError && (
+                  <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--pv-text3)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Error detected
+                  </div>
+                )}
                 <div
                   style={{
                     maxWidth: '82%',
-                    padding: '8px 12px',
+                    padding: msg.isError ? '7px 10px' : '8px 12px',
                     borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                    background: msg.role === 'user' ? 'var(--pv-accent)' : 'var(--pv-surface2)',
+                    background: msg.isError
+                      ? 'rgba(255,80,80,0.07)'
+                      : msg.role === 'user' ? 'var(--pv-accent)' : 'var(--pv-surface2)',
                     color: msg.role === 'user' ? '#fff' : 'var(--pv-text)',
-                    fontSize: 12.5,
-                    lineHeight: 1.5,
-                    border: msg.role === 'bot' ? '1px solid var(--pv-border)' : 'none',
+                    fontSize: msg.isError ? 11 : 12.5,
+                    lineHeight: 1.6,
+                    border: msg.isError
+                      ? '1px solid rgba(255,80,80,0.2)'
+                      : msg.role === 'bot' ? '1px solid var(--pv-border)' : 'none',
+                    fontFamily: msg.isError ? "'JetBrains Mono', 'Fira Code', 'Menlo', monospace" : 'inherit',
+                    whiteSpace: msg.isError ? 'pre-wrap' : 'normal',
+                    wordBreak: 'break-all',
                   }}
                 >
                   {msg.imagePreview && (
                     <img src={msg.imagePreview} alt="attachment" style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 5, display: 'block' }} />
                   )}
-                  {msg.content.split('\n').map((line, j) => (
-                    <span key={j}>{line}{j < msg.content.split('\n').length - 1 && <br />}</span>
-                  ))}
+                  {msg.isError
+                    ? msg.content
+                    : msg.content.split('\n').map((line, j) => (
+                        <span key={j}>{line}{j < msg.content.split('\n').length - 1 && <br />}</span>
+                      ))
+                  }
                 </div>
+                {msg.showResolution && awaitingResolution && i === messages.length - 1 && (
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                    <button
+                      onClick={() => handleResolution(true)}
+                      style={{
+                        fontSize: 11.5, fontWeight: 600, padding: '5px 12px',
+                        borderRadius: 8, border: '1px solid rgba(80,200,120,0.4)',
+                        background: 'rgba(80,200,120,0.1)', color: '#50c878',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                      }}
+                      className="hover:bg-[rgba(80,200,120,0.2)] transition-colors"
+                    >
+                      ✓ Yes, fixed it
+                    </button>
+                    <button
+                      onClick={() => handleResolution(false)}
+                      style={{
+                        fontSize: 11.5, fontWeight: 600, padding: '5px 12px',
+                        borderRadius: 8, border: '1px solid rgba(255,80,80,0.3)',
+                        background: 'rgba(255,80,80,0.07)', color: '#ff6b6b',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                      }}
+                      className="hover:bg-[rgba(255,80,80,0.15)] transition-colors"
+                    >
+                      ✗ Still broken
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
             {sending && (
@@ -222,6 +320,27 @@ export default function SupportWidget() {
                 style={{ fontSize: 11, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                 className="hover:text-[var(--pv-text)] transition-colors"
               >Remove</button>
+            </div>
+          )}
+
+          {/* Quick actions */}
+          {!escalated && !awaitingResolution && messages.length <= 2 && (
+            <div style={{ padding: '0 10px 6px', flexShrink: 0, display: 'flex', gap: 5 }}>
+              <button
+                onClick={() => { setInput(''); textareaRef.current?.focus(); textareaRef.current?.setAttribute('placeholder', 'Paste your error here…') }}
+                style={{
+                  fontSize: 11, padding: '4px 9px', borderRadius: 20,
+                  border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)',
+                  color: 'var(--pv-text3)', cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}
+                className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-accent)] transition-all"
+              >
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Paste an error
+              </button>
             </div>
           )}
 

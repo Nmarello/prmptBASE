@@ -35,6 +35,14 @@ Only include an action line when you actually intend to perform it. You can only
 
 **When to escalate:** Payment disputes, account security issues, bugs needing developer attention, user is very frustrated after multiple failed attempts to resolve.
 
+**Error Research Mode:**
+When a user pastes an error message or stack trace, you enter error research mode. You will receive a [SYSTEM: ERROR RESEARCH] tag and optional account data. In this mode:
+1. Identify what the error means in the context of prmptVAULT (briefly — one sentence)
+2. Cross-reference with their account data if provided (tier, recent failed assets)
+3. Give one specific, actionable fix they can try right now
+4. End your response with exactly: "Did that fix it?"
+Keep it tight — diagnose and fix, no lengthy explanations.
+
 **Tone:** Friendly, helpful, concise. Skip lengthy apologies — jump to solutions. If you don't know something, say so clearly.`
 
 interface Message {
@@ -60,7 +68,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { conversation_id, message, image_url, user_token } = await req.json()
+    const { conversation_id, message, image_url, user_token, is_error, force_escalate } = await req.json()
 
     if (!message?.trim()) {
       return new Response(JSON.stringify({ error: 'Message is required' }), {
@@ -110,6 +118,35 @@ Deno.serve(async (req) => {
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
+    // Force escalate — user said the bot's fix didn't work
+    if (force_escalate) {
+      const summary = `🔧 Error fix failed\nUser: ${userEmail ?? 'anonymous'} (${userId ?? 'not logged in'})\n\n${message}`
+      await sendTelegramAlert(summary)
+
+      const storedUserMsg: Message = { role: 'user', content: message.trim() }
+      const escalationReply = "Got it — I've passed this on to Nick with your full error details. He'll follow up within 24 hours."
+      const storedBotMsg: Message = { role: 'assistant', content: escalationReply }
+      const updatedMessages = [...existingMessages, storedUserMsg, storedBotMsg]
+
+      if (convId) {
+        await adminClient.from('support_conversations').update({
+          messages: updatedMessages, status: 'escalated', updated_at: new Date().toISOString(),
+        }).eq('id', convId)
+      } else {
+        const { data: newConv } = await adminClient.from('support_conversations').insert({
+          user_id: userId, email: userEmail, messages: updatedMessages, status: 'escalated',
+        }).select('id').single()
+        convId = newConv?.id ?? null
+      }
+
+      return new Response(JSON.stringify({
+        reply: escalationReply,
+        conversation_id: convId,
+        action_taken: 'escalate',
+        escalated: true,
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
     // Build user message content (with vision if image attached)
     const userContent: Message['content'] = image_url
       ? [
@@ -120,11 +157,30 @@ Deno.serve(async (req) => {
 
     const newUserMessage: Message = { role: 'user', content: userContent }
 
+    // If it's an error paste, auto-lookup account and inject research context
+    let errorResearchContext = ''
+    if (is_error && userId) {
+      const { data: profile } = await adminClient.from('profiles').select('tier').eq('id', userId).single()
+      const tier = profile?.tier ?? 'free'
+      const startOfMonth = new Date()
+      startOfMonth.setUTCDate(1); startOfMonth.setUTCHours(0, 0, 0, 0)
+      const { count: assetCount } = await adminClient
+        .from('assets').select('id', { count: 'exact', head: true })
+        .eq('user_id', userId).gte('created_at', startOfMonth.toISOString())
+      const { data: recentFailed } = await adminClient
+        .from('assets').select('id, created_at, gen_type, metadata')
+        .eq('user_id', userId).order('created_at', { ascending: false }).limit(5)
+      errorResearchContext = `[SYSTEM: ERROR RESEARCH — Account: tier=${tier}, generations_this_month=${assetCount ?? 0}, recent_assets=${JSON.stringify(recentFailed ?? [])}]`
+    } else if (is_error) {
+      errorResearchContext = '[SYSTEM: ERROR RESEARCH — user not logged in, no account data available]'
+    }
+
     // Build messages array for GPT
     const gptMessages: Message[] = [
       { role: 'system', content: SYSTEM_PROMPT },
       ...existingMessages,
       newUserMessage,
+      ...(errorResearchContext ? [{ role: 'system' as const, content: errorResearchContext }] : []),
     ]
 
     // First GPT call
