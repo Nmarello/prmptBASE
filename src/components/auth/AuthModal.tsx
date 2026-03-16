@@ -10,7 +10,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ onClose }: AuthModalProps) {
-  const { signInWithGoogle, signInWithApple, signInWithMicrosoft, signInWithFacebook, signInWithDiscord, signInWithGithub, signInWithEmail, signUp } = useAuth()
+  const { signInWithGoogle, signInWithApple, signInWithEmail, signUp } = useAuth()
   const [mode, setMode] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
