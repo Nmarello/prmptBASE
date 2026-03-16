@@ -222,13 +222,13 @@ export default function Home() {
         {/* Text + Mockup row */}
         <div className="flex flex-col sm:flex-row sm:items-start" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%' }}>
           <div className="hidden sm:block" style={{ flexShrink: 0, width: 260, position: 'relative', alignSelf: 'stretch' }}>
-            <p style={{ position: 'absolute', top: 112, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
+            <p style={{ position: 'absolute', top: 88, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
               Rough idea in. Polished prompt out. AI does the heavy lifting.
             </p>
-            <p style={{ position: 'absolute', top: 278, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right', display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            <p style={{ position: 'absolute', top: 190, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right', display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               Structured prompt templates tuned for every model. Purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No guesswork.
             </p>
-            <p style={{ position: 'absolute', top: 361, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
+            <p style={{ position: 'absolute', top: 340, right: 0, width: '100%', fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
               Over 20 models to choose from
             </p>
           </div>
