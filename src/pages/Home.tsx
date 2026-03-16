@@ -3,6 +3,7 @@ import Logo from '../components/Logo'
 import AuthModal from '../components/auth/AuthModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 
 const S = 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets'
 const U = 'f9965304-4af9-4eba-a762-7b7c892473e1'
@@ -145,6 +146,12 @@ export default function Home() {
 
   useEffect(() => {
     GALLERY_ASSETS.filter(a => !a.video).forEach(a => { new Image().src = a.url })
+  }, [])
+
+  const [liveModels, setLiveModels] = useState<{ name: string; provider: string; slug: string }[]>([])
+  useEffect(() => {
+    supabase.from('models').select('name, provider, slug').eq('is_active', true).order('sort_order')
+      .then(({ data }) => { if (data) setLiveModels(data) })
   }, [])
 
   if (user) navigate('/dashboard')
@@ -579,10 +586,10 @@ export default function Home() {
             onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(61,127,255,0.25)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'none'; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)' }}
           >
-            <img src={GALLERY_ASSETS[21].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+            <img src="https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773365831134.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,9,8,0.92) 0%, rgba(10,9,8,0.1) 60%)' }} />
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 22 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.text3, marginBottom: 6 }}>Featured · Flux Pro Ultra</div>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.text3, marginBottom: 6 }}>Featured · GPT Image 1</div>
               <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.2, color: T.text }}>State-of-the-art<br />image generation</div>
             </div>
           </div>
@@ -626,31 +633,7 @@ export default function Home() {
             <div style={{ fontSize: 14, color: T.text2, marginTop: 6 }}>Asset storage<br />on Pro</div>
           </div>
 
-          {/* MODELS LIST */}
-          <div style={{
-            background: T.cardBg, borderRadius: 18, border: '1px solid ' + T.border,
-            padding: '18px 20px', transition: 'all 0.2s',
-          }}
-            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(61,127,255,0.2)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLDivElement).style.transform = 'none' }}
-          >
-            <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: T.text }}>All models</h3>
-            {[
-              { dot: '#10b981', name: 'DALL-E 3', prov: 'OpenAI' },
-              { dot: '#3d7fff', name: 'Flux Pro Ultra', prov: 'BFL' },
-              { dot: '#3b82f6', name: 'Veo 3', prov: 'Google' },
-              { dot: '#84cc16', name: 'Dream Machine', prov: 'Luma AI' },
-              { dot: '#a78bfa', name: 'Kling', prov: 'Kuaishou' },
-            ].map((m, i, arr) => (
-              <div key={m.name} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: i < arr.length - 1 ? '1px solid ' + T.border : 'none' }}>
-                <div style={{ width: 7, height: 7, borderRadius: '50%', background: m.dot, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 600, flex: 1, color: T.text }}>{m.name}</span>
-                <span style={{ fontSize: 10, color: T.text3 }}>{m.prov}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* NOTIFICATION */}
+          {/* NOTIFICATION — Generate & go (moved here) */}
           <div style={{
             background: 'linear-gradient(135deg, rgba(61,127,255,0.2), rgba(155,122,255,0.2))',
             border: '1px solid rgba(61,127,255,0.2)', borderRadius: 18,
@@ -671,6 +654,47 @@ export default function Home() {
             </div>
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 5, color: T.text }}>Generate &amp; go</h3>
             <p style={{ fontSize: 12, color: T.text2, lineHeight: 1.6 }}>Start a render, close the tab. We'll notify you the second it's done.</p>
+          </div>
+
+          {/* ALL MODELS — full width, wide and short (moved here) */}
+          <div className="col-span-2 sm:col-span-4" style={{
+            background: T.cardBg, borderRadius: 18, border: '1px solid ' + T.border,
+            padding: '16px 22px', transition: 'all 0.2s',
+          }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(61,127,255,0.2)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+              <h3 style={{ fontSize: 12, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Live models</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(52,199,89,0.12)', border: '1px solid rgba(52,199,89,0.25)', borderRadius: 100, padding: '2px 8px' }}>
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#34c759' }} />
+                <span style={{ fontSize: 10, fontWeight: 600, color: '#34c759' }}>{liveModels.length} active</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {liveModels.map(m => {
+                const provColor: Record<string, string> = {
+                  'OpenAI': '#10b981', 'Black Forest Labs': '#3d7fff', 'Google': '#4285f4',
+                  'Luma AI': '#84cc16', 'Kuaishou': '#a78bfa', 'Recraft': '#f59e0b',
+                  'ByteDance': '#ff6b6b', 'Stability AI': '#8b5cf6', 'Ideogram': '#ec4899',
+                  'HiDream': '#06b6d4', 'MiniMax': '#f97316', 'Pika': '#e879f9',
+                  'Runway': '#fbbf24', 'Sora': '#10b981',
+                }
+                const dot = provColor[m.provider] ?? '#6b7280'
+                return (
+                  <div key={m.slug} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                    border: '1px solid ' + T.border, borderRadius: 8,
+                    padding: '4px 10px',
+                  }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: dot, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: T.text, whiteSpace: 'nowrap' }}>{m.name}</span>
+                    <span style={{ fontSize: 10, color: T.text3, whiteSpace: 'nowrap' }}>{m.provider}</span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
         </div>
