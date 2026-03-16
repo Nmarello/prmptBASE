@@ -226,7 +226,7 @@ export default function Home() {
               AI Assisted prompt creation.
             </p>
             <p style={{ fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
-              Structured prompt templates tuned for every model — purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No guesswork.
+              Structured prompt templates tuned for every model. Purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No guesswork.
             </p>
           </div>
 
