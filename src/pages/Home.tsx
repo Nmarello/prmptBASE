@@ -221,7 +221,10 @@ export default function Home() {
 
         {/* Text + Mockup row */}
         <div className="flex flex-col sm:flex-row sm:items-start" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%' }}>
-          <div style={{ flexShrink: 0, width: '100%', maxWidth: 260, paddingTop: 172 }}>
+          <div style={{ flexShrink: 0, width: '100%', maxWidth: 260, paddingTop: 80, display: 'flex', flexDirection: 'column' }}>
+            <p style={{ fontSize: 14, color: T.text2, fontWeight: 500, lineHeight: 1.5, margin: 0, textAlign: 'right', marginBottom: 68 }}>
+              AI Assisted prompt creation.
+            </p>
             <p style={{ fontSize: 17, color: T.text2, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
               Structured prompt templates tuned for every model — purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No guesswork.
             </p>
@@ -258,7 +261,10 @@ export default function Home() {
               {/* Form panel */}
               <div className="hidden sm:flex" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: 20, flexDirection: 'column', gap: 12, background: '#111009' }}>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(240,237,232,0.28)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prompt</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(240,237,232,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prompt</div>
+                    <div style={{ fontSize: 11, fontWeight: 500, color: '#7aabff', cursor: 'pointer' }}>AI assist</div>
+                  </div>
                   <div style={{
                     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: 10, padding: '10px 12px', fontSize: 12,
