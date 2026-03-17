@@ -371,18 +371,24 @@ Deno.serve(async (req) => {
       if (!prompt) throw new Error('Prompt is required')
       if (!source_image) throw new Error('Source image is required')
 
-      // Upload base64 source image to storage to get a public URL for fal
-      const base64Data = (source_image as string).replace(/^data:image\/\w+;base64,/, '')
-      const mimeMatch = (source_image as string).match(/^data:(image\/\w+);base64,/)
-      const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
-      const ext = mimeType.split('/')[1] ?? 'jpg'
-      const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
-      const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
-      const { error: srcUploadErr } = await adminClient.storage
-        .from('assets')
-        .upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
-      if (srcUploadErr) throw new Error(`Source upload failed: ${srcUploadErr.message}`)
-      const { data: { publicUrl: sourceUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
+      // Get a public URL for the source image (handle both URL and base64 data URL)
+      let sourceUrl: string
+      if ((source_image as string).startsWith('http')) {
+        sourceUrl = source_image as string
+      } else {
+        const base64Data = (source_image as string).replace(/^data:image\/\w+;base64,/, '')
+        const mimeMatch = (source_image as string).match(/^data:(image\/\w+);base64,/)
+        const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+        const ext = mimeType.split('/')[1] ?? 'jpg'
+        const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+        const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
+        const { error: srcUploadErr } = await adminClient.storage
+          .from('assets')
+          .upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
+        if (srcUploadErr) throw new Error(`Source upload failed: ${srcUploadErr.message}`)
+        const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
+        sourceUrl = publicUrl
+      }
 
       const fmt = ['jpeg', 'png'].includes(output_format) ? output_format : 'jpeg'
       const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
