@@ -70,7 +70,7 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
   },
   'hunyuan-video': {
     'txt2vid': 'fal-ai/hunyuan-video',
-    'img2vid': 'fal-ai/hunyuan-video/image-to-video',
+    'img2vid': 'fal-ai/hunyuan-video-image-to-video',
   },
 }
 
