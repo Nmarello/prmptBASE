@@ -309,13 +309,16 @@ Deno.serve(async (req) => {
       ? { version: config.version, input: replicateInput }
       : { input: replicateInput }
 
+    const repHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${replicateKey}`,
+    }
+    // Prefer:wait only works reliably on the /v1/models/ endpoint; versioned predictions poll manually
+    if (!config.version) repHeaders['Prefer'] = 'wait'
+
     const repRes = await fetch(repUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${replicateKey}`,
-        'Prefer': 'wait',
-      },
+      headers: repHeaders,
       body: JSON.stringify(repBody),
     })
 
@@ -330,7 +333,7 @@ Deno.serve(async (req) => {
     if (repData.status === 'starting' || repData.status === 'processing') {
       const pollUrl = repData.urls?.get
       if (!pollUrl) throw new Error(`Replicate prediction stuck in ${repData.status} with no poll URL`)
-      const deadline = Date.now() + 120_000
+      const deadline = Date.now() + 130_000
       while ((repData.status === 'starting' || repData.status === 'processing') && Date.now() < deadline) {
         await new Promise(r => setTimeout(r, 2000))
         const pollRes = await fetch(pollUrl, { headers: { 'Authorization': `Bearer ${replicateKey}` } })

@@ -1780,6 +1780,7 @@ export default function Dashboard() {
                       </p>
                     )}
                     <TemplateForm
+                      key={`${template.id}-${selectedGenType}`}
                       template={template}
                       genType={selectedGenType}
                       onSubmit={handleGenerate}
