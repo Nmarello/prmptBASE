@@ -1046,7 +1046,12 @@ export default function Admin() {
                               <div style={{ fontSize: 13, color: 'var(--pv-text)', fontWeight: 500 }}>{m.model_name}</div>
                               <div style={{ fontSize: 10, color: 'var(--pv-text3)', fontFamily: 'monospace', marginTop: 1 }}>{m.model_slug}</div>
                             </div>
-                            <div style={{ fontSize: 12, color: 'var(--pv-text2)' }}>{m.provider}</div>
+                            <div style={{ fontSize: 12, color: 'var(--pv-text2)' }}>
+                              {m.provider}
+                              {!m.installed_fal && !m.installed_replicate && m.coming_live && (
+                                <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)', letterSpacing: '0.04em' }}>DIRECT</span>
+                              )}
+                            </div>
                             {COLS.map(c => (
                               <div key={c.field} style={{ display: 'flex', justifyContent: 'center' }}>
                                 <button
