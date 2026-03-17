@@ -404,7 +404,7 @@ export default function Dashboard() {
     loadAssets()
     // Resume polling for any pending video from the last 2 hours
     supabase.from('assets')
-      .select('id, metadata')
+      .select('id, metadata, created_at')
       .eq('user_id', user.id)
       .eq('url', '')
       .in('gen_type', ['txt2vid', 'img2vid'])
@@ -414,7 +414,7 @@ export default function Dashboard() {
       .single()
       .then(({ data }) => {
         if (data?.metadata?.status_url) {
-          addPendingVideo({ assetId: data.id, operationName: data.metadata.status_url, provider: 'fal.ai', startedAt: Date.now(), slug: (data.metadata.model_slug as string) ?? 'unknown' })
+          addPendingVideo({ assetId: data.id, operationName: data.metadata.status_url, provider: 'fal.ai', startedAt: new Date((data as any).created_at ?? Date.now()).getTime(), slug: (data.metadata.model_slug as string) ?? 'unknown' })
         }
       })
   }, [user, loadAssets])
