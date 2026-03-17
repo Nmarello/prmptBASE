@@ -345,10 +345,12 @@ export default function Admin() {
 
   async function loadModels() {
     setModelsLoading(true)
-    const [{ data: models }, { data: sources }] = await Promise.all([
+    const [{ data: models, error: modelsErr }, { data: sources, error: sourcesErr }] = await Promise.all([
       supabase.from('models').select('slug,name,provider,supported_gen_types,is_active,coming_soon,sort_order').order('sort_order'),
       supabase.from('model_status').select('model_slug,source,tested'),
     ])
+    if (modelsErr) console.error('[loadModels] models error:', modelsErr)
+    if (sourcesErr) console.error('[loadModels] model_status error:', sourcesErr)
     const sourceMap = Object.fromEntries((sources ?? []).map(s => [s.model_slug, s]))
     const merged: ModelStatusMerged[] = (models ?? []).map(m => ({
       ...m,
@@ -1047,6 +1049,11 @@ export default function Admin() {
               <Card>
                 {modelsLoading ? (
                   <div className="flex items-center justify-center py-20 text-sm animate-pulse" style={{ color: 'var(--pv-text3)' }}>Loading…</div>
+                ) : modelStatuses.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-2">
+                    <span style={{ fontSize: 13, color: 'var(--pv-text3)' }}>No models found — check console for errors</span>
+                    <button onClick={loadModels} style={{ fontSize: 12, color: 'var(--pv-accent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Retry</button>
+                  </div>
                 ) : (
                   (['image', 'video', 'tools'] as const).map(cat => {
                     const rows = modelStatuses.filter(m => m.category === cat).sort((a, b) => a.sort_order - b.sort_order)
