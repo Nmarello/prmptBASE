@@ -201,11 +201,6 @@ interface ModelRow {
   sort_order: number
 }
 
-interface ModelSourceRow {
-  model_slug: string
-  source: 'fal' | 'replicate' | 'direct'
-  tested: boolean
-}
 
 interface ModelStatusMerged extends ModelRow {
   source: 'fal' | 'replicate' | 'direct'
