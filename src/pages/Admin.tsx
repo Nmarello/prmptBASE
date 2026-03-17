@@ -372,7 +372,7 @@ export default function Admin() {
     // Optimistic update
     setModelStatuses(prev => prev.map(m => {
       if (m.slug !== slug) return m
-      if (action === 'mark_tested') return { ...m, tested: true, is_active: false, coming_soon: true }
+      if (action === 'mark_tested') return { ...m, tested: true }
       if (action === 'set_live')    return { ...m, is_active: true, coming_soon: false }
       if (action === 'set_coming_soon') return { ...m, is_active: false, coming_soon: true }
       return m

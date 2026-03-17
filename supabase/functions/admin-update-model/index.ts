@@ -6,7 +6,7 @@ const corsHeaders = {
 }
 
 // Actions:
-//   mark_tested   → model_status.tested=true, models.coming_soon=true, is_active=false
+//   mark_tested   → model_status.tested=true only (no status change)
 //   set_live      → models.is_active=true, coming_soon=false, released_at=now() + blog post
 //   set_coming_soon → models.coming_soon=true, is_active=false
 
@@ -31,9 +31,6 @@ Deno.serve(async (req) => {
     if (action === 'mark_tested') {
       await adminClient.from('model_status')
         .upsert({ model_slug, tested: true, updated_at: new Date().toISOString() }, { onConflict: 'model_slug' })
-      await adminClient.from('models')
-        .update({ coming_soon: true, is_active: false })
-        .eq('slug', model_slug)
 
     } else if (action === 'set_live') {
       await adminClient.from('models')
