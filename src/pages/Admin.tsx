@@ -334,7 +334,6 @@ export default function Admin() {
 
   function deriveCategory(types: string[]): 'image' | 'video' | 'tools' {
     if (types.some(t => ['txt2vid', 'img2vid', 'vid2vid'].includes(t))) return 'video'
-    if (types.length > 0 && types.every(t => t === 'img2img')) return 'tools'
     return 'image'
   }
 
