@@ -6,10 +6,124 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Replicate model owner/name pairs
-const REPLICATE_MODELS: Record<string, string> = {
-  'sd35-large':       'stability-ai/stable-diffusion-3.5-large',
-  'sd35-large-turbo': 'stability-ai/stable-diffusion-3.5-large-turbo',
+// ── Model registry ───────────────────────────────────────────────────────────
+interface ModelConfig {
+  path: string
+  maxOutputs?: number   // default 4; set to 1 for models that don't support batch
+  costUsd?: number      // per image
+  buildInput: (base: BaseInput) => Record<string, unknown>
+}
+
+interface BaseInput {
+  prompt: string
+  negPrompt: string
+  aspectRatio: string
+  numOutputs: number
+  outputFormat: string
+  seed?: number
+  _style?: string   // raw style key, used by model-specific builders (e.g. Recraft)
+}
+
+// Standard input for FLUX / SD-style models
+function standardInput(b: BaseInput, maxOut = 4): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    num_outputs: Math.min(b.numOutputs, maxOut),
+    output_format: b.outputFormat,
+    output_quality: 90,
+  }
+  if (b.negPrompt) out.negative_prompt = b.negPrompt
+  if (b.seed != null) out.seed = b.seed
+  return out
+}
+
+// Recraft uses different param names and an explicit style
+const RECRAFT_STYLE_MAP: Record<string, string> = {
+  photorealistic: 'realistic_image',
+  cinematic: 'realistic_image/hard_flash',
+  digital_art: 'digital_illustration',
+  oil_painting: 'digital_illustration/hand_drawn',
+  watercolor: 'digital_illustration/watercolor',
+  pencil_sketch: 'digital_illustration/sketch',
+  '3d_render': 'render_3d',
+  anime: 'digital_illustration/anime',
+}
+const RECRAFT_SIZE_MAP: Record<string, string> = {
+  '1:1':  '1024x1024',
+  '16:9': '1365x1024',
+  '9:16': '1024x1365',
+  '4:3':  '1365x1024',
+  '3:4':  '1024x1365',
+  '3:2':  '1365x910',
+  '2:3':  '910x1365',
+  '21:9': '1820x780',
+}
+function recraftInput(b: BaseInput, style?: string): Record<string, unknown> {
+  return {
+    prompt: b.prompt,
+    style: style ?? 'realistic_image',
+    n: Math.min(b.numOutputs, 4),
+    size: RECRAFT_SIZE_MAP[b.aspectRatio] ?? '1024x1024',
+    response_format: 'url',
+  }
+}
+
+// Ideogram v3 uses number_of_images and resolution-based sizing
+const IDEOGRAM_RESOLUTION_MAP: Record<string, string> = {
+  '1:1':  'RESOLUTION_1024_1024',
+  '16:9': 'RESOLUTION_1344_768',
+  '9:16': 'RESOLUTION_768_1344',
+  '4:3':  'RESOLUTION_1232_928',
+  '3:4':  'RESOLUTION_928_1232',
+  '3:2':  'RESOLUTION_1344_896',
+  '2:3':  'RESOLUTION_896_1344',
+  '21:9': 'RESOLUTION_1568_672',
+}
+function ideogramInput(b: BaseInput): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    prompt: b.prompt,
+    number_of_images: Math.min(b.numOutputs, 4),
+    resolution: IDEOGRAM_RESOLUTION_MAP[b.aspectRatio] ?? 'RESOLUTION_1024_1024',
+    magic_prompt_option: 'Auto',
+  }
+  if (b.negPrompt) out.negative_prompt = b.negPrompt
+  if (b.seed != null) out.seed = b.seed
+  return out
+}
+
+const MODELS: Record<string, ModelConfig> = {
+  // ── Stability AI ────────────────────────────────────────────────────────────
+  'sd35-large':       { path: 'stability-ai/stable-diffusion-3.5-large',       costUsd: 0.065,  buildInput: (b) => standardInput(b) },
+  'sd35-large-turbo': { path: 'stability-ai/stable-diffusion-3.5-large-turbo', costUsd: 0.035,  buildInput: (b) => standardInput(b) },
+  'sd35-medium':      { path: 'stability-ai/stable-diffusion-3.5-medium',       costUsd: 0.035,  buildInput: (b) => standardInput(b) },
+
+  // ── FLUX ────────────────────────────────────────────────────────────────────
+  'flux-schnell':     { path: 'black-forest-labs/flux-schnell',     costUsd: 0.003, buildInput: (b) => standardInput(b) },
+  'flux-dev':         { path: 'black-forest-labs/flux-dev',         costUsd: 0.025, buildInput: (b) => standardInput(b) },
+  'flux-pro':         { path: 'black-forest-labs/flux-pro',         costUsd: 0.055, maxOutputs: 1, buildInput: (b) => standardInput(b, 1) },
+  'flux-pro-ultra':   { path: 'black-forest-labs/flux-1.1-pro-ultra', costUsd: 0.12, maxOutputs: 1, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    output_format: b.outputFormat,
+    safety_tolerance: 2,
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  })},
+  'flux2-pro':        { path: 'black-forest-labs/flux-2-pro',       costUsd: 0.04, buildInput: (b) => standardInput(b) },
+
+  // ── Recraft ─────────────────────────────────────────────────────────────────
+  'recraft-v3':       { path: 'recraft-ai/recraft-v3',     costUsd: 0.04, buildInput: (b) => recraftInput(b, RECRAFT_STYLE_MAP[b._style as string] ?? 'realistic_image') },
+  'recraft-v4-pro':   { path: 'recraft-ai/recraft-v4-pro', costUsd: 0.08, buildInput: (b) => recraftInput(b, RECRAFT_STYLE_MAP[b._style as string] ?? 'realistic_image') },
+
+  // ── Ideogram ────────────────────────────────────────────────────────────────
+  'ideogram-v3':      { path: 'ideogram-ai/ideogram-v3-balanced', costUsd: 0.06, buildInput: ideogramInput },
+
+  // ── HiDream (via PrunaAI) ───────────────────────────────────────────────────
+  'hidream-fast':     { path: 'prunaai/hidream-l1-fast', costUsd: 0.03, buildInput: (b) => standardInput(b) },
+  'hidream-full':     { path: 'prunaai/hidream-l1-full', costUsd: 0.05, buildInput: (b) => standardInput(b) },
+
+  // ── ByteDance Seedream ───────────────────────────────────────────────────────
+  'seedream-45':      { path: 'bytedance/seedream-4.5',   costUsd: 0.025, buildInput: (b) => standardInput(b) },
 }
 
 const STYLE_MAP: Record<string, string> = {
@@ -143,31 +257,32 @@ Deno.serve(async (req) => {
     }
 
     const slug = (model_slug as string) ?? 'sd35-large'
-    const modelPath = REPLICATE_MODELS[slug]
-    if (!modelPath) throw new Error(`Unknown Replicate model slug: ${slug}`)
+    const config = MODELS[slug]
+    if (!config) throw new Error(`Unknown Replicate model slug: ${slug}`)
 
     const builtPrompt = buildPrompt(body)
     if (!builtPrompt.trim()) throw new Error('Prompt is required')
 
     const fmt = ['png', 'jpg', 'webp'].includes(output_format) ? output_format : 'webp'
     const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
-    const numOutputs = Math.min(Math.max(Number(num_images) || 1, 1), 4)
+    const numOutputs = Math.min(Math.max(Number(num_images) || 1, 1), config.maxOutputs ?? 4)
     const ar = aspect_ratio ?? '1:1'
-
     const negPrompt = (body.negative_prompt as string | undefined)?.trim() ?? ''
 
-    const replicateInput: Record<string, unknown> = {
+    // Build model-specific input — pass _style as a hint for models that need it
+    const baseInput: BaseInput = {
       prompt: builtPrompt,
-      aspect_ratio: ar,
-      num_outputs: numOutputs,
-      output_format: fmt,
-      output_quality: 90,
-      ...(negPrompt ? { negative_prompt: negPrompt } : {}),
-      ...(seedVal !== undefined ? { seed: seedVal } : {}),
+      negPrompt,
+      aspectRatio: ar,
+      numOutputs,
+      outputFormat: fmt,
+      seed: seedVal,
+      _style: body.style as string | undefined,
     }
+    const replicateInput = config.buildInput(baseInput)
 
     const repRes = await fetch(
-      `https://api.replicate.com/v1/models/${modelPath}/predictions`,
+      `https://api.replicate.com/v1/models/${config.path}/predictions`,
       {
         method: 'POST',
         headers: {
@@ -190,15 +305,12 @@ Deno.serve(async (req) => {
       throw new Error(`Replicate generation failed: ${repData.error ?? repData.status}`)
     }
 
-    const outputUrls: string[] = Array.isArray(repData.output) ? repData.output : []
+    const outputUrls: string[] = Array.isArray(repData.output)
+      ? repData.output
+      : typeof repData.output === 'string'
+        ? [repData.output]
+        : []
     if (outputUrls.length === 0) throw new Error(`No output from Replicate: ${JSON.stringify(repData)}`)
-
-    // Estimate cost — SD 3.5 Large ~$0.065/image, Turbo ~$0.035/image
-    const COST_MAP: Record<string, number> = {
-      'sd35-large':       0.065,
-      'sd35-large-turbo': 0.035,
-    }
-    const costPerAsset = COST_MAP[slug] ?? null
 
     const predictTime = repData.metrics?.predict_time ?? null
 
@@ -211,7 +323,7 @@ Deno.serve(async (req) => {
           model_id: model_id ?? null,
           gen_type: 'txt2img',
           url: permanentUrl,
-          cost_usd: costPerAsset,
+          cost_usd: config.costUsd ?? null,
           metadata: {
             prompt: builtPrompt,
             model_slug: slug,
