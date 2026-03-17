@@ -827,16 +827,9 @@ export default function Dashboard() {
     setAssets((prev) => prev.map((a) => a.project_id === id ? { ...a, project_id: null } : a))
   }
 
-  async function sendToImg2Img(imageUrl: string) {
-    // Fetch image and convert to base64 data URL
-    const res = await fetch(imageUrl)
-    const blob = await res.blob()
-    const reader = new FileReader()
-    reader.onload = () => {
-      setImg2imgInitialValues({ source_image: reader.result as string })
-      setImg2imgPickerUrl(imageUrl)
-    }
-    reader.readAsDataURL(blob)
+  function sendToImg2Img(imageUrl: string) {
+    setImg2imgInitialValues({ source_image: imageUrl })
+    setImg2imgPickerUrl(imageUrl)
   }
 
   function sendToImg2Vid(imageUrl: string) {
