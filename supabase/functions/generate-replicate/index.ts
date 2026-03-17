@@ -124,6 +124,9 @@ const MODELS: Record<string, ModelConfig> = {
 
   // ── ByteDance Seedream ───────────────────────────────────────────────────────
   'seedream-45':      { path: 'bytedance/seedream-4.5',   costUsd: 0.025, buildInput: (b) => standardInput(b) },
+
+  // ── Google Nano Banana Pro ───────────────────────────────────────────────────
+  'nano-banana-pro':  { path: 'google/nano-banana-pro',   costUsd: 0.15,  buildInput: (b) => standardInput(b) },
 }
 
 const STYLE_MAP: Record<string, string> = {

@@ -29,8 +29,9 @@ Deno.serve(async (req) => {
     if (!profile?.is_admin) throw new Error('Not admin')
 
     if (action === 'mark_tested') {
-      await adminClient.from('model_status')
+      const { error: upsertErr } = await adminClient.from('model_status')
         .upsert({ model_slug, tested: true, updated_at: new Date().toISOString() }, { onConflict: 'model_slug' })
+      if (upsertErr) throw new Error(`model_status upsert failed: ${upsertErr.message}`)
 
     } else if (action === 'set_live') {
       await adminClient.from('models')

@@ -279,6 +279,7 @@ export default function Dashboard() {
     'recraft-v4-pro':     { gradient: 'linear-gradient(145deg,#3d1a00,#a05000,#e8a020)', initial: 'RV' },
     'nano-banana':        { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NB' },
     'nano-banana-edit':   { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NE' },
+    'nano-banana-pro':    { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NP' },
     'kling':              { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
     'kling-txt2vid':      { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
     'kling-img2vid':      { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
@@ -318,6 +319,7 @@ export default function Dashboard() {
     'recraft-v3':               'Recraft',
     'nano-banana':              'Google',
     'nano-banana-edit':         'Google',
+    'nano-banana-pro':          'Google',
     'imagen-4.0-generate-001':  'Google',
     'veo-2.0-generate-001':     'Google',
     'kling':                    'Kuaishou',
@@ -601,6 +603,7 @@ export default function Dashboard() {
         'ideogram-v3',
         'hidream-fast', 'hidream-full',
         'seedream-45',
+        'nano-banana-pro',
       ])
       const isReplicate = REPLICATE_SLUGS.has(selectedModel.slug)
       const isFal = !isReplicate && !DIRECT_API_SLUGS.has(selectedModel.slug)
