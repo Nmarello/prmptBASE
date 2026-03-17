@@ -189,23 +189,28 @@ function SbBtn({ tip, active, onClick, children }: { tip?: string; active?: bool
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-type AdminView = 'stats' | 'users' | 'feedback' | 'support' | 'models'
+type AdminView = 'stats' | 'users' | 'feedback' | 'support' | 'model-status'
 
-interface ModelStatusRow {
-  id: string
-  model_slug: string
-  model_name: string
-  category: 'image' | 'video' | 'tools'
+interface ModelRow {
+  slug: string
+  name: string
   provider: string
-  fal_path: string | null
-  replicate_path: string | null
-  installed_fal: boolean
-  installed_replicate: boolean
-  coming_live: boolean
+  supported_gen_types: string[]
+  is_active: boolean
   coming_soon: boolean
-  tested: boolean
-  notes: string | null
   sort_order: number
+}
+
+interface ModelSourceRow {
+  model_slug: string
+  source: 'fal' | 'replicate' | 'direct'
+  tested: boolean
+}
+
+interface ModelStatusMerged extends ModelRow {
+  source: 'fal' | 'replicate' | 'direct'
+  tested: boolean
+  category: 'image' | 'video' | 'tools'
 }
 
 interface FeedbackRow {
@@ -275,7 +280,7 @@ export default function Admin() {
   const [supportConvs, setSupportConvs] = useState<SupportConversation[]>([])
   const [supportLoading, setSupportLoading] = useState(false)
   const [expandedConv, setExpandedConv] = useState<string | null>(null)
-  const [modelStatuses, setModelStatuses] = useState<ModelStatusRow[]>([])
+  const [modelStatuses, setModelStatuses] = useState<ModelStatusMerged[]>([])
   const [modelsLoading, setModelsLoading] = useState(false)
 
   useEffect(() => { loadAll() }, [])
@@ -283,7 +288,7 @@ export default function Admin() {
   useEffect(() => {
     if (view === 'feedback') loadFeedback()
     else if (view === 'support') loadSupport()
-    else if (view === 'models') loadModels()
+    else if (view === 'model-status') loadModels()
   }, [view])
 
   async function loadAll() {
@@ -332,16 +337,49 @@ export default function Admin() {
     setSupportLoading(false)
   }
 
+  function deriveCategory(types: string[]): 'image' | 'video' | 'tools' {
+    if (types.some(t => ['txt2vid', 'img2vid', 'vid2vid'].includes(t))) return 'video'
+    if (types.length > 0 && types.every(t => t === 'img2img')) return 'tools'
+    return 'image'
+  }
+
   async function loadModels() {
     setModelsLoading(true)
-    const { data } = await supabase.from('model_status').select('*').order('category').order('sort_order')
-    setModelStatuses(data as ModelStatusRow[] ?? [])
+    const [{ data: models }, { data: sources }] = await Promise.all([
+      supabase.from('models').select('slug,name,provider,supported_gen_types,is_active,coming_soon,sort_order').order('sort_order'),
+      supabase.from('model_status').select('model_slug,source,tested'),
+    ])
+    const sourceMap = Object.fromEntries((sources ?? []).map(s => [s.model_slug, s]))
+    const merged: ModelStatusMerged[] = (models ?? []).map(m => ({
+      ...m,
+      source: sourceMap[m.slug]?.source ?? 'fal',
+      tested: sourceMap[m.slug]?.tested ?? false,
+      category: deriveCategory(m.supported_gen_types),
+    }))
+    setModelStatuses(merged)
     setModelsLoading(false)
   }
 
-  async function toggleModelStatus(id: string, field: keyof Pick<ModelStatusRow, 'installed_fal' | 'installed_replicate' | 'coming_live' | 'coming_soon' | 'tested'>, current: boolean) {
-    await supabase.from('model_status').update({ [field]: !current, updated_at: new Date().toISOString() }).eq('id', id)
-    setModelStatuses(prev => prev.map(r => r.id === id ? { ...r, [field]: !current } : r))
+  async function doModelAction(slug: string, action: 'mark_tested' | 'set_live' | 'set_coming_soon') {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-model`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ user_token: session?.access_token, action, model_slug: slug }),
+      },
+    )
+    const data = await res.json()
+    if (data.error) { alert(data.error); return }
+    // Optimistic update
+    setModelStatuses(prev => prev.map(m => {
+      if (m.slug !== slug) return m
+      if (action === 'mark_tested') return { ...m, tested: true, is_active: false, coming_soon: true }
+      if (action === 'set_live')    return { ...m, is_active: true, coming_soon: false }
+      if (action === 'set_coming_soon') return { ...m, is_active: false, coming_soon: true }
+      return m
+    }))
   }
 
   async function cycleFeedbackStatus(id: string, current: string) {
@@ -554,8 +592,8 @@ export default function Admin() {
           </svg>
         </SbBtn>
 
-        {/* Nav: Models */}
-        <SbBtn tip="Models" active={view === 'models'} onClick={() => setView('models')}>
+        {/* Nav: Model Status */}
+        <SbBtn tip="Model Status" active={view === 'model-status'} onClick={() => setView('model-status')}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="2" y="3" width="20" height="4" rx="1"/><rect x="2" y="10" width="20" height="4" rx="1"/><rect x="2" y="17" width="20" height="4" rx="1"/>
           </svg>
@@ -612,7 +650,7 @@ export default function Admin() {
             {/* Page header */}
             <div className="mb-6">
               <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em', lineHeight: 1.1 }}>
-                {view === 'stats' ? 'Stats' : view === 'users' ? 'Users' : view === 'feedback' ? 'Feedback' : view === 'support' ? 'Support' : 'Models'}
+                {view === 'stats' ? 'Stats' : view === 'users' ? 'Users' : view === 'feedback' ? 'Feedback' : view === 'support' ? 'Support' : 'Model Status'}
               </h1>
               <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 3 }}>{user?.email}</p>
             </div>
@@ -1004,75 +1042,86 @@ export default function Admin() {
               </>
             )}
 
-            {/* ── Models view ── */}
-            {view === 'models' && (
+            {/* ── Model Status view ── */}
+            {view === 'model-status' && (
               <Card>
                 {modelsLoading ? (
-                  <div className="flex items-center justify-center py-20 text-sm animate-pulse" style={{ color: 'var(--pv-text3)' }}>Loading models…</div>
+                  <div className="flex items-center justify-center py-20 text-sm animate-pulse" style={{ color: 'var(--pv-text3)' }}>Loading…</div>
                 ) : (
                   (['image', 'video', 'tools'] as const).map(cat => {
-                    const rows = modelStatuses.filter(m => m.category === cat)
+                    const rows = modelStatuses.filter(m => m.category === cat).sort((a, b) => a.sort_order - b.sort_order)
                     if (!rows.length) return null
-                    const catLabel = cat === 'image' ? 'Image' : cat === 'video' ? 'Video' : 'Tools'
-                    type BoolField = 'installed_fal' | 'installed_replicate' | 'coming_live' | 'coming_soon' | 'tested'
-                    const COLS: { field: BoolField; label: string; color: string }[] = [
-                      { field: 'installed_fal',       label: 'FAL',       color: '#6699ff' },
-                      { field: 'installed_replicate',  label: 'Replicate', color: '#a78bfa' },
-                      { field: 'coming_live',          label: 'Live',        color: '#34d399' },
-                      { field: 'coming_soon',          label: 'Coming Soon', color: '#fbbf24' },
-                      { field: 'tested',               label: 'Tested',    color: '#f87171' },
-                    ]
+                    const catLabel = cat === 'image' ? 'Image Models' : cat === 'video' ? 'Video Models' : 'Tools'
+                    const SOURCE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+                      fal:       { bg: 'rgba(102,153,255,0.12)', color: '#6699ff', label: 'FAL' },
+                      replicate: { bg: 'rgba(167,139,250,0.12)', color: '#a78bfa', label: 'Replicate' },
+                      direct:    { bg: 'rgba(251,191,36,0.12)',  color: '#fbbf24', label: 'Direct' },
+                    }
                     return (
                       <div key={cat} style={{ marginBottom: 32 }}>
                         <div style={{ padding: '10px 20px 8px', borderBottom: '1px solid var(--pv-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pv-text3)' }}>{catLabel}</span>
                           <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>({rows.length})</span>
                         </div>
-                        {/* Header row */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px repeat(5, 72px)', padding: '6px 20px', borderBottom: '1px solid var(--pv-border)', gap: 8 }}>
-                          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--pv-text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Model</span>
-                          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--pv-text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Provider</span>
-                          {COLS.map(c => (
-                            <span key={c.field} style={{ fontSize: 10, fontWeight: 600, color: c.color, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'center' }}>{c.label}</span>
+                        {/* Header */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 90px 140px 80px', padding: '6px 20px', borderBottom: '1px solid var(--pv-border)', gap: 8 }}>
+                          {['Model', 'Provider', 'Source', 'Status', 'Tested'].map(h => (
+                            <span key={h} style={{ fontSize: 10, fontWeight: 600, color: 'var(--pv-text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</span>
                           ))}
                         </div>
-                        {/* Data rows */}
-                        {rows.map((m, i) => (
-                          <div
-                            key={m.id}
-                            style={{ display: 'grid', gridTemplateColumns: '1fr 160px repeat(5, 72px)', padding: '8px 20px', gap: 8, alignItems: 'center', borderBottom: i < rows.length - 1 ? '1px solid var(--pv-border)' : 'none', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}
-                          >
-                            <div>
-                              <div style={{ fontSize: 13, color: 'var(--pv-text)', fontWeight: 500 }}>{m.model_name}</div>
-                              <div style={{ fontSize: 10, color: 'var(--pv-text3)', fontFamily: 'monospace', marginTop: 1 }}>{m.model_slug}</div>
-                            </div>
-                            <div style={{ fontSize: 12, color: 'var(--pv-text2)' }}>
-                              {m.provider}
-                              {!m.installed_fal && !m.installed_replicate && m.coming_live && (
-                                <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)', letterSpacing: '0.04em' }}>DIRECT</span>
-                              )}
-                            </div>
-                            {COLS.map(c => (
-                              <div key={c.field} style={{ display: 'flex', justifyContent: 'center' }}>
-                                <button
-                                  onClick={() => toggleModelStatus(m.id, c.field, m[c.field])}
-                                  style={{
-                                    width: 22, height: 22, borderRadius: 6, border: `1.5px solid ${m[c.field] ? c.color : 'var(--pv-border)'}`,
-                                    background: m[c.field] ? `${c.color}22` : 'transparent',
-                                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
-                                  }}
-                                  title={`Toggle ${c.label}`}
-                                >
-                                  {m[c.field] && (
-                                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                                      <path d="M2 6l3 3 5-5" stroke={c.color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                  )}
-                                </button>
+                        {/* Rows */}
+                        {rows.map((m, i) => {
+                          const src = SOURCE_STYLES[m.source] ?? SOURCE_STYLES.fal
+                          const isLive = m.is_active && !m.coming_soon
+                          const isComingSoon = m.coming_soon
+                          return (
+                            <div key={m.slug} style={{ display: 'grid', gridTemplateColumns: '1fr 120px 90px 140px 80px', padding: '9px 20px', gap: 8, alignItems: 'center', borderBottom: i < rows.length - 1 ? '1px solid var(--pv-border)' : 'none', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
+                              {/* Name */}
+                              <div>
+                                <div style={{ fontSize: 13, color: 'var(--pv-text)', fontWeight: 500 }}>{m.name}</div>
+                                <div style={{ fontSize: 10, color: 'var(--pv-text3)', fontFamily: 'monospace', marginTop: 1 }}>{m.slug}</div>
                               </div>
-                            ))}
-                          </div>
-                        ))}
+                              {/* Provider */}
+                              <div style={{ fontSize: 12, color: 'var(--pv-text2)' }}>{m.provider}</div>
+                              {/* Source badge */}
+                              <div>
+                                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5, background: src.bg, color: src.color, letterSpacing: '0.04em' }}>{src.label}</span>
+                              </div>
+                              {/* Status — clickable */}
+                              <div>
+                                {isLive ? (
+                                  <button
+                                    onClick={() => doModelAction(m.slug, 'set_coming_soon')}
+                                    style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: 'rgba(52,211,153,0.12)', color: '#34d399', border: '1px solid rgba(52,211,153,0.25)', cursor: 'pointer', letterSpacing: '0.04em' }}
+                                    title="Click to move to Coming Soon"
+                                  >LIVE</button>
+                                ) : isComingSoon ? (
+                                  <button
+                                    onClick={() => { if (confirm(`Make ${m.name} live? This will publish a blog post.`)) doModelAction(m.slug, 'set_live') }}
+                                    style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)', cursor: 'pointer', letterSpacing: '0.04em' }}
+                                    title="Click to make Live (publishes blog post)"
+                                  >COMING SOON</button>
+                                ) : (
+                                  <span style={{ fontSize: 10, color: 'var(--pv-text3)' }}>Testing</span>
+                                )}
+                              </div>
+                              {/* Tested toggle */}
+                              <div>
+                                <button
+                                  onClick={() => !m.tested && doModelAction(m.slug, 'mark_tested')}
+                                  style={{
+                                    fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.04em',
+                                    background: m.tested ? 'rgba(248,113,113,0.12)' : 'transparent',
+                                    color: m.tested ? '#f87171' : 'var(--pv-text3)',
+                                    border: m.tested ? '1px solid rgba(248,113,113,0.25)' : '1px solid var(--pv-border)',
+                                    cursor: m.tested ? 'default' : 'pointer',
+                                  }}
+                                  title={m.tested ? 'Tested' : 'Mark as tested — moves to Coming Soon'}
+                                >{m.tested ? 'TESTED' : 'Mark Tested'}</button>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     )
                   })
