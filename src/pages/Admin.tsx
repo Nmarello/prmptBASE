@@ -1018,7 +1018,7 @@ export default function Admin() {
                     const COLS: { field: BoolField; label: string; color: string }[] = [
                       { field: 'installed_fal',       label: 'FAL',       color: '#6699ff' },
                       { field: 'installed_replicate',  label: 'Replicate', color: '#a78bfa' },
-                      { field: 'coming_live',          label: 'Coming Live', color: '#34d399' },
+                      { field: 'coming_live',          label: 'Live',        color: '#34d399' },
                       { field: 'coming_soon',          label: 'Coming Soon', color: '#fbbf24' },
                       { field: 'tested',               label: 'Tested',    color: '#f87171' },
                     ]
