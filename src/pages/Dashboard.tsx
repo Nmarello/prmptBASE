@@ -1547,7 +1547,6 @@ export default function Dashboard() {
                         'luma':            'Luma typically takes 2–5 min',
                         'pika':            'Pika typically takes 2–4 min',
                         'sora2':           'Sora 2 typically takes 3–8 min',
-                        'runway':          'Runway typically takes 2–5 min',
                       }
                       const hint = RENDER_HINTS[pendingVideo.slug]
                       return hint ? <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>{hint}</p> : null
