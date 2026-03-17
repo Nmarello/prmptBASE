@@ -59,6 +59,17 @@ const RECRAFT_SIZE_MAP: Record<string, string> = {
   '2:3':  '910x1365',
   '21:9': '1820x780',
 }
+// Recraft V4 Pro requires higher-res sizes (different enum from V3)
+const RECRAFT_V4_SIZE_MAP: Record<string, string> = {
+  '1:1':  '2048x2048',
+  '16:9': '2688x1536',
+  '9:16': '1536x2688',
+  '4:3':  '2432x1792',
+  '3:4':  '1792x2432',
+  '3:2':  '2560x1664',
+  '2:3':  '1664x2560',
+  '21:9': '3072x1536',
+}
 function recraftInput(b: BaseInput, style?: string): Record<string, unknown> {
   return {
     prompt: b.prompt,
@@ -113,7 +124,13 @@ const MODELS: Record<string, ModelConfig> = {
 
   // ── Recraft ─────────────────────────────────────────────────────────────────
   'recraft-v3':       { path: 'recraft-ai/recraft-v3',     costUsd: 0.04, buildInput: (b) => recraftInput(b, RECRAFT_STYLE_MAP[b._style as string] ?? 'realistic_image') },
-  'recraft-v4-pro':   { path: 'recraft-ai/recraft-v4-pro', costUsd: 0.08, buildInput: (b) => recraftInput(b, RECRAFT_STYLE_MAP[b._style as string] ?? 'realistic_image') },
+  'recraft-v4-pro':   { path: 'recraft-ai/recraft-v4-pro', costUsd: 0.08, buildInput: (b) => ({
+    prompt: b.prompt,
+    style: RECRAFT_STYLE_MAP[b._style as string] ?? 'realistic_image',
+    n: Math.min(b.numOutputs, 4),
+    size: RECRAFT_V4_SIZE_MAP[b.aspectRatio] ?? '2048x2048',
+    response_format: 'url',
+  }) },
 
   // ── Ideogram ────────────────────────────────────────────────────────────────
   'ideogram-v3':      { path: 'ideogram-ai/ideogram-v3-balanced', costUsd: 0.06, buildInput: ideogramInput },
