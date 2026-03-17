@@ -792,6 +792,12 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
       setValues(v => ({ ...v, subject: subjectOverride }))
     }
   }, [subjectOverride])
+
+  useEffect(() => {
+    if (initialValues?.source_image) {
+      setValues(v => ({ ...v, source_image: initialValues.source_image }))
+    }
+  }, [initialValues?.source_image])
   const [customOptions, setCustomOptions] = useState<Record<string, FieldOption[]>>({})
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [assisting, setAssisting] = useState<string | null>(null)
