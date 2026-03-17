@@ -9,6 +9,7 @@ const corsHeaders = {
 // ── Model registry ───────────────────────────────────────────────────────────
 interface ModelConfig {
   path: string
+  version?: string      // pin a version hash → uses /v1/predictions instead of /v1/models/.../predictions
   maxOutputs?: number   // default 4; set to 1 for models that don't support batch
   costUsd?: number      // per image
   buildInput: (base: BaseInput) => Record<string, unknown>
@@ -82,14 +83,14 @@ function recraftInput(b: BaseInput, style?: string): Record<string, unknown> {
 
 // Ideogram v3 uses number_of_images and resolution-based sizing
 const IDEOGRAM_RESOLUTION_MAP: Record<string, string> = {
-  '1:1':  'RESOLUTION_1024_1024',
-  '16:9': 'RESOLUTION_1344_768',
-  '9:16': 'RESOLUTION_768_1344',
-  '4:3':  'RESOLUTION_1232_928',
-  '3:4':  'RESOLUTION_928_1232',
-  '3:2':  'RESOLUTION_1344_896',
-  '2:3':  'RESOLUTION_896_1344',
-  '21:9': 'RESOLUTION_1568_672',
+  '1:1':  '1024x1024',
+  '16:9': '1344x768',
+  '9:16': '768x1344',
+  '4:3':  '1152x864',
+  '3:4':  '864x1152',
+  '3:2':  '1248x832',
+  '2:3':  '832x1248',
+  '21:9': '1536x640',
 }
 function ideogramInput(b: BaseInput): Record<string, unknown> {
   const out: Record<string, unknown> = {
@@ -137,7 +138,7 @@ const MODELS: Record<string, ModelConfig> = {
 
   // ── HiDream (via PrunaAI) ───────────────────────────────────────────────────
   'hidream-fast':     { path: 'prunaai/hidream-l1-fast', costUsd: 0.03, buildInput: (b) => standardInput(b) },
-  'hidream-full':     { path: 'prunaai/hidream-l1-full', costUsd: 0.05, buildInput: (b) => standardInput(b) },
+  'hidream-full':     { path: 'prunaai/hidream-l1-full', version: '4ac54871d9e2152baf74c89729f9c17a1b770e1ca2c10989b69e8ebea480ca40', costUsd: 0.05, buildInput: (b) => standardInput(b) },
 
   // ── ByteDance Seedream ───────────────────────────────────────────────────────
   'seedream-45':      { path: 'bytedance/seedream-4.5',   costUsd: 0.025, buildInput: (b) => standardInput(b) },
@@ -301,25 +302,45 @@ Deno.serve(async (req) => {
     }
     const replicateInput = config.buildInput(baseInput)
 
-    const repRes = await fetch(
-      `https://api.replicate.com/v1/models/${config.path}/predictions`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${replicateKey}`,
-          'Prefer': 'wait',
-        },
-        body: JSON.stringify({ input: replicateInput }),
+    const repUrl = config.version
+      ? 'https://api.replicate.com/v1/predictions'
+      : `https://api.replicate.com/v1/models/${config.path}/predictions`
+    const repBody = config.version
+      ? { version: config.version, input: replicateInput }
+      : { input: replicateInput }
+
+    const repRes = await fetch(repUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${replicateKey}`,
+        'Prefer': 'wait',
       },
-    )
+      body: JSON.stringify(repBody),
+    })
 
     if (!repRes.ok) {
       const err = await repRes.text()
       throw new Error(`Replicate error: ${err}`)
     }
 
-    const repData = await repRes.json()
+    let repData = await repRes.json()
+
+    // Poll if the prediction hasn't completed yet (versioned endpoint ignores Prefer: wait)
+    if (repData.status === 'starting' || repData.status === 'processing') {
+      const pollUrl = repData.urls?.get
+      if (!pollUrl) throw new Error(`Replicate prediction stuck in ${repData.status} with no poll URL`)
+      const deadline = Date.now() + 120_000
+      while ((repData.status === 'starting' || repData.status === 'processing') && Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 2000))
+        const pollRes = await fetch(pollUrl, { headers: { 'Authorization': `Bearer ${replicateKey}` } })
+        if (!pollRes.ok) throw new Error(`Replicate poll error: ${pollRes.status}`)
+        repData = await pollRes.json()
+      }
+      if (repData.status === 'starting' || repData.status === 'processing') {
+        throw new Error('Replicate prediction timed out after 120s')
+      }
+    }
 
     if (repData.status === 'failed' || repData.error) {
       throw new Error(`Replicate generation failed: ${repData.error ?? repData.status}`)

@@ -230,7 +230,7 @@ export default function Dashboard() {
     setPendingVideosRaw(prev => prev.filter(p => p.assetId !== assetId))
   }
   const [generateError, setGenerateError] = useState<string | null>(null)
-  const [pendingImage, setPendingImage] = useState<{ modelName: string } | null>(null)
+  const [pendingImage, setPendingImage] = useState<{ modelName: string; slug: string } | null>(null)
   const [renderingModelSlug, setRenderingModelSlug] = useState<string | null>(null)
   const [recentModelSlugs, setRecentModelSlugs] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('pv_recent_models') ?? '[]') } catch { return [] }
@@ -573,7 +573,7 @@ export default function Dashboard() {
     setGenerateError(null)
     analytics.generationStarted({ model: selectedModel.slug, gen_type: selectedGenType, tier: userTier })
     const isImageGen = selectedGenType !== 'txt2vid' && selectedGenType !== 'img2vid'
-    if (isImageGen) setPendingImage({ modelName: selectedModel.name })
+    if (isImageGen) setPendingImage({ modelName: selectedModel.name, slug: selectedModel.slug })
     setRenderingModelSlug(selectedModel.slug)
     setRecentModelSlugs(prev => {
       const updated = [selectedModel.slug, ...prev.filter(s => s !== selectedModel.slug)].slice(0, 4)
@@ -1563,6 +1563,27 @@ export default function Dashboard() {
                         'runway':          'Runway typically takes 2–5 min',
                       }
                       const hint = RENDER_HINTS[pendingVideo.slug]
+                      return hint ? <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>{hint}</p> : null
+                    })()}
+                    {pendingImage && (() => {
+                      const IMAGE_HINTS: Record<string, string> = {
+                        'flux-schnell':    'Typically under 5 seconds',
+                        'flux-dev':        'Typically 10–20 seconds',
+                        'flux-pro':        'Typically 15–30 seconds',
+                        'flux-pro-ultra':  'Typically 20–40 seconds',
+                        'flux2-pro':       'Typically 15–30 seconds',
+                        'recraft-v3':      'Typically 10–20 seconds',
+                        'recraft-v4-pro':  'Typically 15–30 seconds',
+                        'ideogram-v3':     'Typically 10–20 seconds',
+                        'hidream-fast':    'Typically 10–20 seconds',
+                        'hidream-full':    'Typically 30–60 seconds',
+                        'seedream-45':     'Typically 10–20 seconds',
+                        'nano-banana-pro': 'Typically 20–40 seconds',
+                        'sd35-large':      'Typically 15–30 seconds',
+                        'sd35-large-turbo':'Typically 5–15 seconds',
+                        'sd35-medium':     'Typically 10–20 seconds',
+                      }
+                      const hint = IMAGE_HINTS[pendingImage.slug]
                       return hint ? <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>{hint}</p> : null
                     })()}
                     <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>You can close this — we'll notify you when done</p>
