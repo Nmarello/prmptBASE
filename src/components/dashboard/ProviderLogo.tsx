@@ -41,8 +41,6 @@ const SLUG_PROVIDER: Record<string, string> = {
   'seedream-45':             'bytedance',
   'seedance-1-pro':          'bytedance',
   'sd35-medium':             'stability',
-  'cs-midjourney':           'midjourney',
-  'cs-firefly':              'firefly',
   'cs-runway':               'runway',
   'cs-pika':                 'pika',
 }
@@ -192,25 +190,6 @@ function StabilityLogo({ size }: { size: number }) {
   )
 }
 
-function MidjourneyLogo({ size }: { size: number }) {
-  // Midjourney — abstract sailing boat (their icon)
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <path d="M16 5 L27 25 L5 25 Z" stroke="white" strokeWidth="1.6" strokeLinejoin="round" fill="none" />
-      <path d="M16 5 L16 25" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
-    </svg>
-  )
-}
-
-function FireflyLogo({ size }: { size: number }) {
-  // Adobe Firefly — stylised spark/flame
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <path d="M16 4 C16 4 22 10 20 17 C20 17 25 14 27 16 C27 16 24 22 18 24 C18 24 20 28 16 28 C12 28 14 24 14 24 C8 22 5 16 5 16 C7 14 12 17 12 17 C10 10 16 4 16 4Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" fill="none" />
-    </svg>
-  )
-}
-
 function RunwayLogo({ size }: { size: number }) {
   // Runway — play button in a rounded rect (video-first brand)
   return (
@@ -254,8 +233,6 @@ export default function ProviderLogo({ slug, size = 28 }: Props) {
     case 'hidream':   return <HiDreamLogo size={size} />
     case 'bytedance': return <ByteDanceLogo size={size} />
     case 'stability': return <StabilityLogo size={size} />
-    case 'midjourney':return <MidjourneyLogo size={size} />
-    case 'firefly':   return <FireflyLogo size={size} />
     case 'runway':    return <RunwayLogo size={size} />
     case 'pika':      return <PikaLogo size={size} />
     default: {

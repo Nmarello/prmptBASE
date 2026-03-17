@@ -72,10 +72,7 @@ import { useAnalytics, useIdentify } from '../hooks/useAnalytics'
 
 type View = 'models' | 'builder' | 'assets' | 'projects' | 'tools'
 
-const COMING_SOON_IMAGE: Partial<Model>[] = [
-  { slug: 'cs-midjourney', name: 'Midjourney', provider: 'Midjourney', description: 'The gold standard for artistic AI image generation. Unmatched aesthetic quality.', supported_gen_types: ['txt2img'] },
-  { slug: 'cs-firefly', name: 'Adobe Firefly', provider: 'Adobe', description: 'Commercially safe image generation built for creative professionals.', supported_gen_types: ['txt2img', 'img2img'] },
-]
+const COMING_SOON_IMAGE: Partial<Model>[] = []
 
 const COMING_SOON_VIDEO: Partial<Model>[] = [
   { slug: 'cs-veo3', name: 'Veo 3', provider: 'Google', description: "Google's flagship video model. State-of-the-art motion quality and prompt adherence.", supported_gen_types: ['txt2vid'] },
@@ -597,18 +594,31 @@ export default function Dashboard() {
       // Routing: only these slugs call direct APIs; everything else routes through fal
       const DIRECT_API_SLUGS = new Set(['dalle', 'gpt-image-1', 'imagen-4.0-generate-001', 'veo-2.0-generate-001'])
       const GOOGLE_DIRECT_SLUGS = new Set(['imagen-4.0-generate-001', 'veo-2.0-generate-001'])
-      const isFal = !DIRECT_API_SLUGS.has(selectedModel.slug)
+      const REPLICATE_SLUGS = new Set(['sd35-large', 'sd35-large-turbo'])
+      const isReplicate = REPLICATE_SLUGS.has(selectedModel.slug)
+      const isFal = !isReplicate && !DIRECT_API_SLUGS.has(selectedModel.slug)
       const isGoogle = GOOGLE_DIRECT_SLUGS.has(selectedModel.slug)
       const isImg2Img = selectedGenType === 'img2img'
       const isVideo = selectedGenType === 'txt2vid' || selectedGenType === 'img2vid'
 
-      const endpoint = isFal
+      const endpoint = isReplicate
+        ? 'generate-replicate'
+        : isFal
         ? 'generate-fal'
         : isGoogle
         ? 'generate-google'
         : isImg2Img ? 'edit-image' : 'generate-image'
 
-      const body = isFal
+      const body = isReplicate
+        ? {
+            user_token: session?.access_token ?? null,
+            ...values,
+            model_id: selectedModel.id,
+            model_slug: selectedModel.slug,
+            gen_type: selectedGenType,
+            prompt_id: promptRecord?.id ?? null,
+          }
+        : isFal
         ? {
             user_token: session?.access_token ?? null,
             ...values,
