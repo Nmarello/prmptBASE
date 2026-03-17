@@ -189,7 +189,24 @@ function SbBtn({ tip, active, onClick, children }: { tip?: string; active?: bool
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-type AdminView = 'stats' | 'users' | 'feedback' | 'support'
+type AdminView = 'stats' | 'users' | 'feedback' | 'support' | 'models'
+
+interface ModelStatusRow {
+  id: string
+  model_slug: string
+  model_name: string
+  category: 'image' | 'video' | 'tools'
+  provider: string
+  fal_path: string | null
+  replicate_path: string | null
+  installed_fal: boolean
+  installed_replicate: boolean
+  coming_live: boolean
+  coming_soon: boolean
+  tested: boolean
+  notes: string | null
+  sort_order: number
+}
 
 interface FeedbackRow {
   id: string
@@ -258,12 +275,15 @@ export default function Admin() {
   const [supportConvs, setSupportConvs] = useState<SupportConversation[]>([])
   const [supportLoading, setSupportLoading] = useState(false)
   const [expandedConv, setExpandedConv] = useState<string | null>(null)
+  const [modelStatuses, setModelStatuses] = useState<ModelStatusRow[]>([])
+  const [modelsLoading, setModelsLoading] = useState(false)
 
   useEffect(() => { loadAll() }, [])
 
   useEffect(() => {
     if (view === 'feedback') loadFeedback()
     else if (view === 'support') loadSupport()
+    else if (view === 'models') loadModels()
   }, [view])
 
   async function loadAll() {
@@ -310,6 +330,18 @@ export default function Admin() {
     const { data } = await supabase.from('support_conversations').select('*').order('created_at', { ascending: false })
     setSupportConvs(data as SupportConversation[] ?? [])
     setSupportLoading(false)
+  }
+
+  async function loadModels() {
+    setModelsLoading(true)
+    const { data } = await supabase.from('model_status').select('*').order('category').order('sort_order')
+    setModelStatuses(data as ModelStatusRow[] ?? [])
+    setModelsLoading(false)
+  }
+
+  async function toggleModelStatus(id: string, field: keyof Pick<ModelStatusRow, 'installed_fal' | 'installed_replicate' | 'coming_live' | 'coming_soon' | 'tested'>, current: boolean) {
+    await supabase.from('model_status').update({ [field]: !current, updated_at: new Date().toISOString() }).eq('id', id)
+    setModelStatuses(prev => prev.map(r => r.id === id ? { ...r, [field]: !current } : r))
   }
 
   async function cycleFeedbackStatus(id: string, current: string) {
@@ -522,6 +554,13 @@ export default function Admin() {
           </svg>
         </SbBtn>
 
+        {/* Nav: Models */}
+        <SbBtn tip="Models" active={view === 'models'} onClick={() => setView('models')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="3" width="20" height="4" rx="1"/><rect x="2" y="10" width="20" height="4" rx="1"/><rect x="2" y="17" width="20" height="4" rx="1"/>
+          </svg>
+        </SbBtn>
+
         {/* Bottom actions */}
         <div className="mt-auto flex flex-col items-center gap-1">
           {/* Theme toggle */}
@@ -573,7 +612,7 @@ export default function Admin() {
             {/* Page header */}
             <div className="mb-6">
               <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em', lineHeight: 1.1 }}>
-                {view === 'stats' ? 'Stats' : view === 'users' ? 'Users' : view === 'feedback' ? 'Feedback' : 'Support'}
+                {view === 'stats' ? 'Stats' : view === 'users' ? 'Users' : view === 'feedback' ? 'Feedback' : view === 'support' ? 'Support' : 'Models'}
               </h1>
               <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 3 }}>{user?.email}</p>
             </div>
@@ -963,6 +1002,77 @@ export default function Admin() {
                   })()}
                 </Card>
               </>
+            )}
+
+            {/* ── Models view ── */}
+            {view === 'models' && (
+              <Card>
+                {modelsLoading ? (
+                  <div className="flex items-center justify-center py-20 text-sm animate-pulse" style={{ color: 'var(--pv-text3)' }}>Loading models…</div>
+                ) : (
+                  (['image', 'video', 'tools'] as const).map(cat => {
+                    const rows = modelStatuses.filter(m => m.category === cat)
+                    if (!rows.length) return null
+                    const catLabel = cat === 'image' ? 'Image' : cat === 'video' ? 'Video' : 'Tools'
+                    type BoolField = 'installed_fal' | 'installed_replicate' | 'coming_live' | 'coming_soon' | 'tested'
+                    const COLS: { field: BoolField; label: string; color: string }[] = [
+                      { field: 'installed_fal',       label: 'FAL',       color: '#6699ff' },
+                      { field: 'installed_replicate',  label: 'Replicate', color: '#a78bfa' },
+                      { field: 'coming_live',          label: 'Coming Live', color: '#34d399' },
+                      { field: 'coming_soon',          label: 'Coming Soon', color: '#fbbf24' },
+                      { field: 'tested',               label: 'Tested',    color: '#f87171' },
+                    ]
+                    return (
+                      <div key={cat} style={{ marginBottom: 32 }}>
+                        <div style={{ padding: '10px 20px 8px', borderBottom: '1px solid var(--pv-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pv-text3)' }}>{catLabel}</span>
+                          <span style={{ fontSize: 11, color: 'var(--pv-text3)' }}>({rows.length})</span>
+                        </div>
+                        {/* Header row */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px repeat(5, 72px)', padding: '6px 20px', borderBottom: '1px solid var(--pv-border)', gap: 8 }}>
+                          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--pv-text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Model</span>
+                          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--pv-text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Provider</span>
+                          {COLS.map(c => (
+                            <span key={c.field} style={{ fontSize: 10, fontWeight: 600, color: c.color, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'center' }}>{c.label}</span>
+                          ))}
+                        </div>
+                        {/* Data rows */}
+                        {rows.map((m, i) => (
+                          <div
+                            key={m.id}
+                            style={{ display: 'grid', gridTemplateColumns: '1fr 160px repeat(5, 72px)', padding: '8px 20px', gap: 8, alignItems: 'center', borderBottom: i < rows.length - 1 ? '1px solid var(--pv-border)' : 'none', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}
+                          >
+                            <div>
+                              <div style={{ fontSize: 13, color: 'var(--pv-text)', fontWeight: 500 }}>{m.model_name}</div>
+                              <div style={{ fontSize: 10, color: 'var(--pv-text3)', fontFamily: 'monospace', marginTop: 1 }}>{m.model_slug}</div>
+                            </div>
+                            <div style={{ fontSize: 12, color: 'var(--pv-text2)' }}>{m.provider}</div>
+                            {COLS.map(c => (
+                              <div key={c.field} style={{ display: 'flex', justifyContent: 'center' }}>
+                                <button
+                                  onClick={() => toggleModelStatus(m.id, c.field, m[c.field])}
+                                  style={{
+                                    width: 22, height: 22, borderRadius: 6, border: `1.5px solid ${m[c.field] ? c.color : 'var(--pv-border)'}`,
+                                    background: m[c.field] ? `${c.color}22` : 'transparent',
+                                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
+                                  }}
+                                  title={`Toggle ${c.label}`}
+                                >
+                                  {m[c.field] && (
+                                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                                      <path d="M2 6l3 3 5-5" stroke={c.color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  )}
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })
+                )}
+              </Card>
             )}
 
             {/* ── Support view ── */}

@@ -105,7 +105,7 @@ const MODELS: Record<string, ModelConfig> = {
   'flux-pro-ultra':   { path: 'black-forest-labs/flux-1.1-pro-ultra', costUsd: 0.12, maxOutputs: 1, buildInput: (b) => ({
     prompt: b.prompt,
     aspect_ratio: b.aspectRatio,
-    output_format: b.outputFormat,
+    output_format: b.outputFormat === 'webp' ? 'jpg' : b.outputFormat,
     safety_tolerance: 2,
     ...(b.seed != null ? { seed: b.seed } : {}),
   })},
