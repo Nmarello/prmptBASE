@@ -118,7 +118,7 @@ function SbBtn({ tip, active, onClick, children, dataTour }: { tip?: string; act
 }
 
 const TIER_ORDER = ['newbie', 'creator', 'studio', 'pro']
-const PRO_ONLY_SLUGS = ['sora2', 'sora2-txt2vid', 'sora2-img2vid', 'kling', 'kling-txt2vid', 'kling-img2vid']
+const PRO_ONLY_SLUGS = ['sora2', 'sora2-txt2vid', 'kling', 'kling-txt2vid']
 const CREATOR_LIMIT = 10
 const STUDIO_VIDEO_LIMIT = 5
 
@@ -282,15 +282,12 @@ export default function Dashboard() {
     'nano-banana-pro':    { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NP' },
     'kling':              { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
     'kling-txt2vid':      { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
-    'kling-img2vid':      { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KL' },
     'luma':               { gradient: 'linear-gradient(145deg,#05050f,#0d1a5c,#2952e3)', initial: 'LR' },
     'luma-txt2vid':       { gradient: 'linear-gradient(145deg,#05050f,#0d1a5c,#2952e3)', initial: 'LR' },
-    'luma-img2vid':       { gradient: 'linear-gradient(145deg,#05050f,#0d1a5c,#2952e3)', initial: 'LR' },
     'minimax-txt2vid':    { gradient: 'linear-gradient(145deg,#002b36,#007070,#00c9a7)', initial: 'MM' },
     'sora':               { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
     'sora2':              { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
     'sora2-txt2vid':      { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
-    'sora2-img2vid':      { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#3d3d7a)', initial: 'SR' },
     'pika':               { gradient: 'linear-gradient(145deg,#1a0033,#6600ff,#cc44ff)', initial: 'PK' },
     'runway':             { gradient: 'linear-gradient(145deg,#0d0d0d,#1a1a1a,#2d6a6a)', initial: 'RW' },
     'ltx-video':          { gradient: 'linear-gradient(145deg,#001a40,#003d99,#4d8cff)', initial: 'LX' },
@@ -306,7 +303,6 @@ export default function Dashboard() {
     'gpt-image-1':              'OpenAI',
     'sora':                     'OpenAI',
     'sora2':                    'OpenAI',
-    'sora2-img2vid':            'OpenAI',
     'flux-schnell':             'Black Forest Labs',
     'flux-dev':                 'Black Forest Labs',
     'flux-pro':                 'Black Forest Labs',
@@ -324,10 +320,8 @@ export default function Dashboard() {
     'veo-2.0-generate-001':     'Google',
     'kling':                    'Kuaishou',
     'kling-txt2vid':            'Kuaishou',
-    'kling-img2vid':            'Kuaishou',
     'luma':                     'Luma AI',
     'luma-txt2vid':             'Luma AI',
-    'luma-img2vid':             'Luma AI',
     'minimax-txt2vid':          'MiniMax',
     'ideogram-v3':              'Ideogram',
     'hidream-fast':             'HiDream',
