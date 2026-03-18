@@ -269,10 +269,19 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, 
     return () => { clearInterval(id); window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true) }
   }, [step, current.target])
 
-  const bottomSheet: React.CSSProperties = {
-    position: 'fixed', zIndex: 9999,
-    width: 'calc(100vw - 32px)', maxWidth: CARD_W_CENTER,
-    bottom: 24, top: 'unset', left: '50%', transform: 'translateX(-50%)',
+  function attachedFallback(targetRect: Rect): React.CSSProperties {
+    // Attach card to top or bottom of spotlight, centered on it, clamped to viewport
+    const base: React.CSSProperties = {
+      position: 'fixed', zIndex: 9999,
+      width: 'calc(100vw - 32px)', maxWidth: CARD_W_CENTER,
+      left: Math.max(8, Math.min(targetRect.left + targetRect.width / 2, window.innerWidth - 8)),
+      transform: 'translateX(-50%)',
+    }
+    const spaceBelow = window.innerHeight - (targetRect.top + targetRect.height + PAD)
+    const spaceAbove = targetRect.top - PAD
+    return spaceBelow >= spaceAbove
+      ? { ...base, top: targetRect.top + targetRect.height + PAD + GAP, bottom: 'unset' }
+      : { ...base, top: 'unset', bottom: window.innerHeight - targetRect.top + PAD + GAP }
   }
 
   function cardStyle(): React.CSSProperties {
@@ -288,17 +297,17 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, 
 
     if (pos === 'right') {
       const cardLeft = rect.left + rect.width + GAP
-      if (cardLeft + CARD_W > vw - 8) return bottomSheet
+      if (cardLeft + CARD_W > vw - 8) return attachedFallback(rect)
       return { ...base, top: centerY, left: cardLeft, transform: 'translateY(-50%)' }
     }
     if (pos === 'left') {
       const cardLeft = rect.left - GAP - CARD_W
-      if (cardLeft < 8) return bottomSheet
+      if (cardLeft < 8) return attachedFallback(rect)
       return { ...base, top: centerY, left: cardLeft, transform: 'translateY(-50%)' }
     }
     if (pos === 'bottom') {
       const top = rect.top + rect.height + PAD + GAP
-      if (top + 200 > window.innerHeight) return bottomSheet
+      if (top + 200 > window.innerHeight) return attachedFallback(rect)
       return { ...base, top, left: rect.left + rect.width / 2, transform: 'translateX(-50%)' }
     }
     if (pos === 'top') return { ...base, top: rect.top - GAP, left: rect.left + rect.width / 2, transform: 'translate(-50%, -100%)' }
