@@ -386,11 +386,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return
-    supabase.from('profiles').select('tier, model_picker_locked_until').eq('id', user.id).single()
+    supabase.from('profiles').select('tier, model_picker_locked_until, recent_models').eq('id', user.id).single()
       .then(({ data }) => {
         if (data) {
           setUserTier(data.tier)
           if (data.model_picker_locked_until) setPickerLockedUntil(new Date(data.model_picker_locked_until))
+          if (Array.isArray(data.recent_models) && data.recent_models.length > 0) {
+            setRecentModelSlugs(data.recent_models)
+            try { localStorage.setItem('pv_recent_models', JSON.stringify(data.recent_models)) } catch {}
+          }
           if (data.tier === 'creator' || data.tier === 'studio') {
             supabase.from('user_model_selections').select('model_id').eq('user_id', user.id)
               .then(({ data: sels }) => {
@@ -574,7 +578,8 @@ export default function Dashboard() {
     setRenderingModelSlug(selectedModel.slug)
     setRecentModelSlugs(prev => {
       const updated = [selectedModel.slug, ...prev.filter(s => s !== selectedModel.slug)].slice(0, 4)
-      localStorage.setItem('pv_recent_models', JSON.stringify(updated))
+      try { localStorage.setItem('pv_recent_models', JSON.stringify(updated)) } catch {}
+      if (user) supabase.from('profiles').update({ recent_models: updated }).eq('id', user.id)
       return updated
     })
     // Request notification permission for all generation types
