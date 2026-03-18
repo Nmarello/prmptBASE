@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
 import { checkImageRateLimit } from '../_shared/rate-limit.ts'
+import { isSafeProviderUrl } from '../_shared/validate-url.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -179,13 +180,14 @@ Deno.serve(async (req) => {
 
     const rateLimit = await checkImageRateLimit(adminClient, userId)
     if (!rateLimit.allowed) {
+      const isUnauthed = rateLimit.tier === 'unauthenticated'
       return new Response(JSON.stringify({
-        error: `Monthly limit reached. You've used ${rateLimit.used} of ${rateLimit.limit} generations on the ${rateLimit.tier} plan.`,
-        rate_limited: true,
+        error: isUnauthed ? 'Authentication required' : `Monthly limit reached. You've used ${rateLimit.used} of ${rateLimit.limit} generations on the ${rateLimit.tier} plan.`,
+        rate_limited: !isUnauthed,
         used: rateLimit.used,
         limit: rateLimit.limit,
         tier: rateLimit.tier,
-      }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }), { status: isUnauthed ? 401 : 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     const prompt = buildPrompt(values)
@@ -247,6 +249,7 @@ Deno.serve(async (req) => {
       const tempUrl = openaiData.data[0].url
       permanentUrl = tempUrl
       try {
+        if (!isSafeProviderUrl(tempUrl)) throw new Error('Blocked unsafe URL')
         const imgRes = await fetch(tempUrl)
         const imgBlob = await imgRes.arrayBuffer()
         const fileName = `${userId ?? 'anon'}/${Date.now()}.png`

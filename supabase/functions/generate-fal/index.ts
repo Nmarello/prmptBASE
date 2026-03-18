@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
 import { checkImageRateLimit } from '../_shared/rate-limit.ts'
+import { isSafeProviderUrl } from '../_shared/validate-url.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -297,6 +298,10 @@ function capSupabaseImageUrl(url: string, _maxDim: number): string {
 
 async function storeImage(adminClient: ReturnType<typeof createClient>, tempUrl: string, userId: string | null, fmt = 'jpeg'): Promise<string> {
   try {
+    if (!isSafeProviderUrl(tempUrl)) {
+      console.error('[storeImage] Blocked unsafe URL:', tempUrl)
+      return tempUrl
+    }
     const imgRes = await fetch(tempUrl)
     if (!imgRes.ok) throw new Error(`Fetch failed: ${imgRes.status}`)
     // Use actual content-type from response (handles WebP, PNG, etc.)
@@ -353,13 +358,14 @@ Deno.serve(async (req) => {
 
     const rateLimit = await checkImageRateLimit(adminClient, userId)
     if (!rateLimit.allowed) {
+      const isUnauthed = rateLimit.tier === 'unauthenticated'
       return new Response(JSON.stringify({
-        error: `Monthly limit reached. You've used ${rateLimit.used} of ${rateLimit.limit} generations on the ${rateLimit.tier} plan.`,
-        rate_limited: true,
+        error: isUnauthed ? 'Authentication required' : `Monthly limit reached. You've used ${rateLimit.used} of ${rateLimit.limit} generations on the ${rateLimit.tier} plan.`,
+        rate_limited: !isUnauthed,
         used: rateLimit.used,
         limit: rateLimit.limit,
         tier: rateLimit.tier,
-      }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }), { status: isUnauthed ? 401 : 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
     const isImg2Img = slug === 'flux-dev-img2img'
     const isKontext = slug === 'flux-kontext-pro'

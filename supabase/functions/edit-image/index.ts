@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
 import { checkImageRateLimit } from '../_shared/rate-limit.ts'
+import { isSafeProviderUrl } from '../_shared/validate-url.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -94,6 +95,7 @@ Deno.serve(async (req) => {
       permanentUrl = publicUrl
     } else if (resultUrl) {
       // Download URL and upload to storage
+      if (!isSafeProviderUrl(resultUrl)) throw new Error('Blocked unsafe result URL')
       const imgRes = await fetch(resultUrl)
       const imgBytes = await imgRes.arrayBuffer()
       const fileName = `${userId ?? 'anon'}/${Date.now()}.png`

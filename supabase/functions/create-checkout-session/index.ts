@@ -32,7 +32,16 @@ Deno.serve(async (req) => {
     const { priceId, tier, billing } = await req.json()
     if (!priceId || !tier) throw new Error('Missing priceId or tier')
 
-    const origin = req.headers.get('origin') || 'https://prmptvault.ai'
+    const ALLOWED_ORIGINS = new Set([
+      'https://prmptvault.ai',
+      'https://www.prmptvault.ai',
+      'https://prmptbase.ai',
+      'https://www.prmptbase.ai',
+      'https://prmptbase.pages.dev',
+      'https://staging.prmptbase.pages.dev',
+    ])
+    const rawOrigin = req.headers.get('origin') ?? ''
+    const origin = ALLOWED_ORIGINS.has(rawOrigin) ? rawOrigin : 'https://prmptvault.ai'
 
     // Check if customer already exists
     const { data: sub } = await supabase

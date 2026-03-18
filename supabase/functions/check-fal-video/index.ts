@@ -1,3 +1,5 @@
+import { isSafeProviderUrl } from '../_shared/validate-url.ts'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -85,6 +87,7 @@ Deno.serve(async (req) => {
     // Download and upload to Supabase Storage via REST
     let permanentUrl = sourceUrl
     try {
+      if (!isSafeProviderUrl(sourceUrl)) throw new Error('Blocked unsafe media URL')
       const mediaRes = await fetch(sourceUrl)
       const buf = await mediaRes.arrayBuffer()
       const contentType = isImage

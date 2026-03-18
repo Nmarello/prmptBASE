@@ -18,13 +18,13 @@ export interface RateLimitResult {
 /**
  * Check if a user is within their monthly image generation limit.
  * Counts all gen_types — every asset (image or video) counts against the monthly limit.
- * Returns allowed=true for unauthenticated users (upsell happens on the frontend).
+ * Unauthenticated requests are blocked server-side.
  */
 export async function checkImageRateLimit(
   adminClient: ReturnType<typeof createClient>,
   userId: string | null,
 ): Promise<RateLimitResult> {
-  if (!userId) return { allowed: true, tier: 'free', used: 0, limit: TIER_LIMITS.free }
+  if (!userId) return { allowed: false, tier: 'unauthenticated', used: 0, limit: 0 }
 
   // Get user tier + ban status
   const { data: profile } = await adminClient
