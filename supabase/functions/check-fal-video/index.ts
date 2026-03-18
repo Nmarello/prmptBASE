@@ -1,12 +1,8 @@
 import { isSafeProviderUrl } from '../_shared/validate-url.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, optionsResponse, safeErrorMessage } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return optionsResponse(req)
 
   try {
     const { user_token, asset_id, operation_name } = await req.json()
@@ -53,7 +49,7 @@ Deno.serve(async (req) => {
     if (status !== 'COMPLETED') {
       return new Response(
         JSON.stringify({ status: 'pending' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }
 
@@ -130,12 +126,12 @@ Deno.serve(async (req) => {
         status: 'complete',
         ...(isImage ? { image_url: permanentUrl } : { video_url: permanentUrl }),
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
     )
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: safeErrorMessage(err) }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 })

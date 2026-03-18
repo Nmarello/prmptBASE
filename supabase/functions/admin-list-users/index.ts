@@ -1,12 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, optionsResponse, safeErrorMessage } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return optionsResponse(req)
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -122,12 +118,12 @@ Deno.serve(async (req) => {
     const users = (profiles ?? []).map(p => ({ ...p, asset_count: countMap[p.id] ?? 0, last_sign_in_at: authUsers[p.id] ?? null }))
 
     return new Response(JSON.stringify({ users, cost_by_model, period_spend, total_spend, gen_type_totals: genTypeTotals, video_by_model, image_by_model, assets_today }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: safeErrorMessage(err) }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 })

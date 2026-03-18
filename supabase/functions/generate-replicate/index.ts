@@ -1,11 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
 import { checkImageRateLimit } from '../_shared/rate-limit.ts'
 import { isSafeProviderUrl } from '../_shared/validate-url.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, optionsResponse, safeErrorMessage } from '../_shared/cors.ts'
 
 // ── Model registry ───────────────────────────────────────────────────────────
 interface ModelConfig {
@@ -272,7 +268,7 @@ async function storeImage(
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return optionsResponse(req)
 
   try {
     const body = await req.json()
@@ -301,7 +297,7 @@ Deno.serve(async (req) => {
         used: rateLimit.used,
         limit: rateLimit.limit,
         tier: rateLimit.tier,
-      }), { status: isUnauthed ? 401 : 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }), { status: isUnauthed ? 401 : 429, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
     }
 
     const slug = (model_slug as string) ?? 'sd35-large'
@@ -412,7 +408,7 @@ Deno.serve(async (req) => {
           prompt: builtPrompt,
           seed: repData.input?.seed ?? seedVal ?? null,
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }
 
@@ -449,13 +445,13 @@ Deno.serve(async (req) => {
         prompt: builtPrompt,
         seed: repData.input?.seed ?? seedVal ?? null,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
     )
   } catch (err) {
     console.error('[generate-replicate]', err)
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      JSON.stringify({ error: safeErrorMessage(err) }),
+      { status: 500, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
     )
   }
 })

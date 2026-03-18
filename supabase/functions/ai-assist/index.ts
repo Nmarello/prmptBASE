@@ -1,12 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, optionsResponse, safeErrorMessage } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return optionsResponse(req)
 
   try {
     const { user_token, field_id, field_label, current_value, form_values, source_image_url, is_negative_prompt, gen_type } = await req.json()
@@ -16,6 +12,12 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
     if (user_token) await adminClient.auth.getUser(user_token)
+
+    // Validate that source_image_url is from our own Supabase storage (not an arbitrary external URL)
+    if (source_image_url) {
+      const supabaseStorageBase = Deno.env.get('SUPABASE_URL') + '/storage/v1/object/public/'
+      if (!source_image_url.startsWith(supabaseStorageBase)) throw new Error('Invalid source image URL')
+    }
 
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiKey) throw new Error('OpenAI API key not configured')
@@ -114,12 +116,12 @@ Deno.serve(async (req) => {
     const suggestion = data.choices[0].message.content.trim()
 
     return new Response(JSON.stringify({ suggestion }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: safeErrorMessage(err) }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 })

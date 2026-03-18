@@ -1,12 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, optionsResponse, safeErrorMessage } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return optionsResponse(req)
 
   try {
     const adminClient = createClient(
@@ -38,6 +34,8 @@ Deno.serve(async (req) => {
     }
 
     // Update profile
+    // NOTE: is_admin is intentionally never included in profileUpdate — privilege escalation must
+    // not be possible via this endpoint. Only display_name, is_banned, and tier are permitted.
     const profileUpdate: Record<string, unknown> = {}
     if (display_name !== undefined) profileUpdate.display_name = display_name
     if (is_banned !== undefined) profileUpdate.is_banned = Boolean(is_banned)
@@ -55,12 +53,12 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ ok: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: safeErrorMessage(err) }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 })

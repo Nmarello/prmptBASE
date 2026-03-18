@@ -1,11 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
 import { checkImageRateLimit } from '../_shared/rate-limit.ts'
 import { isSafeProviderUrl } from '../_shared/validate-url.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, optionsResponse, safeErrorMessage } from '../_shared/cors.ts'
 
 const FAL_ENDPOINTS: Record<string, string> = {
   'flux-schnell':       'https://fal.run/fal-ai/flux/schnell',
@@ -327,7 +323,7 @@ async function storeImage(adminClient: ReturnType<typeof createClient>, tempUrl:
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return optionsResponse(req)
   }
 
   try {
@@ -365,7 +361,7 @@ Deno.serve(async (req) => {
         used: rateLimit.used,
         limit: rateLimit.limit,
         tier: rateLimit.tier,
-      }), { status: isUnauthed ? 401 : 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }), { status: isUnauthed ? 401 : 429, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
     }
     const isImg2Img = slug === 'flux-dev-img2img'
     const isKontext = slug === 'flux-kontext-pro'
@@ -453,7 +449,7 @@ Deno.serve(async (req) => {
       const firstAsset = insertedAssets[0]
       return new Response(
         JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt, seed: falData.seed ?? null }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }
 
@@ -534,7 +530,7 @@ Deno.serve(async (req) => {
       const firstAsset = insertedAssets[0]
       return new Response(
         JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt, seed: falData.seed ?? null }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }
 
@@ -750,7 +746,7 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ asset, operation_name: statusUrl, status: 'pending', prompt, provider: 'fal.ai' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }
 
@@ -828,7 +824,7 @@ Deno.serve(async (req) => {
         const firstResult = insertedAssets[0]
         return new Response(
           JSON.stringify({ asset: firstResult?.asset, image_url: firstResult?.asset?.url ?? firstResult?.permanentUrl ?? images[0].url, all_assets: insertedAssets.map(r => r.asset), prompt: builtPrompt, seed: falData.seed ?? null }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
         )
       }
 
@@ -875,7 +871,7 @@ Deno.serve(async (req) => {
       const firstResult = insertedAssets[0]
       return new Response(
         JSON.stringify({ asset: firstResult?.asset, image_url: firstResult?.asset?.url ?? firstResult?.permanentUrl ?? images[0].url, all_assets: insertedAssets.map(r => r.asset), prompt: builtPrompt, seed: falData.seed ?? null }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }
 
@@ -933,7 +929,7 @@ Deno.serve(async (req) => {
       const firstAsset = insertedAssets[0]
       return new Response(
         JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt, seed: falData.seed ?? null }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }
 
@@ -989,7 +985,7 @@ Deno.serve(async (req) => {
       const firstAsset = insertedAssets[0]
       return new Response(
         JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }
 
@@ -1028,7 +1024,7 @@ Deno.serve(async (req) => {
       const firstAsset = insertedAssets[0]
       return new Response(
         JSON.stringify({ asset: firstAsset, image_url: firstAsset?.url ?? images[0].url, all_assets: insertedAssets, prompt: builtPrompt }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }
 
@@ -1094,7 +1090,7 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ asset, operation_name: statusUrl, status: 'pending', prompt: builtPrompt, provider: 'fal.ai', is_image: true }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }
 
@@ -1228,12 +1224,12 @@ Deno.serve(async (req) => {
         prompt: builtPrompt,
         seed: falData.seed ?? null,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
     )
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: safeErrorMessage(err) }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 })

@@ -1,9 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, optionsResponse, safeErrorMessage } from '../_shared/cors.ts'
+import { isSafeProviderUrl } from '../_shared/validate-url.ts'
 
 const SYSTEM_PROMPT = `You are the prmptVAULT support assistant. prmptVAULT is an AI image and video generation platform.
 
@@ -65,16 +62,18 @@ async function callGPT4o(messages: Message[], openaiKey: string): Promise<string
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return optionsResponse(req)
 
   try {
     const { conversation_id, message, image_url, user_token, is_error, force_escalate } = await req.json()
 
     if (!message?.trim()) {
       return new Response(JSON.stringify({ error: 'Message is required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
       })
     }
+
+    if (image_url && !isSafeProviderUrl(image_url)) throw new Error('Invalid image URL')
 
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiKey) throw new Error('OpenAI API key not configured')
@@ -115,7 +114,7 @@ Deno.serve(async (req) => {
         reply: "This conversation has been escalated. Nick will follow up with you within 24 hours.",
         conversation_id: convId,
         action_taken: null,
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }), { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
     }
 
     // Force escalate — user said the bot's fix didn't work
@@ -144,7 +143,7 @@ Deno.serve(async (req) => {
         conversation_id: convId,
         action_taken: 'escalate',
         escalated: true,
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }), { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
     }
 
     // Build user message content (with vision if image attached)
@@ -292,11 +291,11 @@ Deno.serve(async (req) => {
       conversation_id: convId,
       action_taken: actionTaken,
       escalated: newStatus === 'escalated',
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }), { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    return new Response(JSON.stringify({ error: safeErrorMessage(err) }), {
+      status: 400, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 })

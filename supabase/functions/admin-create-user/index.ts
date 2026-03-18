@@ -1,12 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, optionsResponse, safeErrorMessage } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return optionsResponse(req)
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -31,6 +27,17 @@ Deno.serve(async (req) => {
 
     const VALID_TIERS = ['newbie', 'creator', 'studio', 'pro']
     if (!VALID_TIERS.includes(tier)) throw new Error('Invalid tier')
+
+    // Validate email format
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!EMAIL_RE.test(email)) throw new Error('Invalid email format')
+    // Validate password if provided
+    if (password !== undefined && password !== null && password !== '') {
+      if (typeof password !== 'string' || password.length < 8) throw new Error('Password must be at least 8 characters')
+      if (password.length > 72) throw new Error('Password too long')
+    }
+    // Validate display_name length if provided
+    if (display_name && (typeof display_name !== 'string' || display_name.length > 100)) throw new Error('Display name too long')
 
     // Create auth user via REST API
     const createRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
@@ -65,12 +72,12 @@ Deno.serve(async (req) => {
     )
 
     return new Response(JSON.stringify({ ok: true, user_id: userId }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: safeErrorMessage(err) }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 })
