@@ -23,7 +23,9 @@ interface BaseInput {
   numOutputs: number
   outputFormat: string
   seed?: number
-  _style?: string   // raw style key, used by model-specific builders (e.g. Recraft)
+  _style?: string    // raw style key, used by model-specific builders (e.g. Recraft)
+  _steps?: number    // num_inference_steps
+  _guidance?: number // guidance_scale
 }
 
 // Standard input for FLUX / SD-style models
@@ -152,12 +154,16 @@ const MODELS: Record<string, ModelConfig> = {
     prompt: b.prompt,
     aspect_ratio: b.aspectRatio,
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    ...(b._steps != null ? { num_inference_steps: b._steps } : {}),
+    ...(b._guidance != null ? { guidance_scale: b._guidance } : {}),
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
   'ltx-2.3-fast': { path: 'lightricks/ltx-2.3-fast', isVideo: true, maxOutputs: 1, costUsd: 0.05, buildInput: (b) => ({
     prompt: b.prompt,
     aspect_ratio: b.aspectRatio,
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    ...(b._steps != null ? { num_inference_steps: b._steps } : {}),
+    ...(b._guidance != null ? { guidance_scale: b._guidance } : {}),
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
 }
@@ -314,6 +320,8 @@ Deno.serve(async (req) => {
       outputFormat: fmt,
       seed: seedVal,
       _style: body.style as string | undefined,
+      _steps: body.num_inference_steps ? Number(body.num_inference_steps) : undefined,
+      _guidance: body.guidance_scale ? Number(body.guidance_scale) : undefined,
     }
     const replicateInput = config.buildInput(baseInput)
 

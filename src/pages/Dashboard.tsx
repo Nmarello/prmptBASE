@@ -571,7 +571,7 @@ export default function Dashboard() {
     setGenerateError(null)
     analytics.generationStarted({ model: selectedModel.slug, gen_type: selectedGenType, tier: userTier })
     const isImageGen = selectedGenType !== 'txt2vid' && selectedGenType !== 'img2vid'
-    if (isImageGen) setPendingImage({ modelName: selectedModel.name, slug: selectedModel.slug })
+    setPendingImage({ modelName: selectedModel.name, slug: selectedModel.slug })
     setRenderingModelSlug(selectedModel.slug)
     setRecentModelSlugs(prev => {
       const updated = [selectedModel.slug, ...prev.filter(s => s !== selectedModel.slug)].slice(0, 4)
@@ -689,6 +689,7 @@ export default function Dashboard() {
       if (data.status === 'pending') {
         const provider = data.provider === 'google' ? 'google' : 'fal.ai'
         addPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, provider, startedAt: Date.now(), isImage: !!data.is_image, slug: selectedModel?.slug ?? 'unknown' })
+        setPendingImage(null)
         setSubmitting(false)
         return
       }
