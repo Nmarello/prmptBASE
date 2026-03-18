@@ -634,7 +634,7 @@ export default function Dashboard() {
     const updatedRecent = [selectedModel.slug, ...recentModelSlugs.filter(s => s !== selectedModel.slug)].slice(0, 4)
     setRecentModelSlugs(updatedRecent)
     try { localStorage.setItem('pv_recent_models', JSON.stringify(updatedRecent)) } catch {}
-    if (user) supabase.from('profiles').update({ recent_models: updatedRecent }).eq('id', user.id)
+    if (user) supabase.from('profiles').update({ recent_models: updatedRecent }).eq('id', user.id).then()
     // Request notification permission for all generation types
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission()
@@ -1089,10 +1089,11 @@ export default function Dashboard() {
                   {/* Desktop pills */}
                   <div className="hidden sm:flex gap-1.5">
                     {(['all', 'images', 'videos'] as const).map(f => {
+                      const liveModels = models.filter(m => !m.coming_soon)
                       const counts = {
-                        all: models.length,
-                        images: models.filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))).length,
-                        videos: models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid')).length,
+                        all: liveModels.length,
+                        images: liveModels.filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))).length,
+                        videos: liveModels.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid')).length,
                       }
                       const active = modelFilter === f
                       return (

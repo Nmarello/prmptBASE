@@ -383,9 +383,23 @@ Deno.serve(async (req) => {
 
     const predictTime = repData.metrics?.predict_time ?? null
 
-    // ── Video output: store URL directly, no image re-upload ─────────────────
+    // ── Video output: upload to Supabase storage for permanence ─────────────
     if (config.isVideo) {
-      const videoUrl = outputUrls[0]
+      let videoUrl = outputUrls[0]
+      try {
+        const vidRes = await fetch(videoUrl)
+        if (vidRes.ok) {
+          const vidBuf = await vidRes.arrayBuffer()
+          const fileName = `${userId ?? 'anon'}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`
+          const { error: uploadErr } = await adminClient.storage.from('assets').upload(fileName, vidBuf, { contentType: 'video/mp4', upsert: false })
+          if (!uploadErr) {
+            const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(fileName)
+            videoUrl = publicUrl
+          }
+        }
+      } catch (e) {
+        console.error('[storeVideo] error, using temp URL:', e)
+      }
       const { data: asset } = await adminClient.from('assets').insert({
         user_id: userId,
         prompt_id: prompt_id ?? null,
