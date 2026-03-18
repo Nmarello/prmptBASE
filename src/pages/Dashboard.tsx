@@ -631,12 +631,10 @@ export default function Dashboard() {
     analytics.generationStarted({ model: selectedModel.slug, gen_type: selectedGenType, tier: userTier })
     setPendingImage({ modelName: selectedModel.name, slug: selectedModel.slug })
     setRenderingModelSlug(selectedModel.slug)
-    setRecentModelSlugs(prev => {
-      const updated = [selectedModel.slug, ...prev.filter(s => s !== selectedModel.slug)].slice(0, 4)
-      try { localStorage.setItem('pv_recent_models', JSON.stringify(updated)) } catch {}
-      if (user) supabase.from('profiles').update({ recent_models: updated }).eq('id', user.id)
-      return updated
-    })
+    const updatedRecent = [selectedModel.slug, ...recentModelSlugs.filter(s => s !== selectedModel.slug)].slice(0, 4)
+    setRecentModelSlugs(updatedRecent)
+    try { localStorage.setItem('pv_recent_models', JSON.stringify(updatedRecent)) } catch {}
+    if (user) supabase.from('profiles').update({ recent_models: updatedRecent }).eq('id', user.id)
     // Request notification permission for all generation types
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission()
