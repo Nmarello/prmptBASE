@@ -436,7 +436,7 @@ export default function Home() {
                     </div>
                   </>
                 ) : (
-                  <img src={item.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  <img src={item.url} alt="AI-generated image" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                     onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
                 )}
                 <div style={{
@@ -586,7 +586,7 @@ export default function Home() {
             onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(61,127,255,0.25)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'none'; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)' }}
           >
-            <img src="https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773105432147.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+            <img src="https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773105432147.png" alt="prmptVAULT workspace preview" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,9,8,0.7) 0%, rgba(10,9,8,0.05) 50%)' }} />
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 22 }}>
               <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.2, color: T.text }}>State-of-the-art<br />image generation</div>
@@ -840,11 +840,11 @@ export default function Home() {
         style={{ borderTop: '1px solid ' + T.border, color: T.text3, fontSize: 13 }}>
         <Logo height={32} theme={dark ? 'dark' : 'light'} />
         <div style={{ display: 'flex', gap: 24 }}>
-          {['Privacy', 'Terms', 'Docs'].map(l => (
-            <a key={l} href="#" style={{ color: T.text3, textDecoration: 'none', transition: 'color 0.15s' }}
+          {[{ label: 'Privacy', href: '/privacy' }, { label: 'Terms', href: '/tos' }, { label: 'Docs', href: 'https://docs.prmptbase.ai' }].map(l => (
+            <a key={l.label} href={l.href} style={{ color: T.text3, textDecoration: 'none', transition: 'color 0.15s' }}
               onMouseEnter={e => (e.currentTarget.style.color = T.text2)}
               onMouseLeave={e => (e.currentTarget.style.color = T.text3)}
-            >{l}</a>
+            >{l.label}</a>
           ))}
         </div>
         <div>© 2026 Marello Productions</div>

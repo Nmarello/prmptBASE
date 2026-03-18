@@ -11,6 +11,7 @@ import Admin from './pages/Admin'
 import Settings from './pages/Settings'
 import Tos from './pages/Tos'
 import Privacy from './pages/Privacy'
+import NotFound from './pages/NotFound'
 import FeedbackWidget from './components/support/FeedbackWidget'
 import SupportWidget from './components/support/SupportWidget'
 
@@ -49,6 +50,7 @@ export default function App() {
               </AdminRoute>
             }
           />
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <FeedbackWidget />
         <SupportWidget />

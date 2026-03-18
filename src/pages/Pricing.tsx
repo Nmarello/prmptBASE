@@ -106,6 +106,7 @@ export default function Pricing() {
   const [userTier, setUserTier] = useState<string | null>(null)
   const [billing, setBilling] = useState<BillingCycle>('monthly')
   const [teamsEmail, setTeamsEmail] = useState('')
+  const [teamsNotified, setTeamsNotified] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -129,6 +130,7 @@ export default function Pricing() {
       await createCheckoutSession(tier.tier as 'creator' | 'studio' | 'pro', billing)
     } catch (err) {
       console.error(err)
+    } finally {
       setLoading(null)
     }
   }
@@ -317,9 +319,9 @@ export default function Pricing() {
                 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--pv-text3)'; e.currentTarget.style.color = 'var(--pv-text)' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--pv-border)'; e.currentTarget.style.color = 'var(--pv-text2)' }}
-                onClick={() => setTeamsEmail('')}
+                onClick={() => { if (teamsEmail) { setTeamsNotified(true); setTeamsEmail('') } }}
               >
-                Notify me
+                {teamsNotified ? '✓ You\'re on the list!' : 'Notify me'}
               </button>
             </div>
           </div>
