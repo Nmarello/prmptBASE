@@ -1089,7 +1089,7 @@ export default function Dashboard() {
                   {/* Desktop pills */}
                   <div className="hidden sm:flex gap-1.5">
                     {(['all', 'images', 'videos'] as const).map(f => {
-                      const liveModels = models.filter(m => !m.coming_soon)
+                      const liveModels = models.filter(m => m.is_active && !m.coming_soon)
                       const counts = {
                         all: liveModels.length,
                         images: liveModels.filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))).length,
