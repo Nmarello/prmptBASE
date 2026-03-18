@@ -1441,8 +1441,9 @@ export default function Dashboard() {
       >
         <nav
           className="flex items-center gap-1 px-2 py-2"
-          style={{ pointerEvents: 'auto', touchAction: 'manipulation' }}
           style={{
+            pointerEvents: 'auto',
+            touchAction: 'manipulation',
             background: 'var(--pv-surface)',
             border: '1px solid var(--pv-border)',
             borderRadius: 9999,
