@@ -28,6 +28,7 @@ interface Step {
   special?: 'subject' | 'thinking' | 'generating' | 'settings' | 'post_gen_choice'
   hasButton?: boolean
   buttonLabel?: string
+  actionPrompt?: string
 }
 
 const STEPS: Step[] = [
@@ -47,6 +48,7 @@ const STEPS: Step[] = [
     position: 'right',
     title: 'Choose your model',
     body: "These are your AI models — each one has different strengths. You will learn more about all of them as you explore the site. For your first creation lets use DALL-E 3.",
+    actionPrompt: 'Select DALL-E 3 to continue →',
   },
   // 2 – click Generate in drawer
   {
@@ -54,6 +56,7 @@ const STEPS: Step[] = [
     position: 'left',
     title: 'Open the prompt builder',
     body: 'Click Generate to open the structured template for DALL-E 3.',
+    actionPrompt: 'Click Generate to continue →',
   },
   // 3 – select Text to Image
   {
@@ -61,6 +64,7 @@ const STEPS: Step[] = [
     position: 'left',
     title: 'Select Text to Image',
     body: "DALL-E 3 can create from text or transform an existing image. Select Text to Image to get started.",
+    actionPrompt: 'Select Text to Image to continue →',
   },
   // 4 – type in subject (or use auto-fill)
   {
@@ -77,6 +81,7 @@ const STEPS: Step[] = [
     position: 'left',
     title: 'Try AI Assist',
     body: 'Click the "AI assist" button next to Subject. It\'ll expand your simple idea into a detailed, effective prompt.',
+    actionPrompt: 'Click AI Assist to continue →',
   },
   // 6 – waiting for AI response
   {
@@ -91,6 +96,7 @@ const STEPS: Step[] = [
     position: 'left',
     title: 'Your copy is ready!',
     body: "Click Accept to use it, or Decline to keep your original. You can always adjust it once it's in your prompt window.",
+    actionPrompt: 'Click Accept or Decline to continue →',
   },
   // 8 – explain optional settings
   {
@@ -107,6 +113,7 @@ const STEPS: Step[] = [
     position: 'top',
     title: 'Ready to generate',
     body: 'Your prompt is set. Hit Generate to create your first image.',
+    actionPrompt: 'Click Generate to continue →',
   },
   // 10 – generating
   {
@@ -466,9 +473,9 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, 
 
         {/* Waiting indicator */}
         {!current.hasButton && current.special !== 'thinking' && current.special !== 'generating' && current.special !== 'post_gen_choice' && (
-          <div className="flex items-center gap-2 mt-2" style={{ fontSize: 11, color: 'var(--pv-text3)' }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--pv-accent)', animation: 'frPulseDot 1.4s ease-in-out infinite' }} />
-            Waiting for you…
+          <div className="flex items-center gap-2 mt-2" style={{ fontSize: 11, color: 'var(--pv-accent)', fontWeight: 600 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--pv-accent)', flexShrink: 0, animation: 'frPulseDot 1.4s ease-in-out infinite' }} />
+            {current.actionPrompt ?? 'Waiting for you…'}
           </div>
         )}
 
