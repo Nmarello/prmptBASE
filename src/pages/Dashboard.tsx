@@ -1459,6 +1459,7 @@ export default function Dashboard() {
             <button
               key={id}
               onClick={() => setView(id)}
+              data-tour={id === 'models' ? 'sidebar-generate' : id === 'assets' ? 'assets-nav' : id === 'projects' ? 'sidebar-projects' : undefined}
               className="flex flex-col items-center gap-0.5 cursor-pointer transition-all rounded-full"
               style={{
                 color: view === id ? 'var(--pv-accent)' : 'var(--pv-text3)',
@@ -1844,7 +1845,10 @@ export default function Dashboard() {
       {firstRunStep >= 0 && (
         <FirstRunTour
           step={firstRunStep}
-          onNext={() => setFirstRunStep(s => s + 1)}
+          onNext={() => {
+            if (firstRunStep === 11) { closeWorkspace(); setFirstRunStep(s => s + 1) }
+            else setFirstRunStep(s => s + 1)
+          }}
           onSkip={() => { markFirstRunSeen(); setFirstRunStep(-1) }}
           onDone={() => { markFirstRunSeen(); setFirstRunStep(-1) }}
           onExplore={() => setFirstRunStep(DECLINE_STEP)}

@@ -127,9 +127,9 @@ const STEPS: Step[] = [
     target: '[data-tour="workspace-close"]',
     position: 'left',
     title: 'Done? Use this to go back',
-    body: 'Hit × to close the builder and return to the model browser. Your image is already saved to Assets.',
+    body: 'The × button closes the builder and returns you to the model browser. Your image is already saved to Assets.',
     hasButton: true,
-    buttonLabel: 'Next →',
+    buttonLabel: 'Close & continue →',
   },
   // 12 – post-gen choice
   {
