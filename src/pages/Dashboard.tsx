@@ -570,7 +570,6 @@ export default function Dashboard() {
     setResult(null)
     setGenerateError(null)
     analytics.generationStarted({ model: selectedModel.slug, gen_type: selectedGenType, tier: userTier })
-    const isImageGen = selectedGenType !== 'txt2vid' && selectedGenType !== 'img2vid'
     setPendingImage({ modelName: selectedModel.name, slug: selectedModel.slug })
     setRenderingModelSlug(selectedModel.slug)
     setRecentModelSlugs(prev => {
