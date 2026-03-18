@@ -14,8 +14,8 @@ export function clearFirstRun(): void {
   try { localStorage.removeItem(FIRST_RUN_KEY) } catch {}
 }
 
-export const NAV_TOUR_START = 13
-export const DECLINE_STEP   = 19
+export const NAV_TOUR_START = 14
+export const DECLINE_STEP   = 20
 export const SUBJECT_SAMPLE = 'A 2 story building on a city street'
 
 // ── Step definitions ──────────────────────────────────────────────────────────
@@ -122,16 +122,25 @@ const STEPS: Step[] = [
     title: 'Generating your image…',
     special: 'generating',
   },
-  // 11 – point out close button
+  // 11 – highlight the creation
+  {
+    target: '[data-tour="canvas-result"]',
+    position: 'bottom',
+    title: "Here's your creation!",
+    body: "It's automatically saved to your Assets. Take a look — when you're ready we'll head back to the dashboard.",
+    hasButton: true,
+    buttonLabel: 'Next →',
+  },
+  // 12 – point out close button
   {
     target: '[data-tour="workspace-close"]',
     position: 'left',
     title: 'Done? Use this to go back',
-    body: 'The × button closes the builder and returns you to the model browser. Your image is already saved to Assets.',
+    body: 'The × button closes the builder and returns you to the model browser.',
     hasButton: true,
     buttonLabel: 'Close & continue →',
   },
-  // 12 – post-gen choice
+  // 13 – post-gen choice
   {
     target: null,
     position: 'center',
@@ -217,10 +226,12 @@ interface Rect { top: number; left: number; width: number; height: number }
 
 function getRect(selector: string): Rect | null {
   try {
-    const el = document.querySelector(selector)
-    if (!el) return null
-    const r = el.getBoundingClientRect()
-    return { top: r.top, left: r.left, width: r.width, height: r.height }
+    const els = document.querySelectorAll(selector)
+    for (const el of els) {
+      const r = el.getBoundingClientRect()
+      if (r.width > 0 && r.height > 0) return { top: r.top, left: r.left, width: r.width, height: r.height }
+    }
+    return null
   } catch { return null }
 }
 
@@ -240,23 +251,32 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, 
   if (!current) return null
 
   const isCentered    = current.position === 'center' || !current.target
-  const isGenTour     = step >= 0 && step <= 11
+  const isGenTour     = step >= 0 && step <= 12
   const isNavTour     = step >= NAV_TOUR_START && step < DECLINE_STEP
   const showPhase     = isGenTour || isNavTour
   const phaseLabel    = isGenTour ? 'Image generation tour' : 'Navigation tour'
-  const navSteps      = DECLINE_STEP - NAV_TOUR_START - 1  // steps 13–18 = 6
+  const navSteps      = DECLINE_STEP - NAV_TOUR_START - 1
   const phaseProgress = isGenTour
-    ? (step + 1) / 12
+    ? (step + 1) / 13
     : isNavTour
       ? (step - NAV_TOUR_START + 1) / navSteps
       : null
 
   useEffect(() => {
-    if (step === 9) {
-      const el = document.querySelector('[data-tour="generate-btn"]')
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
-  }, [step])
+    if (!current.target) return
+    // Small delay so the DOM has settled before scrolling
+    const t = setTimeout(() => {
+      const els = document.querySelectorAll(current.target!)
+      for (const el of els) {
+        const r = el.getBoundingClientRect()
+        if (r.width > 0 && r.height > 0) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          break
+        }
+      }
+    }, 80)
+    return () => clearTimeout(t)
+  }, [step, current.target])
 
   useEffect(() => {
     function onResize() { setW(window.innerWidth) }

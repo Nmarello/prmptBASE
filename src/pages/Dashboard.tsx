@@ -507,14 +507,14 @@ export default function Dashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firstRunStep])
 
-  // Nav tour: step 14 → switch to assets view
+  // Nav tour: step 15 → switch to assets view
   useEffect(() => {
-    if (firstRunStep === 14) setView('assets')
+    if (firstRunStep === 15) setView('assets')
   }, [firstRunStep])
 
-  // Nav tour: step 16 → switch back to models
+  // Nav tour: step 17 → switch back to models
   useEffect(() => {
-    if (firstRunStep === 16) setView('models')
+    if (firstRunStep === 17) setView('models')
   }, [firstRunStep])
 
   // Nav tour: step 17 → expand avatar nav so settings items are visible
@@ -1600,7 +1600,7 @@ export default function Dashboard() {
 
                 {/* Result */}
                 {result && (
-                  <div className="absolute inset-0 flex items-center justify-center p-2">
+                  <div data-tour="canvas-result" className="absolute inset-0 flex items-center justify-center p-2">
                     {result.isVideo ? (
                       <video src={result.url} controls autoPlay loop className="rounded-[18px]"
                         style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto' }} />
@@ -1846,7 +1846,7 @@ export default function Dashboard() {
         <FirstRunTour
           step={firstRunStep}
           onNext={() => {
-            if (firstRunStep === 11) { closeWorkspace(); setFirstRunStep(s => s + 1) }
+            if (firstRunStep === 12) { closeWorkspace(); setFirstRunStep(s => s + 1) }
             else setFirstRunStep(s => s + 1)
           }}
           onSkip={() => { markFirstRunSeen(); setFirstRunStep(-1) }}
