@@ -887,9 +887,15 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     // If user edited the live prompt, override the prompt field
-    const submitValues = isEdited
+    const submitValues: Record<string, unknown> = isEdited
       ? { ...values, prompt: livePrompt }
-      : values
+      : { ...values }
+    // Fill in first option for any select fields the user hasn't touched
+    for (const field of template.fields) {
+      if (field.type === 'select' && field.options?.length && submitValues[field.id] == null) {
+        submitValues[field.id] = field.options[0].value
+      }
+    }
     onSubmit(submitValues)
   }
 
