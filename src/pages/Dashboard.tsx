@@ -298,6 +298,35 @@ export default function Dashboard() {
     'cs-wan21':           { gradient: 'linear-gradient(145deg,#1a1a00,#4d4d00,#cccc00)', initial: 'WN' },
     'seedance-1-pro-txt2vid': { gradient: 'linear-gradient(145deg,#00001a,#00004d,#0033cc)', initial: 'SD' },
     'cs-seedance':        { gradient: 'linear-gradient(145deg,#00001a,#00004d,#0033cc)', initial: 'SD' },
+    // ── Coming soon — Text → Image ──────────────────────────────────────────────
+    'flux2-max':              { gradient: 'linear-gradient(145deg,#050a1a,#0a1f4d,#1a4dcc)', initial: 'FM' },
+    'flux-kontext-max':       { gradient: 'linear-gradient(145deg,#1a0033,#4400aa,#6622ee)', initial: 'KM' },
+    'recraft-v4':             { gradient: 'linear-gradient(145deg,#3d1a00,#cc6600,#ff9900)', initial: 'R4' },
+    'ideogram-v2':            { gradient: 'linear-gradient(145deg,#001a1a,#006666,#00cccc)', initial: 'I2' },
+    'imagen-4-ultra':         { gradient: 'linear-gradient(145deg,#001a00,#005500,#00aa44)', initial: 'IU' },
+    'imagen-4-fast':          { gradient: 'linear-gradient(145deg,#001a00,#004400,#00cc66)', initial: 'IF' },
+    'gpt-image-1.5':          { gradient: 'linear-gradient(145deg,#1a0a00,#6b2d00,#10a37f)', initial: 'G5' },
+    'seedream-4':             { gradient: 'linear-gradient(145deg,#0d0033,#3300cc,#6644ff)', initial: 'S4' },
+    'seedream-5-lite':        { gradient: 'linear-gradient(145deg,#0d0033,#2200aa,#5533ff)', initial: 'SL' },
+    // ── Coming soon — Text → Video ──────────────────────────────────────────────
+    'sora2-pro':              { gradient: 'linear-gradient(145deg,#0a0a14,#1a1a3e,#5555aa)', initial: 'SP' },
+    'veo-3':                  { gradient: 'linear-gradient(145deg,#001a00,#005522,#00aa55)', initial: 'V3' },
+    'veo-3-fast':             { gradient: 'linear-gradient(145deg,#001a00,#004d1a,#00cc66)', initial: 'VF' },
+    'veo-3.1':                { gradient: 'linear-gradient(145deg,#001a00,#006633,#00bb44)', initial: 'V3' },
+    'kling-v2.5-turbo':       { gradient: 'linear-gradient(145deg,#4a0040,#aa0055,#ff3388)', initial: 'KT' },
+    'kling-v3':               { gradient: 'linear-gradient(145deg,#4a0040,#880044,#dd2277)', initial: 'K3' },
+    'wan-2.5-t2v':            { gradient: 'linear-gradient(145deg,#1a1a00,#555500,#aaaa00)', initial: 'W5' },
+    'minimax-video':          { gradient: 'linear-gradient(145deg,#002b36,#006060,#00bbaa)', initial: 'MV' },
+    'gen-4.5':                { gradient: 'linear-gradient(145deg,#0d0d0d,#1a3333,#2d7a7a)', initial: 'G4' },
+    'pixverse-v5':            { gradient: 'linear-gradient(145deg,#1a001a,#660066,#cc44cc)', initial: 'PV' },
+    // ── Coming soon — Edit / Upscale ────────────────────────────────────────────
+    'flux-fill-pro':          { gradient: 'linear-gradient(145deg,#003566,#0060cc,#33aaff)', initial: 'FF' },
+    'bria-eraser':            { gradient: 'linear-gradient(145deg,#1a0000,#660000,#cc2222)', initial: 'BE' },
+    'bria-genfill':           { gradient: 'linear-gradient(145deg,#1a0000,#880000,#dd3333)', initial: 'BG' },
+    'bria-expand':            { gradient: 'linear-gradient(145deg,#1a0000,#770011,#cc1144)', initial: 'BX' },
+    'recraft-crisp-upscale':  { gradient: 'linear-gradient(145deg,#3d1a00,#994400,#dd8800)', initial: 'RC' },
+    'recraft-creative-upscale':{ gradient: 'linear-gradient(145deg,#3d1a00,#7a3300,#cc7700)', initial: 'RU' },
+    'google-upscaler':        { gradient: 'linear-gradient(145deg,#001a00,#004400,#009933)', initial: 'GU' },
   } as const
 
   const SLUG_BRAND_MAP: Record<string, string> = {
@@ -339,6 +368,32 @@ export default function Dashboard() {
     'ltx-2.3-fast':             'Lightricks',
     'wan-21-txt2vid':           'Alibaba',
     'hunyuan-video':            'Tencent',
+    'flux2-max':                'Black Forest Labs',
+    'flux-kontext-max':         'Black Forest Labs',
+    'flux-fill-pro':            'Black Forest Labs',
+    'recraft-v4':               'Recraft',
+    'recraft-crisp-upscale':    'Recraft',
+    'recraft-creative-upscale': 'Recraft',
+    'ideogram-v2':              'Ideogram',
+    'imagen-4-ultra':           'Google',
+    'imagen-4-fast':            'Google',
+    'google-upscaler':          'Google',
+    'gpt-image-1.5':            'OpenAI',
+    'sora2-pro':                'OpenAI',
+    'seedream-4':               'ByteDance',
+    'seedream-5-lite':          'ByteDance',
+    'veo-3':                    'Google',
+    'veo-3-fast':               'Google',
+    'veo-3.1':                  'Google',
+    'kling-v2.5-turbo':         'Kuaishou',
+    'kling-v3':                 'Kuaishou',
+    'wan-2.5-t2v':              'Alibaba',
+    'minimax-video':            'MiniMax',
+    'gen-4.5':                  'Runway',
+    'pixverse-v5':              'PixVerse',
+    'bria-eraser':              'Bria',
+    'bria-genfill':             'Bria',
+    'bria-expand':              'Bria',
   }
 
   // Latest render per model slug (includes videos; showcase fallback for unused models)
@@ -1550,7 +1605,7 @@ export default function Dashboard() {
                   <div className="relative z-10 flex flex-col items-center gap-4">
                     <div className="w-10 h-10 rounded-full pv-spin" style={{ border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'rgba(255,255,255,0.8)' }} />
                     <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: 500 }}>
-                      {pendingVideo && !pendingVideo.isImage ? 'Rendering video…' : 'Generating…'}
+                      {(pendingVideo && !pendingVideo.isImage) || (pendingImage && ['ltx-2.3-pro', 'ltx-2.3-fast'].includes(pendingImage.slug)) ? 'Rendering video…' : 'Generating…'}
                     </p>
                     {pendingVideo && !pendingVideo.isImage && (() => {
                       const RENDER_HINTS: Record<string, string> = {
@@ -1586,6 +1641,8 @@ export default function Dashboard() {
                         'sd35-large':      'Typically 15–30 seconds',
                         'sd35-large-turbo':'Typically 5–15 seconds',
                         'sd35-medium':     'Typically 10–20 seconds',
+                        'ltx-2.3-pro':     'LTX-2.3 Pro typically takes 1–3 min, hang tight',
+                        'ltx-2.3-fast':    'LTX-2.3 Fast typically takes 30–90 sec, hang tight',
                       }
                       const hint = IMAGE_HINTS[pendingImage.slug]
                       return hint ? <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>{hint}</p> : null
