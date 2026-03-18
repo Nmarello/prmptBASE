@@ -970,7 +970,7 @@ export default function Dashboard() {
         ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (
           <SbBtn
             key={id} tip={tip} active={view === id} onClick={() => setView(id as View)}
-            dataTour={id === 'models' ? 'sidebar-generate' : id === 'assets' ? 'assets-nav' : id === 'projects' ? 'sidebar-projects' : undefined}
+            dataTour={id === 'models' ? 'sidebar-generate' : id === 'assets' ? 'assets-nav' : id === 'projects' ? 'sidebar-projects' : id === 'tools' ? 'nav-tools' : undefined}
           >
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
           </SbBtn>
@@ -978,6 +978,7 @@ export default function Dashboard() {
 
         {/* Notification Bell — below Projects */}
         <NotificationBell
+          dataTour="nav-alerts"
           onViewAsset={(assetId, _assetUrl, _isVideo) => {
             const asset = assets.find((a) => a.id === assetId)
             if (asset) {
@@ -1459,7 +1460,7 @@ export default function Dashboard() {
             <button
               key={id}
               onClick={() => setView(id)}
-              data-tour={id === 'models' ? 'sidebar-generate' : id === 'assets' ? 'assets-nav' : id === 'projects' ? 'sidebar-projects' : undefined}
+              data-tour={id === 'models' ? 'sidebar-generate' : id === 'assets' ? 'assets-nav' : id === 'projects' ? 'sidebar-projects' : id === 'tools' ? 'nav-tools' : undefined}
               className="flex flex-col items-center gap-0.5 cursor-pointer transition-all rounded-full"
               style={{
                 color: view === id ? 'var(--pv-accent)' : 'var(--pv-text3)',
@@ -1475,6 +1476,7 @@ export default function Dashboard() {
           ))}
           <NotificationBell
             inBottomNav
+            dataTour="nav-alerts"
             onViewAsset={(assetId, _assetUrl, _isVideo) => {
               const asset = assets.find((a) => a.id === assetId)
               if (asset) { setLightboxAsset(asset) } else { setView('assets'); loadAssets() }

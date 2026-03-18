@@ -40,9 +40,10 @@ export function addNotification(n: Omit<AppNotification, 'id' | 'createdAt' | 'r
 interface Props {
   onViewAsset?: (assetId: string, assetUrl: string, isVideo: boolean) => void
   inBottomNav?: boolean
+  dataTour?: string
 }
 
-export default function NotificationBell({ onViewAsset, inBottomNav }: Props) {
+export default function NotificationBell({ onViewAsset, inBottomNav, dataTour }: Props) {
   const [notifications, setNotifications] = useState<AppNotification[]>(() => loadNotifications())
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -91,6 +92,7 @@ export default function NotificationBell({ onViewAsset, inBottomNav }: Props) {
     <div className="relative" ref={panelRef}>
       <button
         onClick={handleOpen}
+        data-tour={dataTour}
         className={inBottomNav
           ? 'relative flex flex-col items-center gap-0.5 py-1 px-4 cursor-pointer transition-opacity'
           : `relative p-1.5 rounded-lg transition-colors cursor-pointer ${open ? '' : 'hover:opacity-80'}`

@@ -15,7 +15,7 @@ export function clearFirstRun(): void {
 }
 
 export const NAV_TOUR_START = 14
-export const DECLINE_STEP   = 20
+export const DECLINE_STEP   = 22
 export const SUBJECT_SAMPLE = 'A 2 story building on a city street'
 
 // ── Step definitions ──────────────────────────────────────────────────────────
@@ -185,7 +185,25 @@ const STEPS: Step[] = [
     hasButton: true,
     buttonLabel: 'Next →',
   },
-  // 17 – settings button — Dashboard expands nav
+  // 17 – tools
+  {
+    target: '[data-tour="nav-tools"]',
+    position: 'right',
+    title: 'Tools — power-ups for your images',
+    body: 'Upscale, remove backgrounds, expand, and more. Tools work on anything in your Assets library.',
+    hasButton: true,
+    buttonLabel: 'Next →',
+  },
+  // 18 – alerts
+  {
+    target: '[data-tour="nav-alerts"]',
+    position: 'right',
+    title: 'Alerts — stay in the loop',
+    body: "Get notified when your generations are ready — especially useful for longer video renders. You'll never miss a result.",
+    hasButton: true,
+    buttonLabel: 'Next →',
+  },
+  // 19 – settings button
   {
     target: '[data-tour="settings-btn"]',
     position: 'right',
@@ -194,7 +212,7 @@ const STEPS: Step[] = [
     hasButton: true,
     buttonLabel: 'Next →',
   },
-  // 18 – nav tour end
+  // 20 – nav tour end
   {
     target: null,
     position: 'center',
@@ -347,7 +365,7 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, 
 
   const overlayColor = `rgba(0,0,0,${OVERLAY_ALPHA})`
 
-  const isLastStep = step === STEPS.length - 1 || step === 18  // 18 = nav tour end
+  const isLastStep = step === STEPS.length - 1 || step === NAV_TOUR_START + 6  // nav tour end
 
   return (
     <>
