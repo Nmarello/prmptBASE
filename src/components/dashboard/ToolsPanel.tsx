@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { useAnalytics } from '../../hooks/useAnalytics'
+import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 
 type UpscaleScale = 2 | 4
 
@@ -15,6 +16,7 @@ const TOOLS = [
 export default function ToolsPanel({ onGenerate }: { onGenerate: () => void }) {
   const { session } = useAuth()
   const [activeTool, setActiveTool] = useState('upscale')
+  const { scrollRef: toolsScrollRef, distance: pullDist, refreshing: pullRefreshing } = usePullToRefresh(() => {})
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -72,7 +74,12 @@ export default function ToolsPanel({ onGenerate }: { onGenerate: () => void }) {
       <div style={{ background: 'var(--pv-border)' }} className="h-px mx-4 sm:mx-7 flex-shrink-0" />
 
       {/* Tool content */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-7 py-6">
+      <div ref={toolsScrollRef} className="flex-1 overflow-y-auto px-4 sm:px-7 py-6">
+        {(pullDist > 0 || pullRefreshing) && (
+          <div style={{ height: pullRefreshing ? 48 : pullDist, transition: (!pullRefreshing && pullDist === 0) ? 'height 0.25s ease' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <div className={pullRefreshing ? 'pv-spin' : ''} style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--pv-border)', borderTopColor: pullRefreshing ? 'transparent' : 'var(--pv-accent)', opacity: pullRefreshing ? 1 : Math.min(pullDist / 72, 1), transform: pullRefreshing ? undefined : `rotate(${pullDist * 3}deg)` }} />
+          </div>
+        )}
         {activeTool === 'upscale' && (
           <UpscaleTool
             userToken={session?.access_token ?? null}

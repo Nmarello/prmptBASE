@@ -902,7 +902,7 @@ export default function Dashboard() {
   }, [])
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--pv-bg)', color: 'var(--pv-text)', fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="flex overflow-hidden" style={{ height: '100dvh', background: 'var(--pv-bg)', color: 'var(--pv-text)', fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── Icon Sidebar ── */}
       <aside className="hidden sm:flex flex-col items-center py-4 gap-1 flex-shrink-0 relative z-20" style={{ width: 'calc(60px + env(safe-area-inset-left))', paddingLeft: 'env(safe-area-inset-left)', background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}>
@@ -1010,7 +1010,7 @@ export default function Dashboard() {
         {view === 'models' && (
           <div className="flex flex-col h-full overflow-hidden">
             {/* Header */}
-            <div className="px-4 sm:px-7 pt-4 sm:pt-6 pb-4 flex-shrink-0">
+            <div className="px-4 sm:px-7 pb-4 flex-shrink-0" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
               <div className="flex items-center">
                 {/* Logo — left */}
                 <Logo height={42} style={{ marginBottom: 2, flexShrink: 0 }} />
@@ -1436,11 +1436,12 @@ export default function Dashboard() {
 
       {/* ── Mobile Bottom Tab Bar ── */}
       <div
-        className="sm:hidden fixed bottom-0 left-0 right-0 z-20 flex justify-center pointer-events-none"
-        style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-20 flex justify-center"
+        style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))', pointerEvents: 'none' }}
       >
         <nav
-          className="pointer-events-auto flex items-center gap-1 px-2 py-2"
+          className="flex items-center gap-1 px-2 py-2"
+          style={{ pointerEvents: 'auto', touchAction: 'manipulation' }}
           style={{
             background: 'var(--pv-surface)',
             border: '1px solid var(--pv-border)',
@@ -1463,6 +1464,7 @@ export default function Dashboard() {
                 background: view === id ? 'color-mix(in srgb, var(--pv-accent) 12%, transparent)' : 'none',
                 border: 'none',
                 padding: '7px 16px',
+                touchAction: 'manipulation',
               }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>

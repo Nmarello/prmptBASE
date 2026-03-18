@@ -277,27 +277,31 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, 
   }, [step, current.target])
 
   function attachedFallback(targetRect: Rect): React.CSSProperties {
-    // Attach card to top or bottom of spotlight, centered on it, clamped to viewport
+    // Always center on viewport horizontally; place above or below based on space
     const base: React.CSSProperties = {
       position: 'fixed', zIndex: 9999,
       width: 'calc(100vw - 32px)', maxWidth: CARD_W_CENTER,
-      left: Math.max(8, Math.min(targetRect.left + targetRect.width / 2, window.innerWidth - 8)),
+      left: '50%',
       transform: 'translateX(-50%)',
     }
     const spaceBelow = window.innerHeight - (targetRect.top + targetRect.height + PAD)
     const spaceAbove = targetRect.top - PAD
     return spaceBelow >= spaceAbove
-      ? { ...base, top: targetRect.top + targetRect.height + PAD + GAP, bottom: 'unset' }
-      : { ...base, top: 'unset', bottom: window.innerHeight - targetRect.top + PAD + GAP }
+      ? { ...base, top: targetRect.top + targetRect.height + PAD + GAP }
+      : { ...base, bottom: window.innerHeight - targetRect.top + PAD + GAP }
   }
 
   function cardStyle(): React.CSSProperties {
     const vw = window.innerWidth
+    const isMobile = vw < 768
     const base: React.CSSProperties = { position: 'fixed', zIndex: 9999, width: CARD_W }
 
     if (isCentered || !rect) {
       return { ...base, width: CARD_W_CENTER, maxWidth: 'calc(100vw - 32px)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
     }
+
+    // On mobile always go above/below — left/right never fits
+    if (isMobile) return attachedFallback(rect)
 
     const centerY = Math.min(Math.max(rect.top + rect.height / 2, 120), window.innerHeight - 260)
     const pos = current.position
