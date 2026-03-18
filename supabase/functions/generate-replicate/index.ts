@@ -152,7 +152,7 @@ const MODELS: Record<string, ModelConfig> = {
   // ── Lightricks LTX-2.3 Video ─────────────────────────────────────────────────
   'ltx-2.3-pro':  { path: 'lightricks/ltx-2.3-pro',  isVideo: true, maxOutputs: 1, costUsd: 0.10, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: b.aspectRatio,
+    aspect_ratio: ['16:9', '9:16'].includes(b.aspectRatio) ? b.aspectRatio : '16:9',
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
     ...(b._steps != null ? { num_inference_steps: b._steps } : {}),
     ...(b._guidance != null ? { guidance_scale: b._guidance } : {}),
@@ -160,7 +160,7 @@ const MODELS: Record<string, ModelConfig> = {
   }) },
   'ltx-2.3-fast': { path: 'lightricks/ltx-2.3-fast', isVideo: true, maxOutputs: 1, costUsd: 0.05, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: b.aspectRatio,
+    aspect_ratio: ['16:9', '9:16'].includes(b.aspectRatio) ? b.aspectRatio : '16:9',
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
     ...(b._steps != null ? { num_inference_steps: b._steps } : {}),
     ...(b._guidance != null ? { guidance_scale: b._guidance } : {}),

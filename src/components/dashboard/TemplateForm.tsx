@@ -76,7 +76,7 @@ const CUSTOM_EXCLUDED_FIELDS = ['size', 'quality']
 // Fields that are passed as separate API params — not injected into the prompt string
 const API_PARAM_FIELDS = new Set([
   'aspect_ratio', 'resolution', 'num_images', 'output_format', 'seed',
-  'steps', 'guidance_scale', 'thinking_level', 'enable_web_search',
+  'steps', 'num_inference_steps', 'guidance_scale', 'thinking_level', 'enable_web_search',
   'safety_tolerance', 'duration', 'model', 'source_image',
 ])
 
