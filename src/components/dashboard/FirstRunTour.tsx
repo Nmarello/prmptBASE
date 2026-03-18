@@ -228,6 +228,7 @@ interface Props {
 
 export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, onAutoFillSubject }: Props) {
   const [rect, setRect] = useState<Rect | null>(null)
+  const [, setW] = useState(window.innerWidth)
   const current = STEPS[step]
   if (!current) return null
 
@@ -251,6 +252,12 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, 
   }, [step])
 
   useEffect(() => {
+    function onResize() { setW(window.innerWidth) }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  useEffect(() => {
     if (!current.target) { setRect(null); return }
     function update() {
       setRect(current.target ? getRect(current.target) : null)
@@ -262,17 +269,39 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, 
     return () => { clearInterval(id); window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true) }
   }, [step, current.target])
 
+  const bottomSheet: React.CSSProperties = {
+    position: 'fixed', zIndex: 9999,
+    width: 'calc(100vw - 32px)', maxWidth: CARD_W_CENTER,
+    bottom: 24, top: 'unset', left: '50%', transform: 'translateX(-50%)',
+  }
+
   function cardStyle(): React.CSSProperties {
+    const vw = window.innerWidth
     const base: React.CSSProperties = { position: 'fixed', zIndex: 9999, width: CARD_W }
+
     if (isCentered || !rect) {
       return { ...base, width: CARD_W_CENTER, maxWidth: 'calc(100vw - 32px)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
     }
+
     const centerY = Math.min(Math.max(rect.top + rect.height / 2, 120), window.innerHeight - 260)
     const pos = current.position
-    if (pos === 'right')  return { ...base, top: centerY, left: rect.left + rect.width + GAP, transform: 'translateY(-50%)' }
-    if (pos === 'left')   return { ...base, top: centerY, left: Math.max(rect.left - GAP - CARD_W, 12), transform: 'translateY(-50%)' }
-    if (pos === 'bottom') return { ...base, top: rect.top + rect.height + PAD + GAP, left: rect.left + rect.width / 2, transform: 'translateX(-50%)' }
-    if (pos === 'top')    return { ...base, top: rect.top - GAP, left: rect.left + rect.width / 2, transform: 'translate(-50%, -100%)' }
+
+    if (pos === 'right') {
+      const cardLeft = rect.left + rect.width + GAP
+      if (cardLeft + CARD_W > vw - 8) return bottomSheet
+      return { ...base, top: centerY, left: cardLeft, transform: 'translateY(-50%)' }
+    }
+    if (pos === 'left') {
+      const cardLeft = rect.left - GAP - CARD_W
+      if (cardLeft < 8) return bottomSheet
+      return { ...base, top: centerY, left: cardLeft, transform: 'translateY(-50%)' }
+    }
+    if (pos === 'bottom') {
+      const top = rect.top + rect.height + PAD + GAP
+      if (top + 200 > window.innerHeight) return bottomSheet
+      return { ...base, top, left: rect.left + rect.width / 2, transform: 'translateX(-50%)' }
+    }
+    if (pos === 'top') return { ...base, top: rect.top - GAP, left: rect.left + rect.width / 2, transform: 'translate(-50%, -100%)' }
     return { ...base, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
   }
 
