@@ -40,6 +40,8 @@ const SLUG_PROVIDER: Record<string, string> = {
   'hidream-full':            'hidream',
   'seedream-45':             'bytedance',
   'seedance-1-pro':          'bytedance',
+  'ltx-2.3-pro':             'lightricks',
+  'ltx-2.3-fast':            'lightricks',
   'sd35-medium':             'stability',
   'cs-runway':               'runway',
   'cs-pika':                 'pika',
@@ -200,6 +202,18 @@ function RunwayLogo({ size }: { size: number }) {
   )
 }
 
+function LightricksLogo({ size }: { size: number }) {
+  // Lightricks — stylised L with a film-frame accent
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <line x1="10" y1="7" x2="10" y2="25" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <line x1="10" y1="25" x2="22" y2="25" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <rect x="20" y="8" width="4" height="7" rx="1" stroke="white" strokeWidth="1.4" fill="none" />
+      <line x1="22" y1="8" x2="22" y2="15" stroke="white" strokeWidth="0.8" strokeDasharray="1.5 1.5" />
+    </svg>
+  )
+}
+
 function PikaLogo({ size }: { size: number }) {
   // Pika — lightning bolt
   return (
@@ -233,8 +247,9 @@ export default function ProviderLogo({ slug, size = 28 }: Props) {
     case 'hidream':   return <HiDreamLogo size={size} />
     case 'bytedance': return <ByteDanceLogo size={size} />
     case 'stability': return <StabilityLogo size={size} />
-    case 'runway':    return <RunwayLogo size={size} />
-    case 'pika':      return <PikaLogo size={size} />
+    case 'runway':      return <RunwayLogo size={size} />
+    case 'pika':        return <PikaLogo size={size} />
+    case 'lightricks':  return <LightricksLogo size={size} />
     default: {
       const art = slug?.slice(0,2).toUpperCase() ?? '??'
       return <FallbackLogo size={size} initial={art} />

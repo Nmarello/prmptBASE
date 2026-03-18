@@ -11,7 +11,8 @@ interface ModelConfig {
   path: string
   version?: string      // pin a version hash → uses /v1/predictions instead of /v1/models/.../predictions
   maxOutputs?: number   // default 4; set to 1 for models that don't support batch
-  costUsd?: number      // per image
+  costUsd?: number      // per image/video
+  isVideo?: boolean     // skip image storage, use gen_type 'txt2vid', extend polling deadline
   buildInput: (base: BaseInput) => Record<string, unknown>
 }
 
@@ -145,6 +146,20 @@ const MODELS: Record<string, ModelConfig> = {
 
   // ── Google Nano Banana Pro ───────────────────────────────────────────────────
   'nano-banana-pro':  { path: 'google/nano-banana-pro',   costUsd: 0.15,  buildInput: (b) => standardInput(b) },
+
+  // ── Lightricks LTX-2.3 Video ─────────────────────────────────────────────────
+  'ltx-2.3-pro':  { path: 'lightricks/ltx-2.3-pro',  isVideo: true, maxOutputs: 1, costUsd: 0.10, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+  'ltx-2.3-fast': { path: 'lightricks/ltx-2.3-fast', isVideo: true, maxOutputs: 1, costUsd: 0.05, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
 }
 
 const STYLE_MAP: Record<string, string> = {
@@ -333,7 +348,7 @@ Deno.serve(async (req) => {
     if (repData.status === 'starting' || repData.status === 'processing') {
       const pollUrl = repData.urls?.get
       if (!pollUrl) throw new Error(`Replicate prediction stuck in ${repData.status} with no poll URL`)
-      const deadline = Date.now() + 130_000
+      const deadline = Date.now() + (config.isVideo ? 300_000 : 130_000)
       while ((repData.status === 'starting' || repData.status === 'processing') && Date.now() < deadline) {
         await new Promise(r => setTimeout(r, 2000))
         const pollRes = await fetch(pollUrl, { headers: { 'Authorization': `Bearer ${replicateKey}` } })
@@ -358,6 +373,36 @@ Deno.serve(async (req) => {
 
     const predictTime = repData.metrics?.predict_time ?? null
 
+    // ── Video output: store URL directly, no image re-upload ─────────────────
+    if (config.isVideo) {
+      const videoUrl = outputUrls[0]
+      const { data: asset } = await adminClient.from('assets').insert({
+        user_id: userId,
+        prompt_id: prompt_id ?? null,
+        model_id: model_id ?? null,
+        gen_type: 'txt2vid',
+        url: videoUrl,
+        cost_usd: config.costUsd ?? null,
+        metadata: {
+          prompt: builtPrompt,
+          model_slug: slug,
+          aspect_ratio: ar,
+          seed: repData.input?.seed ?? seedVal ?? null,
+          predict_time: predictTime,
+        },
+      }).select().single()
+      return new Response(
+        JSON.stringify({
+          asset,
+          image_url: videoUrl,
+          prompt: builtPrompt,
+          seed: repData.input?.seed ?? seedVal ?? null,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // ── Image output: download + re-upload to Supabase storage ───────────────
     const insertedAssets = await Promise.all(
       outputUrls.map(async (url) => {
         const permanentUrl = await storeImage(adminClient, url, userId, fmt)

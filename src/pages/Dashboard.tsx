@@ -291,6 +291,8 @@ export default function Dashboard() {
     'pika':               { gradient: 'linear-gradient(145deg,#1a0033,#6600ff,#cc44ff)', initial: 'PK' },
     'runway':             { gradient: 'linear-gradient(145deg,#0d0d0d,#1a1a1a,#2d6a6a)', initial: 'RW' },
     'ltx-video':          { gradient: 'linear-gradient(145deg,#001a40,#003d99,#4d8cff)', initial: 'LX' },
+    'ltx-2.3-pro':        { gradient: 'linear-gradient(145deg,#001a40,#003d99,#4d8cff)', initial: 'LT' },
+    'ltx-2.3-fast':       { gradient: 'linear-gradient(145deg,#001a40,#003d99,#4d8cff)', initial: 'LT' },
     'wan-21-txt2vid':     { gradient: 'linear-gradient(145deg,#1a1a00,#4d4d00,#cccc00)', initial: 'WN' },
     'hunyuan-video':      { gradient: 'linear-gradient(145deg,#00001a,#0a0a66,#3333cc)', initial: 'HY' },
     'cs-wan21':           { gradient: 'linear-gradient(145deg,#1a1a00,#4d4d00,#cccc00)', initial: 'WN' },
@@ -333,6 +335,8 @@ export default function Dashboard() {
     'pika':                     'Pika',
     'runway':                   'Runway',
     'ltx-video':                'Lightricks',
+    'ltx-2.3-pro':              'Lightricks',
+    'ltx-2.3-fast':             'Lightricks',
     'wan-21-txt2vid':           'Alibaba',
     'hunyuan-video':            'Tencent',
   }
@@ -598,6 +602,7 @@ export default function Dashboard() {
         'hidream-fast', 'hidream-full',
         'seedream-45',
         'nano-banana-pro',
+        'ltx-2.3-pro', 'ltx-2.3-fast',
       ])
       const isReplicate = REPLICATE_SLUGS.has(selectedModel.slug)
       const isFal = !isReplicate && !DIRECT_API_SLUGS.has(selectedModel.slug)
@@ -1544,6 +1549,8 @@ export default function Dashboard() {
                         'minimax-txt2vid': 'Minimax typically takes 2–5 min',
                         'minimax':         'Minimax typically takes 2–5 min',
                         'ltx-video':       'LTX typically takes 1–3 min',
+                        'ltx-2.3-pro':     'LTX-2.3 Pro typically takes 1–3 min',
+                        'ltx-2.3-fast':    'LTX-2.3 Fast typically takes 30–90 sec',
                         'luma':            'Luma typically takes 2–5 min',
                         'pika':            'Pika typically takes 2–4 min',
                         'sora2':           'Sora 2 typically takes 3–8 min',
