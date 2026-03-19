@@ -67,7 +67,7 @@ export default function FamilyRow({ category, models, userTier, onSelectModel, l
   return (
     <div className="flex flex-col gap-2">
       {/* Row label */}
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-center gap-3">
         <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
           {LABELS[category]}
         </h2>
