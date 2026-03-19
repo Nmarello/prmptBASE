@@ -1177,44 +1177,6 @@ export default function Dashboard() {
                 )
               })()}
 
-              {/* Recently Used row */}
-              {!modelSearch && recentModelSlugs.length > 0 && (() => {
-                const recentModels = recentModelSlugs
-                  .map(slug => models.find(m => m.slug === slug))
-                  .filter(Boolean) as Model[]
-                if (recentModels.length === 0) return null
-                return (
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
-                        Recently Used
-                      </h2>
-                    </div>
-                    <div className="flex gap-3.5 overflow-x-auto pb-3">
-                      {recentModels.map((m) => {
-                        const { status, upgradeTier } = getModelStatus(m, userTier, selectedModelIds)
-                        return (
-                          <ModelCard
-                            key={m.id}
-                            model={m}
-                            userTier={userTier}
-                            selected={selectedModel?.id === m.id}
-                            onClick={() => setDrawerModel(m)}
-                            rendering={renderingModelSlug === m.slug}
-                            latestRenderUrl={latestRenderBySlug[m.slug]?.url}
-                            latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
-                            modelStatus={status}
-                            upgradeTier={upgradeTier}
-                            onAdd={() => handleAddModel(m.id)}
-                            onUpgrade={() => { analytics.upgradeClicked({ tier: userTier, source: 'model_card' }); navigate(`/pricing?highlight=${upgradeTier ?? 'creator'}`) }}
-                          />
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })()}
-
               {/* Your Models row */}
               {(() => {
                 if (modelSearch) return null
@@ -1365,6 +1327,44 @@ export default function Dashboard() {
                   }}
                 />
               )}
+
+              {/* Recently Used row */}
+              {!modelSearch && recentModelSlugs.length > 0 && (() => {
+                const recentModels = recentModelSlugs
+                  .map(slug => models.find(m => m.slug === slug))
+                  .filter(Boolean) as Model[]
+                if (recentModels.length === 0) return null
+                return (
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                        Recently Used
+                      </h2>
+                    </div>
+                    <div className="flex gap-3.5 overflow-x-auto pb-3">
+                      {recentModels.map((m) => {
+                        const { status, upgradeTier } = getModelStatus(m, userTier, selectedModelIds)
+                        return (
+                          <ModelCard
+                            key={m.id}
+                            model={m}
+                            userTier={userTier}
+                            selected={selectedModel?.id === m.id}
+                            onClick={() => setDrawerModel(m)}
+                            rendering={renderingModelSlug === m.slug}
+                            latestRenderUrl={latestRenderBySlug[m.slug]?.url}
+                            latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
+                            modelStatus={status}
+                            upgradeTier={upgradeTier}
+                            onAdd={() => handleAddModel(m.id)}
+                            onUpgrade={() => { analytics.upgradeClicked({ tier: userTier, source: 'model_card' }); navigate(`/pricing?highlight=${upgradeTier ?? 'creator'}`) }}
+                          />
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })()}
 
             </div>
           </div>
