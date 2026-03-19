@@ -20,7 +20,7 @@ const FAMILY_ART: Record<string, { gradient: string; accent: string; initial: st
 
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', accent: '#888', initial: '??' }
 
-const STACK_OVERHANG = 50 // total px the peek slivers extend beyond the anchor card
+const stackOverhang = (n: number) => n <= 4 ? 30 : 50
 
 // ── Main FamilyCard ───────────────────────────────────────────────────────────
 interface Props {
@@ -39,8 +39,9 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
   const totalCount = models.length
 
   // Peek sliver widths — 50px total overhang divided evenly, min 3px each
-  const peekWidth = Math.max(3, Math.floor(STACK_OVERHANG / totalCount))
-  const totalWidth = 230 + STACK_OVERHANG // constant 280px footprint
+  const overhang = stackOverhang(totalCount)
+  const peekWidth = Math.max(3, Math.floor(overhang / totalCount))
+  const totalWidth = 230 + overhang
 
   // Family latest render — most recent across all models in this family
   const familyRender = models
