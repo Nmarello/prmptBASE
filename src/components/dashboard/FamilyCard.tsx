@@ -16,6 +16,12 @@ const FAMILY_ART: Record<string, { gradient: string; accent: string; initial: st
   'Seedance': { gradient: 'linear-gradient(145deg,#0a001a,#330066,#6600cc)', accent: '#9933ff', initial: 'SD' },
   'MiniMax':  { gradient: 'linear-gradient(145deg,#002b36,#007070,#00c9a7)', accent: '#00c9a7', initial: 'MM' },
   'Pika':     { gradient: 'linear-gradient(145deg,#1a0a00,#7a2800,#e05000)', accent: '#e05000', initial: 'PK' },
+  'HiDream':  { gradient: 'linear-gradient(145deg,#001a2e,#004d80,#0099cc)', accent: '#0099cc', initial: 'HD' },
+  'Veo':      { gradient: 'linear-gradient(145deg,#001a00,#004422,#00aa55)', accent: '#00cc66', initial: 'VE' },
+  'Seedream': { gradient: 'linear-gradient(145deg,#0d001a,#3d0066,#7700cc)', accent: '#aa44ff', initial: 'SD' },
+  'Stable Diffusion': { gradient: 'linear-gradient(145deg,#1a1000,#4d3000,#996600)', accent: '#cc9900', initial: 'SD' },
+  'Bria':     { gradient: 'linear-gradient(145deg,#1a0010,#660033,#cc0055)', accent: '#ff2266', initial: 'BR' },
+  'GPT Image':{ gradient: 'linear-gradient(145deg,#001a0d,#00401a,#00a844)', accent: '#00cc55', initial: 'GP' },
 }
 
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', accent: '#888', initial: '??' }
