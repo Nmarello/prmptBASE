@@ -74,9 +74,7 @@ import { useAnalytics, useIdentify } from '../hooks/useAnalytics'
 
 type View = 'models' | 'builder' | 'assets' | 'projects' | 'tools'
 
-const COMING_SOON_VIDEO: Partial<Model>[] = [
-  { slug: 'cs-veo3', name: 'Veo 3', provider: 'Google', description: "Google's flagship video model. State-of-the-art motion quality and prompt adherence.", supported_gen_types: ['txt2vid'] },
-]
+const COMING_SOON_VIDEO: Partial<Model>[] = []
 
 function PullIndicator({ distance, refreshing }: { distance: number; refreshing: boolean }) {
   if (distance === 0 && !refreshing) return null
