@@ -1284,6 +1284,7 @@ export default function Dashboard() {
                     models={imgModels}
                     userTier={userTier}
                     onSelectModel={m => setDrawerModel(m)}
+                    latestRenderBySlug={latestRenderBySlug}
                   />
                 )
               })()}
@@ -1305,6 +1306,7 @@ export default function Dashboard() {
                     models={vidModels}
                     userTier={userTier}
                     onSelectModel={m => setDrawerModel(m)}
+                    latestRenderBySlug={latestRenderBySlug}
                   />
                 )
               })()}

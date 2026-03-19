@@ -20,6 +20,8 @@ const FAMILY_ART: Record<string, { gradient: string; accent: string; initial: st
 
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', accent: '#888', initial: '??' }
 
+const STACK_OVERHANG = 50 // total px the peek slivers extend beyond the anchor card
+
 // ── Main FamilyCard ───────────────────────────────────────────────────────────
 interface Props {
   family: string
@@ -28,49 +30,104 @@ interface Props {
   isOpen: boolean
   onToggle: () => void
   onSelectModel: (m: Model) => void
+  latestRenderBySlug: Record<string, { url: string; isVideo: boolean }>
 }
 
-export default function FamilyCard({ family, models, userTier, isOpen, onToggle, onSelectModel }: Props) {
+export default function FamilyCard({ family, models, userTier, isOpen, onToggle, onSelectModel, latestRenderBySlug }: Props) {
   const art = FAMILY_ART[family] ?? DEFAULT_ART
   const activeCount = models.filter(m => !m.coming_soon).length
   const totalCount = models.length
 
+  // Peek sliver widths — 50px total overhang divided evenly, min 3px each
+  const peekWidth = Math.max(3, Math.floor(STACK_OVERHANG / totalCount))
+  const totalWidth = 230 + STACK_OVERHANG // constant 280px footprint
+
+  // Family latest render — most recent across all models in this family
+  const familyRender = models
+    .map(m => latestRenderBySlug[m.slug])
+    .filter(Boolean)[0] // latestRenderBySlug is already ordered by recency
+
+  const sortedModels = [...models].sort((a, b) => (a.family_order ?? 0) - (b.family_order ?? 0))
+
   return (
     <div className="flex items-stretch gap-1.5 flex-shrink-0">
-      {/* ── Family anchor card — matches ModelCard exactly (230px × 148px header) ── */}
-      <div className="relative flex-shrink-0" style={{ width: 230 }}>
-        {/* Stacked peek shadows behind (collapsed only) */}
-        {!isOpen && (
-          <>
-            <div className="absolute inset-0 rounded-[18px] -z-10 translate-x-1.5 translate-y-1.5 opacity-40"
-              style={{ background: art.gradient, border: '1.5px solid var(--pv-border)' }} />
-            <div className="absolute inset-0 rounded-[18px] -z-20 translate-x-3 translate-y-3 opacity-20"
-              style={{ background: art.gradient, border: '1.5px solid var(--pv-border)' }} />
-          </>
-        )}
 
+      {/* ── Collapsed stack: anchor card + peek slivers ── */}
+      <div
+        className="relative flex-shrink-0"
+        style={{ width: isOpen ? 230 : totalWidth, transition: 'width 0.3s ease' }}
+      >
+        {/* Peek slivers — rendered back-to-front (last model furthest right, lowest z) */}
+        {!isOpen && sortedModels.map((_, i) => {
+          // Sliver i peeks out at: anchor right edge + (i+1) * peekWidth
+          // The full 230px card body is mostly hidden under the anchor card
+          const rightEdge = 230 + (i + 1) * peekWidth
+          const leftEdge = rightEdge - 230
+          return (
+            <div
+              key={i}
+              className="absolute inset-y-0 rounded-[18px] border"
+              style={{
+                left: leftEdge,
+                width: 230,
+                background: art.gradient,
+                borderColor: 'var(--pv-border)',
+                zIndex: totalCount - i,
+                opacity: 1 - (i * 0.12), // slight fade for depth
+              }}
+            />
+          )
+        })}
+
+        {/* Anchor card — on top of all slivers */}
         <button
           onClick={onToggle}
-          className="group w-full text-left rounded-[18px] border overflow-hidden flex flex-col transition-all duration-200 cursor-pointer select-none"
+          className="group relative text-left rounded-[18px] border overflow-hidden flex flex-col transition-all duration-200 cursor-pointer select-none"
           style={{
+            width: 230,
+            minHeight: 301,
             background: 'var(--pv-surface)',
             borderColor: isOpen ? art.accent : 'var(--pv-border)',
             boxShadow: isOpen ? `0 0 0 1px ${art.accent}44` : undefined,
-            minHeight: 301,
+            zIndex: totalCount + 1,
+            position: 'relative',
           }}
         >
           {/* Gradient header — same 148px as ModelCard */}
           <div className="relative overflow-hidden" style={{ height: 148 }}>
-            <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105" style={{ background: art.gradient }} />
-            {/* Noise overlay */}
-            <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage:"url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E\")", opacity:0.5, mixBlendMode:'overlay' as const }} />
-            {/* Decorative circles */}
-            <span className="absolute rounded-full pointer-events-none" style={{ width:120, height:120, top:-30, right:-20, background:'rgba(255,255,255,0.12)' }} />
-            <span className="absolute rounded-full pointer-events-none" style={{ width:60, height:60, bottom:-10, left:20, background:'rgba(255,255,255,0.08)' }} />
-            {/* Watermark initial */}
-            <div className="absolute select-none pointer-events-none" style={{ bottom:'-12px', right:'-2px', fontFamily:"'Bricolage Grotesque',sans-serif", fontSize:'88px', fontWeight:800, color:'rgba(255,255,255,0.11)', lineHeight:1, letterSpacing:'-0.06em' }}>
-              {art.initial}
-            </div>
+            {/* Latest family render or gradient fallback */}
+            {familyRender ? (
+              <>
+                {familyRender.isVideo ? (
+                  <video
+                    src={familyRender.url}
+                    autoPlay muted loop playsInline
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <img
+                    src={familyRender.url}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                )}
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom,rgba(0,0,0,0) 50%,rgba(0,0,0,0.28) 100%)' }} />
+              </>
+            ) : (
+              <>
+                <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105" style={{ background: art.gradient }} />
+                {/* Noise overlay */}
+                <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage:"url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E\")", opacity:0.5, mixBlendMode:'overlay' as const }} />
+                {/* Decorative circles */}
+                <span className="absolute rounded-full pointer-events-none" style={{ width:120, height:120, top:-30, right:-20, background:'rgba(255,255,255,0.12)' }} />
+                <span className="absolute rounded-full pointer-events-none" style={{ width:60, height:60, bottom:-10, left:20, background:'rgba(255,255,255,0.08)' }} />
+                {/* Watermark initial */}
+                <div className="absolute select-none pointer-events-none" style={{ bottom:'-12px', right:'-2px', fontFamily:"'Bricolage Grotesque',sans-serif", fontSize:'88px', fontWeight:800, color:'rgba(255,255,255,0.11)', lineHeight:1, letterSpacing:'-0.06em' }}>
+                  {art.initial}
+                </div>
+              </>
+            )}
+
             {/* Model count badge — bottom left */}
             <div className="absolute bottom-2.5 left-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full"
               style={{ background: 'rgba(0,0,0,0.4)', color: art.accent, backdropFilter: 'blur(4px)', border: `1px solid ${art.accent}55` }}>
@@ -88,7 +145,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
             </div>
           </div>
 
-          {/* Info — same padding as ModelCard */}
+          {/* Info */}
           <div className="p-3.5 flex flex-col flex-1">
             <div style={{ fontFamily:"'Bricolage Grotesque',sans-serif", fontSize:'14px', fontWeight:800, color:'var(--pv-text)', letterSpacing:'-0.02em', lineHeight:1.2 }}>
               {family}
@@ -110,23 +167,22 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
       <div
         className="flex items-stretch gap-1.5 overflow-hidden transition-all duration-300"
         style={{
-          maxWidth: isOpen ? `${models.length * (230 + 6)}px` : '0px',
+          maxWidth: isOpen ? `${sortedModels.length * (230 + 6)}px` : '0px',
           opacity: isOpen ? 1 : 0,
         }}
       >
-        {models
-          .slice()
-          .sort((a, b) => (a.family_order ?? 0) - (b.family_order ?? 0))
-          .map(model => (
-            <ModelCard
-              key={model.id}
-              model={model}
-              userTier={userTier}
-              selected={false}
-              onClick={() => onSelectModel(model)}
-              comingSoon={model.coming_soon}
-            />
-          ))}
+        {sortedModels.map(model => (
+          <ModelCard
+            key={model.id}
+            model={model}
+            userTier={userTier}
+            selected={false}
+            onClick={() => onSelectModel(model)}
+            comingSoon={model.coming_soon}
+            latestRenderUrl={latestRenderBySlug[model.slug]?.url}
+            latestRenderIsVideo={latestRenderBySlug[model.slug]?.isVideo}
+          />
+        ))}
       </div>
     </div>
   )

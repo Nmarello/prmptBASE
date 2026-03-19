@@ -15,6 +15,7 @@ interface Props {
   models: Model[]        // all models for this category (active + coming_soon)
   userTier: string
   onSelectModel: (m: Model) => void
+  latestRenderBySlug: Record<string, { url: string; isVideo: boolean }>
 }
 
 const LABELS: Record<string, string> = {
@@ -23,7 +24,7 @@ const LABELS: Record<string, string> = {
   characters: 'Characters',
 }
 
-export default function FamilyRow({ category, models, userTier, onSelectModel }: Props) {
+export default function FamilyRow({ category, models, userTier, onSelectModel, latestRenderBySlug }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [openFamily, setOpenFamily] = useState<string | null>(null)
 
@@ -92,6 +93,7 @@ export default function FamilyRow({ category, models, userTier, onSelectModel }:
               isOpen={openFamily === family}
               onToggle={() => handleToggle(family)}
               onSelectModel={m => { onSelectModel(m); setOpenFamily(null) }}
+              latestRenderBySlug={latestRenderBySlug}
             />
           </div>
         ))}
@@ -104,6 +106,8 @@ export default function FamilyRow({ category, models, userTier, onSelectModel }:
             userTier={userTier}
             selected={false}
             onClick={() => onSelectModel(model)}
+            latestRenderUrl={latestRenderBySlug[model.slug]?.url}
+            latestRenderIsVideo={latestRenderBySlug[model.slug]?.isVideo}
           />
         ))}
 
@@ -122,4 +126,3 @@ export default function FamilyRow({ category, models, userTier, onSelectModel }:
     </div>
   )
 }
-
