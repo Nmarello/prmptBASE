@@ -128,7 +128,7 @@ function SoloCard({
   return (
     <div
       onClick={() => !comingSoon && onSelect(model)}
-      className="flex-shrink-0 w-36 rounded-2xl overflow-hidden border transition-all duration-150 select-none"
+      className="flex-shrink-0 w-48 rounded-2xl overflow-hidden border transition-all duration-150 select-none"
       style={{
         background: 'var(--pv-surface)',
         borderColor: 'var(--pv-border)',
@@ -136,7 +136,7 @@ function SoloCard({
         opacity: comingSoon ? 0.55 : 1,
       }}
     >
-      <div className="h-14" style={{ background: 'linear-gradient(145deg,#1a1a1a,#333,#555)' }} />
+      <div className="h-28" style={{ background: 'linear-gradient(145deg,#1a1a1a,#333,#555)' }} />
       <div className="p-2.5">
         <div className="flex items-start justify-between gap-1">
           <div className="text-xs font-semibold leading-tight truncate" style={{ color: 'var(--pv-text)' }}>

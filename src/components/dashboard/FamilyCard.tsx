@@ -41,7 +41,7 @@ function VariantCard({
   return (
     <div
       onClick={() => !model.coming_soon && onSelect(model)}
-      className="flex-shrink-0 w-36 rounded-2xl overflow-hidden border transition-all duration-150 select-none"
+      className="flex-shrink-0 w-48 rounded-2xl overflow-hidden border transition-all duration-150 select-none"
       style={{
         background: 'var(--pv-surface)',
         borderColor: 'var(--pv-border)',
@@ -50,7 +50,7 @@ function VariantCard({
       }}
     >
       {/* Mini gradient header */}
-      <div className="h-14 flex items-center justify-center relative" style={{ background: art.gradient }}>
+      <div className="h-24 flex items-center justify-center relative" style={{ background: art.gradient }}>
         {model.coming_soon && (
           <span className="absolute top-1.5 right-1.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
             style={{ background: 'rgba(0,0,0,0.5)', color: '#aaa' }}>
@@ -65,14 +65,14 @@ function VariantCard({
       </div>
       {/* Info */}
       <div className="p-2.5">
-        <div className="text-xs font-semibold leading-tight mb-0.5 truncate" style={{ color: 'var(--pv-text)' }}>
+        <div className="text-sm font-semibold leading-tight mb-0.5 truncate" style={{ color: 'var(--pv-text)' }}>
           {model.name.replace(model.family ?? '', '').trim() || model.name}
         </div>
-        <div className="text-[10px] leading-tight truncate" style={{ color: 'var(--pv-text3)' }}>
+        <div className="text-xs leading-tight truncate" style={{ color: 'var(--pv-text3)' }}>
           {typeLabel}
         </div>
         {isVideo && !locked && !model.coming_soon && (
-          <div className="mt-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full inline-block"
+          <div className="mt-2 text-[11px] font-semibold px-2 py-0.5 rounded-full inline-block"
             style={{ background: `${art.accent}22`, color: art.accent }}>
             Video
           </div>
@@ -102,7 +102,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
       {/* ── Family anchor card ── */}
       <div
         onClick={onToggle}
-        className="flex-shrink-0 w-36 rounded-2xl overflow-hidden cursor-pointer select-none transition-all duration-150 relative"
+        className="flex-shrink-0 w-48 rounded-2xl overflow-hidden cursor-pointer select-none transition-all duration-150 relative"
         style={{
           background: 'var(--pv-surface)',
           border: `1.5px solid ${isOpen ? art.accent : 'var(--pv-border)'}`,
@@ -120,7 +120,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
         )}
 
         {/* Gradient hero */}
-        <div className="h-20 flex items-end justify-start p-2.5 relative" style={{ background: art.gradient }}>
+        <div className="h-28 flex items-end justify-start p-3 relative" style={{ background: art.gradient }}>
           <div className="text-xs font-bold px-1.5 py-0.5 rounded-full"
             style={{ background: 'rgba(0,0,0,0.4)', color: art.accent, backdropFilter: 'blur(4px)' }}>
             {totalCount} model{totalCount !== 1 ? 's' : ''}
@@ -138,9 +138,9 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
         </div>
 
         {/* Name + active count */}
-        <div className="p-2.5">
-          <div className="text-sm font-bold truncate" style={{ color: 'var(--pv-text)' }}>{family}</div>
-          <div className="text-[11px] mt-0.5" style={{ color: 'var(--pv-text3)' }}>
+        <div className="p-3">
+          <div className="text-base font-bold truncate" style={{ color: 'var(--pv-text)' }}>{family}</div>
+          <div className="text-xs mt-0.5" style={{ color: 'var(--pv-text3)' }}>
             {activeCount} active
             {totalCount > activeCount ? ` · ${totalCount - activeCount} soon` : ''}
           </div>
