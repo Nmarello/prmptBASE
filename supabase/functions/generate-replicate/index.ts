@@ -60,8 +60,19 @@ const RECRAFT_SIZE_MAP: Record<string, string> = {
   '2:3':  '910x1365',
   '21:9': '1820x780',
 }
-// Recraft V4 Pro requires higher-res sizes (different enum from V3)
+// Recraft V4 (standard) valid sizes per Replicate enum
 const RECRAFT_V4_SIZE_MAP: Record<string, string> = {
+  '1:1':  '1024x1024',
+  '16:9': '1344x768',
+  '9:16': '768x1344',
+  '4:3':  '1280x896',
+  '3:4':  '896x1280',
+  '3:2':  '1280x832',
+  '2:3':  '832x1280',
+  '21:9': '1536x768',
+}
+// Recraft V4 Pro requires higher-res sizes (different enum from V4 standard)
+const RECRAFT_V4_PRO_SIZE_MAP: Record<string, string> = {
   '1:1':  '2048x2048',
   '16:9': '2688x1536',
   '9:16': '1536x2688',
@@ -125,11 +136,18 @@ const MODELS: Record<string, ModelConfig> = {
 
   // ── Recraft ─────────────────────────────────────────────────────────────────
   'recraft-v3':       { path: 'recraft-ai/recraft-v3',     costUsd: 0.04, buildInput: (b) => recraftInput(b, RECRAFT_STYLE_MAP[b._style as string] ?? 'realistic_image') },
+  'recraft-v4':       { path: 'recraft-ai/recraft-v4',     costUsd: 0.04, buildInput: (b) => ({
+    prompt: b.prompt,
+    style: RECRAFT_STYLE_MAP[b._style as string] ?? 'realistic_image',
+    n: Math.min(b.numOutputs, 4),
+    size: RECRAFT_V4_SIZE_MAP[b.aspectRatio] ?? '1024x1024',
+    response_format: 'url',
+  }) },
   'recraft-v4-pro':   { path: 'recraft-ai/recraft-v4-pro', costUsd: 0.08, buildInput: (b) => ({
     prompt: b.prompt,
     style: RECRAFT_STYLE_MAP[b._style as string] ?? 'realistic_image',
     n: Math.min(b.numOutputs, 4),
-    size: RECRAFT_V4_SIZE_MAP[b.aspectRatio] ?? '2048x2048',
+    size: RECRAFT_V4_PRO_SIZE_MAP[b.aspectRatio] ?? '2048x2048',
     response_format: 'url',
   }) },
 

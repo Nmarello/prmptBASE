@@ -1,51 +1,54 @@
 # Handoff — prmptVAULT
 **Session date**: 2026-03-18
-**Next action**: Check staging (https://staging.prmptbase.pages.dev/dashboard) — family anchor cards should now be 230px/148px matching ModelCard. If still wrong, the issue is a flex/CSS constraint in FamilyRow or FamilyCard, not the component code.
+**Next action**: Check staging (https://staging.prmptbase.pages.dev/dashboard) — family cards should show maker + tagline in info section. If anything looks off, start there.
 
 ## What we did
-1. **Apple Sign In fix** — raw EC private key was in Supabase instead of ES256 JWT; generated correct JWT with `jsonwebtoken`, saved to Supabase Apple provider config
-2. **`/auth/callback` route** — created `AuthCallback.tsx` to explicitly call `exchangeCodeForSession()` and avoid PKCE race conditions
-3. **Kling v3 + PixVerse v5 activated** — FAL endpoints added, DB migration to set active, templates created
-4. **Model families DB migration** — added `family` + `family_order` columns, seeded all models into their families (Flux, Imagen, Recraft, Ideogram, Kling, LTX, Luma, Sora, WAN, Hunyuan, Seedance, MiniMax, Pika)
-5. **FamilyCard + FamilyRow components built** — horizontal accordion: click family → variants slide right; 3 rows (Images, Video, Characters); coming soon inside families; solo unfamilied models at end
-6. **Family anchor card sizing** — ongoing battle; latest commit (889b7ab) sets `width: 230px` / `height: 148px` matching ModelCard exactly. Variant cards use actual `<ModelCard>` component.
+1. **Family card sizing fixed** — anchor cards now match ModelCard exactly (minHeight: 301px)
+2. **Section headings fixed** — Images/Video row labels now match "Recently Used" / "Featured" h2 style
+3. **Solo cards fixed** — unfamilied models now use full `<ModelCard>` instead of custom SoloCard
+4. **Stack peek slivers** — replaced diagonal shadows with right-side card edge stack; gradient top 148px only, surface below; overhang scales with count (≤4 models = 30px, 5+ = 50px)
+5. **Family latest render** — anchor card shows most recent render from any model in the family; expanded variant cards show individual latest renders
+6. **Variant cards inherit accent border** — when family is open, each ModelCard gets the family accent color as border (added `borderColor` prop to ModelCard)
+7. **Scroll fix** — `overflow-anchor: none` on scroll container; expansion now pushes right only
+8. **Family order migration** — re-ordered all families newest version first (Flux Kontext → Flux 2 → Flux 1, etc.)
+9. **Badge removed** — model count moved from gradient header to info section
+10. **Family restructure** — major DB cleanup:
+    - Added: HiDream, Veo, Seedream, Stable Diffusion, Bria, GPT Image families
+    - Fixed: Imagen 4 (`imagen-4.0-generate-001`) added to Imagen family
+    - Removed: Seedance family (1 model), Hunyuan family (1 model), Nano Banana from Imagen
+    - Nano Banana is now solo — ready to anchor its own family when more Nano models arrive
+11. **Maker + tagline** — each family card now shows maker name (accent color) + 1-line strength blurb
 
 ## Files changed
 | File | What changed |
 |------|-------------|
-| `src/pages/AuthCallback.tsx` | NEW — exchanges OAuth code, redirects to /dashboard |
-| `src/App.tsx` | Added `/auth/callback` route |
-| `src/contexts/AuthContext.tsx` | redirectTo points to `/auth/callback` for all OAuth providers |
-| `src/components/dashboard/FamilyCard.tsx` | NEW — family anchor card (230px/148px, ModelCard style) + ModelCard variant cards |
-| `src/components/dashboard/FamilyRow.tsx` | NEW — horizontal scroll row per category, groups models by family |
-| `src/pages/Dashboard.tsx` | Replaced flat image/video model sections with `<FamilyRow>` |
-| `src/types/index.ts` | Added `family: string \| null` and `family_order: number` to Model interface |
-| `supabase/functions/generate-fal/index.ts` | Added kling-v3 and pixverse-v5 to FAL_VIDEO_ENDPOINTS |
-| `supabase/migrations/20260318000003_activate_kling_v3_pixverse.sql` | Activates kling-v3 + pixverse-v5, creates templates |
-| `supabase/migrations/20260318000004_model_families.sql` | Adds family columns, seeds all model families |
+| `src/components/dashboard/FamilyCard.tsx` | Complete rewrite: stack slivers, latest render on anchor, borderColor on variants, maker+tagline in info, badge removed from header |
+| `src/components/dashboard/FamilyRow.tsx` | Added `latestRenderBySlug` prop, `overflow-anchor: none`, updated FAMILY_ORDER for all new families, replaced SoloCard with ModelCard |
+| `src/components/dashboard/ModelCard.tsx` | Added optional `borderColor` prop — inline style override for family accent border |
+| `src/pages/Dashboard.tsx` | Pass `latestRenderBySlug` to both FamilyRow instances |
+| `supabase/migrations/20260318000005_family_order_by_version.sql` | Re-order family_order by latest model maker version |
+| `supabase/migrations/20260318000006_family_restructure.sql` | Add HiDream/Veo/Seedream/SD/Bria/GPT Image families; fix Imagen 4 slug; remove Seedance |
+| `supabase/migrations/20260318000007_remove_single_model_families.sql` | Remove Hunyuan from family (1 model) |
+| `supabase/migrations/20260318000008_nano_banana_solo.sql` | Remove Nano Banana from Imagen family |
 
 ## Current state
-- ✅ Working: Apple Sign In (JWT secret saved, /auth/callback route live)
-- ✅ Working: Kling v3 + PixVerse v5 active in staging
-- ✅ Working: FamilyRow renders 3 rows (Images/Video/Characters) with correct family groupings
-- ✅ Working: Accordion expand-right animation, one open at a time, smooth scroll
-- ✅ Working: Variant cards use actual ModelCard component (correct design)
-- 🔧 In progress: Family anchor card size — code is correct (230px/148px, commit 889b7ab) but CF Pages build may not have deployed yet when user last checked. Verify on staging first.
-- ❌ Not started: Remotion for PV Instagram Reels (mentioned at session start, never built)
-- ❌ Not started: Characters row (infrastructure ready, no active character models yet)
+- ✅ Working: Family card stack with peek slivers, latest renders, maker+tagline
+- ✅ Working: All families correctly structured in DB (migrations applied)
+- ✅ Working: Scroll expansion goes right only
+- ✅ Working: Variant cards show individual latest renders + family accent border
+- ✅ Working: Solo cards (HiDream, Hunyuan, Nano Banana, PixVerse, etc.) use full ModelCard
+- 🔧 Pending review: Cull candidates still in families (pushed to end): `flux-dev-img2img`, `recraft-v3`, `kling` v1, `ltx-video`, `wan-21-txt2vid` — Nick tabled this, assets stay safe if culled (just set family=NULL)
+- ❌ Not started: Remotion for PV Instagram Reels (mentioned sessions ago, never built)
+- ❌ Not started: Family card info section — Nick said "we'll work on what info goes in the family card later" (now done with maker+tagline, but may want more)
 
 ## Start here next session
-Check staging dashboard at https://staging.prmptbase.pages.dev/dashboard. The family anchor cards (Flux, Kling, etc.) should be 230px wide with a 148px gradient header — same visual as the ModelCard in "Recently Used". If they're still rendering small, check `FamilyCard.tsx` line ~45 (`style={{ width: 230 }}`) and whether the wrapping `<div>` in `FamilyRow.tsx` is constraining width. The variant cards (shown after expanding a family) correctly use `<ModelCard>` already.
-
-All work is on `staging` branch. Do NOT push to `main` until Nick explicitly says to ship.
-
-Apple JWT expires ~2026-09-18 — set a reminder.
+Everything is on the `staging` branch — do NOT push to `main` until Nick says to ship. All 8 migrations from this session are applied to the live Supabase DB. The family card UI is in good shape. Next likely tasks: further polish on the family cards, culling old model versions, or the Remotion Instagram Reels work. Check staging first to confirm the maker+tagline build deployed cleanly.
 
 ## Gotchas
-- **ModelCard uses inline `style={{ width: '230px' }}`** — not a Tailwind class. Using `w-48` or `w-36` Tailwind classes gives wrong size (192px / 144px). Always use inline style to match exactly.
-- **Apple JWT**: Supabase needs an ES256 JWT (not the raw `-----BEGIN PRIVATE KEY-----` EC key). Generate with `jsonwebtoken`. Terminal line-wrapping will corrupt the private key — pipe to a file or use `| tr -d '\n'`.
-- **Supabase JS v2 lazy queries**: `.update()/.insert()` without `await` or `.then()` silently never execute.
-- **Video assets**: Always upload to Supabase storage before saving URL — Replicate/FAL temp URLs expire.
-- **RLS gotcha**: Never write a policy that SELECTs the same table it guards → infinite recursion.
-- **`supabase db push`**: Don't use `--project-ref` flag — not supported in this CLI version.
-- **FamilyCard stacked shadows**: The `-z-10`/`-z-20` peek shadows behind the anchor card require the parent wrapper to be `relative` and have `overflow: visible` (not `overflow-hidden`). The button inside is `overflow-hidden` for the rounded corners.
+- **`imagen-4.0-generate-001`** is the actual Imagen 4 slug in the DB — not `imagen-4`. Previous migrations referenced `imagen-4` which didn't exist.
+- **`overflow-anchor: none`** is what fixed the scroll pushing both ways — browser scroll anchoring was adjusting scrollLeft automatically when content expanded. Required `as React.CSSProperties` cast for TypeScript.
+- **ModelCard `borderColor` prop** — uses inline style which overrides Tailwind's `border-[var(--pv-border)]` class. Works because inline styles have higher specificity.
+- **Stack overhang** — `stackOverhang(n)` function: ≤4 models = 30px, 5+ = 50px. Total card footprint = 230 + overhang. Peek sliver positions: `rightEdge = 230 + (i+1) * peekWidth`, `leftEdge = rightEdge - 230`.
+- **Family card minHeight: 301** — derived from ModelCard's natural height (148px header + ~153px info). Without this, FamilyCard was ~90px shorter than ModelCard.
+- **`supabase db push` — no `--project-ref` flag** — not supported in this CLI version.
+- **Apple JWT expires 2026-09-18** — set a reminder to regenerate.
