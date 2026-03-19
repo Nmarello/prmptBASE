@@ -551,87 +551,6 @@ export default function Settings({ asDrawer = false, onClose, scrollTo }: { asDr
           )}
         </div>
 
-        {/* ── Stats ── */}
-        <div id="settings-stats" />
-        {loading ? (
-          <div className="flex items-center justify-center py-20 animate-pulse" style={{ color: 'var(--pv-text3)', fontSize: 13 }}>Loading…</div>
-        ) : stats ? (
-          <>
-            <SectionLabel>Assets</SectionLabel>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6">
-              <MiniStat label="Total"   value={stats.total_assets}                        accent="var(--pv-text)" />
-              <MiniStat label="Today"   value={stats.assets_today}                        accent="var(--pv-accent)" />
-              <MiniStat label="txt2img" value={stats.gen_type_totals['txt2img'] ?? 0}     accent="var(--pv-text2)" />
-              <MiniStat label="img2img" value={stats.gen_type_totals['img2img'] ?? 0}     accent="var(--pv-text2)" />
-              <MiniStat label="txt2vid" value={stats.gen_type_totals['txt2vid'] ?? 0}     accent="#a78bfa" />
-              <MiniStat label="img2vid" value={stats.gen_type_totals['img2vid'] ?? 0}     accent="#c084fc" />
-            </div>
-
-
-            {stats.image_by_model?.length > 0 && (
-              <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
-                <div className="flex items-center justify-between mb-3">
-                  <SectionLabel>Image Assets · by Model</SectionLabel>
-                  <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)', marginBottom: 12 }}>
-                    <span style={{ color: 'var(--pv-accent)' }}>■ txt2img</span>
-                    <span style={{ color: '#7aabff' }}>■ img2img</span>
-                  </div>
-                </div>
-                <BarChart rows={stats.image_by_model as unknown as Array<{ name: string; slug: string; [key: string]: string | number }>} colorA="var(--pv-accent)" colorB="#7aabff" keyA="txt2img" keyB="img2img" />
-              </div>
-            )}
-
-            {stats.video_by_model?.length > 0 && (
-              <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
-                <div className="flex items-center justify-between mb-3">
-                  <SectionLabel>Video Assets · by Model</SectionLabel>
-                  <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)', marginBottom: 12 }}>
-                    <span style={{ color: '#a78bfa' }}>■ txt2vid</span>
-                    <span style={{ color: '#c084fc' }}>■ img2vid</span>
-                  </div>
-                </div>
-                <BarChart rows={stats.video_by_model as unknown as Array<{ name: string; slug: string; [key: string]: string | number }>} colorA="#a78bfa" colorB="#c084fc" keyA="txt2vid" keyB="img2vid" />
-              </div>
-            )}
-
-            {stats.by_model.length > 0 && (
-              <div className="mb-6">
-                <SectionLabel>By Model</SectionLabel>
-                <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden' }}>
-                  {stats.by_model.map((m, i) => (
-                    <div key={m.slug} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: i < stats.by_model.length - 1 ? '1px solid var(--pv-border)' : undefined }}>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>{m.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>{m.provider}</div>
-                      </div>
-                      <div className="text-right">
-                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--pv-accent)', fontFamily: "'Bricolage Grotesque', sans-serif" }}>{m.count}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {stats.total_assets === 0 && (
-              <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 24 }}>
-                <div style={{ fontSize: 14, color: 'var(--pv-text3)', marginBottom: 12 }}>No assets yet — start generating!</div>
-                <a href="/dashboard" style={{ fontSize: 13, color: 'var(--pv-accent)', textDecoration: 'none', fontWeight: 600 }}>Go to Dashboard →</a>
-              </div>
-            )}
-          </>
-        ) : (
-          <div style={{ fontSize: 13, color: 'var(--pv-text3)', textAlign: 'center', paddingTop: 32 }}>Failed to load stats</div>
-        )}
-
-        {/* ── Model Picker (creator + studio only) ── */}
-        {stats && ['creator', 'studio'].includes(stats.profile.tier) && user && (
-          <div style={{ borderTop: '1px solid var(--pv-border)', paddingTop: 24, marginTop: 8 }}>
-            <SectionLabel>My Models</SectionLabel>
-            <ModelPicker tier={stats.profile.tier} userId={user.id} />
-          </div>
-        )}
-
         {/* ── Preferences ── */}
         <div id="settings-preferences" style={{ borderTop: '1px solid var(--pv-border)', paddingTop: 24, marginTop: 8 }}>
           <SectionLabel>Preferences</SectionLabel>
@@ -785,6 +704,87 @@ export default function Settings({ asDrawer = false, onClose, scrollTo }: { asDr
             </div>
           </div>
         </div>
+
+        {/* ── Stats ── */}
+        <div id="settings-stats" style={{ borderTop: '1px solid var(--pv-border)', paddingTop: 24, marginTop: 8 }} />
+        {loading ? (
+          <div className="flex items-center justify-center py-20 animate-pulse" style={{ color: 'var(--pv-text3)', fontSize: 13 }}>Loading…</div>
+        ) : stats ? (
+          <>
+            <SectionLabel>Assets</SectionLabel>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6">
+              <MiniStat label="Total"   value={stats.total_assets}                        accent="var(--pv-text)" />
+              <MiniStat label="Today"   value={stats.assets_today}                        accent="var(--pv-accent)" />
+              <MiniStat label="txt2img" value={stats.gen_type_totals['txt2img'] ?? 0}     accent="var(--pv-text2)" />
+              <MiniStat label="img2img" value={stats.gen_type_totals['img2img'] ?? 0}     accent="var(--pv-text2)" />
+              <MiniStat label="txt2vid" value={stats.gen_type_totals['txt2vid'] ?? 0}     accent="#a78bfa" />
+              <MiniStat label="img2vid" value={stats.gen_type_totals['img2vid'] ?? 0}     accent="#c084fc" />
+            </div>
+
+
+            {stats.image_by_model?.length > 0 && (
+              <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+                <div className="flex items-center justify-between mb-3">
+                  <SectionLabel>Image Assets · by Model</SectionLabel>
+                  <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)', marginBottom: 12 }}>
+                    <span style={{ color: 'var(--pv-accent)' }}>■ txt2img</span>
+                    <span style={{ color: '#7aabff' }}>■ img2img</span>
+                  </div>
+                </div>
+                <BarChart rows={stats.image_by_model as unknown as Array<{ name: string; slug: string; [key: string]: string | number }>} colorA="var(--pv-accent)" colorB="#7aabff" keyA="txt2img" keyB="img2img" />
+              </div>
+            )}
+
+            {stats.video_by_model?.length > 0 && (
+              <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+                <div className="flex items-center justify-between mb-3">
+                  <SectionLabel>Video Assets · by Model</SectionLabel>
+                  <div className="flex gap-3" style={{ fontSize: 10, color: 'var(--pv-text3)', marginBottom: 12 }}>
+                    <span style={{ color: '#a78bfa' }}>■ txt2vid</span>
+                    <span style={{ color: '#c084fc' }}>■ img2vid</span>
+                  </div>
+                </div>
+                <BarChart rows={stats.video_by_model as unknown as Array<{ name: string; slug: string; [key: string]: string | number }>} colorA="#a78bfa" colorB="#c084fc" keyA="txt2vid" keyB="img2vid" />
+              </div>
+            )}
+
+            {stats.by_model.length > 0 && (
+              <div className="mb-6">
+                <SectionLabel>By Model</SectionLabel>
+                <div style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', borderRadius: 14, overflow: 'hidden' }}>
+                  {stats.by_model.map((m, i) => (
+                    <div key={m.slug} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: i < stats.by_model.length - 1 ? '1px solid var(--pv-border)' : undefined }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--pv-text)' }}>{m.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--pv-text3)' }}>{m.provider}</div>
+                      </div>
+                      <div className="text-right">
+                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--pv-accent)', fontFamily: "'Bricolage Grotesque', sans-serif" }}>{m.count}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {stats.total_assets === 0 && (
+              <div style={{ textAlign: 'center', paddingTop: 16, paddingBottom: 24 }}>
+                <div style={{ fontSize: 14, color: 'var(--pv-text3)', marginBottom: 12 }}>No assets yet — start generating!</div>
+                <a href="/dashboard" style={{ fontSize: 13, color: 'var(--pv-accent)', textDecoration: 'none', fontWeight: 600 }}>Go to Dashboard →</a>
+              </div>
+            )}
+          </>
+        ) : (
+          <div style={{ fontSize: 13, color: 'var(--pv-text3)', textAlign: 'center', paddingTop: 32 }}>Failed to load stats</div>
+        )}
+
+        {/* ── Model Picker (creator + studio only) ── */}
+        {stats && ['creator', 'studio'].includes(stats.profile.tier) && user && (
+          <div style={{ borderTop: '1px solid var(--pv-border)', paddingTop: 24, marginTop: 8 }}>
+            <SectionLabel>My Models</SectionLabel>
+            <ModelPicker tier={stats.profile.tier} userId={user.id} />
+          </div>
+        )}
 
         {/* ── Data ── */}
         <div id="settings-data" style={{ marginTop: 8 }}>

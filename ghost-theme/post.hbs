@@ -1,0 +1,24 @@
+{{!< default}}
+
+{{#post}}
+<div class="post-header-wrap">
+  <div class="post-header">
+    {{#primary_tag}}<span class="post-tag">{{name}}</span>{{/primary_tag}}
+    <h1 class="post-title">{{title}}</h1>
+    {{#if custom_excerpt}}<p class="post-excerpt">{{custom_excerpt}}</p>{{/if}}
+    <div class="post-meta">
+      <span>{{@site.title}}</span>
+      <span>·</span>
+      <span>{{date published_at format="MMMM D, YYYY"}}</span>
+      <span>·</span>
+      <span>{{reading_time}}</span>
+    </div>
+  </div>
+</div>
+
+<div class="post-content-wrap">
+  <div class="post-content">
+    {{{content}}}
+  </div>
+</div>
+{{/post}}

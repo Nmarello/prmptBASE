@@ -979,11 +979,6 @@ export default function Dashboard() {
               <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
             </svg>
           </SbBtn>
-          <SbBtn tip="Stats" active={settingsOpen && settingsSection === 'stats'} onClick={() => { setSettingsSection('stats'); setSettingsOpen(true) }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-            </svg>
-          </SbBtn>
           <SbBtn tip="Preferences" active={settingsOpen && settingsSection === 'preferences'} onClick={() => { setSettingsSection('preferences'); setSettingsOpen(true) }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
@@ -995,6 +990,11 @@ export default function Dashboard() {
           <SbBtn tip="Account" active={settingsOpen && settingsSection === 'account'} onClick={() => { setSettingsSection('account'); setSettingsOpen(true) }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </SbBtn>
+          <SbBtn tip="Stats" active={settingsOpen && settingsSection === 'stats'} onClick={() => { setSettingsSection('stats'); setSettingsOpen(true) }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
             </svg>
           </SbBtn>
           <SbBtn tip="Data" active={settingsOpen && settingsSection === 'data'} onClick={() => { setSettingsSection('data'); setSettingsOpen(true) }}>

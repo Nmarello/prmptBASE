@@ -1,0 +1,61 @@
+{{!< default}}
+
+<div class="page-hero-wrap">
+  <div class="page-hero">
+    <p class="page-hero-kicker">prmptVAULT — The Blog</p>
+    <h1>AI is moving <em>fast.</em><br>Keep up.</h1>
+    <p>News, model drops, guides, and opinions on generative AI — written for people who are actually building with it. Powered by prmptVAULT, the platform that puts the best AI image and video models in one place.</p>
+  </div>
+</div>
+
+<div class="page-hero-posts-label">Latest posts</div>
+
+<div class="post-grid">
+
+  {{#foreach posts}}
+    {{#if @first}}
+      <a href="{{url}}" class="post-card-featured">
+        {{#if feature_image}}
+        <div class="card-image">
+          {{#match feature_image "~" ".mp4"}}
+            <video src="{{feature_image}}" autoplay muted loop playsinline></video>
+          {{else}}
+            <img src="{{feature_image}}" alt="{{title}}" />
+          {{/match}}
+        </div>
+        {{/if}}
+        <div class="card-body">
+          {{#primary_tag}}<span class="card-tag">{{name}}</span>{{/primary_tag}}
+          <h2 class="card-title">{{title}}</h2>
+          <p class="card-excerpt">{{excerpt words="30"}}</p>
+          <div class="card-meta">
+            <span>{{date published_at format="MMMM D, YYYY"}}</span>
+            <span>·</span>
+            <span>{{reading_time}}</span>
+          </div>
+          <span class="card-read-more">Read post →</span>
+        </div>
+      </a>
+    {{else}}
+      <a href="{{url}}" class="post-card">
+        {{#if feature_image}}
+        <div class="card-image">
+          <img src="{{feature_image}}" alt="{{title}}" />
+        </div>
+        {{/if}}
+        <div class="card-body">
+          {{#primary_tag}}<span class="card-tag">{{name}}</span>{{/primary_tag}}
+          <h2 class="card-title">{{title}}</h2>
+          <p class="card-excerpt">{{excerpt words="20"}}</p>
+          <div class="card-meta">
+            <span>{{date published_at format="MMMM D, YYYY"}}</span>
+            <span>·</span>
+            <span>{{reading_time}}</span>
+          </div>
+          <span class="card-read-more">Read post →</span>
+        </div>
+      </a>
+    {{/if}}
+  {{/foreach}}
+
+</div>

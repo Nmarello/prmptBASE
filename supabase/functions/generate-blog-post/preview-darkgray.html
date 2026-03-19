@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<!-- VARIANT A: Dark Gray -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog Preview — Dark Gray</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #141414;
+      color: #d8d8d8;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    a { color: #2952E3; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .site-header {
+      background: #1a1a1a;
+      border-bottom: 1px solid #252525;
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .site-logo { font-size: 20px; font-weight: 900; color: #fff; text-decoration: none; letter-spacing: -0.03em; }
+    .site-logo span { color: #2952E3; }
+    .site-nav a { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #666; margin-left: 24px; }
+    .site-nav a:hover { color: #fff; text-decoration: none; }
+
+    .post-header { max-width: 720px; margin: 64px auto 0; padding: 0 24px; }
+    .post-tag {
+      display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; color: #2952E3; border: 1px solid #2952E3;
+      border-radius: 3px; padding: 3px 8px; margin-bottom: 18px;
+    }
+    .post-title {
+      font-size: 48px; font-weight: 900; line-height: 1.05; letter-spacing: -0.04em;
+      text-transform: uppercase; color: #f0f0f0; margin-bottom: 16px;
+    }
+    .post-title em { font-style: normal; color: #2952E3; }
+    .post-excerpt { font-size: 17px; color: #777; line-height: 1.5; margin-bottom: 28px; max-width: 580px; }
+    .post-meta {
+      display: flex; align-items: center; gap: 12px; font-size: 11px; color: #555;
+      padding-bottom: 28px; border-bottom: 1px solid #252525;
+    }
+
+    .post-content { max-width: 680px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    .post-content p { font-size: 15px; color: #b0b0b0; line-height: 1.85; margin-bottom: 20px; }
+
+    .post-content h2 {
+      font-size: 22px; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase;
+      color: #f0f0f0; margin: 44px 0 14px;
+    }
+    .post-content h2 em { font-style: normal; color: #2952E3; }
+    .post-content h3 { font-size: 16px; font-weight: 800; color: #f0f0f0; margin: 28px 0 10px; }
+    .post-content strong { color: #f0f0f0; font-weight: 700; }
+    .post-content em { font-style: normal; color: #2952E3; }
+    .post-content ul { margin: 0 0 20px 20px; }
+    .post-content li { font-size: 15px; color: #b0b0b0; line-height: 1.8; margin-bottom: 6px; }
+    .post-content img { width: 100%; border-radius: 8px; margin: 28px 0; display: block; }
+
+    .pv-cta-block {
+      background: #1e1e1e; border: 1px solid #2a2a2a; border-top: 3px solid #2952E3;
+      border-radius: 8px; padding: 32px 28px; margin: 44px 0 0; text-align: center;
+    }
+    .pv-cta-block h3 { font-size: 20px; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase; color: #fff; margin: 0 0 8px; }
+    .pv-cta-block h3 span { color: #2952E3; }
+    .pv-cta-block p { font-size: 13px; color: #666; margin: 0 0 20px; }
+    .pv-cta-btn {
+      display: inline-block; background: #2952E3; color: #fff !important; font-size: 11px;
+      font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 12px 28px; border-radius: 4px; text-decoration: none !important;
+    }
+    .pv-cta-btn:hover { background: #1e3ec0; }
+
+    .site-footer {
+      border-top: 1px solid #252525; padding: 24px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .site-footer-logo { font-size: 14px; font-weight: 900; color: #fff; letter-spacing: -0.03em; }
+    .site-footer-logo span { color: #2952E3; }
+    .site-footer-copy { font-size: 11px; color: #444; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="#" class="site-logo">prmpt<span>VAULT</span></a>
+    <nav class="site-nav">
+      <a href="#">Blog</a>
+      <a href="#">Models</a>
+      <a href="#">Sign up</a>
+    </nav>
+  </header>
+
+  <div class="post-header">
+    <span class="post-tag">New model drop</span>
+    <h1 class="post-title">Meet <em>Flux</em> 1.1 Pro</h1>
+    <p class="post-excerpt">The fastest high-res image model we've added yet — and it shows.</p>
+    <div class="post-meta">
+      <span>prmptVAULT Team</span><span>·</span>
+      <span>March 19, 2026</span><span>·</span>
+      <span>3 min read</span>
+    </div>
+  </div>
+
+  <div class="post-content">
+    <p>Flux 1.1 Pro is now live on prmptVAULT. It's fast, sharp, and doesn't need hand-holding to produce something worth keeping.</p>
+
+    <h2>What <em>Flux 1.1 Pro</em> does</h2>
+    <p>It generates high-resolution images from text prompts. Up to 2048px on the long edge. The outputs are clean — good lighting, coherent structure, detail that holds up when you zoom in.</p>
+    <p>It's built on the Flux architecture from Black Forest Labs. This version trades some of the flexibility of the base model for speed and consistency. You get results in 3–5 seconds.</p>
+
+    <img src="https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773373758999-l9uvrjwo7b.png" alt="Sample output" />
+
+    <h2>What makes it <em>good</em></h2>
+    <p>Most models at this speed sacrifice detail. Flux 1.1 Pro doesn't. Faces are coherent. Backgrounds don't fall apart at the edges.</p>
+    <ul>
+      <li>Consistent lighting across complex scenes</li>
+      <li>Strong prompt adherence — what you write is what you get</li>
+      <li>Fast enough to iterate without waiting</li>
+    </ul>
+
+    <img src="https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773628791125-bhtli4uukhw.jpg" alt="Sample output" />
+
+    <h2>How to use it on <em>prmptVAULT</em></h2>
+    <p>Open the vault, pick Flux 1.1 Pro from the model list. The prompt form is structured — subject, style, lighting, mood. Fill in what matters, leave the rest blank.</p>
+
+    <div class="pv-cta-block">
+      <h3>Try <span>Flux 1.1 Pro</span> now</h3>
+      <p>New models every week. Start free, no credit card required.</p>
+      <a href="https://prmptvault.ai" class="pv-cta-btn">Open your vault →</a>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <span class="site-footer-logo">prmpt<span>VAULT</span></span>
+    <span class="site-footer-copy">© 2026 prmptVAULT</span>
+  </footer>
+
+</body>
+</html>

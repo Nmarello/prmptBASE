@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="{{@site.locale}}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>{{meta_title}}</title>
+  <meta name="description" content="{{meta_description}}" />
+  <link rel="stylesheet" href="{{asset "css/screen.css"}}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+  {{ghost_head}}
+</head>
+<body class="{{body_class}}">
+
+  <header class="site-header">
+    <a href="{{@site.url}}" class="site-logo">prmpt<span>VAULT</span></a>
+    <nav class="site-nav">
+      <a href="{{@site.url}}">Blog</a>
+      <a href="https://prmptvault.ai">Models</a>
+      <a href="https://prmptvault.ai/signup">Sign up</a>
+    </nav>
+  </header>
+
+  {{{body}}}
+
+  <footer class="site-footer">
+    <span class="site-footer-logo">prmpt<span>VAULT</span></span>
+    <span class="site-footer-copy">© {{date format="YYYY"}} prmptVAULT</span>
+  </footer>
+
+  {{ghost_foot}}
+</body>
+</html>

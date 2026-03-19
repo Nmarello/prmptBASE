@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Vault is Open — prmptVAULT Blog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #2952E3;
+      color: #1a1a1a;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    a { color: #2952E3; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .site-header {
+      background: #2952E3;
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .site-logo { font-size: 20px; font-weight: 900; color: #fff; text-decoration: none; letter-spacing: -0.03em; }
+    .site-logo span { color: #0a0a0a; }
+    .site-nav a { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-left: 24px; }
+    .site-nav a:hover { color: #fff; text-decoration: none; }
+
+    .post-header-wrap {
+      background: #0a0a0a;
+      border-bottom: 3px solid #2952E3;
+    }
+    .post-header {
+      max-width: 960px; margin: 0 auto; padding: 0 24px;
+      display: grid; grid-template-columns: 1fr 1fr;
+      min-height: 320px;
+    }
+    .post-header-body {
+      padding: 36px 40px 36px 0;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .post-header-video {
+      overflow: hidden;
+    }
+    .post-header-video video {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .post-tag {
+      display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; background: #2952E3; color: #fff;
+      border-radius: 3px; padding: 3px 8px; margin-bottom: 20px; width: fit-content;
+    }
+    .post-title {
+      font-size: 48px; font-weight: 900; line-height: 1.0; letter-spacing: -0.04em;
+      text-transform: uppercase; color: #ffffff; margin-bottom: 16px;
+    }
+    .post-title em { font-style: normal; color: #2952E3; }
+    .post-excerpt { font-size: 15px; color: #666; line-height: 1.5; margin-bottom: 24px; }
+    .post-meta { display: flex; align-items: center; gap: 12px; font-size: 11px; color: #555; }
+
+    .post-content-wrap { padding: 40px 24px 80px; }
+    .post-content { max-width: 680px; margin: 0 auto; background: #fff; border-radius: 10px; padding: 40px 40px 48px; border: 1px solid #e4ebff; }
+
+    .post-content p { font-size: 15px; color: #444; line-height: 1.85; margin-bottom: 20px; }
+    .post-content h2 { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase; color: #0a0a0a; margin: 44px 0 14px; }
+    .post-content h2 em { font-style: normal; color: #2952E3; }
+    .post-content h3 { font-size: 16px; font-weight: 800; color: #0a0a0a; margin: 28px 0 10px; }
+    .post-content strong { color: #0a0a0a; font-weight: 700; }
+    .post-content em { font-style: normal; color: #2952E3; }
+    .post-content ul { margin: 0 0 20px 20px; }
+    .post-content li { font-size: 15px; color: #444; line-height: 1.8; margin-bottom: 6px; }
+    .post-content img { width: 100%; border-radius: 8px; margin: 28px 0; display: block; }
+
+    .pv-cta-block { background: #2952E3; border-radius: 8px; padding: 32px 28px; margin: 44px 0 0; text-align: center; }
+    .pv-cta-block h3 { font-size: 20px; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase; color: #fff; margin: 0 0 8px; }
+    .pv-cta-block h3 span { color: #0a0a0a; }
+    .pv-cta-block p { font-size: 13px; color: rgba(255,255,255,0.65); margin: 0 0 20px; }
+    .pv-cta-btn { display: inline-block; background: #0a0a0a; color: #fff !important; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; padding: 12px 28px; border-radius: 4px; text-decoration: none !important; }
+    .pv-cta-btn:hover { background: #222; }
+
+    .site-footer { background: #2952E3; padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; }
+    .site-footer-logo { font-size: 14px; font-weight: 900; color: #fff; letter-spacing: -0.03em; }
+    .site-footer-logo span { color: #0a0a0a; }
+    .site-footer-copy { font-size: 11px; color: rgba(255,255,255,0.4); }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="#" class="site-logo">prmpt<span>VAULT</span></a>
+    <nav class="site-nav">
+      <a href="#">Blog</a>
+      <a href="#">Models</a>
+      <a href="#">Sign up</a>
+    </nav>
+  </header>
+
+  <div class="post-header-wrap">
+    <div class="post-header">
+      <div class="post-header-body">
+        <span class="post-tag">Announcement</span>
+        <h1 class="post-title">The vault is <em>open.</em></h1>
+        <p class="post-excerpt">We built prmptVAULT because generating AI images and video shouldn't require a PhD in prompt engineering.</p>
+        <div class="post-meta">
+          <span>prmptVAULT Team</span>
+          <span>·</span>
+          <span>March 19, 2026</span>
+          <span>·</span>
+          <span>4 min read</span>
+        </div>
+      </div>
+      <div class="post-header-video">
+        <video src="https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773755073432-djbjhh9p82i.mp4" autoplay muted loop playsinline></video>
+      </div>
+    </div>
+  </div>
+
+  <div class="post-content-wrap">
+    <div class="post-content">
+
+      <p>Today, prmptVAULT is open to the world.</p>
+
+      <p>If you've spent any time with AI image and video generators, you know the drill. Blank text box. Stare at it. Type something. Get something back that's almost right but not quite. Tweak the prompt from scratch. Repeat. Lose your last good prompt somewhere in a browser tab you'll never find again.</p>
+
+      <p>We got tired of that workflow. So we built something better.</p>
+
+      <h2>What <em>prmptVAULT</em> is</h2>
+
+      <p>prmptVAULT is an AI image and video generation platform built around one idea: your prompts should work <em>for</em> you, not against you.</p>
+
+      <p>Instead of a blank text box, you get structured prompt templates — fields for subject, style, lighting, mood, camera angle. Fill in what matters, skip what doesn't. The model gets cleaner instructions. You get better outputs. Faster.</p>
+
+      <p>Everything you generate gets saved to your library automatically. Every prompt, every image, every video. It's there when you come back. No copying and pasting into Notion. No mystery files on your desktop.</p>
+
+      <h2>The <em>models</em></h2>
+
+      <p>We've pulled together the best image and video generation models available right now — all in one place. Here's a taste of what's inside.</p>
+
+      <h3>Flux Pro — Image</h3>
+      <p><em>Flux Pro</em> from Black Forest Labs is one of the sharpest image models available. High resolution, strong prompt adherence, coherent detail across the whole frame. This is the model you reach for when quality matters.</p>
+      <img src="https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773537851402-hvulr1pv8u9.png" alt="Generated with Flux Pro on prmptVAULT" />
+
+      <h3>Nano Banana 2 — Image</h3>
+      <p><em>Nano Banana 2</em> produces a distinct, stylized look that stands apart from photorealistic models. Rich color, strong composition, immediately recognizable. Great for creative work where you want something that doesn't look like every other AI image.</p>
+      <img src="https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773189262873-bdvfolfm3x5.jpg" alt="Generated with Nano Banana 2 on prmptVAULT" />
+
+      <h3>Minimax Video — Video</h3>
+      <p><em>Minimax Video</em> turns text prompts into smooth, cinematic video clips. Motion is fluid, scenes hold together. This is text-to-video that actually looks like something you'd use.</p>
+      <video src="https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773436588545-mwgovmt3wqm.mp4" autoplay muted loop playsinline style="width:100%; border-radius:8px; margin:28px 0; display:block;"></video>
+
+      <h3>Luna Dream Machine — Video</h3>
+      <p><em>Luna Dream Machine</em> from Luma AI pushes video quality further — longer clips, more dynamic motion, better scene consistency. If you're generating video for real use, this is the one.</p>
+      <video src="https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/f9965304-4af9-4eba-a762-7b7c892473e1/1773755073432-djbjhh9p82i.mp4" autoplay muted loop playsinline style="width:100%; border-radius:8px; margin:28px 0; display:block;"></video>
+
+      <p>These are just four. There are dozens more inside, and new ones drop every week.</p>
+
+      <h2>Who it's <em>for</em></h2>
+
+      <p>Designers who need reference imagery fast. Marketers building campaigns. Developers prototyping interfaces. Creators who want to produce more without spending half their day fighting with prompts.</p>
+
+      <p>You don't need to know how to write prompts. That's the point. The structure does that work for you.</p>
+
+      <h2>What's <em>next</em></h2>
+
+      <p>We're just getting started. The roadmap is full — more models, better tools for organizing and exporting your library, collaboration features, and things we haven't announced yet.</p>
+
+      <p>This blog is where we'll document all of it. Model drops, guides, opinions on where generative AI is heading. Written for people who are actually building with this stuff, not just reading about it.</p>
+
+      <p>The vault is open. Come see what's inside.</p>
+
+      <div class="pv-cta-block">
+        <h3>Start using <span>prmptVAULT</span></h3>
+        <p>Free to start. No credit card required. New models every week.</p>
+        <a href="https://prmptvault.ai" class="pv-cta-btn">Open your vault →</a>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <span class="site-footer-logo">prmpt<span>VAULT</span></span>
+    <span class="site-footer-copy">© 2026 prmptVAULT</span>
+  </footer>
+
+</body>
+</html>

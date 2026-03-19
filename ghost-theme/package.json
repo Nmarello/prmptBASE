@@ -1,0 +1,10 @@
+{
+  "name": "prmptvault",
+  "description": "prmptVAULT Blog Theme",
+  "version": "1.0.0",
+  "engines": {
+    "ghost": ">=5.0.0"
+  },
+  "license": "MIT",
+  "keywords": ["ghost-theme"]
+}
