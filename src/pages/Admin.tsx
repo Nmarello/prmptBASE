@@ -234,8 +234,8 @@ interface SupportConversation {
 }
 
 export default function Admin() {
-  const { user, signOut } = useAuth()
-  const { theme, setTheme } = useTheme()
+  const { user } = useAuth()
+  const { theme } = useTheme()
   const [view, setView] = useState<AdminView>('stats')
   const [users, setUsers] = useState<UserRow[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
