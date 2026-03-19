@@ -69,11 +69,10 @@ export default function FamilyRow({ category, models, userTier, onSelectModel }:
   return (
     <div className="flex flex-col gap-2">
       {/* Row label */}
-      <div className="px-1 flex items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--pv-text3)' }}>
+      <div className="flex items-center gap-3 mb-2">
+        <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
           {LABELS[category]}
-        </span>
-        <div className="flex-1 h-px" style={{ background: 'var(--pv-border)' }} />
+        </h2>
       </div>
 
       {/* Horizontal scroll */}
