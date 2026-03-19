@@ -32,6 +32,8 @@ export interface Model {
   is_active: boolean
   coming_soon: boolean
   sort_order: number
+  family: string | null
+  family_order: number
 }
 
 export interface Template {

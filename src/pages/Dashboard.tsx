@@ -53,6 +53,7 @@ import { supabase } from '../lib/supabase'
 import type { Asset, Model, Template, GenType, UserProject } from '../types'
 import { GEN_TYPE_LABELS } from '../types'
 import ModelCard from '../components/dashboard/ModelCard'
+import FamilyRow from '../components/dashboard/FamilyRow'
 import TemplateForm from '../components/dashboard/TemplateForm'
 import AssetGrid, { Lightbox } from '../components/dashboard/AssetGrid'
 import ProjectsView from '../components/dashboard/ProjectsView'
@@ -71,8 +72,6 @@ import ToolsPanel from '../components/dashboard/ToolsPanel'
 import { useAnalytics, useIdentify } from '../hooks/useAnalytics'
 
 type View = 'models' | 'builder' | 'assets' | 'projects' | 'tools'
-
-const COMING_SOON_IMAGE: Partial<Model>[] = []
 
 const COMING_SOON_VIDEO: Partial<Model>[] = [
   { slug: 'cs-veo3', name: 'Veo 3', provider: 'Google', description: "Google's flagship video model. State-of-the-art motion quality and prompt adherence.", supported_gen_types: ['txt2vid'] },
@@ -1269,112 +1268,44 @@ export default function Dashboard() {
                 )
               })()}
 
-              {/* Image Models row */}
-              {(() => {
-                if (modelFilter === 'videos') return null
-                // Merge flux-dev-img2img into flux-dev as a single card
-                let imgModels: any[] = models
+              {/* Image Models row — family cards */}
+              {modelFilter !== 'videos' && (() => {
+                let imgModels = models
                   .filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g)))
                   .filter(m => m.slug !== 'flux-dev-img2img')
-                  .map(m => m.slug === 'flux-dev'
-                    ? { ...m, supported_gen_types: [...new Set([...m.supported_gen_types, 'img2img'])] }
-                    : m
-                  )
-                imgModels = imgModels.map(m => m.coming_soon ? { ...m, _comingSoon: true } : m)
-                imgModels.push(...COMING_SOON_IMAGE.map(m => ({ ...m, _comingSoon: true })))
-                // active first, then add, then next-month, then upgrade, then coming-soon
-                const statusOrder = { active: 0, add: 1, 'next-month': 2, upgrade: 3, 'coming-soon': 4 }
-                imgModels.sort((a: any, b: any) => {
-                  const sa = a._comingSoon ? 'coming-soon' : getModelStatus(a, userTier, selectedModelIds).status
-                  const sb = b._comingSoon ? 'coming-soon' : getModelStatus(b, userTier, selectedModelIds).status
-                  return (statusOrder[sa] ?? 5) - (statusOrder[sb] ?? 5)
-                })
-                if (modelSearch) { const q = modelSearch.toLowerCase(); imgModels = imgModels.filter((m: any) => m.name?.toLowerCase().includes(q) || m.provider?.toLowerCase().includes(q) || m.description?.toLowerCase().includes(q)) }
+                if (modelSearch) {
+                  const q = modelSearch.toLowerCase()
+                  imgModels = imgModels.filter(m => m.name?.toLowerCase().includes(q) || m.provider?.toLowerCase().includes(q) || m.description?.toLowerCase().includes(q))
+                }
                 if (imgModels.length === 0) return null
                 return (
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
-                        Image Models
-                      </h2>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pv-text3)', background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', padding: '2px 8px', borderRadius: 20 }}>
-                        {imgModels.filter((m: any) => !m._comingSoon).length} available
-                      </span>
-                    </div>
-                    <div className="flex gap-3.5 overflow-x-auto pb-3">
-                      {imgModels.map((m: any) => {
-                        const { status, upgradeTier } = m._comingSoon ? { status: 'coming-soon' as const, upgradeTier: undefined } : getModelStatus(m as Model, userTier, selectedModelIds)
-                        return (
-                          <ModelCard
-                            key={m.id ?? m.slug}
-                            model={m as Model}
-                            userTier={userTier}
-                            selected={selectedModel?.id === m.id}
-                            onClick={() => setDrawerModel(m as Model)}
-                            comingSoon={m._comingSoon || m.comingSoon}
-                            rendering={renderingModelSlug === m.slug}
-                            latestRenderUrl={latestRenderBySlug[m.slug]?.url}
-                            latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
-                            dataTour={m.slug === 'dalle' ? 'dalle-card' : undefined}
-                            modelStatus={status}
-                            upgradeTier={upgradeTier}
-                            onAdd={() => handleAddModel(m.id)}
-                            onUpgrade={() => { analytics.upgradeClicked({ tier: userTier, source: 'your_models' }); navigate(`/pricing?highlight=${upgradeTier ?? 'creator'}`) }}
-                          />
-                        )
-                      })}
-                    </div>
-                  </div>
+                  <FamilyRow
+                    category="images"
+                    models={imgModels}
+                    userTier={userTier}
+                    onSelectModel={m => setDrawerModel(m)}
+                  />
                 )
               })()}
 
-              {/* Video Models row */}
-              {(() => {
-                if (modelFilter === 'images') return null
-                let vidModels: any[] = models.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid' || g === 'vid2vid'))
-                vidModels = vidModels.map(m => m.coming_soon ? { ...m, _comingSoon: true } : m)
-                vidModels.push(...COMING_SOON_VIDEO.map(m => ({ ...m, _comingSoon: true })))
-                const statusOrder = { active: 0, add: 1, 'next-month': 2, upgrade: 3, 'coming-soon': 4 }
-                vidModels.sort((a: any, b: any) => {
-                  const sa = a._comingSoon ? 'coming-soon' : getModelStatus(a, userTier, selectedModelIds).status
-                  const sb = b._comingSoon ? 'coming-soon' : getModelStatus(b, userTier, selectedModelIds).status
-                  return (statusOrder[sa] ?? 5) - (statusOrder[sb] ?? 5)
-                })
-                if (modelSearch) { const q = modelSearch.toLowerCase(); vidModels = vidModels.filter((m: any) => m.name?.toLowerCase().includes(q) || m.provider?.toLowerCase().includes(q) || m.description?.toLowerCase().includes(q)) }
+              {/* Video Models row — family cards */}
+              {modelFilter !== 'images' && (() => {
+                let vidModels = models.filter(m =>
+                  m.supported_gen_types.some(g => ['txt2vid','img2vid','vid2vid'].includes(g))
+                )
+                vidModels = [...vidModels, ...COMING_SOON_VIDEO.map(m => ({ ...m as Model, coming_soon: true }))]
+                if (modelSearch) {
+                  const q = modelSearch.toLowerCase()
+                  vidModels = vidModels.filter(m => m.name?.toLowerCase().includes(q) || m.provider?.toLowerCase().includes(q) || m.description?.toLowerCase().includes(q))
+                }
                 if (vidModels.length === 0) return null
                 return (
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
-                        Video Models
-                      </h2>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pv-text3)', background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', padding: '2px 8px', borderRadius: 20 }}>
-                        {vidModels.filter((m: any) => !m._comingSoon).length} available
-                      </span>
-                    </div>
-                    <div className="flex gap-3.5 overflow-x-auto pb-3">
-                      {vidModels.map((m: any) => {
-                        const { status, upgradeTier } = m._comingSoon ? { status: 'coming-soon' as const, upgradeTier: undefined } : getModelStatus(m as Model, userTier, selectedModelIds)
-                        return (
-                          <ModelCard
-                            key={m.id ?? m.slug}
-                            model={m as Model}
-                            userTier={userTier}
-                            selected={selectedModel?.id === m.id}
-                            onClick={() => setDrawerModel(m as Model)}
-                            comingSoon={m._comingSoon || m.comingSoon}
-                            rendering={renderingModelSlug === m.slug}
-                            latestRenderUrl={latestRenderBySlug[m.slug]?.url}
-                            latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
-                            modelStatus={status}
-                            upgradeTier={upgradeTier}
-                            onAdd={() => handleAddModel(m.id)}
-                            onUpgrade={() => { analytics.upgradeClicked({ tier: userTier, source: 'video_models' }); navigate(`/pricing?highlight=${upgradeTier ?? 'studio'}`) }}
-                          />
-                        )
-                      })}
-                    </div>
-                  </div>
+                  <FamilyRow
+                    category="video"
+                    models={vidModels}
+                    userTier={userTier}
+                    onSelectModel={m => setDrawerModel(m)}
+                  />
                 )
               })()}
 
