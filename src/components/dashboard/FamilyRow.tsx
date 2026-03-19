@@ -61,19 +61,7 @@ export default function FamilyRow({ category, models, userTier, onSelectModel, l
   }
 
   function handleToggle(family: string) {
-    const isOpening = openFamily !== family
     setOpenFamily(prev => prev === family ? null : family)
-    // On open: scroll so the family anchor stays at left edge, new cards reveal rightward
-    if (isOpening) {
-      setTimeout(() => {
-        const el = scrollRef.current?.querySelector(`[data-family="${family}"]`) as HTMLElement | null
-        if (el && scrollRef.current) {
-          const containerLeft = scrollRef.current.getBoundingClientRect().left
-          const elLeft = el.getBoundingClientRect().left
-          scrollRef.current.scrollLeft += elLeft - containerLeft - 12
-        }
-      }, 10)
-    }
   }
 
   return (
