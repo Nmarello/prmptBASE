@@ -30,11 +30,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Auth state — never blocks loading
   useEffect(() => {
+    const hasOAuthCode = new URLSearchParams(window.location.search).has('code')
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) setAdminLoading(true)
-      setLoading(false)
+      // If there's an OAuth code in the URL, keep loading until onAuthStateChange fires
+      if (!hasOAuthCode || session) setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
