@@ -7,10 +7,38 @@ import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 type UpscaleScale = 2 | 4
 
 const UPSCALERS = [
-  { id: 'esrgan',           name: 'Real-ESRGAN',     desc: 'Fast & sharp. Best for photos and game art.',         supportsScale: true  },
-  { id: 'recraft-crisp',    name: 'Recraft Crisp',   desc: 'Crisp edges. Great for illustrations and graphics.',  supportsScale: false },
-  { id: 'recraft-creative', name: 'Recraft Creative', desc: 'Generative enhancement. Adds texture and detail.',   supportsScale: false },
-  { id: 'google',           name: 'Google Upscaler', desc: "Google's model. Balanced quality at 2× or 4×.",       supportsScale: true  },
+  {
+    id: 'esrgan',
+    name: 'Real-ESRGAN',
+    supportsScale: true,
+    pros: 'Fast, reliable, and widely tested. Excellent at restoring fine detail in photos, textures, and game art without hallucinating new content.',
+    cons: 'Purely mathematical — it sharpens what\'s there but won\'t add creatively. Can over-sharpen noisy images.',
+    best: 'Photos, screenshots, game assets, anything where accuracy matters.',
+  },
+  {
+    id: 'recraft-crisp',
+    name: 'Recraft Crisp Upscale',
+    supportsScale: false,
+    pros: 'Optimized for hard edges and flat areas. Keeps lines clean and colors accurate — ideal for vector-style art and UI graphics.',
+    cons: 'Output scale is fixed (determined by the model). Less effective on organic textures like skin or foliage.',
+    best: 'Illustrations, logos, graphic design, anything with defined edges.',
+  },
+  {
+    id: 'recraft-creative',
+    name: 'Recraft Creative Upscale',
+    supportsScale: false,
+    pros: 'Generative — it reinvents texture and surface detail at higher resolution. Results often look more "polished" than the source.',
+    cons: 'May change fine details that weren\'t in the original. Less faithful to the source. Fixed output scale.',
+    best: 'Artistic renders, AI-generated images, portraits where added detail is welcome.',
+  },
+  {
+    id: 'google',
+    name: 'Google Upscaler',
+    supportsScale: true,
+    pros: 'Strong general-purpose upscaler from Google. Handles a wide range of content types well at both 2× and 4×.',
+    cons: 'Slower than ESRGAN. Less specialized than the Recraft models for specific content types.',
+    best: 'Mixed-content images, general photography, when you\'re unsure which to pick.',
+  },
 ]
 
 const TOOLS = [
@@ -217,31 +245,33 @@ function UpscaleTool({
       {/* Upscaler selector */}
       <div className="mb-5">
         <div style={{ color: 'var(--pv-text3)' }} className="text-xs font-semibold uppercase tracking-wider mb-2">Model</div>
-        <div className="flex flex-col gap-2">
+        <select
+          value={upscaler}
+          onChange={e => setUpscaler(e.target.value)}
+          style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)', fontFamily: "'DM Sans', sans-serif" }}
+          className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-sky-500/50 cursor-pointer"
+        >
           {UPSCALERS.map(u => (
-            <button
-              key={u.id}
-              onClick={() => setUpscaler(u.id)}
-              style={{
-                background: upscaler === u.id ? 'color-mix(in srgb, var(--pv-accent) 10%, var(--pv-surface2))' : 'var(--pv-surface2)',
-                borderColor: upscaler === u.id ? 'var(--pv-accent)' : 'var(--pv-border)',
-                textAlign: 'left',
-              }}
-              className="w-full px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer hover:border-[var(--pv-accent)]"
-            >
-              <div className="flex items-center justify-between">
-                <span style={{ color: upscaler === u.id ? 'var(--pv-accent)' : 'var(--pv-text2)', fontFamily: "'DM Sans', sans-serif" }} className="text-sm font-semibold">
-                  {u.name}
-                </span>
-                {upscaler === u.id && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pv-accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                )}
-              </div>
-              <div style={{ color: 'var(--pv-text3)' }} className="text-xs mt-0.5 leading-relaxed">{u.desc}</div>
-            </button>
+            <option key={u.id} value={u.id}>{u.name}</option>
           ))}
+        </select>
+        {/* Per-model description */}
+        <div
+          style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)' }}
+          className="mt-2 px-4 py-3 rounded-xl border text-xs leading-relaxed flex flex-col gap-1.5"
+        >
+          <div className="flex gap-1.5">
+            <span style={{ color: '#50c878' }} className="font-semibold shrink-0">✓</span>
+            <span style={{ color: 'var(--pv-text2)' }}>{selectedUpscaler.pros}</span>
+          </div>
+          <div className="flex gap-1.5">
+            <span style={{ color: '#f87171' }} className="font-semibold shrink-0">✗</span>
+            <span style={{ color: 'var(--pv-text2)' }}>{selectedUpscaler.cons}</span>
+          </div>
+          <div className="flex gap-1.5 pt-0.5" style={{ borderTop: '1px solid var(--pv-border)' }}>
+            <span style={{ color: 'var(--pv-text3)' }} className="shrink-0 font-semibold">Best for:</span>
+            <span style={{ color: 'var(--pv-text3)' }}>{selectedUpscaler.best}</span>
+          </div>
         </div>
       </div>
 
