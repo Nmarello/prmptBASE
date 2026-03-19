@@ -7,7 +7,7 @@ import ModelCard from './ModelCard'
 // Family display order per row
 const FAMILY_ORDER: Record<string, string[]> = {
   images:     ['Flux', 'Imagen', 'Recraft', 'Ideogram', 'HiDream', 'GPT Image', 'Stable Diffusion', 'Bria', 'Seedream'],
-  video:      ['Kling', 'LTX', 'Luma', 'Sora', 'Veo', 'MiniMax', 'WAN', 'Hunyuan', 'Pika'],
+  video:      ['Kling', 'LTX', 'Luma', 'Sora', 'Veo', 'MiniMax', 'WAN', 'Pika'],
   characters: [],
 }
 
