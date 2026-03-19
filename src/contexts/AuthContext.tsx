@@ -40,12 +40,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!hasOAuthCode || session) setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       if (!session) { setIsAdmin(false); setAdminLoading(false) }
       else setAdminLoading(true)
-      setLoading(false)
+      // If exchanging an OAuth code, wait for SIGNED_IN — don't clear loading on INITIAL_SESSION with no user
+      if (event !== 'INITIAL_SESSION' || session || !hasOAuthCode) setLoading(false)
     })
 
     return () => subscription.unsubscribe()
