@@ -1,54 +1,43 @@
 # Handoff — prmptVAULT
-**Session date**: 2026-03-18
-**Next action**: Check staging (https://staging.prmptbase.pages.dev/dashboard) — family cards should show maker + tagline in info section. If anything looks off, start there.
+**Session date**: 2026-03-19
+**Next action**: Check staging (https://staging.prmptbase.pages.dev/dashboard) — verify tour card stays in viewport and DALL-E gets spotlighted. Then continue testing the first-run tour flow end to end.
 
 ## What we did
-1. **Family card sizing fixed** — anchor cards now match ModelCard exactly (minHeight: 301px)
-2. **Section headings fixed** — Images/Video row labels now match "Recently Used" / "Featured" h2 style
-3. **Solo cards fixed** — unfamilied models now use full `<ModelCard>` instead of custom SoloCard
-4. **Stack peek slivers** — replaced diagonal shadows with right-side card edge stack; gradient top 148px only, surface below; overhang scales with count (≤4 models = 30px, 5+ = 50px)
-5. **Family latest render** — anchor card shows most recent render from any model in the family; expanded variant cards show individual latest renders
-6. **Variant cards inherit accent border** — when family is open, each ModelCard gets the family accent color as border (added `borderColor` prop to ModelCard)
-7. **Scroll fix** — `overflow-anchor: none` on scroll container; expansion now pushes right only
-8. **Family order migration** — re-ordered all families newest version first (Flux Kontext → Flux 2 → Flux 1, etc.)
-9. **Badge removed** — model count moved from gradient header to info section
-10. **Family restructure** — major DB cleanup:
-    - Added: HiDream, Veo, Seedream, Stable Diffusion, Bria, GPT Image families
-    - Fixed: Imagen 4 (`imagen-4.0-generate-001`) added to Imagen family
-    - Removed: Seedance family (1 model), Hunyuan family (1 model), Nano Banana from Imagen
-    - Nano Banana is now solo — ready to anchor its own family when more Nano models arrive
-11. **Maker + tagline** — each family card now shows maker name (accent color) + 1-line strength blurb
+1. **Recraft V4 fix** — added `recraft-v4` to `generate-replicate` edge fn (was missing entirely); split size maps into `RECRAFT_V4_SIZE_MAP` (1024–1344px) vs `RECRAFT_V4_PRO_SIZE_MAP` (2048px+)
+2. **Multi-model upscaler dropdown** — replaced button selector with `<select>` matching TemplateForm style; added pros/cons/best-for description card below dropdown; 4 models: Real-ESRGAN (FAL), Recraft Crisp, Recraft Creative, Google Upscaler (all Replicate); edge fn updated to route accordingly
+3. **Tools row on dashboard** — new `ToolsRow` component with 4 tool cards (Upscale clickable → navigates to tools, Inpaint/Remove BG/Expand as "Soon"); `activeTool` state lifted to Dashboard
+4. **Veo 3 duplicate fixed** — removed hardcoded `COMING_SOON_VIDEO` stub (`cs-veo3`) that was showing as a solo card alongside the real `veo-3` in the Veo family
+5. **Tour audit** — fixed missing `data-tour="dalle-card"` (never was set anywhere); updated stale copy in GuidedTour (provider list → family cards) and FirstRunTour nav step; added `dataTour` to solo ModelCard in FamilyRow so Pro users get the spotlight too
+6. **Tour card off-screen fix** — `attachedFallback` in FirstRunTour now clamps `top` to `[16, innerHeight - 260]` so card never goes below fold when target fills screen
 
 ## Files changed
 | File | What changed |
 |------|-------------|
-| `src/components/dashboard/FamilyCard.tsx` | Complete rewrite: stack slivers, latest render on anchor, borderColor on variants, maker+tagline in info, badge removed from header |
-| `src/components/dashboard/FamilyRow.tsx` | Added `latestRenderBySlug` prop, `overflow-anchor: none`, updated FAMILY_ORDER for all new families, replaced SoloCard with ModelCard |
-| `src/components/dashboard/ModelCard.tsx` | Added optional `borderColor` prop — inline style override for family accent border |
-| `src/pages/Dashboard.tsx` | Pass `latestRenderBySlug` to both FamilyRow instances |
-| `supabase/migrations/20260318000005_family_order_by_version.sql` | Re-order family_order by latest model maker version |
-| `supabase/migrations/20260318000006_family_restructure.sql` | Add HiDream/Veo/Seedream/SD/Bria/GPT Image families; fix Imagen 4 slug; remove Seedance |
-| `supabase/migrations/20260318000007_remove_single_model_families.sql` | Remove Hunyuan from family (1 model) |
-| `supabase/migrations/20260318000008_nano_banana_solo.sql` | Remove Nano Banana from Imagen family |
+| `supabase/functions/upscale-image/index.ts` | Route to FAL (ESRGAN) or Replicate (Recraft/Google) based on `upscaler` param |
+| `supabase/functions/generate-replicate/index.ts` | Added `recraft-v4` model entry + split size maps |
+| `src/components/dashboard/ToolsPanel.tsx` | `<select>` dropdown + pros/cons description card; upscaler state |
+| `src/components/dashboard/ToolsRow.tsx` | New — 4 tool nav cards for dashboard |
+| `src/components/dashboard/FamilyRow.tsx` | Added `dataTour="dalle-card"` to DALL-E solo card |
+| `src/components/dashboard/FirstRunTour.tsx` | `attachedFallback` clamped to viewport; nav step copy updated |
+| `src/components/dashboard/GuidedTour.tsx` | Step 2 copy updated from provider list to family card description |
+| `src/pages/Dashboard.tsx` | Removed `COMING_SOON_VIDEO` stub; added `activeTool`/`setActiveTool`; ToolsRow added; `dataTour` on DALL-E in Your Models row |
 
 ## Current state
-- ✅ Working: Family card stack with peek slivers, latest renders, maker+tagline
-- ✅ Working: All families correctly structured in DB (migrations applied)
-- ✅ Working: Scroll expansion goes right only
-- ✅ Working: Variant cards show individual latest renders + family accent border
-- ✅ Working: Solo cards (HiDream, Hunyuan, Nano Banana, PixVerse, etc.) use full ModelCard
-- 🔧 Pending review: Cull candidates still in families (pushed to end): `flux-dev-img2img`, `recraft-v3`, `kling` v1, `ltx-video`, `wan-21-txt2vid` — Nick tabled this, assets stay safe if culled (just set family=NULL)
-- ❌ Not started: Remotion for PV Instagram Reels (mentioned sessions ago, never built)
-- ❌ Not started: Family card info section — Nick said "we'll work on what info goes in the family card later" (now done with maker+tagline, but may want more)
+- ✅ Working: Multi-upscaler dropdown with descriptions deployed to Supabase
+- ✅ Working: Tools row on dashboard navigates to tools section
+- ✅ Working: Veo family clean (no duplicate solo card)
+- ✅ Working: Tour copy updated for families
+- 🔧 Pending retest: First-run tour full flow — tour card positioning fix and DALL-E spotlight need verification
+- ❌ Not started: Characters row (tabled — need model education first)
+- ❌ Not started: Cull old model versions (flux-dev-img2img, recraft-v3, kling v1, ltx-video, wan-21-txt2vid)
+- ❌ Not started: Remotion Instagram Reels
 
 ## Start here next session
-Everything is on the `staging` branch — do NOT push to `main` until Nick says to ship. All 8 migrations from this session are applied to the live Supabase DB. The family card UI is in good shape. Next likely tasks: further polish on the family cards, culling old model versions, or the Remotion Instagram Reels work. Check staging first to confirm the maker+tagline build deployed cleanly.
+Branch is `staging` — do NOT push to `main` until Nick says to ship. All edge fn changes are deployed to Supabase (project ref `knlelqirhlvgvmmwiske`). The main outstanding item is verifying the first-run tour end-to-end: reset with `localStorage.removeItem('prmptVAULT_firstRunSeen')` in browser console, then run through the full flow on staging. After that, the testing site still has models to test and approve (see `~/testing-prmptvault/src/models.ts` — many still `needs-test`).
 
 ## Gotchas
-- **`imagen-4.0-generate-001`** is the actual Imagen 4 slug in the DB — not `imagen-4`. Previous migrations referenced `imagen-4` which didn't exist.
-- **`overflow-anchor: none`** is what fixed the scroll pushing both ways — browser scroll anchoring was adjusting scrollLeft automatically when content expanded. Required `as React.CSSProperties` cast for TypeScript.
-- **ModelCard `borderColor` prop** — uses inline style which overrides Tailwind's `border-[var(--pv-border)]` class. Works because inline styles have higher specificity.
-- **Stack overhang** — `stackOverhang(n)` function: ≤4 models = 30px, 5+ = 50px. Total card footprint = 230 + overhang. Peek sliver positions: `rightEdge = 230 + (i+1) * peekWidth`, `leftEdge = rightEdge - 230`.
-- **Family card minHeight: 301** — derived from ModelCard's natural height (148px header + ~153px info). Without this, FamilyCard was ~90px shorter than ModelCard.
-- **`supabase db push` — no `--project-ref` flag** — not supported in this CLI version.
-- **Apple JWT expires 2026-09-18** — set a reminder to regenerate.
+- **Testing site is a separate repo** at `~/testing-prmptvault/` — deploy with `CLOUDFLARE_API_TOKEN=QjSrvAkYlDnorQDQ0yUv-3nAnUHayYmEc2GOoJVZ npm run deploy` from that dir. Not git-triggered.
+- **`COMING_SOON_VIDEO` array** in Dashboard.tsx was the source of the duplicate Veo 3 — if any future "coming soon" models need to be hardcoded there, make sure they don't already exist in Supabase with `coming_soon=true`
+- **Tour `attachedFallback`** was clamping to `innerHeight - 260` (estimated card height) — if cards grow taller, increase that constant
+- **DALL-E tour target** is set in two places: `yourModels.map()` in Dashboard.tsx (newbie users) and `soloActive.map()` in FamilyRow.tsx (pro users). Both must be kept in sync if DALL-E ever moves to a family
+- **Upscaler Replicate models** (recraft-crisp, recraft-creative, google) — input params assumed from Replicate convention (`image` key). Haven't been live-tested yet; errors may require param name fixes

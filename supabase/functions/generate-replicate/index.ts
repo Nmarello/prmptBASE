@@ -418,7 +418,7 @@ Deno.serve(async (req) => {
       } catch (e) {
         console.error('[storeVideo] error, using temp URL:', e)
       }
-      const { data: asset } = await adminClient.from('assets').insert({
+      const { data: asset, error: assetErr } = await adminClient.from('assets').insert({
         user_id: userId,
         prompt_id: prompt_id ?? null,
         model_id: model_id ?? null,
@@ -433,6 +433,7 @@ Deno.serve(async (req) => {
           predict_time: predictTime,
         },
       }).select().single()
+      if (assetErr || !asset) console.error('[generate-replicate] video asset insert failed:', assetErr?.message)
       return new Response(
         JSON.stringify({
           asset,
@@ -448,7 +449,7 @@ Deno.serve(async (req) => {
     const insertedAssets = await Promise.all(
       outputUrls.map(async (url) => {
         const permanentUrl = await storeImage(adminClient, url, userId, fmt)
-        const { data } = await adminClient.from('assets').insert({
+        const { data, error: insertErr } = await adminClient.from('assets').insert({
           user_id: userId,
           prompt_id: prompt_id ?? null,
           model_id: model_id ?? null,
@@ -464,6 +465,7 @@ Deno.serve(async (req) => {
             predict_time: predictTime,
           },
         }).select().single()
+        if (insertErr || !data) console.error('[generate-replicate] image asset insert failed:', insertErr?.message)
         return data
       }),
     )
