@@ -19,7 +19,7 @@ const STEPS: Step[] = [
   {
     target: '[data-tour="sidebar"]',
     title: 'Pick your model',
-    body: 'Browse AI models organized by provider — OpenAI, Black Forest Labs, Google, and more. Each card shows what it\'s good at and which generation types it supports.',
+    body: 'Models are grouped into families — Flux, Recraft, Kling, and more — with the newest version front and center. Click a family card to expand it and see all variants.',
     position: 'right',
   },
   {

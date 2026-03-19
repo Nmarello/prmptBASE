@@ -1232,6 +1232,7 @@ export default function Dashboard() {
                           latestRenderUrl={latestRenderBySlug[m.slug]?.url}
                           latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
                           modelStatus="active"
+                          dataTour={m.slug === 'dalle' ? 'dalle-card' : undefined}
                         />
                       ))}
                       {showAddCard && (

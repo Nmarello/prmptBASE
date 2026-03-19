@@ -154,7 +154,7 @@ const STEPS: Step[] = [
     target: '[data-tour="sidebar-generate"]',
     position: 'right',
     title: 'Generate — your home base',
-    body: 'This is where you start. Browse AI models organized by capability and create new images or videos.',
+    body: 'This is where you start. Models are grouped into families by Images, Video, and Tools — click any card to explore variants and start creating.',
     hasButton: true,
     buttonLabel: 'Next →',
   },
