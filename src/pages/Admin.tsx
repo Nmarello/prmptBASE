@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { useTheme } from '../contexts/ThemeContext'
 import Logo from '../components/Logo'
 import { supabase } from '../lib/supabase'
 
@@ -235,7 +234,6 @@ interface SupportConversation {
 
 export default function Admin() {
   const { user } = useAuth()
-  const { theme } = useTheme()
   const [view, setView] = useState<AdminView>('stats')
   const [users, setUsers] = useState<UserRow[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
