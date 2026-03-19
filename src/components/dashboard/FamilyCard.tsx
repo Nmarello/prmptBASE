@@ -56,6 +56,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
             background: 'var(--pv-surface)',
             borderColor: isOpen ? art.accent : 'var(--pv-border)',
             boxShadow: isOpen ? `0 0 0 1px ${art.accent}44` : undefined,
+            minHeight: 301,
           }}
         >
           {/* Gradient header — same 148px as ModelCard */}
