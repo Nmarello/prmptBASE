@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import React from 'react'
 import type { Model } from '../../types'
 import FamilyCard from './FamilyCard'
 import ModelCard from './ModelCard'
@@ -60,12 +61,19 @@ export default function FamilyRow({ category, models, userTier, onSelectModel, l
   }
 
   function handleToggle(family: string) {
+    const isOpening = openFamily !== family
     setOpenFamily(prev => prev === family ? null : family)
-    // Scroll the row so opened family is visible
-    setTimeout(() => {
-      const el = scrollRef.current?.querySelector(`[data-family="${family}"]`) as HTMLElement | null
-      el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
-    }, 50)
+    // On open: scroll so the family anchor stays at left edge, new cards reveal rightward
+    if (isOpening) {
+      setTimeout(() => {
+        const el = scrollRef.current?.querySelector(`[data-family="${family}"]`) as HTMLElement | null
+        if (el && scrollRef.current) {
+          const containerLeft = scrollRef.current.getBoundingClientRect().left
+          const elLeft = el.getBoundingClientRect().left
+          scrollRef.current.scrollLeft += elLeft - containerLeft - 12
+        }
+      }, 10)
+    }
   }
 
   return (
@@ -81,7 +89,7 @@ export default function FamilyRow({ category, models, userTier, onSelectModel, l
       <div
         ref={scrollRef}
         className="flex gap-3 overflow-x-auto pb-2 scroll-smooth"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overflowAnchor: 'none' } as React.CSSProperties}
       >
         {/* Family cards */}
         {orderedFamilies.map(family => (

@@ -129,11 +129,6 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
               </>
             )}
 
-            {/* Model count badge — bottom left */}
-            <div className="absolute bottom-2.5 left-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(0,0,0,0.4)', color: art.accent, backdropFilter: 'blur(4px)', border: `1px solid ${art.accent}55` }}>
-              {totalCount} model{totalCount !== 1 ? 's' : ''}
-            </div>
             {/* Chevron — top right */}
             <div className="absolute top-2.5 right-2.5 w-6 h-6 flex items-center justify-center rounded-full"
               style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.18)' }}>
@@ -152,7 +147,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
               {family}
             </div>
             <div style={{ fontSize:'11.5px', color:'var(--pv-text3)', marginTop:'4px' }}>
-              {activeCount} active{totalCount > activeCount ? ` · ${totalCount - activeCount} coming soon` : ''}
+              {totalCount} model{totalCount !== 1 ? 's' : ''} · {activeCount} active{totalCount > activeCount ? ` · ${totalCount - activeCount} soon` : ''}
             </div>
             {/* Hover CTA */}
             <div className="mt-auto pt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
