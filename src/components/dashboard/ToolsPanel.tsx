@@ -6,6 +6,13 @@ import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 
 type UpscaleScale = 2 | 4
 
+const UPSCALERS = [
+  { id: 'esrgan',           name: 'Real-ESRGAN',     desc: 'Fast & sharp. Best for photos and game art.',         supportsScale: true  },
+  { id: 'recraft-crisp',    name: 'Recraft Crisp',   desc: 'Crisp edges. Great for illustrations and graphics.',  supportsScale: false },
+  { id: 'recraft-creative', name: 'Recraft Creative', desc: 'Generative enhancement. Adds texture and detail.',   supportsScale: false },
+  { id: 'google',           name: 'Google Upscaler', desc: "Google's model. Balanced quality at 2× or 4×.",       supportsScale: true  },
+]
+
 const TOOLS = [
   { id: 'upscale', label: 'Upscale', available: true },
   { id: 'inpaint', label: 'Inpaint', available: false },
@@ -13,9 +20,17 @@ const TOOLS = [
   { id: 'expand', label: 'Expand', available: false },
 ]
 
-export default function ToolsPanel({ onGenerate }: { onGenerate: () => void }) {
+interface ToolsPanelProps {
+  onGenerate: () => void
+  activeTool?: string
+  setActiveTool?: (tool: string) => void
+}
+
+export default function ToolsPanel({ onGenerate, activeTool: activeToolProp, setActiveTool: setActiveToolProp }: ToolsPanelProps) {
   const { session } = useAuth()
-  const [activeTool, setActiveTool] = useState('upscale')
+  const [activeToolInternal, setActiveToolInternal] = useState('upscale')
+  const activeTool = activeToolProp ?? activeToolInternal
+  const setActiveTool = setActiveToolProp ?? setActiveToolInternal
   const { scrollRef: toolsScrollRef, distance: pullDist, refreshing: pullRefreshing } = usePullToRefresh(() => {})
 
   return (
@@ -109,10 +124,13 @@ function UpscaleTool({
   const [preview, setPreview] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [scale, setScale] = useState<UpscaleScale>(2)
+  const [upscaler, setUpscaler] = useState('esrgan')
   const [processing, setProcessing] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
+
+  const selectedUpscaler = UPSCALERS.find(u => u.id === upscaler) ?? UPSCALERS[0]
 
   function handleFile(f: File) {
     if (!f.type.startsWith('image/')) return
@@ -153,7 +171,7 @@ function UpscaleTool({
           'Authorization': `Bearer ${anonKey}`,
           'apikey': anonKey,
         },
-        body: JSON.stringify({ image_url: publicUrl, scale, user_token: userToken }),
+        body: JSON.stringify({ image_url: publicUrl, scale, upscaler, user_token: userToken }),
       }).catch(err => { throw new Error(`Network error: ${err.message}`) })
 
       const text = await res.text()
@@ -192,8 +210,39 @@ function UpscaleTool({
           AI Upscale
         </h2>
         <p style={{ color: 'var(--pv-text3)' }} className="text-xs leading-relaxed">
-          Enhance any image with Real-ESRGAN. Upload a photo and select a scale — the result is saved to your gallery. Costs 1 credit.
+          Enhance any image with AI upscaling. Choose your model below. Upload a photo and select a scale — the result is saved to your gallery. Costs 1 credit.
         </p>
+      </div>
+
+      {/* Upscaler selector */}
+      <div className="mb-5">
+        <div style={{ color: 'var(--pv-text3)' }} className="text-xs font-semibold uppercase tracking-wider mb-2">Model</div>
+        <div className="flex flex-col gap-2">
+          {UPSCALERS.map(u => (
+            <button
+              key={u.id}
+              onClick={() => setUpscaler(u.id)}
+              style={{
+                background: upscaler === u.id ? 'color-mix(in srgb, var(--pv-accent) 10%, var(--pv-surface2))' : 'var(--pv-surface2)',
+                borderColor: upscaler === u.id ? 'var(--pv-accent)' : 'var(--pv-border)',
+                textAlign: 'left',
+              }}
+              className="w-full px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer hover:border-[var(--pv-accent)]"
+            >
+              <div className="flex items-center justify-between">
+                <span style={{ color: upscaler === u.id ? 'var(--pv-accent)' : 'var(--pv-text2)', fontFamily: "'DM Sans', sans-serif" }} className="text-sm font-semibold">
+                  {u.name}
+                </span>
+                {upscaler === u.id && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pv-accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                )}
+              </div>
+              <div style={{ color: 'var(--pv-text3)' }} className="text-xs mt-0.5 leading-relaxed">{u.desc}</div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Upload zone */}
@@ -249,29 +298,31 @@ function UpscaleTool({
             </button>
           </div>
 
-          {/* Scale */}
-          <div>
-            <div style={{ color: 'var(--pv-text3)' }} className="text-xs font-semibold uppercase tracking-wider mb-2">Scale</div>
-            <div className="flex gap-2">
-              {([2, 4] as UpscaleScale[]).map(s => (
-                <button
-                  key={s}
-                  onClick={() => setScale(s)}
-                  style={{
-                    background: scale === s ? 'var(--pv-accent)' : 'var(--pv-surface2)',
-                    borderColor: scale === s ? 'var(--pv-accent)' : 'var(--pv-border)',
-                    color: scale === s ? '#fff' : 'var(--pv-text2)',
-                  }}
-                  className="px-5 py-2 rounded-xl border text-sm font-semibold transition-all cursor-pointer hover:border-[var(--pv-accent)]"
-                >
-                  {s}×
-                </button>
-              ))}
-              <div style={{ color: 'var(--pv-text3)' }} className="flex items-center text-xs ml-1">
-                1 credit
+          {/* Scale — only shown for upscalers that support it */}
+          {selectedUpscaler.supportsScale && (
+            <div>
+              <div style={{ color: 'var(--pv-text3)' }} className="text-xs font-semibold uppercase tracking-wider mb-2">Scale</div>
+              <div className="flex gap-2">
+                {([2, 4] as UpscaleScale[]).map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setScale(s)}
+                    style={{
+                      background: scale === s ? 'var(--pv-accent)' : 'var(--pv-surface2)',
+                      borderColor: scale === s ? 'var(--pv-accent)' : 'var(--pv-border)',
+                      color: scale === s ? '#fff' : 'var(--pv-text2)',
+                    }}
+                    className="px-5 py-2 rounded-xl border text-sm font-semibold transition-all cursor-pointer hover:border-[var(--pv-accent)]"
+                  >
+                    {s}×
+                  </button>
+                ))}
+                <div style={{ color: 'var(--pv-text3)' }} className="flex items-center text-xs ml-1">
+                  1 credit
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {error && (
             <div className="text-xs px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
@@ -292,7 +343,7 @@ function UpscaleTool({
                 </svg>
                 Upscaling…
               </span>
-            ) : !userToken ? 'Sign in to upscale' : `Upscale ${scale}×`}
+            ) : !userToken ? 'Sign in to upscale' : selectedUpscaler.supportsScale ? `Upscale ${scale}×` : `Upscale with ${selectedUpscaler.name}`}
           </button>
         </div>
       )}
@@ -310,7 +361,7 @@ function UpscaleTool({
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12"/>
             </svg>
-            Saved to your gallery · {scale}× upscale complete
+            Saved to your gallery · {selectedUpscaler.supportsScale ? `${scale}×` : ''} upscale complete
           </div>
           <div className="flex gap-2">
             <button

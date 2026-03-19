@@ -69,6 +69,7 @@ import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import ModelDrawer from '../components/dashboard/ModelDrawer'
 import ProviderLogo from '../components/dashboard/ProviderLogo'
 import ToolsPanel from '../components/dashboard/ToolsPanel'
+import ToolsRow from '../components/dashboard/ToolsRow'
 import { useAnalytics, useIdentify } from '../hooks/useAnalytics'
 
 type View = 'models' | 'builder' | 'assets' | 'projects' | 'tools'
@@ -180,6 +181,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const userInitial = (user?.user_metadata?.full_name ?? user?.email ?? '?')[0].toUpperCase()
   const [view, setView] = useState<View>('models')
+  const [activeTool, setActiveTool] = useState('upscale')
   const [tourActive, setTourActive] = useState(false)
   const [firstRunStep, setFirstRunStep] = useState<number>(-1)
   const [tourSubjectFill, setTourSubjectFill] = useState<string | undefined>()
@@ -1311,6 +1313,16 @@ export default function Dashboard() {
                 )
               })()}
 
+              {/* Tools row */}
+              {!modelSearch && (
+                <ToolsRow
+                  onSelectTool={(tool: string) => {
+                    setActiveTool(tool)
+                    setView('tools')
+                  }}
+                />
+              )}
+
               {/* Featured row */}
               {!modelSearch && (() => {
                 const FEATURED_SLUGS = ['flux-pro-ultra', 'recraft-v4-pro', 'luma-txt2vid', 'flux-kontext-pro']
@@ -1393,7 +1405,11 @@ export default function Dashboard() {
         )}
 
         {view === 'tools' && (
-          <ToolsPanel onGenerate={() => { setView('assets'); loadAssets() }} />
+          <ToolsPanel
+            onGenerate={() => { setView('assets'); loadAssets() }}
+            activeTool={activeTool}
+            setActiveTool={setActiveTool}
+          />
         )}
       </div>
 
