@@ -42,6 +42,14 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'txt2vid': 'fal-ai/kling-video/v1.6/standard/text-to-video',
     'img2vid': 'fal-ai/kling-video/v1.6/standard/image-to-video',
   },
+  'kling-v3': {
+    'txt2vid': 'fal-ai/kling-video/v3/standard/text-to-video',
+    'img2vid': 'fal-ai/kling-video/v3/standard/image-to-video',
+  },
+  'pixverse-v5': {
+    'txt2vid': 'fal-ai/pixverse/v4/text-to-video',
+    'img2vid': 'fal-ai/pixverse/v4/image-to-video',
+  },
   'luma': {
     'txt2vid': 'fal-ai/luma-dream-machine/ray-2',
     'img2vid': 'fal-ai/luma-dream-machine/ray-2/image-to-video',
@@ -696,6 +704,12 @@ Deno.serve(async (req) => {
         // img2vid uses guide_scale; txt2vid does not support guidance at all
         if (isImgVid && body.guide_scale) falPayload.guide_scale = Number(body.guide_scale)
         if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
+      } else if (slug.startsWith('pixverse')) {
+        falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
+        if (body.duration) falPayload.duration = Number(body.duration)
+        if (body.negative_prompt) falPayload.negative_prompt = body.negative_prompt
+        if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
+        if (body.quality) falPayload.quality = body.quality
       } else if (slug.startsWith('hunyuan')) {
         // Both models use aspect_ratio directly (16:9 or 9:16 only)
         if (body.aspect_ratio) falPayload.aspect_ratio = body.aspect_ratio
