@@ -1136,8 +1136,13 @@ export default function Dashboard() {
               {/* Featured row — last 4 live models by released_at */}
               {!modelSearch && (() => {
                 const featuredModels = [...models]
-                  .filter(m => m.is_active && !m.coming_soon && m.released_at)
-                  .sort((a, b) => new Date(b.released_at!).getTime() - new Date(a.released_at!).getTime())
+                  .filter(m => m.is_active && !m.coming_soon)
+                  .sort((a, b) => {
+                    if (a.released_at && b.released_at) return new Date(b.released_at).getTime() - new Date(a.released_at).getTime()
+                    if (a.released_at) return -1
+                    if (b.released_at) return 1
+                    return b.sort_order - a.sort_order
+                  })
                   .slice(0, 4)
                 if (featuredModels.length === 0) return null
                 return (
