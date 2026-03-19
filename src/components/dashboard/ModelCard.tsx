@@ -17,6 +17,7 @@ interface Props {
   upgradeTier?: string
   onAdd?: () => void
   onUpgrade?: () => void
+  borderColor?: string
 }
 
 const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
@@ -163,7 +164,7 @@ const slugBrandLabels: Record<string, string> = {
 
 // Provider logo mark — SVG or styled wordmark
 
-export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering, latestRenderUrl, latestRenderIsVideo, dataTour, modelStatus, upgradeTier, onAdd, onUpgrade }: Props) {
+export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering, latestRenderUrl, latestRenderIsVideo, dataTour, modelStatus, upgradeTier, onAdd, onUpgrade, borderColor }: Props) {
   const accessible = tierCanAccess(userTier, model.min_tier)
   const comingSoon = comingSoonProp || modelStatus === 'coming-soon' || false
   const art = MODEL_ART[model.slug] ?? DEFAULT_ART
@@ -192,7 +193,7 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
     <button
       onClick={handleClick}
       data-tour={dataTour}
-      style={{ width: '230px', flexShrink: 0, background: 'var(--pv-surface)' }}
+      style={{ width: '230px', flexShrink: 0, background: 'var(--pv-surface)', ...(borderColor ? { borderColor } : {}) }}
       className={`group relative text-left rounded-[18px] border overflow-hidden flex flex-col transition-all duration-200 ${
         comingSoon
           ? 'opacity-40 cursor-not-allowed border-[var(--pv-border)]'

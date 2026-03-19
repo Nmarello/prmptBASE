@@ -59,23 +59,24 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
       >
         {/* Peek slivers — rendered back-to-front (last model furthest right, lowest z) */}
         {!isOpen && sortedModels.map((_, i) => {
-          // Sliver i peeks out at: anchor right edge + (i+1) * peekWidth
-          // The full 230px card body is mostly hidden under the anchor card
           const rightEdge = 230 + (i + 1) * peekWidth
           const leftEdge = rightEdge - 230
           return (
             <div
               key={i}
-              className="absolute inset-y-0 rounded-[18px] border"
+              className="absolute inset-y-0 rounded-[18px] border overflow-hidden"
               style={{
                 left: leftEdge,
                 width: 230,
-                background: art.gradient,
+                background: 'var(--pv-surface)',
                 borderColor: 'var(--pv-border)',
                 zIndex: totalCount - i,
-                opacity: 1 - (i * 0.12), // slight fade for depth
+                opacity: 1 - (i * 0.12),
               }}
-            />
+            >
+              {/* Gradient only in the header zone — mirrors card structure */}
+              <div className="absolute top-0 left-0 right-0" style={{ height: 148, background: art.gradient }} />
+            </div>
           )
         })}
 
@@ -181,6 +182,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
             comingSoon={model.coming_soon}
             latestRenderUrl={latestRenderBySlug[model.slug]?.url}
             latestRenderIsVideo={latestRenderBySlug[model.slug]?.isVideo}
+            borderColor={art.accent}
           />
         ))}
       </div>
