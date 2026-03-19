@@ -104,6 +104,7 @@ export default function FamilyRow({ category, models, userTier, onSelectModel, l
             onClick={() => onSelectModel(model)}
             latestRenderUrl={latestRenderBySlug[model.slug]?.url}
             latestRenderIsVideo={latestRenderBySlug[model.slug]?.isVideo}
+            dataTour={model.slug === 'dalle' ? 'dalle-card' : undefined}
           />
         ))}
 

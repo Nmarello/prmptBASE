@@ -322,11 +322,16 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, 
       left: '50%',
       transform: 'translateX(-50%)',
     }
+    const CARD_H_EST = 260 // estimated card height for clamping
     const spaceBelow = window.innerHeight - (targetRect.top + targetRect.height + PAD)
     const spaceAbove = targetRect.top - PAD
-    return spaceBelow >= spaceAbove
-      ? { ...base, top: targetRect.top + targetRect.height + PAD + GAP }
-      : { ...base, bottom: window.innerHeight - targetRect.top + PAD + GAP }
+    if (spaceBelow >= spaceAbove) {
+      const top = Math.min(targetRect.top + targetRect.height + PAD + GAP, window.innerHeight - CARD_H_EST - 16)
+      return { ...base, top: Math.max(top, 16) }
+    } else {
+      const top = targetRect.top - PAD - GAP - CARD_H_EST
+      return { ...base, top: Math.max(top, 16) }
+    }
   }
 
   function cardStyle(): React.CSSProperties {
