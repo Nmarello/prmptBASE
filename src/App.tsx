@@ -12,6 +12,7 @@ import Settings from './pages/Settings'
 import Tos from './pages/Tos'
 import Privacy from './pages/Privacy'
 import NotFound from './pages/NotFound'
+import AuthCallback from './pages/AuthCallback'
 import FeedbackWidget from './components/support/FeedbackWidget'
 import SupportWidget from './components/support/SupportWidget'
 
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/tos" element={<Tos />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route
             path="/settings"
             element={

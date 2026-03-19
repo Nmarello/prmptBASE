@@ -30,23 +30,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Auth state — never blocks loading
   useEffect(() => {
-    const hasOAuthCode = new URLSearchParams(window.location.search).has('code')
-
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) setAdminLoading(true)
-      // If there's an OAuth code in the URL, keep loading until onAuthStateChange fires
-      if (!hasOAuthCode || session) setLoading(false)
+      setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       if (!session) { setIsAdmin(false); setAdminLoading(false) }
       else setAdminLoading(true)
-      // If exchanging an OAuth code, wait for SIGNED_IN — don't clear loading on INITIAL_SESSION with no user
-      if (event !== 'INITIAL_SESSION' || session || !hasOAuthCode) setLoading(false)
+      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
@@ -63,42 +59,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
   }
 
   const signInWithApple = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'apple',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
   }
 
   const signInWithMicrosoft = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'azure',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
   }
 
   const signInWithFacebook = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'facebook',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
   }
 
   const signInWithDiscord = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'discord',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
   }
 
   const signInWithGithub = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'github',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
   }
 
