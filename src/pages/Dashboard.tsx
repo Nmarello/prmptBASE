@@ -1133,12 +1133,12 @@ export default function Dashboard() {
             <div ref={generateScrollRef} data-tour="sidebar" className="flex-1 overflow-y-auto px-4 sm:px-7 pb-28 sm:pb-10 space-y-5">
               <PullIndicator distance={generatePullDist} refreshing={generateRefreshing} />
 
-              {/* Featured row */}
+              {/* Featured row — last 4 live models by released_at */}
               {!modelSearch && (() => {
-                const FEATURED_SLUGS = ['flux-pro-ultra', 'recraft-v4-pro', 'luma-txt2vid', 'flux-kontext-pro']
-                const featuredModels = FEATURED_SLUGS
-                  .map(slug => models.find(m => m.slug === slug))
-                  .filter(Boolean) as Model[]
+                const featuredModels = [...models]
+                  .filter(m => m.is_active && !m.coming_soon && m.released_at)
+                  .sort((a, b) => new Date(b.released_at!).getTime() - new Date(a.released_at!).getTime())
+                  .slice(0, 4)
                 if (featuredModels.length === 0) return null
                 return (
                   <div>
@@ -1146,9 +1146,6 @@ export default function Dashboard() {
                       <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
                         Featured
                       </h2>
-                      <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'linear-gradient(90deg,#0050ff18,#7b2ff718)', border: '1px solid #0050ff30', color: 'var(--pv-accent)' }}>
-                        Staff picks
-                      </span>
                     </div>
                     <div className="flex gap-3.5 overflow-x-auto pb-3">
                       {featuredModels.map((m) => {

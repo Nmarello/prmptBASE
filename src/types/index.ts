@@ -34,6 +34,7 @@ export interface Model {
   sort_order: number
   family: string | null
   family_order: number
+  released_at: string | null
 }
 
 export interface Template {
