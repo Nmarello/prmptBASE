@@ -188,7 +188,7 @@ function SbBtn({ tip, active, onClick, children }: { tip?: string; active?: bool
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-type AdminView = 'stats' | 'users' | 'feedback' | 'support' | 'model-status'
+type AdminView = 'stats' | 'users' | 'feedback' | 'support' | 'model-status' | 'blog'
 
 interface ModelRow {
   slug: string
@@ -276,12 +276,20 @@ export default function Admin() {
   const [modelStatuses, setModelStatuses] = useState<ModelStatusMerged[]>([])
   const [modelsLoading, setModelsLoading] = useState(false)
 
+  // Blog publisher state
+  const [blogModels, setBlogModels] = useState<Array<{ name: string; image_url: string }>>([{ name: '', image_url: '' }])
+  const [blogSubmitting, setBlogSubmitting] = useState(false)
+  const [blogResult, setBlogResult] = useState<{ ok: boolean; draft?: { id: string; title: string; preview_url: string; admin_url: string }; error?: string } | null>(null)
+  const [blogDrafts, setBlogDrafts] = useState<Array<{ id: string; title: string; preview_url: string; model_names: string[]; created_at: string }>>([])
+  const [approvingDraft, setApprovingDraft] = useState<string | null>(null)
+
   useEffect(() => { loadAll() }, [])
 
   useEffect(() => {
     if (view === 'feedback') loadFeedback()
     else if (view === 'support') loadSupport()
     else if (view === 'model-status') loadModels()
+    else if (view === 'blog') loadBlogDrafts()
   }, [view])
 
   async function loadAll() {
@@ -375,6 +383,63 @@ export default function Admin() {
       if (action === 'set_coming_soon') return { ...m, is_active: false, coming_soon: true }
       return m
     }))
+  }
+
+  async function loadBlogDrafts() {
+    const { data } = await supabase.from('blog_drafts').select('*').order('created_at', { ascending: false })
+    setBlogDrafts(data ?? [])
+  }
+
+  async function submitBlogDraft() {
+    const models = blogModels.filter(m => m.name.trim())
+    if (!models.length) return
+    setBlogSubmitting(true)
+    setBlogResult(null)
+    const { data: { session } } = await supabase.auth.getSession()
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/publish-blog`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ user_token: session?.access_token, action: 'draft', models }),
+        },
+      )
+      const data = await res.json()
+      setBlogResult(data)
+      if (data.ok) {
+        setBlogModels([{ name: '', image_url: '' }])
+        loadBlogDrafts()
+      }
+    } catch (err) {
+      setBlogResult({ ok: false, error: String(err) })
+    }
+    setBlogSubmitting(false)
+  }
+
+  async function approveDraft(postId: string) {
+    setApprovingDraft(postId)
+    const { data: { session } } = await supabase.auth.getSession()
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/publish-blog`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ user_token: session?.access_token, action: 'approve', post_id: postId }),
+        },
+      )
+      const data = await res.json()
+      if (data.ok) {
+        loadBlogDrafts()
+        alert(`Published! ${data.published.emails_sent} emails sent.`)
+      } else {
+        alert(`Error: ${data.error}`)
+      }
+    } catch (err) {
+      alert(`Error: ${err}`)
+    }
+    setApprovingDraft(null)
   }
 
   async function cycleFeedbackStatus(id: string, current: string) {
@@ -594,6 +659,13 @@ export default function Admin() {
           </svg>
         </SbBtn>
 
+        {/* Nav: Blog Publisher */}
+        <SbBtn tip="Blog" active={view === 'blog'} onClick={() => setView('blog')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+          </svg>
+        </SbBtn>
+
       </aside>
 
       {/* ── Main Content ── */}
@@ -615,7 +687,7 @@ export default function Admin() {
             {/* Page header */}
             <div className="mb-6">
               <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em', lineHeight: 1.1 }}>
-                {view === 'stats' ? 'Stats' : view === 'users' ? 'Users' : view === 'feedback' ? 'Feedback' : view === 'support' ? 'Support' : 'Model Status'}
+                {view === 'stats' ? 'Stats' : view === 'users' ? 'Users' : view === 'feedback' ? 'Feedback' : view === 'support' ? 'Support' : view === 'model-status' ? 'Model Status' : 'Blog Publisher'}
               </h1>
               <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 3 }}>{user?.email}</p>
             </div>
@@ -1067,9 +1139,9 @@ export default function Admin() {
                                   >LIVE</button>
                                 ) : isComingSoon ? (
                                   <button
-                                    onClick={() => { if (confirm(`Make ${m.name} live? This will publish a blog post.`)) doModelAction(m.slug, 'set_live') }}
+                                    onClick={() => { if (confirm(`Make ${m.name} live?`)) doModelAction(m.slug, 'set_live') }}
                                     style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)', cursor: 'pointer', letterSpacing: '0.04em' }}
-                                    title="Click to make Live (publishes blog post)"
+                                    title="Click to make Live"
                                   >COMING SOON</button>
                                 ) : (
                                   <span style={{ fontSize: 10, color: 'var(--pv-text3)' }}>Testing</span>
@@ -1164,6 +1236,103 @@ export default function Admin() {
                   </div>
                 )}
               </Card>
+            )}
+
+            {/* ── Blog Publisher view ── */}
+            {view === 'blog' && (
+              <>
+                {/* Draft form */}
+                <Card>
+                  <div style={{ padding: 20 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--pv-text3)', marginBottom: 16 }}>New Blog Post</div>
+
+                    {blogModels.map((m, i) => (
+                      <div key={i} className="flex gap-3 mb-3 items-start">
+                        <div style={{ flex: 1 }}>
+                          <input
+                            type="text"
+                            placeholder="Model name (e.g. FLUX Kontext Max)"
+                            value={m.name}
+                            onChange={e => setBlogModels(prev => prev.map((p, j) => j === i ? { ...p, name: e.target.value } : p))}
+                            style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <input
+                            type="text"
+                            placeholder="Image URL (paste from library)"
+                            value={m.image_url}
+                            onChange={e => setBlogModels(prev => prev.map((p, j) => j === i ? { ...p, image_url: e.target.value } : p))}
+                            style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+                          />
+                        </div>
+                        {blogModels.length > 1 && (
+                          <button
+                            onClick={() => setBlogModels(prev => prev.filter((_, j) => j !== i))}
+                            style={{ padding: '8px 10px', background: 'none', border: '1px solid var(--pv-border)', borderRadius: 8, color: 'var(--pv-text3)', cursor: 'pointer', fontSize: 14, lineHeight: 1 }}
+                            title="Remove"
+                          >×</button>
+                        )}
+                      </div>
+                    ))}
+
+                    <div className="flex gap-3 mt-4">
+                      <button
+                        onClick={() => setBlogModels(prev => [...prev, { name: '', image_url: '' }])}
+                        style={{ padding: '7px 16px', borderRadius: 8, background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                      >+ Add Model</button>
+
+                      <button
+                        onClick={submitBlogDraft}
+                        disabled={blogSubmitting || !blogModels.some(m => m.name.trim())}
+                        style={{ padding: '7px 20px', borderRadius: 8, background: 'var(--pv-accent)', border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: blogSubmitting ? 0.5 : 1 }}
+                      >{blogSubmitting ? 'Generating...' : 'Generate Draft'}</button>
+                    </div>
+
+                    {blogResult && (
+                      <div style={{ marginTop: 16, padding: 12, borderRadius: 8, background: blogResult.ok ? 'rgba(52,211,153,0.08)' : 'rgba(248,113,113,0.08)', border: `1px solid ${blogResult.ok ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)'}`, fontSize: 12 }}>
+                        {blogResult.ok ? (
+                          <div>
+                            <div style={{ color: '#34d399', fontWeight: 600, marginBottom: 4 }}>Draft created!</div>
+                            <div style={{ color: 'var(--pv-text2)' }}>{blogResult.draft?.title}</div>
+                            <div className="flex gap-3 mt-2">
+                              <a href={blogResult.draft?.preview_url} target="_blank" rel="noreferrer" style={{ color: 'var(--pv-accent)', fontSize: 12 }}>Preview →</a>
+                              <a href={blogResult.draft?.admin_url} target="_blank" rel="noreferrer" style={{ color: 'var(--pv-accent)', fontSize: 12 }}>Edit in Ghost →</a>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ color: '#f87171' }}>{blogResult.error}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+
+                {/* Pending drafts */}
+                {blogDrafts.length > 0 && (
+                  <Card>
+                    <div style={{ padding: '16px 20px 8px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--pv-text3)', marginBottom: 12 }}>Pending Drafts</div>
+                    </div>
+                    {blogDrafts.map(d => (
+                      <div key={d.id} style={{ padding: '12px 20px', borderTop: '1px solid var(--pv-border)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, color: 'var(--pv-text)', fontWeight: 500 }}>{d.title}</div>
+                          <div style={{ fontSize: 11, color: 'var(--pv-text3)', marginTop: 2 }}>
+                            {d.model_names?.join(', ')} · {new Date(d.created_at).toLocaleString()}
+                          </div>
+                        </div>
+                        <a href={d.preview_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: 'var(--pv-accent)', textDecoration: 'none', whiteSpace: 'nowrap' }}>Preview</a>
+                        <button
+                          onClick={() => { if (confirm('Publish this blog post and send emails to all users?')) approveDraft(d.id) }}
+                          disabled={approvingDraft === d.id}
+                          style={{ padding: '5px 14px', borderRadius: 6, background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.25)', color: '#34d399', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.04em', opacity: approvingDraft === d.id ? 0.5 : 1 }}
+                        >{approvingDraft === d.id ? 'Publishing...' : 'Approve & Publish'}</button>
+                      </div>
+                    ))}
+                  </Card>
+                )}
+              </>
             )}
 
           </div>
