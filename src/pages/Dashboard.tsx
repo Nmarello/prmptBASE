@@ -652,7 +652,7 @@ export default function Dashboard() {
       const GOOGLE_DIRECT_SLUGS = new Set(['imagen-4.0-generate-001', 'veo-2.0-generate-001'])
       const REPLICATE_SLUGS = new Set([
         'sd35-large', 'sd35-large-turbo', 'sd35-medium',
-        'flux-schnell', 'flux-dev', 'flux-pro', 'flux-pro-ultra', 'flux2-pro',
+        'flux-schnell', 'flux-dev', 'flux-pro', 'flux-pro-ultra', 'flux2-pro', 'flux2-max',
         'recraft-v3', 'recraft-v4-pro',
         'ideogram-v3',
         'hidream-fast', 'hidream-full',

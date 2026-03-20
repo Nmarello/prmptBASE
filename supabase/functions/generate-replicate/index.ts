@@ -133,6 +133,7 @@ const MODELS: Record<string, ModelConfig> = {
     ...(b.seed != null ? { seed: b.seed } : {}),
   })},
   'flux2-pro':        { path: 'black-forest-labs/flux-2-pro',       costUsd: 0.04, buildInput: (b) => standardInput(b) },
+  'flux2-max':        { path: 'black-forest-labs/flux-2-max',       costUsd: 0.08, buildInput: (b) => standardInput(b) },
 
   // ── Recraft ─────────────────────────────────────────────────────────────────
   'recraft-v3':       { path: 'recraft-ai/recraft-v3',     costUsd: 0.04, buildInput: (b) => recraftInput(b, RECRAFT_STYLE_MAP[b._style as string] ?? 'realistic_image') },
