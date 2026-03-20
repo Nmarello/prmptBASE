@@ -94,6 +94,9 @@ a { text-decoration: none; }
   border-bottom: 3px solid #2952E3;
   color: inherit;
 }
+.post-card-featured:not(:has(.card-image)) {
+  grid-template-columns: 1fr;
+}
 .post-card-featured .card-image { overflow: hidden; }
 .post-card-featured .card-image img,
 .post-card-featured .card-image video { width: 100%; height: 100%; min-height: 280px; object-fit: cover; display: block; }
@@ -108,7 +111,8 @@ a { text-decoration: none; }
   color: inherit;
 }
 .post-card .card-image { height: 180px; overflow: hidden; }
-.post-card .card-image img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s ease; }
+.post-card .card-image img,
+.post-card .card-image video { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s ease; }
 .post-card:hover .card-image img { transform: scale(1.03); }
 .post-card .card-body { padding: 20px 20px 24px; flex: 1; display: flex; flex-direction: column; }
 
@@ -157,16 +161,17 @@ a { text-decoration: none; }
 .post-meta { display: flex; align-items: center; gap: 12px; font-size: 11px; color: #555; }
 
 /* ── Post: Content ── */
-.post-content-wrap { padding: 40px 24px 80px; }
+.post-content-wrap { padding: 16px 24px 80px; }
 .post-content {
   max-width: 680px;
   margin: 0 auto;
   background: #fff;
   border-radius: 10px;
-  padding: 40px 40px 48px;
+  padding: 32px 40px 48px;
   border: 1px solid #e4ebff;
 }
 .post-content p { font-size: 15px; color: #444; line-height: 1.85; margin-bottom: 20px; }
+.post-content h2:first-child { margin-top: 0; }
 .post-content h2 { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase; color: #0a0a0a; margin: 44px 0 14px; }
 .post-content h2 em { font-style: normal; color: #2952E3; }
 .post-content h3 { font-size: 16px; font-weight: 800; color: #0a0a0a; margin: 28px 0 10px; }
@@ -174,7 +179,7 @@ a { text-decoration: none; }
 .post-content em { font-style: normal; color: #2952E3; }
 .post-content ul { margin: 0 0 20px 20px; }
 .post-content li { font-size: 15px; color: #444; line-height: 1.8; margin-bottom: 6px; }
-.post-content img { width: 100%; border-radius: 8px; margin: 28px 0; display: block; }
+.post-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 28px auto; display: block; object-fit: contain; }
 .post-content a { color: #2952E3; }
 .post-content a:hover { text-decoration: underline; }
 

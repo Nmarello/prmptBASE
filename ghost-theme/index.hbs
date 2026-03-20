@@ -40,7 +40,11 @@
       <a href="{{url}}" class="post-card">
         {{#if feature_image}}
         <div class="card-image">
-          <img src="{{feature_image}}" alt="{{title}}" />
+          {{#match feature_image "~" ".mp4"}}
+            <video src="{{feature_image}}" autoplay muted loop playsinline></video>
+          {{else}}
+            <img src="{{feature_image}}" alt="{{title}}" />
+          {{/match}}
         </div>
         {{/if}}
         <div class="card-body">

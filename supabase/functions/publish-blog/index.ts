@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
       // Build image section for the prompt
       const imageInstructions = models
         .filter(m => m.image_url)
-        .map(m => `<figure><img src="${m.image_url}" alt="${m.name}" /><figcaption>${m.name}</figcaption></figure>`)
+        .map(m => `<p><img src="${m.image_url}" alt="${m.name}" /></p>`)
         .join('\n')
 
       const modelList = models.map(m => m.name).join(', ')
@@ -89,22 +89,26 @@ Deno.serve(async (req) => {
             role: 'system',
             content: `You write sharp, punchy blog posts for prmptVAULT — an AI image and video generation platform.
 Style: confident, direct, no fluff. Short paragraphs. No buzzwords. No em-dashes.
-The blog theme renders post titles in UPPERCASE automatically. Use <em> tags to accent key words in blue.
-Headings use <h2> tags, wrap accent words in <em>.
+The blog theme renders post titles in UPPERCASE automatically.
+IMPORTANT: The title field must be PLAIN TEXT only — no HTML tags whatsoever. Ghost does not render HTML in titles.
+Headings in the body use <h2> tags. Use <em> tags in the body to accent key words in blue.
 Return a JSON object with:
-- title: post title (2-6 words, use <em> for one accent word)
-- excerpt: one sentence hero subtitle (plain text, max 120 chars)
-- html: full post body HTML using only <p>, <h2>, <h3>, <strong>, <em>, <ul>, <li>, <img>, <figure>, <figcaption> tags`
+- title: post title (2-6 words, plain text only, NO HTML tags)
+- excerpt: one sentence hero subtitle (plain text, max 120 chars). This appears below the title in the hero area — do NOT repeat it in the body.
+- html: full post body HTML using ONLY these tags: <p>, <h2>, <h3>, <strong>, <em>, <ul>, <li>, <img>. Do NOT use <div>, <figure>, <figcaption>, <span>, or any tags with class attributes. For images, use plain <img src="..." alt="..." /> inside a <p> tag. For the CTA at the end, use a simple <h3> and <p> with an <a> link — no wrapper divs or classes.
+
+BODY STRUCTURE: Start the body immediately with the first model section heading as an <h2> (e.g. "FLUX.2 <em>MAX</em>: Unparalleled Precision"). Do NOT start with an intro paragraph restating the excerpt. Jump straight into the first model. Each model gets its own <h2> section heading. Place the model's image IMMEDIATELY after the <h2> heading, before any body text paragraphs. Then follow with 2-3 short paragraphs.`
           }, {
             role: 'user',
             content: `Write a blog post announcing that ${isBatch ? 'these new models are' : `${modelNames[0]} is`} now live on prmptVAULT: ${modelList}.
 
-For each model, write a section covering what it does, what makes it good, and how to use it on prmptVAULT (structured prompts, saves to library).
+For each model, write a section with an <h2> heading (model name + a punchy tagline) covering what it does, what makes it good, and how to use it on prmptVAULT (structured prompts, saves to library).
 
 ${imageInstructions ? `Include these example images in the relevant model sections:\n${imageInstructions}` : ''}
 
-End with a CTA section using this HTML:
-<div class="pv-cta-block"><h3>Try ${isBatch ? 'them' : `<span>${modelNames[0]}</span>`} now</h3><p>New models every week. Start free, no credit card required.</p><a href="https://prmptvault.ai" class="pv-cta-btn">Open your vault →</a></div>`
+End with a CTA section like:
+<h3>Try ${isBatch ? 'them' : modelNames[0]} now</h3>
+<p>New models every week. Start free, no credit card required. <a href="https://prmptvault.ai">Open your vault</a></p>`
           }],
           response_format: { type: 'json_object' },
         })
@@ -113,14 +117,18 @@ End with a CTA section using this HTML:
       const aiData = await aiRes.json()
       const { title, excerpt, html } = JSON.parse(aiData.choices[0].message.content)
 
-      // Create Ghost draft
-      const ghostRes = await ghostFetch('/posts/', {
+      // Use the first provided image as the feature image for the blog card
+      const featureImage = models.find(m => m.image_url)?.image_url || undefined
+
+      // Create Ghost draft — use source=html so Ghost accepts raw HTML content
+      const ghostRes = await ghostFetch('/posts/?source=html', {
         method: 'POST',
         body: JSON.stringify({
           posts: [{
             title,
             custom_excerpt: excerpt,
             html,
+            feature_image: featureImage,
             tags: [{ name: isBatch ? 'New model drop' : modelNames[0] }, { name: 'New model drop' }],
             status: 'draft',
           }]
