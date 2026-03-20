@@ -11,6 +11,7 @@ import Admin from './pages/Admin'
 import Settings from './pages/Settings'
 import Tos from './pages/Tos'
 import Privacy from './pages/Privacy'
+import Gallery from './pages/Gallery'
 import NotFound from './pages/NotFound'
 import AuthCallback from './pages/AuthCallback'
 import FeedbackWidget from './components/support/FeedbackWidget'
@@ -33,6 +34,7 @@ export default function App() {
             }
           />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/gallery" element={<Gallery />} />
           <Route path="/tos" element={<Tos />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/auth/callback" element={<AuthCallback />} />

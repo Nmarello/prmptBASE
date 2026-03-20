@@ -170,7 +170,7 @@ export default function Home() {
       }}>
         <Logo height={32} theme={dark ? 'dark' : 'light'} />
         <div style={{ display: 'flex', gap: 24 }}>
-          {[{ label: 'Models', href: '#models' }, { label: 'Pricing', href: '/pricing' }, { label: 'Gallery', href: '#gallery' }].map(l => (
+          {[{ label: 'Models', href: '#models' }, { label: 'Pricing', href: '/pricing' }, { label: 'Gallery', href: '/gallery' }].map(l => (
             <a key={l.label} href={l.href} style={{ color: T.text2, textDecoration: 'none', fontSize: 13, fontWeight: 500, transition: 'color 0.15s' }}
               onMouseEnter={e => (e.currentTarget.style.color = T.text)}
               onMouseLeave={e => (e.currentTarget.style.color = T.text2)}
@@ -255,7 +255,7 @@ export default function Home() {
 
         <h1 style={{ fontSize: 'clamp(36px, 5vw, 72px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-2px', marginBottom: 24, color: T.text }}>
           Every top AI model.<br />
-          <span style={{ background: 'linear-gradient(135deg, #3d7fff 0%, #9b7aff 50%, #ff7a9b 100%)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
+          <span style={{ color: '#3d7fff' }}>
             One studio.
           </span>
         </h1>
@@ -288,7 +288,7 @@ export default function Home() {
                 <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#ffbd2e' }} />
                 <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
               </div>
-              <Logo height={24} theme={dark ? 'dark' : 'light'} style={{ marginLeft: 6 }} />
+              <Logo height={24} theme="dark" style={{ marginLeft: 6 }} />
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 7,
@@ -412,9 +412,9 @@ export default function Home() {
             const models = item.video ? VIDEO_MODELS : IMAGE_MODELS
             const modelName = models[i % models.length]
             return (
-              <div key={i} style={{
+              <div key={i} onClick={() => window.location.href = '/gallery'} style={{
                 width: 220, height: 160, borderRadius: 14, overflow: 'hidden', flexShrink: 0,
-                border: '1px solid rgba(255,255,255,0.06)', position: 'relative',
+                border: '1px solid rgba(255,255,255,0.06)', position: 'relative', cursor: 'pointer',
               }}>
                 {item.video ? (
                   <>
@@ -810,7 +810,7 @@ export default function Home() {
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(61,127,255,0.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <h2 style={{ fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 800, letterSpacing: '-2px', marginBottom: 18, color: T.text, position: 'relative' }}>
           Ready to build your<br />
-          <span style={{ background: 'linear-gradient(135deg, #3d7fff, #9b7aff)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
+          <span style={{ color: '#3d7fff' }}>
             creative vault?
           </span>
         </h2>
