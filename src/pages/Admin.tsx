@@ -358,7 +358,7 @@ export default function Admin() {
   async function doModelAction(slug: string, action: 'mark_tested' | 'set_live' | 'set_coming_soon') {
     const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-model`,
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-model-v2`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },

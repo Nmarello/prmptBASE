@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
         ghost_error: ghostData,
         debug_key_id: keyId,
         debug_key_len: keyLen,
-        fn_version: 3,
+        fn_version: 4,
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
@@ -132,14 +132,14 @@ Deno.serve(async (req) => {
       url: post?.url,
       title: post?.title,
       status: post?.status,
-      fn_version: 3,
+      fn_version: 4,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (err) {
     return new Response(JSON.stringify({
       error: String(err),
       stack: (err as Error).stack,
-      fn_version: 3,
+      fn_version: 4,
     }), { status: 500, headers: corsHeaders })
   }
 })

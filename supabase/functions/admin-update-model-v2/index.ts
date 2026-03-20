@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       let blogData
       try { blogData = JSON.parse(blogText) } catch { blogData = { raw: blogText } }
       return new Response(
-        JSON.stringify({ success: true, blog_post: blogData, blog_status: blogRes.status, v: 2 }),
+        JSON.stringify({ success: true, blog_post: blogData, blog_status: blogRes.status, v: 3 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
 
