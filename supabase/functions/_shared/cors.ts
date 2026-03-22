@@ -40,8 +40,8 @@ export function safeErrorMessage(err: unknown): string {
   if (!(err instanceof Error)) return 'An unexpected error occurred'
   const msg = err.message
   // Allow safe, user-facing messages through; block anything that looks like a stack trace or internal path
-  if (msg.length > 200) return 'An unexpected error occurred'
   if (/at \w+ \(/.test(msg)) return 'An unexpected error occurred'
   if (/\/supabase\/functions\//.test(msg)) return 'An unexpected error occurred'
+  if (msg.length > 500) return 'An unexpected error occurred'
   return msg
 }

@@ -60,6 +60,8 @@ interface Props {
   initialValues?: Record<string, unknown>
   userTier?: string
   modelMinTier?: string
+  // Prompt length limit for this model (chars)
+  promptMaxChars?: number
   // First-run tour callbacks
   generateError?: string | null
   onTourSubjectTyped?: () => void
@@ -684,6 +686,7 @@ function LivePromptPanel({
   isEdited,
   onChange,
   onReset,
+  maxChars,
 }: {
   fields: TemplateField[]
   values: Record<string, unknown>
@@ -691,6 +694,7 @@ function LivePromptPanel({
   isEdited: boolean
   onChange: (v: string) => void
   onReset: () => void
+  maxChars?: number
 }) {
   // Collect API params that have values set (non-prompt fields)
   const apiParams = fields.filter((f) =>
@@ -705,6 +709,8 @@ function LivePromptPanel({
   const recraftStyleLabel = recraftStyleField?.options?.find((o) => o.value === recraftStyleVal)?.label
 
   const charCount = livePrompt.length
+  const isOverLimit = maxChars != null && charCount > maxChars
+  const isNearLimit = maxChars != null && charCount > maxChars * 0.9
 
   return (
     <div className="flex flex-col h-full">
@@ -719,7 +725,9 @@ function LivePromptPanel({
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs" style={{ color: 'var(--pv-text3)' }}>{charCount} chars</span>
+          <span className="text-xs font-medium" style={{ color: isOverLimit ? '#c0392b' : isNearLimit ? '#e67e22' : 'var(--pv-text3)' }}>
+            {charCount}{maxChars != null ? ` / ${maxChars.toLocaleString()}` : ''} chars
+          </span>
           {isEdited && (
             <button
               type="button"
@@ -745,6 +753,12 @@ function LivePromptPanel({
             : 'focus:border-sky-500/50'
         }`}
       />
+
+      {isOverLimit && (
+        <p className="text-xs mt-2 font-medium" style={{ color: '#c0392b' }}>
+          Prompt exceeds the {maxChars!.toLocaleString()}-character limit for this model. Shorten it to generate.
+        </p>
+      )}
 
       <p className="text-xs mt-2 mb-4" style={{ color: 'var(--pv-text3)' }}>
         This is the exact prompt sent to the model. Edit freely — your changes override the auto-build.
@@ -784,7 +798,7 @@ function LivePromptPanel({
 
 // ─── Main form ───────────────────────────────────────────────────────────────
 
-export default function TemplateForm({ template, genType, onSubmit, submitting, initialValues, userTier, modelMinTier, generateError, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted, subjectOverride, sourceImageOriginUrl }: Props) {
+export default function TemplateForm({ template, genType, onSubmit, submitting, initialValues, userTier, modelMinTier, promptMaxChars, generateError, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted, subjectOverride, sourceImageOriginUrl }: Props) {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
 
   useEffect(() => {
@@ -1018,6 +1032,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
     )
   }
 
+  const promptOverLimit = promptMaxChars != null && livePrompt.length > promptMaxChars
   const canGenerate = !userTier || !modelMinTier || tierCanAccess(userTier, modelMinTier)
 
   return (
@@ -1035,6 +1050,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
             isEdited={isEdited}
             onChange={(v) => setLivePromptOverride(v)}
             onReset={() => setLivePromptOverride(null)}
+            maxChars={promptMaxChars}
           />
         </div>
 
@@ -1064,11 +1080,11 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
             <button
               type="submit"
               data-tour="generate-btn"
-              disabled={submitting}
+              disabled={submitting || promptOverLimit}
               className="w-full py-3.5 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-semibold text-sm transition-all cursor-pointer"
               style={{ background: 'var(--pv-text)', color: 'var(--pv-bg)' }}
             >
-              {submitting ? 'Generating…' : 'Generate →'}
+              {promptOverLimit ? 'Prompt too long' : submitting ? 'Generating…' : 'Generate →'}
             </button>
           ) : (
             <div className="space-y-2">

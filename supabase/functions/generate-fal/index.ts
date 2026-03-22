@@ -371,6 +371,26 @@ Deno.serve(async (req) => {
         tier: rateLimit.tier,
       }), { status: isUnauthed ? 401 : 429, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
     }
+    // Prompt length validation — reject before hitting the provider
+    const PROMPT_CHAR_LIMITS: Record<string, number> = {
+      'luma': 2000, 'kling': 2500, 'kling-v3': 2500, 'minimax-txt2vid': 2000,
+      'sora2': 4000, 'pika': 2000, 'ltx-video': 2000, 'ltx-2.3-pro': 2000, 'ltx-2.3-fast': 2000,
+      'wan-21-txt2vid': 2000, 'hunyuan-video': 2000, 'seedance-1-pro-txt2vid': 2000,
+      'flux-schnell': 2000, 'flux-dev': 2000, 'flux-pro': 2000, 'flux-pro-ultra': 2000,
+      'flux2-pro': 2000, 'flux2-max': 2000, 'flux-kontext-pro': 2000, 'flux-dev-img2img': 2000,
+      'recraft-v3': 1000, 'recraft-v4-pro': 1000,
+      'nano-banana': 2000, 'nano-banana-edit': 2000, 'nano-banana-pro': 2000,
+      'ideogram-v3': 2000, 'hidream-fast': 2000, 'hidream-full': 2000, 'seedream-45': 2000,
+      'sd35-medium': 2000,
+    }
+    const promptText = (body.prompt as string | undefined)?.trim() ?? ''
+    const charLimit = PROMPT_CHAR_LIMITS[slug]
+    if (charLimit && promptText.length > charLimit) {
+      return new Response(JSON.stringify({
+        error: `Prompt is ${promptText.length.toLocaleString()} characters — this model's limit is ${charLimit.toLocaleString()}. Please shorten your prompt.`,
+      }), { status: 400, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
+    }
+
     const isImg2Img = slug === 'flux-dev-img2img'
     const isKontext = slug === 'flux-kontext-pro'
     const isRecraft = slug === 'recraft-v4-pro'
