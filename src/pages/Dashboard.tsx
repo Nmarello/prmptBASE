@@ -114,6 +114,8 @@ import type { Asset, Model, Template, GenType, UserProject } from '../types'
 import { GEN_TYPE_LABELS } from '../types'
 import ModelCard from '../components/dashboard/ModelCard'
 import FamilyRow from '../components/dashboard/FamilyRow'
+import HeroCard from '../components/dashboard/HeroCard'
+import UpgradeTeaser from '../components/dashboard/UpgradeTeaser'
 import TemplateForm from '../components/dashboard/TemplateForm'
 import AssetGrid, { Lightbox } from '../components/dashboard/AssetGrid'
 import ProjectsView from '../components/dashboard/ProjectsView'
@@ -1231,12 +1233,226 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Scrollable model rows */}
+            {/* Scrollable model rows — tier-aware layout */}
             <div ref={generateScrollRef} data-tour="sidebar" className="flex-1 overflow-y-auto px-4 sm:px-7 pb-28 sm:pb-10 space-y-5">
               <PullIndicator distance={generatePullDist} refreshing={generateRefreshing} />
 
-              {/* Featured row — last 4 live models by released_at */}
-              {!modelSearch && (() => {
+              {/* ── NEWBIE LAYOUT ─────────────────────────────────────────── */}
+              {userTier === 'newbie' && !modelSearch && (() => {
+                const heroModels = models.filter(m => ['dalle', 'flux-schnell'].includes(m.slug))
+                // Curated teaser: pick exciting creator-tier models
+                const TEASER_SLUGS = ['flux-pro-ultra', 'ideogram-v3', 'recraft-v4-pro', 'gpt-image-1', 'nano-banana', 'hidream-fast']
+                const teaserModels = TEASER_SLUGS.map(s => models.find(m => m.slug === s)).filter(Boolean) as Model[]
+                return (
+                  <>
+                    {/* Hero cards — prominent display of the 2 free models */}
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                          Your Models
+                        </h2>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {heroModels.map(m => (
+                          <HeroCard
+                            key={m.id}
+                            model={m}
+                            onClick={() => setDrawerModel(m)}
+                            rendering={renderingModelSlug === m.slug}
+                            latestRenderUrl={latestRenderBySlug[m.slug]?.url}
+                            latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
+                            dataTour={m.slug === 'dalle' ? 'dalle-card' : undefined}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Upgrade teaser — curated selection */}
+                    <UpgradeTeaser
+                      title="Unlock More Models"
+                      subtitle="Upgrade to Creator to choose from 20+ image models — including Flux Pro Ultra, GPT Image, Ideogram, and more."
+                      models={teaserModels}
+                      userTier={userTier}
+                      upgradeTier="creator"
+                      onUpgrade={() => { analytics.upgradeClicked({ tier: userTier, source: 'teaser_row' }); navigate('/pricing?highlight=creator') }}
+                      latestRenderBySlug={latestRenderBySlug}
+                    />
+
+                    {/* Coming soon — builds anticipation */}
+                    {(() => {
+                      const comingSoonModels = models.filter(m => m.coming_soon).slice(0, 4)
+                      if (comingSoonModels.length === 0) return null
+                      return (
+                        <div>
+                          <div className="flex items-center gap-3 mb-2">
+                            <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                              Coming Soon
+                            </h2>
+                          </div>
+                          <div className="flex gap-3.5 overflow-x-auto pb-3">
+                            {comingSoonModels.map(m => (
+                              <ModelCard
+                                key={m.id}
+                                model={m}
+                                userTier={userTier}
+                                selected={false}
+                                onClick={() => {}}
+                                modelStatus="coming-soon"
+                                comingSoon
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </>
+                )
+              })()}
+
+              {/* ── CREATOR LAYOUT ────────────────────────────────────────── */}
+              {userTier === 'creator' && !modelSearch && (() => {
+                const yourModels = models.filter(m =>
+                  selectedModelIds.has(m.id) && !m.coming_soon && m.slug !== 'flux-dev-img2img'
+                )
+                const showAddCard = selectedModelIds.size < 10
+                return (
+                  <>
+                    {/* Your Models */}
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                          Your Models
+                        </h2>
+                        <button
+                          onClick={() => setSettingsOpen(true)}
+                          style={{ fontSize: 12, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+                        >
+                          Manage →
+                        </button>
+                      </div>
+                      <div className="flex gap-3.5 overflow-x-auto pb-3">
+                        {yourModels.map(m => (
+                          <ModelCard
+                            key={m.id}
+                            model={m}
+                            userTier={userTier}
+                            selected={selectedModel?.id === m.id}
+                            onClick={() => setDrawerModel(m)}
+                            rendering={renderingModelSlug === m.slug}
+                            latestRenderUrl={latestRenderBySlug[m.slug]?.url}
+                            latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
+                            modelStatus="active"
+                            dataTour={m.slug === 'dalle' ? 'dalle-card' : undefined}
+                          />
+                        ))}
+                        {showAddCard && (
+                          <button
+                            onClick={() => setSettingsOpen(true)}
+                            style={{
+                              width: 230, flexShrink: 0, height: 260,
+                              background: 'var(--pv-surface)',
+                              border: '1.5px dashed var(--pv-border)',
+                              borderRadius: 18,
+                              display: 'flex', flexDirection: 'column',
+                              alignItems: 'center', justifyContent: 'center', gap: 10,
+                              cursor: 'pointer', color: 'var(--pv-text3)',
+                              transition: 'all 0.15s',
+                              fontFamily: 'inherit',
+                            }}
+                            className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-accent)]"
+                          >
+                            <div style={{ width: 40, height: 40, borderRadius: 12, border: '1.5px dashed currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                              </svg>
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 600, textAlign: 'center', lineHeight: 1.4 }}>
+                              Add models<br/>to your account
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )
+              })()}
+
+              {/* ── STUDIO LAYOUT ─────────────────────────────────────────── */}
+              {userTier === 'studio' && !modelSearch && (() => {
+                const imgModels = models.filter(m =>
+                  !m.coming_soon &&
+                  m.slug !== 'flux-dev-img2img' &&
+                  m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))
+                )
+                const selectedVidModels = models.filter(m =>
+                  selectedModelIds.has(m.id) && !m.coming_soon &&
+                  m.supported_gen_types.some(g => ['txt2vid','img2vid','vid2vid'].includes(g))
+                )
+                const yourModels = [...imgModels, ...selectedVidModels]
+                const showAddCard = selectedVidModels.length < 5
+                return (
+                  <>
+                    {/* Your Models */}
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                          Your Models
+                        </h2>
+                        <button
+                          onClick={() => setSettingsOpen(true)}
+                          style={{ fontSize: 12, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+                        >
+                          Manage →
+                        </button>
+                      </div>
+                      <div className="flex gap-3.5 overflow-x-auto pb-3">
+                        {yourModels.map(m => (
+                          <ModelCard
+                            key={m.id}
+                            model={m}
+                            userTier={userTier}
+                            selected={selectedModel?.id === m.id}
+                            onClick={() => setDrawerModel(m)}
+                            rendering={renderingModelSlug === m.slug}
+                            latestRenderUrl={latestRenderBySlug[m.slug]?.url}
+                            latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
+                            modelStatus="active"
+                          />
+                        ))}
+                        {showAddCard && (
+                          <button
+                            onClick={() => setSettingsOpen(true)}
+                            style={{
+                              width: 230, flexShrink: 0, height: 260,
+                              background: 'var(--pv-surface)',
+                              border: '1.5px dashed var(--pv-border)',
+                              borderRadius: 18,
+                              display: 'flex', flexDirection: 'column',
+                              alignItems: 'center', justifyContent: 'center', gap: 10,
+                              cursor: 'pointer', color: 'var(--pv-text3)',
+                              transition: 'all 0.15s',
+                              fontFamily: 'inherit',
+                            }}
+                            className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-accent)]"
+                          >
+                            <div style={{ width: 40, height: 40, borderRadius: 12, border: '1.5px dashed currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                              </svg>
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 600, textAlign: 'center', lineHeight: 1.4 }}>
+                              Add video models<br/>to your account
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )
+              })()}
+
+              {/* ── Featured row — Creator/Studio/Pro only (not newbie) ──── */}
+              {userTier !== 'newbie' && !modelSearch && (() => {
                 const featuredModels = [...models]
                   .filter(m => m.is_active && !m.coming_soon)
                   .sort((a, b) => {
@@ -1279,106 +1495,8 @@ export default function Dashboard() {
                 )
               })()}
 
-              {/* Your Models row */}
-              {(() => {
-                if (modelSearch) return null
-                if (userTier === 'pro') return null
-
-                let yourModels: Model[] = []
-                let showAddCard = false
-
-                if (userTier === 'newbie') {
-                  // Free: always DALL-E 3 + Flux Schnell + upgrade card
-                  yourModels = models.filter(m => ['dalle', 'flux-schnell'].includes(m.slug))
-                  showAddCard = true
-                } else if (userTier === 'creator') {
-                  // Creator: selected image models + add card if under quota
-                  yourModels = models.filter(m =>
-                    selectedModelIds.has(m.id) && !m.coming_soon && m.slug !== 'flux-dev-img2img'
-                  )
-                  showAddCard = selectedModelIds.size < 10
-                } else if (userTier === 'studio') {
-                  // Studio: all image models + selected video models + add card if video under quota
-                  const imgModels = models.filter(m =>
-                    !m.coming_soon &&
-                    m.slug !== 'flux-dev-img2img' &&
-                    m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))
-                  )
-                  const selectedVidModels = models.filter(m =>
-                    selectedModelIds.has(m.id) && !m.coming_soon &&
-                    m.supported_gen_types.some(g => ['txt2vid','img2vid','vid2vid'].includes(g))
-                  )
-                  yourModels = [...imgModels, ...selectedVidModels]
-                  const selectedVidCount = selectedVidModels.length
-                  showAddCard = selectedVidCount < 5
-                }
-
-                return (
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
-                        Your Models
-                      </h2>
-                      {['creator', 'studio'].includes(userTier) && (
-                        <button
-                          onClick={() => setSettingsOpen(true)}
-                          style={{ fontSize: 12, color: 'var(--pv-text3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
-                        >
-                          Manage →
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex gap-3.5 overflow-x-auto pb-3">
-                      {yourModels.map((m) => (
-                        <ModelCard
-                          key={m.id}
-                          model={m}
-                          userTier={userTier}
-                          selected={selectedModel?.id === m.id}
-                          onClick={() => setDrawerModel(m)}
-                          rendering={renderingModelSlug === m.slug}
-                          latestRenderUrl={latestRenderBySlug[m.slug]?.url}
-                          latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
-                          modelStatus="active"
-                          dataTour={m.slug === 'dalle' ? 'dalle-card' : undefined}
-                        />
-                      ))}
-                      {showAddCard && (
-                        <button
-                          onClick={() => userTier === 'newbie' ? navigate('/pricing') : setSettingsOpen(true)}
-                          style={{
-                            width: 230, flexShrink: 0, height: 260,
-                            background: 'var(--pv-surface)',
-                            border: '1.5px dashed var(--pv-border)',
-                            borderRadius: 18,
-                            display: 'flex', flexDirection: 'column',
-                            alignItems: 'center', justifyContent: 'center', gap: 10,
-                            cursor: 'pointer', color: 'var(--pv-text3)',
-                            transition: 'all 0.15s',
-                            fontFamily: 'inherit',
-                          }}
-                          className="hover:border-[var(--pv-accent)] hover:text-[var(--pv-accent)]"
-                        >
-                          <div style={{ width: 40, height: 40, borderRadius: 12, border: '1.5px dashed currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                            </svg>
-                          </div>
-                          <span style={{ fontSize: 12, fontWeight: 600, textAlign: 'center', lineHeight: 1.4 }}>
-                            {userTier === 'newbie'
-                              ? <>Upgrade your account<br/>to get more models</>
-                              : <>Add models<br/>to your account</>
-                            }
-                          </span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )
-              })()}
-
-              {/* Image Models row — family cards */}
-              {modelFilter !== 'videos' && (() => {
+              {/* ── Browse Image Models — Creator+ (full family browser) ── */}
+              {userTier !== 'newbie' && modelFilter !== 'videos' && (() => {
                 let imgModels = models
                   .filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g)))
                   .filter(m => m.slug !== 'flux-dev-img2img')
@@ -1398,8 +1516,25 @@ export default function Dashboard() {
                 )
               })()}
 
-              {/* Video Models row — family cards */}
-              {modelFilter !== 'images' && (() => {
+              {/* ── Browse Video Models — Studio+ full browser, Creator gets teaser ── */}
+              {userTier !== 'newbie' && modelFilter !== 'images' && (() => {
+                if (userTier === 'creator') {
+                  // Creator sees teaser instead of full video browser
+                  const VID_TEASER_SLUGS = ['luma', 'ltx-2.3-pro', 'minimax-txt2vid', 'wan-21-txt2vid']
+                  const vidTeaserModels = VID_TEASER_SLUGS.map(s => models.find(m => m.slug === s)).filter(Boolean) as Model[]
+                  return (
+                    <UpgradeTeaser
+                      title="Video Models"
+                      subtitle="Upgrade to Studio to generate videos with Luma, LTX, MiniMax, and more."
+                      models={vidTeaserModels}
+                      userTier={userTier}
+                      upgradeTier="studio"
+                      onUpgrade={() => { analytics.upgradeClicked({ tier: userTier, source: 'video_teaser' }); navigate('/pricing?highlight=studio') }}
+                      latestRenderBySlug={latestRenderBySlug}
+                    />
+                  )
+                }
+                // Studio/Pro: full video family browser
                 let vidModels = models.filter(m =>
                   m.supported_gen_types.some(g => ['txt2vid','img2vid','vid2vid'].includes(g))
                 )
@@ -1420,8 +1555,26 @@ export default function Dashboard() {
                 )
               })()}
 
-              {/* Tools row */}
-              {!modelSearch && (
+              {/* ── Pro Exclusive teaser — Studio only ───────────────────── */}
+              {userTier === 'studio' && !modelSearch && (() => {
+                const PRO_TEASER_SLUGS = ['sora2', 'kling']
+                const proTeaserModels = PRO_TEASER_SLUGS.map(s => models.find(m => m.slug === s)).filter(Boolean) as Model[]
+                if (proTeaserModels.length === 0) return null
+                return (
+                  <UpgradeTeaser
+                    title="Pro Exclusive"
+                    subtitle="Unlock Sora 2 and Kling with unlimited generations on the Pro plan."
+                    models={proTeaserModels}
+                    userTier={userTier}
+                    upgradeTier="pro"
+                    onUpgrade={() => { analytics.upgradeClicked({ tier: userTier, source: 'pro_teaser' }); navigate('/pricing?highlight=pro') }}
+                    latestRenderBySlug={latestRenderBySlug}
+                  />
+                )
+              })()}
+
+              {/* ── Tools row — Creator+ only ───────────────────────────── */}
+              {userTier !== 'newbie' && !modelSearch && (
                 <ToolsRow
                   onSelectTool={(tool: string) => {
                     setActiveTool(tool)
@@ -1430,7 +1583,7 @@ export default function Dashboard() {
                 />
               )}
 
-              {/* Recently Used row */}
+              {/* ── Recently Used row — all tiers ───────────────────────── */}
               {!modelSearch && recentModelSlugs.length > 0 && (() => {
                 const recentModels = recentModelSlugs
                   .map(slug => models.find(m => m.slug === slug))
