@@ -918,7 +918,7 @@ export default function Home() {
             onMouseEnter={e => { e.currentTarget.style.background = '#5590ff'; e.currentTarget.style.boxShadow = '0 0 56px rgba(61,127,255,0.45)' }}
             onMouseLeave={e => { e.currentTarget.style.background = '#3d7fff'; e.currentTarget.style.boxShadow = '0 0 40px rgba(61,127,255,0.3)' }}
           >Try 20+ models free →</button>
-          <a href="/pricing" style={{
+          <a href="#models" style={{
             background: 'transparent', border: '1px solid ' + T.border, color: T.text2,
             padding: '14px 28px', borderRadius: 100, fontSize: 15, fontWeight: 600,
             fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'none', display: 'inline-block', transition: 'all 0.2s',
