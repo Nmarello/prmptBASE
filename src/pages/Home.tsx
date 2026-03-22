@@ -1,9 +1,73 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { motion, useScroll, useTransform, useInView } from 'motion/react'
 import Logo from '../components/Logo'
 import AuthModal from '../components/auth/AuthModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+
+// Scroll-triggered fade+slide wrapper
+function FadeIn({ children, delay = 0, y = 40, x = 0, className, style, once = true }: {
+  children: React.ReactNode; delay?: number; y?: number; x?: number;
+  className?: string; style?: React.CSSProperties; once?: boolean
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once, margin: '0px 0px -200px 0px' })
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y, x }}
+      animate={inView ? { opacity: 1, y: 0, x: 0 } : {}}
+      transition={{ duration: 0.7, delay, ease: [0.25, 0.1, 0.25, 1] }}
+      className={className}
+      style={style}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+// Staggered children container
+function StaggerIn({ children, stagger = 0.1, className, style }: {
+  children: React.ReactNode; stagger?: number; className?: string; style?: React.CSSProperties
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true, margin: '0px 0px -200px 0px' })
+  return (
+    <motion.div
+      ref={ref}
+      initial="hidden"
+      animate={inView ? 'visible' : 'hidden'}
+      variants={{ visible: { transition: { staggerChildren: stagger } } }}
+      className={className}
+      style={style}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+// Section CTA pill
+function SectionCta({ onClick }: { onClick: () => void }) {
+  return (
+    <FadeIn style={{ textAlign: 'center', marginTop: 40 }}>
+      <button onClick={onClick} style={{
+        background: '#3d7fff', color: '#fff', border: 'none',
+        padding: '10px 24px', borderRadius: 100, fontSize: 14, fontWeight: 600,
+        cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s',
+        boxShadow: '0 0 24px rgba(61,127,255,0.2)',
+      }}
+        onMouseEnter={e => { e.currentTarget.style.background = '#5590ff'; e.currentTarget.style.boxShadow = '0 0 40px rgba(61,127,255,0.35)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = '#3d7fff'; e.currentTarget.style.boxShadow = '0 0 24px rgba(61,127,255,0.2)' }}
+      >Try for free →</button>
+    </FadeIn>
+  )
+}
+
+const staggerChild = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } },
+}
 
 const S = 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets'
 const U = 'f9965304-4af9-4eba-a762-7b7c892473e1'
@@ -154,6 +218,16 @@ export default function Home() {
       .then(({ data }) => { if (data) setLiveModels(data) })
   }, [])
 
+  // Parallax
+  const heroRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+  const heroGlowY = useTransform(heroProgress, [0, 1], [0, 120])
+  const heroMockupY = useTransform(heroProgress, [0, 1], [0, 60])
+
+  const ctaRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress: ctaProgress } = useScroll({ target: ctaRef, offset: ['start end', 'end start'] })
+  const ctaGlowY = useTransform(ctaProgress, [0, 1], [60, -60])
+
   if (user) navigate('/dashboard')
 
   return (
@@ -233,49 +307,60 @@ export default function Home() {
       </nav>
 
       {/* ── HERO ─────────────────────────────────────── */}
-      <section className="px-5 sm:px-10 pt-20 sm:pt-24 pb-12 sm:pb-20" style={{ textAlign: 'center', maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
+      <section ref={heroRef} className="px-5 sm:px-10 pt-20 sm:pt-24 pb-12 sm:pb-20" style={{ textAlign: 'center', maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
 
-        {/* Glow behind headline */}
-        <div style={{
+        {/* Glow behind headline — parallax */}
+        <motion.div style={{
           position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)',
           width: 600, height: 400, borderRadius: '50%',
           background: 'radial-gradient(ellipse, rgba(61,127,255,0.12) 0%, transparent 70%)',
           pointerEvents: 'none',
+          y: heroGlowY,
         }} />
 
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          background: 'rgba(61,127,255,0.12)', border: '1px solid rgba(61,127,255,0.25)',
-          color: '#7aabff', padding: '6px 14px', borderRadius: 100,
-          fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', marginBottom: 28,
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3d7fff', display: 'inline-block' }} />
-          20+ models · 0 API keys needed · Free to start
-        </div>
+        <FadeIn delay={0.1} y={-20}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: 'rgba(61,127,255,0.12)', border: '1px solid rgba(61,127,255,0.25)',
+            color: '#7aabff', padding: '6px 14px', borderRadius: 100,
+            fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', marginBottom: 28,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3d7fff', display: 'inline-block' }} />
+            20+ models · 0 API keys needed · Free to start
+          </div>
+        </FadeIn>
 
-        <h1 style={{ fontSize: 'clamp(36px, 5vw, 72px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-2px', marginBottom: 24, color: T.text }}>
-          Every top AI model.<br />
-          <span style={{ color: '#3d7fff' }}>
-            One studio.
-          </span>
-        </h1>
+        <FadeIn delay={0.25}>
+          <h1 style={{ fontSize: 'clamp(36px, 5vw, 72px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-2px', marginBottom: 24, color: T.text }}>
+            Every top AI model.<br />
+            <span style={{ color: '#3d7fff' }}>
+              One studio.
+            </span>
+          </h1>
+        </FadeIn>
 
         {/* Text + Mockup row */}
-        <div className="flex flex-col sm:flex-row sm:items-start" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%' }}>
+        <motion.div className="flex flex-col sm:flex-row sm:items-start" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%', y: heroMockupY }}>
           <div className="hidden sm:block" style={{ flexShrink: 0, width: 260, position: 'relative', alignSelf: 'stretch' }}>
-            <p style={{ position: 'absolute', top: 102, right: 0, width: '100%', fontSize: 17, color: T.text, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
-              Rough idea in. Polished prompt out. AI does the heavy lifting.
-            </p>
-            <p style={{ position: 'absolute', top: 184, right: 0, width: '100%', fontSize: 17, color: T.text, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right', display: '-webkit-box', WebkitLineClamp: 7, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-              Structured prompt templates tuned for every model. Purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No&nbsp;guesswork.
-            </p>
-            <p style={{ position: 'absolute', top: 380, right: 0, width: '100%', fontSize: 17, color: T.text, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
-              Over 20 models to choose from
-            </p>
+            <FadeIn delay={0.5} x={-30} y={0}>
+              <p style={{ position: 'absolute', top: 102, right: 0, width: '100%', fontSize: 17, color: T.text, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
+                Rough idea in. Polished prompt out. AI does the heavy lifting.
+              </p>
+            </FadeIn>
+            <FadeIn delay={0.7} x={-30} y={0}>
+              <p style={{ position: 'absolute', top: 184, right: 0, width: '100%', fontSize: 17, color: T.text, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right', display: '-webkit-box', WebkitLineClamp: 7, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                Structured prompt templates tuned for every model. Purpose-built fields for subject, style, lighting, mood, and more. No blank text boxes. No&nbsp;guesswork.
+              </p>
+            </FadeIn>
+            <FadeIn delay={0.9} x={-30} y={0}>
+              <p style={{ position: 'absolute', top: 380, right: 0, width: '100%', fontSize: 17, color: T.text, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
+                Over 20 models to choose from
+              </p>
+            </FadeIn>
           </div>
 
         {/* APP WINDOW — product mockup */}
-        <div style={{ flex: 1, minWidth: 0, textAlign: 'left', width: '100%' }}>
+        <FadeIn delay={0.4} y={50} style={{ flex: 1, minWidth: 0, textAlign: 'left', width: '100%' }}>
           <div style={{
             background: '#131210', border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: 18, overflow: 'hidden',
@@ -395,9 +480,10 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
-        </div>{/* end text+mockup row */}
+        </FadeIn>
+        </motion.div>{/* end text+mockup row */}
 
+        <SectionCta onClick={() => setShowAuth(true)} />
       </section>
 
       {/* ── ASSET GALLERY STRIP ────────────────────────── */}
@@ -452,11 +538,12 @@ export default function Home() {
           })}
         </div>
         <style>{`@keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }`}</style>
+        <SectionCta onClick={() => setShowAuth(true)} />
       </section>
 
       {/* ── WHY PRMPTVAULT ────────────────────────────── */}
       <section className="px-5 sm:px-10 py-20 sm:py-28" style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+        <FadeIn style={{ textAlign: 'center', marginBottom: 56 }}>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: T.text3, marginBottom: 14 }}>
             Why prmptVAULT
           </div>
@@ -466,11 +553,11 @@ export default function Home() {
           <p style={{ fontSize: 17, color: T.text2, maxWidth: 560, margin: '0 auto', lineHeight: 1.7 }}>
             Every other tool gives you a text field and wishes you luck. prmptVAULT gives you purpose-built fields for every model — so your subject, style, lighting, mood, and lens are all intentional, not accidental.
           </p>
-        </div>
+        </FadeIn>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+        <StaggerIn stagger={0.12} className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
           {/* Card 1 — Structured fields */}
-          <div style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28, transition: 'all 0.2s' }}
+          <motion.div variants={staggerChild} style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28, transition: 'all 0.2s' }}
             onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(61,127,255,0.25)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = T.border; (e.currentTarget as HTMLDivElement).style.transform = 'none' }}
           >
@@ -483,10 +570,10 @@ export default function Home() {
             <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.7 }}>
               Subject. Style. Lighting. Mood. Lens. Composition. Each field is purpose-built for the model you're using — no guessing, no prompt engineering degree required.
             </p>
-          </div>
+          </motion.div>
 
           {/* Card 2 — All models */}
-          <div style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28, transition: 'all 0.2s' }}
+          <motion.div variants={staggerChild} style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28, transition: 'all 0.2s' }}
             onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(155,122,255,0.25)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = T.border; (e.currentTarget as HTMLDivElement).style.transform = 'none' }}
           >
@@ -499,10 +586,10 @@ export default function Home() {
             <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.7 }}>
               DALL-E 3. Flux Pro Ultra. Kling. Luma Ray-2. Veo 3. Minimax. 12+ image and video models, all in one workspace — no switching tabs, no managing API keys, no stitching tools together.
             </p>
-          </div>
+          </motion.div>
 
           {/* Card 3 — Your vault */}
-          <div style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28, transition: 'all 0.2s' }}
+          <motion.div variants={staggerChild} style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28, transition: 'all 0.2s' }}
             onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(52,199,89,0.25)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = T.border; (e.currentTarget as HTMLDivElement).style.transform = 'none' }}
           >
@@ -515,13 +602,13 @@ export default function Home() {
             <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.7 }}>
               Every image and video you generate lives in your personal vault. Download it, send it to img2img, run it through a different model, or pick up exactly where you left off — months later.
             </p>
-          </div>
-        </div>
+          </motion.div>
+        </StaggerIn>
 
         {/* Before / after comparison */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Without */}
-          <div style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28 }}>
+          <FadeIn x={-40} y={0} style={{ background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28 }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.text3, marginBottom: 16 }}>Without prmptVAULT</div>
             <div style={{ background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', border: '1px solid ' + T.border, borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}>
               <div style={{ fontSize: 12, color: T.text3, fontStyle: 'italic' }}>a lighthouse at night...</div>
@@ -538,9 +625,9 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-          </div>
+          </FadeIn>
           {/* With */}
-          <div style={{ background: dark ? 'rgba(61,127,255,0.06)' : 'rgba(61,127,255,0.04)', border: '1px solid rgba(61,127,255,0.2)', borderRadius: 20, padding: 28 }}>
+          <FadeIn x={40} y={0} style={{ background: dark ? 'rgba(61,127,255,0.06)' : 'rgba(61,127,255,0.04)', border: '1px solid rgba(61,127,255,0.2)', borderRadius: 20, padding: 28 }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7aabff', marginBottom: 16 }}>With prmptVAULT</div>
             <div style={{ background: 'rgba(61,127,255,0.08)', border: '1px solid rgba(61,127,255,0.15)', borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -564,21 +651,22 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-          </div>
+          </FadeIn>
         </div>
+        <SectionCta onClick={() => setShowAuth(true)} />
       </section>
 
       {/* ── BENTO FEATURES ────────────────────────────── */}
       <section id="models" className="px-5 sm:px-10 pb-16 sm:pb-20" style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <FadeIn style={{ textAlign: 'center', marginBottom: 40 }}>
           <h2 style={{ fontSize: 'clamp(26px, 4vw, 42px)', fontWeight: 800, letterSpacing: '-1.5px', color: T.text }}>
             Everything you need.<br />Nothing you don't.
           </h2>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        </FadeIn>
+        <StaggerIn stagger={0.08} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
 
           {/* WIDE — showcase asset */}
-          <div className="col-span-2 sm:row-span-2" style={{
+          <motion.div variants={staggerChild} className="col-span-2 sm:row-span-2" style={{
             borderRadius: 18, border: '1px solid ' + T.border,
             overflow: 'hidden', position: 'relative', minHeight: 260,
             transition: 'transform 0.2s, border-color 0.2s', cursor: 'default',
@@ -594,10 +682,10 @@ export default function Home() {
             <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: '3px 8px' }}>
               <span style={{ fontSize: 11, fontWeight: 500, color: '#fff', fontFamily: '-apple-system, system-ui, sans-serif' }}>DALL-E 3</span>
             </div>
-          </div>
+          </motion.div>
 
           {/* STAT — models */}
-          <div style={{
+          <motion.div variants={staggerChild} style={{
             background: T.cardBg, borderRadius: 18, border: '1px solid ' + T.border,
             padding: 22, transition: 'all 0.2s',
           }}
@@ -606,10 +694,10 @@ export default function Home() {
           >
             <div style={{ fontSize: 52, fontWeight: 800, letterSpacing: '-2px', lineHeight: 1, color: '#3d7fff' }}>12+</div>
             <div style={{ fontSize: 14, color: T.text2, marginTop: 6 }}>AI models<br />connected</div>
-          </div>
+          </motion.div>
 
           {/* FEATURE — Prompt Library */}
-          <div style={{
+          <motion.div variants={staggerChild} style={{
             background: T.cardBg, borderRadius: 18, border: '1px solid ' + T.border,
             padding: 22, transition: 'all 0.2s',
           }}
@@ -621,10 +709,10 @@ export default function Home() {
             </div>
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, color: T.text }}>Prompt Vault</h3>
             <p style={{ fontSize: 12, color: T.text2, lineHeight: 1.6 }}>Every prompt saved. Search, remix, and build on what works.</p>
-          </div>
+          </motion.div>
 
           {/* STAT — storage */}
-          <div style={{
+          <motion.div variants={staggerChild} style={{
             background: T.cardBg, borderRadius: 18, border: '1px solid ' + T.border,
             padding: 22, transition: 'all 0.2s',
           }}
@@ -633,10 +721,10 @@ export default function Home() {
           >
             <div style={{ fontSize: 52, fontWeight: 800, letterSpacing: '-2px', lineHeight: 1, color: '#34c759' }}>∞</div>
             <div style={{ fontSize: 14, color: T.text2, marginTop: 6 }}>Asset storage<br />on Pro</div>
-          </div>
+          </motion.div>
 
           {/* NOTIFICATION — Generate & go (moved here) */}
-          <div style={{
+          <motion.div variants={staggerChild} style={{
             background: 'linear-gradient(135deg, rgba(61,127,255,0.2), rgba(155,122,255,0.2))',
             border: '1px solid rgba(61,127,255,0.2)', borderRadius: 18,
             padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
@@ -656,10 +744,10 @@ export default function Home() {
             </div>
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 5, color: T.text }}>Generate &amp; go</h3>
             <p style={{ fontSize: 12, color: T.text2, lineHeight: 1.6 }}>Start a render, close the tab. We'll notify you the second it's done.</p>
-          </div>
+          </motion.div>
 
           {/* ALL MODELS — full width, wide and short (moved here) */}
-          <div className="col-span-2 sm:col-span-4" style={{
+          <motion.div variants={staggerChild} className="col-span-2 sm:col-span-4" style={{
             background: T.cardBg, borderRadius: 18, border: '1px solid ' + T.border,
             padding: '16px 22px', transition: 'all 0.2s',
           }}
@@ -697,16 +785,19 @@ export default function Home() {
                 )
               })}
             </div>
-          </div>
+          </motion.div>
 
-        </div>
+        </StaggerIn>
+        <SectionCta onClick={() => setShowAuth(true)} />
       </section>
 
       {/* ── PRICING ───────────────────────────────────── */}
       <section className="px-5 sm:px-10 py-16 sm:py-20" style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.text3, marginBottom: 12 }}>Pricing</div>
-        <h2 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 36, color: T.text }}>Start free.<br />Scale when ready.</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <FadeIn>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.text3, marginBottom: 12 }}>Pricing</div>
+          <h2 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 36, color: T.text }}>Start free.<br />Scale when ready.</h2>
+        </FadeIn>
+        <StaggerIn stagger={0.1} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {[
             {
               name: 'Free', price: '$0', period: '', desc: 'Try it out — no card needed', featured: false, trial: false,
@@ -754,7 +845,7 @@ export default function Home() {
               cta: 'Notify me', ctaFilled: false,
             },
           ].map((tier: { name: string; price: string; period: string; desc: string; featured: boolean; trial: boolean; comingSoon?: boolean; features: { text: string; inc: boolean }[]; cta: string; ctaFilled: boolean }) => (
-            <div key={tier.name} style={{
+            <motion.div variants={staggerChild} key={tier.name} style={{
               position: 'relative',
               background: tier.featured ? T.pricingFeatured : T.cardBg,
               border: `1px solid ${tier.featured ? 'rgba(61,127,255,0.35)' : tier.comingSoon ? 'rgba(255,255,255,0.06)' : T.border}`,
@@ -800,16 +891,17 @@ export default function Home() {
                 onMouseEnter={e => { if (tier.ctaFilled) e.currentTarget.style.background = '#5590ff'; else if (!tier.comingSoon) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; e.currentTarget.style.color = '#f0ede8' } }}
                 onMouseLeave={e => { if (tier.ctaFilled) e.currentTarget.style.background = '#3d7fff'; else { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'rgba(240,237,232,0.45)' } }}
               >{tier.cta}</button>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </StaggerIn>
       </section>
 
       {/* ── CTA ──────────────────────────────────────── */}
-      <section className="px-5 sm:px-10 py-20 sm:py-28" style={{ textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(61,127,255,0.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
-        <h2 style={{ fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 800, letterSpacing: '-2px', marginBottom: 18, color: T.text, position: 'relative' }}>
-          Ready to build your<br />
+      <section ref={ctaRef} className="px-5 sm:px-10 py-20 sm:py-28" style={{ textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        <motion.div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(61,127,255,0.1) 0%, transparent 65%)', pointerEvents: 'none', y: ctaGlowY }} />
+        <FadeIn>
+          <h2 style={{ fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 800, letterSpacing: '-2px', marginBottom: 18, color: T.text, position: 'relative' }}>
+            Ready to build your<br />
           <span style={{ color: '#3d7fff' }}>
             creative vault?
           </span>
@@ -833,6 +925,7 @@ export default function Home() {
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = T.border; (e.currentTarget as HTMLAnchorElement).style.color = T.text2 }}
           >View all models</a>
         </div>
+        </FadeIn>
       </section>
 
       {/* ── FOOTER ───────────────────────────────────── */}
