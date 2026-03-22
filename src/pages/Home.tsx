@@ -18,7 +18,7 @@ function FadeIn({ children, delay = 0, y = 40, x = 0, className, style, once = t
       ref={ref}
       initial={{ opacity: 0, y, x }}
       animate={inView ? { opacity: 1, y: 0, x: 0 } : {}}
-      transition={{ duration: 0.7, delay, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ duration: 0.7, delay, ease: [0.25, 0.1, 0.25, 1] as const }}
       className={className}
       style={style}
     >
@@ -66,7 +66,7 @@ function SectionCta({ onClick }: { onClick: () => void }) {
 
 const staggerChild = {
   hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] as const } },
 }
 
 const S = 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets'
