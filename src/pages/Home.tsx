@@ -488,6 +488,7 @@ export default function Home() {
 
       {/* ── ASSET GALLERY STRIP ────────────────────────── */}
       <section id="gallery" style={{ overflow: 'hidden', paddingBottom: 4 }}>
+        <FadeIn y={60}>
         <div style={{
           display: 'flex', gap: 10,
           animation: 'marquee 160s linear infinite',
@@ -537,6 +538,7 @@ export default function Home() {
             )
           })}
         </div>
+        </FadeIn>
         <style>{`@keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }`}</style>
         <SectionCta onClick={() => setShowAuth(true)} />
       </section>
