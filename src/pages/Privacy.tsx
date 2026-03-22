@@ -44,8 +44,8 @@ export default function Privacy() {
         <P>We take your privacy seriously. Here's exactly what we collect and why.</P>
 
         <Section title="1. Overview">
-          <P>This Privacy Policy explains how PrmptVault ("we," "us," or "our") collects, uses, and protects information about you when you use our platform at prmptbase.ai. We are committed to data minimization: we collect only what we need to operate the service.</P>
-          <P>If you have questions about this policy, contact us at <a href="mailto:legal@prmptbase.ai" style={{ color: 'var(--pv-accent, #3d7fff)' }}>legal@prmptbase.ai</a>.</P>
+          <P>This Privacy Policy explains how PrmptVault ("we," "us," or "our") collects, uses, and protects information about you when you use our platform at prmptvault.ai. We are committed to data minimization: we collect only what we need to operate the service.</P>
+          <P>If you have questions about this policy, contact us at <a href="mailto:legal@prmptvault.ai" style={{ color: 'var(--pv-accent, #3d7fff)' }}>legal@prmptvault.ai</a>.</P>
         </Section>
 
         <Section title="2. Information We Collect">
@@ -108,7 +108,7 @@ export default function Privacy() {
 
         <Section title="5. Data Retention">
           <P>We retain your account information and generated assets for as long as your account is active. If you cancel your account, we will delete your personal data within 90 days, except where we are required to retain it for legal or financial compliance purposes.</P>
-          <P>Prompt history and generation logs are retained for 12 months to support your ability to revisit and reuse prior work. You may request earlier deletion by contacting <a href="mailto:legal@prmptbase.ai" style={{ color: 'var(--pv-accent, #3d7fff)' }}>legal@prmptbase.ai</a>.</P>
+          <P>Prompt history and generation logs are retained for 12 months to support your ability to revisit and reuse prior work. You may request earlier deletion by contacting <a href="mailto:legal@prmptvault.ai" style={{ color: 'var(--pv-accent, #3d7fff)' }}>legal@prmptvault.ai</a>.</P>
         </Section>
 
         <Section title="6. Cookies">
@@ -130,9 +130,9 @@ export default function Privacy() {
             'Portability: Request an export of your data in a machine-readable format',
             'Opt-out: Unsubscribe from marketing emails at any time via the unsubscribe link or by contacting us',
           ]} />
-          <P>To exercise any of these rights, contact us at <a href="mailto:legal@prmptbase.ai" style={{ color: 'var(--pv-accent, #3d7fff)' }}>legal@prmptbase.ai</a>. We will respond within 30 days.</P>
+          <P>To exercise any of these rights, contact us at <a href="mailto:legal@prmptvault.ai" style={{ color: 'var(--pv-accent, #3d7fff)' }}>legal@prmptvault.ai</a>. We will respond within 30 days.</P>
           <H3>7.1 California Residents (CCPA)</H3>
-          <P>If you are a California resident, you have additional rights under the California Consumer Privacy Act (CCPA), including the right to know what personal information is collected, the right to deletion, and the right to opt out of the sale of personal information. We do not sell personal information. To submit a CCPA request, contact us at legal@prmptbase.ai.</P>
+          <P>If you are a California resident, you have additional rights under the California Consumer Privacy Act (CCPA), including the right to know what personal information is collected, the right to deletion, and the right to opt out of the sale of personal information. We do not sell personal information. To submit a CCPA request, contact us at legal@prmptvault.ai.</P>
           <H3>7.2 EEA/UK Residents (GDPR)</H3>
           <P>If you are located in the European Economic Area or United Kingdom, our legal basis for processing your data is: (a) performance of a contract (to provide the service you signed up for), (b) legitimate interests (security, fraud prevention, platform improvement), and (c) your consent (marketing communications). You have the right to lodge a complaint with your local data protection authority.</P>
         </Section>
@@ -149,7 +149,7 @@ export default function Privacy() {
         </Section>
 
         <Section title="9. Children's Privacy">
-          <P>Our platform is not directed at children under 13. We do not knowingly collect personal information from children under 13. If we become aware that we have collected information from a child under 13, we will delete it promptly. If you believe a child has provided us with personal information, contact us at <a href="mailto:legal@prmptbase.ai" style={{ color: 'var(--pv-accent, #3d7fff)' }}>legal@prmptbase.ai</a>.</P>
+          <P>Our platform is not directed at children under 13. We do not knowingly collect personal information from children under 13. If we become aware that we have collected information from a child under 13, we will delete it promptly. If you believe a child has provided us with personal information, contact us at <a href="mailto:legal@prmptvault.ai" style={{ color: 'var(--pv-accent, #3d7fff)' }}>legal@prmptvault.ai</a>.</P>
         </Section>
 
         <Section title="10. Changes to This Policy">
@@ -158,7 +158,7 @@ export default function Privacy() {
 
         <Section title="11. Contact Us">
           <P>For questions, concerns, or data requests related to this Privacy Policy, contact us at:</P>
-          <P>PrmptVault<br /><a href="mailto:legal@prmptbase.ai" style={{ color: 'var(--pv-accent, #3d7fff)' }}>legal@prmptbase.ai</a><br />prmptbase.ai</P>
+          <P>PrmptVault<br /><a href="mailto:legal@prmptvault.ai" style={{ color: 'var(--pv-accent, #3d7fff)' }}>legal@prmptvault.ai</a><br />prmptvault.ai</P>
         </Section>
 
       </div>

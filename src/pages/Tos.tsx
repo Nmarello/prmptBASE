@@ -44,7 +44,7 @@ export default function Tos() {
         <P>Please read these terms carefully before using our platform.</P>
 
         <Section title="1. Agreement to Terms">
-          <P>By accessing or using PrmptVault (available at prmptbase.ai), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, do not use the platform. These Terms apply to all users, including free and paid accounts.</P>
+          <P>By accessing or using PrmptVault (available at prmptvault.ai), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, do not use the platform. These Terms apply to all users, including free and paid accounts.</P>
           <P>PrmptVault is operated by PrmptVault, Inc. ("we," "us," or "our"). We reserve the right to update these Terms at any time. Continued use of the platform after changes constitutes acceptance of the updated Terms. We will notify you of material changes by email or in-app notification.</P>
         </Section>
 
@@ -63,7 +63,7 @@ export default function Tos() {
           <H3>3.1 Eligibility</H3>
           <P>You must be at least 13 years old to use this service. If you are under 18, you represent that a parent or guardian has reviewed and agreed to these Terms on your behalf.</P>
           <H3>3.2 Account Responsibility</H3>
-          <P>You are responsible for all activity under your account. You may not share your account credentials or allow others to access your account. Notify us immediately at support@prmptbase.ai if you suspect unauthorized access.</P>
+          <P>You are responsible for all activity under your account. You may not share your account credentials or allow others to access your account. Notify us immediately at support@prmptvault.ai if you suspect unauthorized access.</P>
         </Section>
 
         <Section title="4. Acceptable Use">
@@ -141,7 +141,7 @@ export default function Tos() {
         </Section>
 
         <Section title="11. Contact">
-          <P>For questions about these Terms, contact us at <a href="mailto:legal@prmptbase.ai" style={{ color: 'var(--pv-accent, #3d7fff)' }}>legal@prmptbase.ai</a>.</P>
+          <P>For questions about these Terms, contact us at <a href="mailto:legal@prmptvault.ai" style={{ color: 'var(--pv-accent, #3d7fff)' }}>legal@prmptvault.ai</a>.</P>
         </Section>
 
       </div>

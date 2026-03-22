@@ -9,6 +9,6 @@ Default behavior (no args or "staging"):
 If $ARGUMENTS contains "main", "prod", or "production":
 1. Confirm with the user before proceeding
 2. Push to `origin main`
-3. Confirm: "Deployed to production — https://prmptbase.ai"
+3. Confirm: "Deployed to production — https://prmptvault.ai"
 
 Never push to main without explicit confirmation. Remind Nick if there are uncommitted changes that weren't staged.

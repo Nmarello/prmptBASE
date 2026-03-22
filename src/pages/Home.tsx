@@ -5,6 +5,7 @@ import AuthModal from '../components/auth/AuthModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useTheme } from '../contexts/ThemeContext'
 
 // Scroll-triggered fade+slide wrapper
 function FadeIn({ children, delay = 0, y = 40, x = 0, className, style, once = true }: {
@@ -48,7 +49,7 @@ function StaggerIn({ children, stagger = 0.1, className, style }: {
 }
 
 // Section CTA pill
-function SectionCta({ onClick }: { onClick: () => void }) {
+function SectionCta({ onClick, label = 'Try for free →' }: { onClick: () => void; label?: string }) {
   return (
     <FadeIn style={{ textAlign: 'center', marginTop: 40 }}>
       <button onClick={onClick} style={{
@@ -59,8 +60,27 @@ function SectionCta({ onClick }: { onClick: () => void }) {
       }}
         onMouseEnter={e => { e.currentTarget.style.background = '#5590ff'; e.currentTarget.style.boxShadow = '0 0 40px rgba(61,127,255,0.35)' }}
         onMouseLeave={e => { e.currentTarget.style.background = '#3d7fff'; e.currentTarget.style.boxShadow = '0 0 24px rgba(61,127,255,0.2)' }}
-      >Try for free →</button>
+      >{label}</button>
     </FadeIn>
+  )
+}
+
+// FAQ accordion component
+function FaqItem({ q, a, open, onToggle, T }: { q: string; a: string; open: boolean; onToggle: () => void; T: typeof DARK }) {
+  return (
+    <div style={{ borderBottom: '1px solid ' + T.border }}>
+      <button onClick={onToggle} style={{
+        width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '20px 0', background: 'none', border: 'none', cursor: 'pointer',
+        fontFamily: 'inherit', textAlign: 'left',
+      }}>
+        <span style={{ fontSize: 16, fontWeight: 600, color: T.text, paddingRight: 16 }}>{q}</span>
+        <span style={{ fontSize: 20, color: T.text3, flexShrink: 0, transition: 'transform 0.2s', transform: open ? 'rotate(45deg)' : 'none' }}>+</span>
+      </button>
+      {open && (
+        <div style={{ paddingBottom: 20, fontSize: 15, color: T.text2, lineHeight: 1.7 }}>{a}</div>
+      )}
+    </div>
   )
 }
 
@@ -172,7 +192,9 @@ const LIGHT = {
 export default function Home() {
   const { user } = useAuth()
   const [showAuth, setShowAuth] = useState(false)
-  const [dark, setDark] = useState(true)
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const { theme, setTheme } = useTheme()
+  const dark = theme === 'dark'
   const T = dark ? DARK : LIGHT
   const navigate = useNavigate()
 
@@ -244,8 +266,8 @@ export default function Home() {
       }}>
         <Logo height={32} theme={dark ? 'dark' : 'light'} />
         <div style={{ display: 'flex', gap: 24 }}>
-          {[{ label: 'Models', href: '#models' }, { label: 'Pricing', href: '/pricing' }, { label: 'Gallery', href: '/gallery' }].map(l => (
-            <a key={l.label} href={l.href} style={{ color: T.text2, textDecoration: 'none', fontSize: 13, fontWeight: 500, transition: 'color 0.15s' }}
+          {[{ label: 'Blog', href: 'https://blog.prmptvault.ai', ext: true }, { label: 'Gallery', href: '/gallery', ext: false }, { label: 'Pricing', href: '/pricing', ext: false }].map(l => (
+            <a key={l.label} href={l.href} {...(l.ext ? { target: '_blank', rel: 'noopener noreferrer' } : {})} style={{ color: T.text2, textDecoration: 'none', fontSize: 13, fontWeight: 500, transition: 'color 0.15s' }}
               onMouseEnter={e => (e.currentTarget.style.color = T.text)}
               onMouseLeave={e => (e.currentTarget.style.color = T.text2)}
             >{l.label}</a>
@@ -253,7 +275,7 @@ export default function Home() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {/* Dark / Light toggle */}
-          <button onClick={() => setDark(d => !d)} style={{
+          <button onClick={() => setTheme(dark ? 'light' : 'dark')} style={{
             background: T.surface, border: `1px solid ${T.border}`, color: T.text2,
             width: 32, height: 32, borderRadius: 100, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', flexShrink: 0,
           }} title={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
@@ -292,7 +314,7 @@ export default function Home() {
       }}>
         <Logo height={32} theme={dark ? 'dark' : 'light'} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={() => setDark(d => !d)} style={{
+          <button onClick={() => setTheme(dark ? 'light' : 'dark')} style={{
             background: T.surface, border: `1px solid ${T.border}`, color: T.text2,
             width: 32, height: 32, borderRadius: 100, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
@@ -450,6 +472,24 @@ export default function Home() {
                   </svg>
                 </div>
               </div>
+              {/* Mobile-only condensed fields */}
+              <div className="sm:hidden" style={{ background: '#111009', padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
+                  {[
+                    { label: 'Subject', val: 'Luxury dinner...' },
+                    { label: 'Style', val: 'Cinematic' },
+                    { label: 'Lighting', val: 'Golden hour' },
+                    { label: 'Mood', val: 'Dramatic' },
+                    { label: 'Lens', val: '24mm wide' },
+                    { label: 'Model', val: 'Flux Pro Ultra', blue: true },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '6px 8px' }}>
+                      <div style={{ fontSize: 8, color: 'rgba(240,237,232,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>{s.label}</div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: (s as { blue?: boolean }).blue ? '#7aabff' : 'rgba(240,237,232,0.5)' }}>{s.val}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               {/* Output / canvas */}
               <div style={{ position: 'relative', background: '#0a0908', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
                 <img
@@ -483,7 +523,7 @@ export default function Home() {
         </FadeIn>
         </motion.div>{/* end text+mockup row */}
 
-        <SectionCta onClick={() => setShowAuth(true)} />
+        <SectionCta onClick={() => setShowAuth(true)} label="Start generating →" />
       </section>
 
       {/* ── ASSET GALLERY STRIP ────────────────────────── */}
@@ -586,7 +626,7 @@ export default function Home() {
             </div>
             <h3 style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 10, letterSpacing: '-0.3px' }}>Every model. One place.</h3>
             <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.7 }}>
-              DALL-E 3. Flux Pro Ultra. Kling. Luma Ray-2. Veo 3. Minimax. 12+ image and video models, all in one workspace — no switching tabs, no managing API keys, no stitching tools together.
+              DALL-E 3. Flux Pro Ultra. Kling. Luma Ray-2. Veo 3. Minimax. 20+ image and video models, all in one workspace — no switching tabs, no managing API keys, no stitching tools together.
             </p>
           </motion.div>
 
@@ -605,6 +645,29 @@ export default function Home() {
               Every image and video you generate lives in your personal vault. Download it, send it to img2img, run it through a different model, or pick up exactly where you left off — months later.
             </p>
           </motion.div>
+        </StaggerIn>
+
+        {/* ── HOW IT WORKS ──────────────────────────────── */}
+        <FadeIn style={{ textAlign: 'center', marginTop: 64, marginBottom: 48 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: T.text3, marginBottom: 14 }}>
+            How it works
+          </div>
+          <h2 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 800, letterSpacing: '-1.5px', color: T.text, lineHeight: 1.1 }}>
+            How it works.
+          </h2>
+        </FadeIn>
+        <StaggerIn stagger={0.15} className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-16" style={{ position: 'relative' }}>
+          {[
+            { num: '01', title: 'Pick your model', desc: 'Choose from 20+ image and video models — DALL-E, Flux, Imagen, Kling, Veo, and more. Switch anytime with one click.' },
+            { num: '02', title: 'Fill the fields', desc: 'Every model gets purpose-built prompt fields — subject, style, lighting, mood, lens, camera. No guessing. No blank text boxes.' },
+            { num: '03', title: 'Generate & save', desc: 'Hit generate. Your output and the prompt that made it are saved to your vault automatically. Remix, iterate, or move on.' },
+          ].map(step => (
+            <motion.div key={step.num} variants={staggerChild} style={{ textAlign: 'center', padding: '32px 24px' }}>
+              <div style={{ fontSize: 48, fontWeight: 800, color: '#3d7fff', letterSpacing: '-2px', marginBottom: 16, lineHeight: 1 }}>{step.num}</div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: T.text, marginBottom: 10, letterSpacing: '-0.3px' }}>{step.title}</h3>
+              <p style={{ fontSize: 14, color: T.text2, lineHeight: 1.7 }}>{step.desc}</p>
+            </motion.div>
+          ))}
         </StaggerIn>
 
         {/* Before / after comparison */}
@@ -644,7 +707,7 @@ export default function Home() {
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
                 'Structured fields for every model',
-                '12+ models in one workspace',
+                '20+ models in one workspace',
                 'Every output saved to your vault',
                 'Remix and iterate on anything',
               ].map(t => (
@@ -655,7 +718,7 @@ export default function Home() {
             </ul>
           </FadeIn>
         </div>
-        <SectionCta onClick={() => setShowAuth(true)} />
+        <SectionCta onClick={() => setShowAuth(true)} label="Try structured prompts →" />
       </section>
 
       {/* ── BENTO FEATURES ────────────────────────────── */}
@@ -694,7 +757,7 @@ export default function Home() {
             onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(61,127,255,0.2)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLDivElement).style.transform = 'none' }}
           >
-            <div style={{ fontSize: 52, fontWeight: 800, letterSpacing: '-2px', lineHeight: 1, color: '#3d7fff' }}>12+</div>
+            <div style={{ fontSize: 52, fontWeight: 800, letterSpacing: '-2px', lineHeight: 1, color: '#3d7fff' }}>20+</div>
             <div style={{ fontSize: 14, color: T.text2, marginTop: 6 }}>AI models<br />connected</div>
           </motion.div>
 
@@ -790,7 +853,39 @@ export default function Home() {
           </motion.div>
 
         </StaggerIn>
-        <SectionCta onClick={() => setShowAuth(true)} />
+        <SectionCta onClick={() => setShowAuth(true)} label="Start creating →" />
+      </section>
+
+      {/* ── WHO IS THIS FOR ─────────────────────────────── */}
+      <section className="px-5 sm:px-10 py-16 sm:py-20" style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <FadeIn style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: T.text3, marginBottom: 14 }}>
+            Built for creators
+          </div>
+          <h2 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 800, letterSpacing: '-1.5px', color: T.text, lineHeight: 1.1 }}>
+            Made for people who make things.
+          </h2>
+        </FadeIn>
+        <StaggerIn stagger={0.1} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[
+            { icon: '📱', title: 'Social Media Managers', desc: 'Generate scroll-stopping visuals across every model without managing API keys or juggling five different tools.' },
+            { icon: '🎮', title: 'Indie Game Developers', desc: 'Concept art, character sprites, environment art, and cinematic trailers — all from one workspace. Prototype faster.' },
+            { icon: '✨', title: 'AI-Curious Creators', desc: 'No prompt engineering degree required. Structured fields guide you to better results from day one.' },
+            { icon: '📈', title: 'Freelancers & Solopreneurs', desc: 'Client-ready assets without subscribing to Midjourney AND Runway AND Pika. One studio, one bill, every model.' },
+          ].map(card => (
+            <motion.div key={card.title} variants={staggerChild} style={{
+              background: T.cardBg, border: '1px solid ' + T.border, borderRadius: 20, padding: 28,
+              transition: 'all 0.2s',
+            }}
+              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(61,127,255,0.25)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = T.border; (e.currentTarget as HTMLDivElement).style.transform = 'none' }}
+            >
+              <div style={{ fontSize: 32, marginBottom: 16 }}>{card.icon}</div>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 10, letterSpacing: '-0.3px' }}>{card.title}</h3>
+              <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.7 }}>{card.desc}</p>
+            </motion.div>
+          ))}
+        </StaggerIn>
       </section>
 
       {/* ── PRICING ───────────────────────────────────── */}
@@ -898,6 +993,32 @@ export default function Home() {
         </StaggerIn>
       </section>
 
+      {/* ── FAQ ─────────────────────────────────────────── */}
+      <section className="px-5 sm:px-10 py-16 sm:py-20" style={{ maxWidth: 800, margin: '0 auto' }}>
+        <FadeIn style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: T.text3, marginBottom: 14 }}>
+            FAQ
+          </div>
+          <h2 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 800, letterSpacing: '-1.5px', color: T.text, lineHeight: 1.1 }}>
+            Questions? Answers.
+          </h2>
+        </FadeIn>
+        <FadeIn>
+          <div style={{ borderTop: '1px solid ' + T.border }}>
+            {[
+              { q: 'Do I need my own API keys?', a: "No. prmptVAULT handles all model access — you don't need accounts with OpenAI, Google, Black Forest Labs, or anyone else. Just sign up and generate." },
+              { q: 'What happens when new models launch?', a: 'We add new models regularly — often within days of release. Your templates update automatically. No manual setup, no configuration.' },
+              { q: 'How is this different from Midjourney or Leonardo?', a: 'Most tools lock you into one model behind a blank text box. prmptVAULT gives you structured prompt fields tuned to each model, plus access to 20+ image and video models in one workspace. Switch models in one click without switching tools.' },
+              { q: "What counts as a 'generation'?", a: "Each time you hit Generate and produce an image or video, that's one generation. Failed generations don't count against your limit." },
+              { q: 'Can I cancel anytime?', a: 'Yes. All paid plans are month-to-month with no contracts. Cancel from your account settings at any time. Your saved assets stay in your vault.' },
+              { q: 'Is there a free plan?', a: 'Yes. The free plan includes 25 generations per month with access to core models like DALL-E 3 and Flux Schnell. No credit card required.' },
+            ].map((item, i) => (
+              <FaqItem key={i} q={item.q} a={item.a} open={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} T={T} />
+            ))}
+          </div>
+        </FadeIn>
+      </section>
+
       {/* ── CTA ──────────────────────────────────────── */}
       <section ref={ctaRef} className="px-5 sm:px-10 py-20 sm:py-28" style={{ textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <motion.div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(61,127,255,0.1) 0%, transparent 65%)', pointerEvents: 'none', y: ctaGlowY }} />
@@ -931,18 +1052,40 @@ export default function Home() {
       </section>
 
       {/* ── FOOTER ───────────────────────────────────── */}
-      <footer className="flex flex-col sm:flex-row gap-4 sm:gap-0 items-center justify-between px-5 sm:px-10 py-8"
+      <footer className="flex flex-col gap-6 items-center px-5 sm:px-10 py-8"
         style={{ borderTop: '1px solid ' + T.border, color: T.text3, fontSize: 13 }}>
-        <Logo height={32} theme={dark ? 'dark' : 'light'} />
-        <div style={{ display: 'flex', gap: 24 }}>
-          {[{ label: 'Privacy', href: '/privacy' }, { label: 'Terms', href: '/tos' }, { label: 'Docs', href: 'https://docs.prmptbase.ai' }].map(l => (
-            <a key={l.label} href={l.href} style={{ color: T.text3, textDecoration: 'none', transition: 'color 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = T.text2)}
-              onMouseLeave={e => (e.currentTarget.style.color = T.text3)}
-            >{l.label}</a>
-          ))}
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-0 items-center justify-between w-full">
+          <Logo height={32} theme={dark ? 'dark' : 'light'} />
+          <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {[
+              { label: 'Privacy', href: '/privacy', ext: false },
+              { label: 'Terms', href: '/tos', ext: false },
+              { label: 'Docs', href: 'https://docs.prmptvault.ai', ext: false },
+              { label: 'Blog', href: 'https://blog.prmptvault.ai', ext: true },
+            ].map(l => (
+              <a key={l.label} href={l.href} {...(l.ext ? { target: '_blank', rel: 'noopener noreferrer' } : {})} style={{ color: T.text3, textDecoration: 'none', transition: 'color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = T.text2)}
+                onMouseLeave={e => (e.currentTarget.style.color = T.text3)}
+              >{l.label}</a>
+            ))}
+            {/* Social icons */}
+            <div style={{ display: 'flex', gap: 12, marginLeft: 8 }}>
+              <a href="https://x.com/prmptvault" target="_blank" rel="noopener noreferrer" style={{ color: T.text3, transition: 'color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = T.text2)}
+                onMouseLeave={e => (e.currentTarget.style.color = T.text3)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </a>
+              <a href="https://www.linkedin.com/company/prmptvault" target="_blank" rel="noopener noreferrer" style={{ color: T.text3, transition: 'color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = T.text2)}
+                onMouseLeave={e => (e.currentTarget.style.color = T.text3)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              </a>
+            </div>
+          </div>
+          <div>© 2026 Marello Productions</div>
         </div>
-        <div>© 2026 Marello Productions</div>
       </footer>
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}

@@ -99,6 +99,13 @@ const tiers = [
 export default function Pricing() {
   const { user } = useAuth()
   const location = useLocation()
+
+  useEffect(() => {
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null
+    if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link) }
+    link.href = 'https://prmptvault.ai/pricing'
+    return () => { link!.href = 'https://prmptvault.ai/' }
+  }, [])
   const analytics = useAnalytics()
   const highlightTier = new URLSearchParams(location.search).get('highlight')
   const [showAuth, setShowAuth] = useState(false)
@@ -152,16 +159,21 @@ export default function Pricing() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--pv-bg)', color: 'var(--pv-text)', fontFamily: "'DM Sans', -apple-system, sans-serif", padding: '80px 24px' }}>
+      {/* Nav */}
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, padding: '12px 24px', background: 'var(--pv-bg)', borderBottom: '1px solid var(--pv-border)', backdropFilter: 'blur(20px)' }}>
+        {[
+          { label: 'Home', href: '/' },
+          { label: 'Gallery', href: '/gallery' },
+          { label: 'Blog', href: 'https://blog.prmptvault.ai', ext: true },
+        ].map(l => (
+          <a key={l.label} href={l.href} {...('ext' in l && l.ext ? { target: '_blank', rel: 'noopener noreferrer' } : {})} style={{ color: 'var(--pv-text2)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>{l.label}</a>
+        ))}
+        {user && <a href="/dashboard" style={{ color: 'var(--pv-text2)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>Dashboard</a>}
+      </div>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          {user && (
-            <a href="/dashboard" style={{ display: 'inline-block', fontSize: 12, color: 'var(--pv-text3)', marginBottom: 24, textDecoration: 'none', transition: 'color 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--pv-text2)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--pv-text3)')}
-            >← Back to dashboard</a>
-          )}
+        <div style={{ textAlign: 'center', marginBottom: 48, marginTop: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--pv-text3)', marginBottom: 12 }}>Pricing</div>
           <Logo height={55} style={{ marginBottom: 12 }} />
           <p style={{ fontSize: 17, color: 'var(--pv-text2)', marginBottom: 32 }}>Start free. Scale when you're ready.</p>

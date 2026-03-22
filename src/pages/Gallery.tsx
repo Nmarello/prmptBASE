@@ -121,6 +121,13 @@ function extractParams(meta: Record<string, unknown> | null): [string, string][]
 export default function Gallery() {
   const { theme } = useTheme()
   const dark = theme === 'dark'
+
+  useEffect(() => {
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null
+    if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link) }
+    link.href = 'https://prmptvault.ai/gallery'
+    return () => { link!.href = 'https://prmptvault.ai/' }
+  }, [])
   const T = dark ? DARK : LIGHT
   const numCols = useNumCols()
 
@@ -215,8 +222,8 @@ export default function Gallery() {
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 2, justifySelf: 'end' }}>
-            {[{ label: 'Home', href: '/' }, { label: 'Models', href: '/#models' }, { label: 'Pricing', href: '/pricing' }].map(l => (
-              <a key={l.label} href={l.href} style={{ color: T.text2, textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>{l.label}</a>
+            {[{ label: 'Home', href: '/', ext: false }, { label: 'Blog', href: 'https://blog.prmptvault.ai', ext: true }, { label: 'Pricing', href: '/pricing', ext: false }].map(l => (
+              <a key={l.label} href={l.href} {...(l.ext ? { target: '_blank', rel: 'noopener noreferrer' } : {})} style={{ color: T.text2, textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>{l.label}</a>
             ))}
             <Link to="/dashboard" style={{
               background: '#3d7fff', border: 'none', color: '#fff',

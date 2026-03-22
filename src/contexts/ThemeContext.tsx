@@ -8,7 +8,7 @@ function getSaved(): Theme {
     const v = localStorage.getItem(STORAGE_KEY)
     if (v === 'dark' || v === 'light') return v
   } catch {}
-  return 'light'
+  return 'dark'
 }
 
 function applyTheme(t: Theme) {
