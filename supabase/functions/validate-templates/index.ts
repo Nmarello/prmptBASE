@@ -72,7 +72,7 @@ const FAL_KNOWN_PARAMS: Record<string, Set<string>> = {
   'pixverse-v5':      new Set(['prompt', 'aspect_ratio', 'duration', 'negative_prompt', 'seed', 'quality']),
   'luma':             new Set(['prompt', 'aspect_ratio', 'resolution', 'duration', 'loop', 'source_image']),
   'minimax-txt2vid':  new Set(['prompt']),
-  'sora2':            new Set(['prompt', 'aspect_ratio', 'resolution', 'duration', 'model']),
+  'sora2':            new Set(['prompt', 'aspect_ratio', 'resolution', 'duration', 'model', 'source_image']),
   'pika':             new Set(['prompt', 'aspect_ratio', 'resolution', 'duration', 'seed']),
   'ltx-video':        new Set(['prompt', 'aspect_ratio', 'negative_prompt', 'num_inference_steps', 'guidance_scale', 'seed']),
   'wan-21-txt2vid':   new Set(['prompt', 'aspect_ratio', 'resolution', 'num_inference_steps', 'seed']),
