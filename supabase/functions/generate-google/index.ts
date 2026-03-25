@@ -130,7 +130,6 @@ Deno.serve(async (req) => {
       parameters: {
         sampleCount: numImages,
         aspectRatio,
-        ...(body.negative_prompt ? { negativePrompt: body.negative_prompt } : {}),
         ...(body.seed != null && body.seed !== '' ? { seed: Number(body.seed) } : {}),
       },
     }
