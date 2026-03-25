@@ -41,6 +41,7 @@ export default function OnboardingModal({ onDone }: OnboardingModalProps) {
           },
           body: JSON.stringify({
             display_name: displayName.trim(),
+            tos_accepted: true,
             ...(phone.trim() ? { phone: phone.trim() } : {}),
           }),
         }
@@ -51,7 +52,6 @@ export default function OnboardingModal({ onDone }: OnboardingModalProps) {
         throw new Error(text || 'Failed to save profile')
       }
 
-      localStorage.setItem('prmptVAULT_tos_accepted', '1')
       onDone()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save. Please try again.')

@@ -587,9 +587,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return
-    supabase.from('profiles').select('display_name').eq('id', user.id).single()
+    supabase.from('profiles').select('display_name, tos_accepted').eq('id', user.id).single()
       .then(({ data }) => {
-        const needs = !data?.display_name || !localStorage.getItem('prmptVAULT_tos_accepted')
+        const needs = !data?.display_name || !data?.tos_accepted
         setShowOnboarding(needs)
         setOnboardingChecked(true)
       })

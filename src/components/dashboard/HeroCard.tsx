@@ -33,7 +33,7 @@ export default function HeroCard({ model, onClick, rendering, latestRenderUrl, l
       onClick={onClick}
       data-tour={dataTour}
       className="group relative text-left rounded-[20px] border overflow-hidden flex flex-col transition-all duration-200 cursor-pointer border-[var(--pv-border)] hover:-translate-y-1 hover:shadow-lg hover:border-transparent"
-      style={{ width: '100%', minWidth: 280, maxWidth: 400, flex: '1 1 0', background: 'var(--pv-surface)' }}
+      style={{ width: '100%', minWidth: 0, flex: '1 1 0', background: 'var(--pv-surface)' }}
     >
       {/* Art header — taller than standard card */}
       <div className="relative overflow-hidden" style={{ height: '200px' }}>
