@@ -1,4 +1,4 @@
--- prmptBASE schema
+-- prmptVAULT schema
 -- Run in: https://supabase.com/dashboard/project/<ref>/sql/new
 
 -- 1. Profiles (auto-created on signup via trigger)

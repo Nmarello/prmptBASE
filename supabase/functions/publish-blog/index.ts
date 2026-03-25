@@ -196,37 +196,47 @@ End with a CTA section like:
         .filter(Boolean) as string[]
 
       // Send emails via Resend in batches
-      const FROM_EMAIL = 'noreply@prmptvault.ai'
+      const FROM_EMAIL = 'prmptVAULT <noreply@prmptvault.ai>'
       const tag = post.primary_tag?.name || 'New model drop'
       const featureImageUrl = post.feature_image || undefined
       let sent = 0
+      const errors: string[] = []
 
-      for (let i = 0; i < emails.length; i += 50) {
-        const batch = emails.slice(i, i + 50)
-        await Promise.all(batch.map(async (email) => {
-          const unsubscribeUrl = `https://prmptvault.ai/unsubscribe?email=${encodeURIComponent(email)}`
-          const emailHtml = buildEmailHtml({
-            postTitle: post.title,
-            postExcerpt: post.custom_excerpt || post.excerpt || '',
-            postUrl: post.url,
-            featureImageUrl,
-            tag,
-            unsubscribeUrl,
-          })
-          await fetch('https://api.resend.com/emails', {
+      // Resend rate limit: 5 req/s — send 2 per second to stay safe
+      for (const email of emails) {
+        const unsubscribeUrl = `https://prmptvault.ai/unsubscribe?email=${encodeURIComponent(email)}`
+        const emailHtml = buildEmailHtml({
+          postTitle: post.title,
+          postExcerpt: post.custom_excerpt || post.excerpt || '',
+          postUrl: post.url,
+          featureImageUrl,
+          tag,
+          unsubscribeUrl,
+        })
+        try {
+          const res = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ from: FROM_EMAIL, to: email, subject: post.title, html: emailHtml }),
           })
-          sent++
-        }))
+          const resBody = await res.json()
+          if (!res.ok) {
+            errors.push(`${email}: ${res.status} ${JSON.stringify(resBody)}`)
+          } else {
+            sent++
+          }
+        } catch (e) {
+          errors.push(`${email}: ${e instanceof Error ? e.message : String(e)}`)
+        }
+        await new Promise(r => setTimeout(r, 500))
       }
 
       // Notify via Telegram
+      const errorSummary = errors.length ? `\n\n⚠️ ${errors.length} failed:\n${errors.slice(0, 5).join('\n')}` : ''
       await fetch('http://localhost:8000/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `✅ Blog published & ${sent} emails sent!\n\n${post.title}\n${post.url}` }),
+        body: JSON.stringify({ message: `✅ Blog published & ${sent}/${emails.length} emails sent!\n\n${post.title}\n${post.url}${errorSummary}` }),
       }).catch(() => {})
 
       // Clean up draft record
@@ -234,7 +244,7 @@ End with a CTA section like:
 
       return new Response(JSON.stringify({
         ok: true,
-        published: { title: post.title, url: post.url, emails_sent: sent },
+        published: { title: post.title, url: post.url, emails_sent: sent, emails_failed: errors.length, errors: errors.slice(0, 10) },
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
