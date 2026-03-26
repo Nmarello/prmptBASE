@@ -262,6 +262,7 @@ export default function Dashboard() {
   const [template, setTemplate] = useState<Template | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string; isVideo?: boolean } | null>(null)
+  const [copiedUrl, setCopiedUrl] = useState(false)
   const [lightboxAsset, setLightboxAsset] = useState<Asset | null>(null)
   type PendingVideo = { assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number; isImage?: boolean; slug: string }
   const PENDING_VIDEO_KEY = 'prmptVAULT_pendingVideo'
@@ -1910,6 +1911,11 @@ export default function Dashboard() {
                       </button>
                     </>
                   )}
+                  <button onClick={() => { navigator.clipboard.writeText(result.url); setCopiedUrl(true); setTimeout(() => setCopiedUrl(false), 2000) }}
+                    className="px-4 py-2 rounded-[10px] text-sm font-semibold transition-all"
+                    style={{ background: 'var(--pv-surface)', color: copiedUrl ? 'var(--pv-accent)' : 'var(--pv-text2)', border: '1px solid var(--pv-border)' }}>
+                    {copiedUrl ? '✓ Copied' : 'Copy URL'}
+                  </button>
                   <button onClick={() => { setResult(null); setGenerateError(null) }}
                     className="px-4 py-2 rounded-[10px] text-sm font-semibold transition-all"
                     style={{ background: 'var(--pv-surface)', color: 'var(--pv-text2)', border: '1px solid var(--pv-border)' }}>
