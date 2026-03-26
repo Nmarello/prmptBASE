@@ -39,6 +39,11 @@ export function optionsResponse(req: Request): Response {
 export function safeErrorMessage(err: unknown): string {
   if (!(err instanceof Error)) return 'An unexpected error occurred'
   const msg = err.message
+  // FAL provider errors need to pass through so the frontend's friendlyFalError() can translate them
+  if (/^fal\.ai (?:job failed|queue error|error):/.test(msg)) {
+    // Still cap at a generous limit to avoid truly enormous payloads
+    return msg.length > 4000 ? msg.slice(0, 4000) : msg
+  }
   // Allow safe, user-facing messages through; block anything that looks like a stack trace or internal path
   if (/at \w+ \(/.test(msg)) return 'An unexpected error occurred'
   if (/\/supabase\/functions\//.test(msg)) return 'An unexpected error occurred'

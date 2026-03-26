@@ -8,8 +8,8 @@ function friendlyFalError(raw: unknown): string {
   const rawStr: string = typeof raw === 'string'
     ? raw
     : (raw ? JSON.stringify(raw) : '')
-  // Strip "fal.ai job failed: " / "fal.ai queue error: " prefix so inner content can be checked/parsed
-  const stripped = rawStr.replace(/^fal\.ai (?:job failed|queue error):\s*/, '')
+  // Strip fal.ai prefix so inner content can be checked/parsed
+  const stripped = rawStr.replace(/^fal\.ai (?:job failed|queue error|error):\s*/, '')
   let msg = ''
   try {
     const parsed = JSON.parse(stripped)
