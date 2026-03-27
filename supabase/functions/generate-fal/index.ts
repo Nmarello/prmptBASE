@@ -81,6 +81,10 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'txt2vid': 'fal-ai/hunyuan-video',
     'img2vid': 'fal-ai/hunyuan-video-image-to-video',
   },
+  'seedance-1-pro-txt2vid': {
+    'txt2vid': 'fal-ai/bytedance/seedance/v1/pro/text-to-video',
+    'img2vid': 'fal-ai/bytedance/seedance/v1/pro/image-to-video',
+  },
 }
 
 const FAL_QUEUE_BASE = 'https://queue.fal.run'
@@ -748,6 +752,11 @@ Deno.serve(async (req) => {
         if (isImgVid && body.i2v_stability != null && body.i2v_stability !== '') {
           falPayload.i2v_stability = body.i2v_stability === 'true' || body.i2v_stability === true
         }
+        if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
+      } else if (slug.startsWith('seedance')) {
+        const SEEDANCE_AR = ['21:9', '16:9', '4:3', '1:1', '3:4', '9:16']
+        falPayload.aspect_ratio = SEEDANCE_AR.includes(body.aspect_ratio as string) ? body.aspect_ratio : '16:9'
+        if (body.duration) falPayload.duration = String(body.duration)
         if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
       }
 

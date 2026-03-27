@@ -240,7 +240,7 @@ const MODELS: Record<string, ModelConfig> = {
   // ── Video — Replicate-only models ─────────────────────────────────────────
   'sora2-pro':        { path: 'openai/sora-2-pro',          isVideo: true, maxOutputs: 1, costUsd: 0.20, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: videoAR(b.aspectRatio),
+    aspect_ratio: b.aspectRatio === '9:16' ? 'portrait' : 'landscape',
     ...(b._duration ? { duration: [4, 8, 12].includes(b._duration) ? b._duration : 8 } : {}),
   }) },
   'veo-3':            { path: 'google/veo-3',               isVideo: true, maxOutputs: 1, costUsd: 0.25, buildInput: (b) => ({
@@ -274,7 +274,7 @@ const MODELS: Record<string, ModelConfig> = {
     }
   } },
   'wan-2.5-t2v':      { path: 'wan-video/wan-2.5-t2v',      isVideo: true, maxOutputs: 1, costUsd: 0.08, buildInput: (b) => {
-    const WAN_SIZE_MAP: Record<string, string> = { '16:9': '1280x720', '9:16': '720x1280' }
+    const WAN_SIZE_MAP: Record<string, string> = { '16:9': '1280*720', '9:16': '720*1280' }
     return {
       prompt: b.prompt,
       size: WAN_SIZE_MAP[b.aspectRatio] ?? '1280x720',
@@ -287,10 +287,10 @@ const MODELS: Record<string, ModelConfig> = {
     prompt_optimizer: true,
   }) },
   'gen-4.5':          { path: 'runwayml/gen-4.5',            isVideo: true, maxOutputs: 1, costUsd: 0.15, buildInput: (b) => {
-    const GEN45_AR_MAP: Record<string, string> = { '16:9': '1280:720', '9:16': '720:1280' }
+    const VALID = ['16:9', '9:16', '4:3', '3:4', '1:1', '21:9']
     return {
       prompt: b.prompt,
-      aspect_ratio: GEN45_AR_MAP[b.aspectRatio] ?? '1280:720',
+      aspect_ratio: VALID.includes(b.aspectRatio) ? b.aspectRatio : '16:9',
       ...(b._duration ? { duration: Math.min(Math.max(b._duration, 2), 10) } : {}),
       ...(b.seed != null ? { seed: b.seed } : {}),
     }
