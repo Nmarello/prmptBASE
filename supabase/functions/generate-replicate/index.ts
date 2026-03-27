@@ -195,6 +195,103 @@ const MODELS: Record<string, ModelConfig> = {
     ...(b._guidance != null ? { guidance_scale: b._guidance } : {}),
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
+
+  // ── ByteDance Seedream 4 & 5 Lite (same API shape as 4.5) ─────────────────
+  'seedream-4':       { path: 'bytedance/seedream-4',      costUsd: 0.02, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    max_images: Math.min(b.numOutputs, 4),
+    size: '2K',
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+  'seedream-5-lite':  { path: 'bytedance/seedream-5-lite',  costUsd: 0.015, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    max_images: Math.min(b.numOutputs, 4),
+    size: '2K',
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+
+  // ── Google Imagen 4 ────────────────────────────────────────────────────────
+  'imagen-4-ultra':   { path: 'google/imagen-4-ultra',  costUsd: 0.10, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    number_of_images: Math.min(b.numOutputs, 4),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+  'imagen-4-fast':    { path: 'google/imagen-4-fast',   costUsd: 0.04, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    number_of_images: Math.min(b.numOutputs, 4),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+
+  // ── OpenAI GPT Image 1.5 ──────────────────────────────────────────────────
+  'gpt-image-1.5':    { path: 'openai/gpt-image-1.5',  costUsd: 0.04, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    num_outputs: Math.min(b.numOutputs, 4),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+
+  // ── Video — Replicate-only models ─────────────────────────────────────────
+  'sora2-pro':        { path: 'openai/sora-2-pro',          isVideo: true, maxOutputs: 1, costUsd: 0.20, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio || '16:9',
+    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+  'veo-3':            { path: 'google/veo-3',               isVideo: true, maxOutputs: 1, costUsd: 0.25, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio || '16:9',
+    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+  'veo-3-fast':       { path: 'google/veo-3-fast',          isVideo: true, maxOutputs: 1, costUsd: 0.12, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio || '16:9',
+    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+  'veo-3.1':          { path: 'google/veo-3.1',             isVideo: true, maxOutputs: 1, costUsd: 0.25, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio || '16:9',
+    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+  'kling-v2.5-turbo': { path: 'kwaivgi/kling-v2.5-turbo-pro', isVideo: true, maxOutputs: 1, costUsd: 0.10, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio || '16:9',
+    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+  }) },
+  'wan-2.5-t2v':      { path: 'wan-video/wan-2.5-t2v',      isVideo: true, maxOutputs: 1, costUsd: 0.08, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: ['16:9', '9:16'].includes(b.aspectRatio) ? b.aspectRatio : '16:9',
+    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    ...(b._steps != null ? { num_inference_steps: b._steps } : {}),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+  'minimax-video':    { path: 'minimax/video-01',            isVideo: true, maxOutputs: 1, costUsd: 0.10, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio || '16:9',
+    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+  }) },
+  'gen-4.5':          { path: 'runway/gen-4.5',              isVideo: true, maxOutputs: 1, costUsd: 0.15, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio || '16:9',
+    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+  }) },
+
+  // ── Tools — Editing & Upscaling (Replicate) ──────────────────────────────
+  'flux-fill-pro':           { path: 'black-forest-labs/flux-fill-pro', costUsd: 0.05, maxOutputs: 1, buildInput: (b) => ({
+    prompt: b.prompt,
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+  'bria-eraser':             { path: 'bria/eraser',              costUsd: 0.02, maxOutputs: 1, buildInput: (_b) => ({}) },
+  'bria-genfill':            { path: 'bria/genfill',             costUsd: 0.02, maxOutputs: 1, buildInput: (b) => ({ prompt: b.prompt }) },
+  'bria-expand':             { path: 'bria/expand-image',        costUsd: 0.02, maxOutputs: 1, buildInput: (b) => ({ prompt: b.prompt }) },
+  'recraft-crisp-upscale':   { path: 'recraft-ai/recraft-crisp-upscale',    costUsd: 0.04, maxOutputs: 1, buildInput: (_b) => ({}) },
+  'recraft-creative-upscale':{ path: 'recraft-ai/recraft-creative-upscale', costUsd: 0.04, maxOutputs: 1, buildInput: (_b) => ({}) },
 }
 
 const STYLE_MAP: Record<string, string> = {

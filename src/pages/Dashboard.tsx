@@ -756,15 +756,25 @@ export default function Dashboard() {
       const DIRECT_API_SLUGS = new Set(['dalle', 'gpt-image-1', 'imagen-4.0-generate-001', 'veo-2.0-generate-001'])
       const GOOGLE_DIRECT_SLUGS = new Set(['imagen-4.0-generate-001', 'veo-2.0-generate-001'])
       const REPLICATE_SLUGS = new Set([
+        // Image
         'sd35-large', 'sd35-large-turbo', 'sd35-medium',
         'flux-schnell', 'flux-dev', 'flux-pro', 'flux-pro-ultra', 'flux2-pro', 'flux2-max',
         'recraft-v3', 'recraft-v4', 'recraft-v4-pro',
         'ideogram-v2', 'ideogram-v3',
         'hidream-fast', 'hidream-full',
-        'seedream-45',
+        'seedream-45', 'seedream-4', 'seedream-5-lite',
         'nano-banana-pro',
-        'ltx-2.3-pro', 'ltx-2.3-fast',
+        'imagen-4-ultra', 'imagen-4-fast',
+        'gpt-image-1.5',
+        // Img2img
         'flux-kontext-max',
+        // Video
+        'ltx-2.3-pro', 'ltx-2.3-fast',
+        'sora2-pro', 'veo-3', 'veo-3-fast', 'veo-3.1',
+        'kling-v2.5-turbo', 'wan-2.5-t2v', 'minimax-video', 'gen-4.5',
+        // Tools
+        'flux-fill-pro', 'bria-eraser', 'bria-genfill', 'bria-expand',
+        'recraft-crisp-upscale', 'recraft-creative-upscale',
       ])
       const isReplicate = REPLICATE_SLUGS.has(selectedModel.slug)
       const isFal = !isReplicate && !DIRECT_API_SLUGS.has(selectedModel.slug)
