@@ -758,7 +758,7 @@ export default function Dashboard() {
       const REPLICATE_SLUGS = new Set([
         'sd35-large', 'sd35-large-turbo', 'sd35-medium',
         'flux-schnell', 'flux-dev', 'flux-pro', 'flux-pro-ultra', 'flux2-pro', 'flux2-max',
-        'recraft-v3', 'recraft-v4-pro',
+        'recraft-v3', 'recraft-v4', 'recraft-v4-pro',
         'ideogram-v3',
         'hidream-fast', 'hidream-full',
         'seedream-45',
