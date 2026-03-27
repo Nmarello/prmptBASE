@@ -286,9 +286,9 @@ export default function Admin() {
   useEffect(() => { loadAll() }, [])
 
   useEffect(() => {
-    if (view === 'feedback') loadFeedback()
-    else if (view === 'support') loadSupport()
-    else if (view === 'model-status') loadModels()
+    if (view === 'feedback' && feedbackRows.length === 0) loadFeedback()
+    else if (view === 'support' && supportConvs.length === 0) loadSupport()
+    else if (view === 'model-status' && modelStatuses.length === 0) loadModels()
     else if (view === 'blog') loadBlogDrafts()
   }, [view])
 

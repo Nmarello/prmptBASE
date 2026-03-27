@@ -160,10 +160,22 @@ const MODELS: Record<string, ModelConfig> = {
   'hidream-full':     { path: 'prunaai/hidream-l1-full', version: '4ac54871d9e2152baf74c89729f9c17a1b770e1ca2c10989b69e8ebea480ca40', costUsd: 0.05, buildInput: (b) => standardInput(b) },
 
   // ── ByteDance Seedream ───────────────────────────────────────────────────────
-  'seedream-45':      { path: 'bytedance/seedream-4.5',   costUsd: 0.025, buildInput: (b) => standardInput(b) },
+  'seedream-45':      { path: 'bytedance/seedream-4.5',   costUsd: 0.025, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    max_images: Math.min(b.numOutputs, 4),
+    size: '2K',
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
 
   // ── Google Nano Banana Pro ───────────────────────────────────────────────────
   'nano-banana-pro':  { path: 'google/nano-banana-pro',   costUsd: 0.15,  buildInput: (b) => standardInput(b) },
+
+  // ── FLUX Kontext Max (img2img via Replicate — not on FAL) ────────────────────
+  'flux-kontext-max': { path: 'black-forest-labs/flux-kontext-max', costUsd: 0.08, maxOutputs: 1, buildInput: (b) => ({
+    prompt: b.prompt,
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
 
   // ── Lightricks LTX-2.3 Video ─────────────────────────────────────────────────
   'ltx-2.3-pro':  { path: 'lightricks/ltx-2.3-pro',  isVideo: true, maxOutputs: 1, costUsd: 0.10, buildInput: (b) => ({
@@ -345,6 +357,28 @@ Deno.serve(async (req) => {
       _guidance: body.guidance_scale ? Number(body.guidance_scale) : undefined,
     }
     const replicateInput = config.buildInput(baseInput)
+
+    // Inject source image for img2img models routed through Replicate (e.g. Kontext Max)
+    if (slug === 'flux-kontext-max' && body.source_image) {
+      const src = body.source_image as string
+      if (src.startsWith('http')) {
+        replicateInput.image_url = src
+      } else {
+        // base64 → upload to storage first
+        const base64Data = src.replace(/^data:image\/\w+;base64,/, '')
+        const mimeMatch = src.match(/^data:(image\/\w+);base64,/)
+        const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+        const ext = mimeType.split('/')[1] ?? 'jpg'
+        const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+        const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
+        const { error: srcUploadErr } = await adminClient.storage
+          .from('assets')
+          .upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
+        if (srcUploadErr) throw new Error(`Source upload failed: ${srcUploadErr.message}`)
+        const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
+        replicateInput.image_url = publicUrl
+      }
+    }
 
     const repUrl = config.version
       ? 'https://api.replicate.com/v1/predictions'
