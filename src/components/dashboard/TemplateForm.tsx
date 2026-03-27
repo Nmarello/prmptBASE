@@ -350,8 +350,43 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn, userAsset
   }
 
   if (field.type === 'select') {
-    // Auto-convert dimension options with different aspect ratios to visual pill picker
     const opts = field.options ?? []
+
+    // ── Aspect ratio visual shape buttons ──────────────────────────────────
+    const RATIO_SHAPES: Record<string, { w: number; h: number }> = {
+      '1:1': { w: 28, h: 28 }, '16:9': { w: 36, h: 20 }, '9:16': { w: 20, h: 36 },
+      '4:3': { w: 32, h: 24 }, '3:4': { w: 24, h: 32 }, '3:2': { w: 33, h: 22 },
+      '2:3': { w: 22, h: 33 }, '21:9': { w: 40, h: 17 }, '4:5': { w: 25, h: 31 },
+      '5:4': { w: 31, h: 25 }, 'auto': { w: 28, h: 28 },
+    }
+    const isRatioField = field.id === 'aspect_ratio' || field.id === 'size'
+    const allRatios = opts.every(o => o.value in RATIO_SHAPES)
+    if (isRatioField && allRatios && opts.length > 0) {
+      const selected = (value as string) ?? ''
+      return (
+        <div>
+          <div className="flex gap-2">
+            {opts.map((opt) => {
+              const active = selected === opt.value
+              const shape = RATIO_SHAPES[opt.value] ?? { w: 28, h: 28 }
+              const label = opt.value === 'auto' ? 'Auto' : opt.value
+              return (
+                <button key={opt.value} type="button" onClick={() => onChange(active ? '' : opt.value)} className="flex flex-col items-center gap-1.5 cursor-pointer flex-1">
+                  <div
+                    className={`rounded-[4px] transition-all ${active ? 'border-2' : 'border'}`}
+                    style={{ width: shape.w + 6, height: shape.h + 6, borderColor: active ? 'var(--pv-accent)' : 'var(--pv-border)', background: active ? 'rgba(0,80,255,0.08)' : 'var(--pv-surface2)' }}
+                  />
+                  <span className="text-[11px] font-medium" style={{ color: active ? 'var(--pv-accent)' : 'var(--pv-text3)' }}>{label}</span>
+                </button>
+              )
+            })}
+          </div>
+          {field.hint && <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
+        </div>
+      )
+    }
+
+    // Auto-convert dimension options with different aspect ratios to visual pill picker
     const DIM_PATTERN = /^(\d+)x(\d+)$/i
     const KNOWN_DIMS: Record<string, [number, number]> = {
       square_hd: [1024, 1024], square: [512, 512],
@@ -969,6 +1004,19 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
       if (field.type === 'select' && field.options?.length && submitValues[field.id] == null) {
         submitValues[field.id] = field.options[0].value
       }
+    }
+    // Prompt-hint fields: inject into prompt text instead of sending as API params
+    const hints: string[] = []
+    for (const field of template.fields) {
+      if (field.prompt_hint && submitValues[field.id] != null && submitValues[field.id] !== '') {
+        const opt = field.options?.find(o => o.value === submitValues[field.id])
+        hints.push(opt?.label ?? String(submitValues[field.id]))
+        delete submitValues[field.id]
+      }
+    }
+    if (hints.length > 0) {
+      const base = ((submitValues.prompt as string) ?? '').trim()
+      submitValues.prompt = base + (base ? ', ' : '') + hints.join(', ')
     }
     onSubmit(submitValues)
   }

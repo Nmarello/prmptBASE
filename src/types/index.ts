@@ -18,6 +18,7 @@ export interface TemplateField {
   hint?: string
   tooltip?: string
   options?: FieldOption[]
+  prompt_hint?: boolean   // inject value into prompt text instead of sending as API param
 }
 
 export interface Model {
