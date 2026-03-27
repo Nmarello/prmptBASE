@@ -52,6 +52,14 @@ export default function FamilyRow({ category, models, userTier, onSelectModel, l
         .sort()
     )
 
+  // Families with only 1 member → treat as solo cards
+  for (const [fam, arr] of familyMap) {
+    if (arr.length === 1) {
+      unfamilied.push(arr[0])
+      familyMap.delete(fam)
+    }
+  }
+
   // Coming-soon without a family go at the end as solo cards
   const soloComingSoon = unfamilied.filter(m => m.coming_soon)
   const soloActive = unfamilied.filter(m => !m.coming_soon)

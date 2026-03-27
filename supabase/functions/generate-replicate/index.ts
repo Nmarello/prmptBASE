@@ -115,6 +115,9 @@ function ideogramInput(b: BaseInput): Record<string, unknown> {
   return out
 }
 
+const VALID_VIDEO_AR = new Set(['16:9', '9:16'])
+const videoAR = (ar: string) => VALID_VIDEO_AR.has(ar) ? ar : '16:9'
+
 const MODELS: Record<string, ModelConfig> = {
   // ── Stability AI ────────────────────────────────────────────────────────────
   'sd35-large':       { path: 'stability-ai/stable-diffusion-3.5-large',       costUsd: 0.065,  buildInput: (b) => standardInput(b) },
@@ -170,7 +173,12 @@ const MODELS: Record<string, ModelConfig> = {
   }) },
 
   // ── Google Nano Banana Pro ───────────────────────────────────────────────────
-  'nano-banana-pro':  { path: 'google/nano-banana-pro',   costUsd: 0.15,  buildInput: (b) => standardInput(b) },
+  'nano-banana-pro':  { path: 'google/nano-banana-pro',   costUsd: 0.15,  buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    number_of_images: Math.min(b.numOutputs, 4),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
 
   // ── FLUX Kontext Max (img2img via Replicate — not on FAL) ────────────────────
   'flux-kontext-max': { path: 'black-forest-labs/flux-kontext-max', costUsd: 0.08, maxOutputs: 1, buildInput: (b) => ({
@@ -181,7 +189,7 @@ const MODELS: Record<string, ModelConfig> = {
   // ── Lightricks LTX-2.3 Video ─────────────────────────────────────────────────
   'ltx-2.3-pro':  { path: 'lightricks/ltx-2.3-pro',  isVideo: true, maxOutputs: 1, costUsd: 0.10, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: ['16:9', '9:16'].includes(b.aspectRatio) ? b.aspectRatio : '16:9',
+    aspect_ratio: videoAR(b.aspectRatio),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
     ...(b._steps != null ? { num_inference_steps: b._steps } : {}),
     ...(b._guidance != null ? { guidance_scale: b._guidance } : {}),
@@ -189,7 +197,7 @@ const MODELS: Record<string, ModelConfig> = {
   }) },
   'ltx-2.3-fast': { path: 'lightricks/ltx-2.3-fast', isVideo: true, maxOutputs: 1, costUsd: 0.05, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: ['16:9', '9:16'].includes(b.aspectRatio) ? b.aspectRatio : '16:9',
+    aspect_ratio: videoAR(b.aspectRatio),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
     ...(b._steps != null ? { num_inference_steps: b._steps } : {}),
     ...(b._guidance != null ? { guidance_scale: b._guidance } : {}),
@@ -237,48 +245,48 @@ const MODELS: Record<string, ModelConfig> = {
   // ── Video — Replicate-only models ─────────────────────────────────────────
   'sora2-pro':        { path: 'openai/sora-2-pro',          isVideo: true, maxOutputs: 1, costUsd: 0.20, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: b.aspectRatio || '16:9',
+    aspect_ratio: videoAR(b.aspectRatio),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
   'veo-3':            { path: 'google/veo-3',               isVideo: true, maxOutputs: 1, costUsd: 0.25, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: b.aspectRatio || '16:9',
+    aspect_ratio: videoAR(b.aspectRatio),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
   'veo-3-fast':       { path: 'google/veo-3-fast',          isVideo: true, maxOutputs: 1, costUsd: 0.12, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: b.aspectRatio || '16:9',
+    aspect_ratio: videoAR(b.aspectRatio),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
   'veo-3.1':          { path: 'google/veo-3.1',             isVideo: true, maxOutputs: 1, costUsd: 0.25, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: b.aspectRatio || '16:9',
+    aspect_ratio: videoAR(b.aspectRatio),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
   'kling-v2.5-turbo': { path: 'kwaivgi/kling-v2.5-turbo-pro', isVideo: true, maxOutputs: 1, costUsd: 0.10, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: b.aspectRatio || '16:9',
+    aspect_ratio: videoAR(b.aspectRatio),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
   }) },
   'wan-2.5-t2v':      { path: 'wan-video/wan-2.5-t2v',      isVideo: true, maxOutputs: 1, costUsd: 0.08, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: ['16:9', '9:16'].includes(b.aspectRatio) ? b.aspectRatio : '16:9',
+    aspect_ratio: videoAR(b.aspectRatio),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
     ...(b._steps != null ? { num_inference_steps: b._steps } : {}),
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
   'minimax-video':    { path: 'minimax/video-01',            isVideo: true, maxOutputs: 1, costUsd: 0.10, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: b.aspectRatio || '16:9',
+    aspect_ratio: videoAR(b.aspectRatio),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
   }) },
   'gen-4.5':          { path: 'runway/gen-4.5',              isVideo: true, maxOutputs: 1, costUsd: 0.15, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: b.aspectRatio || '16:9',
+    aspect_ratio: videoAR(b.aspectRatio),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
   }) },
 

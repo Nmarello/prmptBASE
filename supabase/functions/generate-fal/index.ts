@@ -61,6 +61,10 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'txt2vid': 'fal-ai/sora-2/text-to-video',
     'img2vid': 'fal-ai/sora-2/image-to-video',
   },
+  'sora2-pro': {
+    'txt2vid': 'fal-ai/sora-2/pro/text-to-video',
+    'img2vid': 'fal-ai/sora-2/pro/image-to-video',
+  },
   'pika': {
     'txt2vid': 'fal-ai/pika/v2.2/text-to-video',
     'img2vid': 'fal-ai/pika/v2.2/image-to-video',
@@ -374,7 +378,7 @@ Deno.serve(async (req) => {
     // Prompt length validation — reject before hitting the provider
     const PROMPT_CHAR_LIMITS: Record<string, number> = {
       'luma': 2000, 'kling': 2500, 'kling-v3': 2500, 'minimax-txt2vid': 2000,
-      'sora2': 4000, 'pika': 2000, 'ltx-video': 2000, 'ltx-2.3-pro': 2000, 'ltx-2.3-fast': 2000,
+      'sora2': 4000, 'sora2-pro': 4000, 'pika': 2000, 'ltx-video': 2000, 'ltx-2.3-pro': 2000, 'ltx-2.3-fast': 2000,
       'wan-21-txt2vid': 2000, 'hunyuan-video': 2000, 'seedance-1-pro-txt2vid': 2000,
       'flux-schnell': 2000, 'flux-dev': 2000, 'flux-pro': 2000, 'flux-pro-ultra': 2000,
       'flux2-pro': 2000, 'flux2-max': 2000, 'flux-kontext-pro': 2000, 'flux-dev-img2img': 2000,
@@ -697,7 +701,8 @@ Deno.serve(async (req) => {
           falPayload.prompt = `${falPayload.prompt ?? ''}, ${MINIMAX_STYLE[style]}`.replace(/^, /, '')
         }
       } else if (slug.startsWith('sora2')) {
-        falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
+        const ar = body.aspect_ratio as string | undefined
+        falPayload.aspect_ratio = (ar === '16:9' || ar === '9:16') ? ar : '16:9'
         if (body.resolution) falPayload.resolution = body.resolution
         if (body.duration) falPayload.duration = Number(body.duration)
         if (body.model) falPayload.model = body.model
