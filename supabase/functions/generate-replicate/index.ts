@@ -504,8 +504,8 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${replicateKey}`,
     }
-    // Prefer:wait only works reliably on the /v1/models/ endpoint; versioned predictions poll manually
-    if (!config.version) repHeaders['Prefer'] = 'wait'
+    // Prefer:wait only for non-video models; video returns pending immediately
+    if (!config.version && !config.isVideo) repHeaders['Prefer'] = 'wait'
 
     const repRes = await fetch(repUrl, {
       method: 'POST',
@@ -519,81 +519,75 @@ Deno.serve(async (req) => {
       throw new Error(`Replicate error (${slug}): ${err}`)
     }
 
-    let repData = await repRes.json()
+    const repData = await repRes.json()
 
-    // Poll if the prediction hasn't completed yet (versioned endpoint ignores Prefer: wait)
-    if (repData.status === 'starting' || repData.status === 'processing') {
-      const pollUrl = repData.urls?.get
-      if (!pollUrl) throw new Error(`Replicate prediction stuck in ${repData.status} with no poll URL`)
-      const deadline = Date.now() + (config.isVideo ? 300_000 : 130_000)
-      while ((repData.status === 'starting' || repData.status === 'processing') && Date.now() < deadline) {
-        await new Promise(r => setTimeout(r, 2000))
-        const pollRes = await fetch(pollUrl, { headers: { 'Authorization': `Bearer ${replicateKey}` } })
-        if (!pollRes.ok) throw new Error(`Replicate poll error: ${pollRes.status}`)
-        repData = await pollRes.json()
-      }
-      if (repData.status === 'starting' || repData.status === 'processing') {
-        throw new Error('Replicate prediction timed out after 120s')
-      }
-    }
-
-    if (repData.status === 'failed' || repData.error) {
-      console.error(`[generate-replicate] ${slug} prediction failed:`, repData.error, 'INPUT:', JSON.stringify(replicateInput))
-      throw new Error(`Replicate generation failed (${slug}): ${repData.error ?? repData.status}`)
-    }
-
-    const outputUrls: string[] = Array.isArray(repData.output)
-      ? repData.output
-      : typeof repData.output === 'string'
-        ? [repData.output]
-        : []
-    if (outputUrls.length === 0) throw new Error(`No output from Replicate: ${JSON.stringify(repData)}`)
-
-    const predictTime = repData.metrics?.predict_time ?? null
-
-    // ── Video output: upload to Supabase storage for permanence ─────────────
+    // ── Video: return pending immediately, let frontend poll ─────────────────
     if (config.isVideo) {
-      let videoUrl = outputUrls[0]
-      try {
-        const vidRes = await fetch(videoUrl)
-        if (vidRes.ok) {
-          const vidBuf = await vidRes.arrayBuffer()
-          const fileName = `${userId ?? 'anon'}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`
-          const { error: uploadErr } = await adminClient.storage.from('assets').upload(fileName, vidBuf, { contentType: 'video/mp4', upsert: false })
-          if (!uploadErr) {
-            const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(fileName)
-            videoUrl = publicUrl
-          }
-        }
-      } catch (e) {
-        console.error('[storeVideo] error, using temp URL:', e)
+      const pollUrl = repData.urls?.get ?? repData.url
+      // If prediction already failed at creation time
+      if (repData.status === 'failed' || repData.error) {
+        console.error(`[generate-replicate] ${slug} prediction failed:`, repData.error, 'INPUT:', JSON.stringify(replicateInput))
+        throw new Error(`Replicate generation failed (${slug}): ${repData.error ?? repData.status}`)
       }
+      // Create placeholder asset row
       const { data: asset, error: assetErr } = await adminClient.from('assets').insert({
         user_id: userId,
         prompt_id: prompt_id ?? null,
         model_id: model_id ?? null,
         gen_type: 'txt2vid',
-        url: videoUrl,
+        url: '',  // updated when video completes
         cost_usd: config.costUsd ?? null,
         metadata: {
           prompt: builtPrompt,
           model_slug: slug,
           aspect_ratio: ar,
-          seed: repData.input?.seed ?? seedVal ?? null,
-          predict_time: predictTime,
+          seed: seedVal ?? null,
+          replicate_prediction_url: pollUrl,
         },
       }).select().single()
       if (assetErr || !asset) console.error('[generate-replicate] video asset insert failed:', assetErr?.message)
       return new Response(
         JSON.stringify({
+          status: 'pending',
           asset,
-          image_url: videoUrl,
+          provider: 'replicate',
+          prediction_url: pollUrl,
           prompt: builtPrompt,
-          seed: repData.input?.seed ?? seedVal ?? null,
         }),
         { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }
+
+    // ── Image: poll until complete (images are fast) ─────────────────────────
+    let imgData = repData
+    if (imgData.status === 'starting' || imgData.status === 'processing') {
+      const imgPollUrl = imgData.urls?.get
+      if (!imgPollUrl) throw new Error(`Replicate prediction stuck in ${imgData.status} with no poll URL`)
+      const deadline = Date.now() + 130_000
+      while ((imgData.status === 'starting' || imgData.status === 'processing') && Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 2000))
+        const pollRes = await fetch(imgPollUrl, { headers: { 'Authorization': `Bearer ${replicateKey}` } })
+        if (!pollRes.ok) throw new Error(`Replicate poll error: ${pollRes.status}`)
+        imgData = await pollRes.json()
+      }
+      if (imgData.status === 'starting' || imgData.status === 'processing') {
+        throw new Error('Replicate prediction timed out after 120s')
+      }
+    }
+
+    if (imgData.status === 'failed' || imgData.error) {
+      console.error(`[generate-replicate] ${slug} prediction failed:`, imgData.error, 'INPUT:', JSON.stringify(replicateInput))
+      throw new Error(`Replicate generation failed (${slug}): ${imgData.error ?? imgData.status}`)
+    }
+
+    const outputUrls: string[] = Array.isArray(imgData.output)
+      ? imgData.output
+      : typeof imgData.output === 'string'
+        ? [imgData.output]
+        : []
+    if (outputUrls.length === 0) throw new Error(`No output from Replicate: ${JSON.stringify(imgData)}`)
+
+    const predictTime = imgData.metrics?.predict_time ?? null
 
     // ── Image output: download + re-upload to Supabase storage ───────────────
     const insertedAssets = await Promise.all(

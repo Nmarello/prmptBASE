@@ -264,7 +264,7 @@ export default function Dashboard() {
   const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string; isVideo?: boolean } | null>(null)
   const [copiedUrl, setCopiedUrl] = useState(false)
   const [lightboxAsset, setLightboxAsset] = useState<Asset | null>(null)
-  type PendingVideo = { assetId: string; operationName: string; provider: 'google' | 'fal.ai'; startedAt: number; isImage?: boolean; slug: string }
+  type PendingVideo = { assetId: string; operationName?: string; predictionUrl?: string; provider: 'google' | 'fal.ai' | 'replicate'; startedAt: number; isImage?: boolean; slug: string }
   const PENDING_VIDEO_KEY = 'prmptVAULT_pendingVideo'
   const [pendingVideos, setPendingVideosRaw] = useState<PendingVideo[]>(() => {
     try {
@@ -863,8 +863,8 @@ export default function Dashboard() {
 
       // Async pending (video or slow image model like hidream-full) — start polling
       if (data.status === 'pending') {
-        const provider = data.provider === 'google' ? 'google' : 'fal.ai'
-        addPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, provider, startedAt: Date.now(), isImage: !!data.is_image, slug: selectedModel?.slug ?? 'unknown' })
+        const provider = data.provider === 'replicate' ? 'replicate' : data.provider === 'google' ? 'google' : 'fal.ai'
+        addPendingVideo({ assetId: data.asset?.id, operationName: data.operation_name, predictionUrl: data.prediction_url, provider, startedAt: Date.now(), isImage: !!data.is_image, slug: selectedModel?.slug ?? 'unknown' })
         setPendingImage(null)
         setSubmitting(false)
         return
@@ -917,13 +917,16 @@ export default function Dashboard() {
           return
         }
         try {
-          const endpoint = pv.provider === 'fal.ai' ? 'check-fal-video' : 'check-veo-job'
+          const endpoint = pv.provider === 'replicate' ? 'check-replicate-video' : pv.provider === 'fal.ai' ? 'check-fal-video' : 'check-veo-job'
+          const pollBody = pv.provider === 'replicate'
+            ? { user_token: session?.access_token ?? null, asset_id: pv.assetId, prediction_url: pv.predictionUrl }
+            : { user_token: session?.access_token ?? null, asset_id: pv.assetId, operation_name: pv.operationName }
           const res = await fetch(
             `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-              body: JSON.stringify({ user_token: session?.access_token ?? null, asset_id: pv.assetId, operation_name: pv.operationName }),
+              body: JSON.stringify(pollBody),
             },
           )
           const data = await res.json()
