@@ -764,6 +764,7 @@ export default function Dashboard() {
         'seedream-45',
         'nano-banana-pro',
         'ltx-2.3-pro', 'ltx-2.3-fast',
+        'flux-kontext-max',
       ])
       const isReplicate = REPLICATE_SLUGS.has(selectedModel.slug)
       const isFal = !isReplicate && !DIRECT_API_SLUGS.has(selectedModel.slug)
@@ -2068,6 +2069,7 @@ export default function Dashboard() {
                       onTourAiSuggestionAccepted={() => { setFirstRunStep(s => s === 7 ? 8 : s) }}
                       subjectOverride={tourSubjectFill}
                       sourceImageOriginUrl={img2imgPickerUrl ?? undefined}
+                      userAssets={assets}
                     />
                   </>
                 )}

@@ -52,6 +52,13 @@ interface CustomOption {
   prompt_text: string
 }
 
+interface AssetRef {
+  id: string
+  url: string
+  gen_type: string | null
+  created_at: string
+}
+
 interface Props {
   template: Template
   genType: GenType
@@ -70,6 +77,7 @@ interface Props {
   onTourAiSuggestionAccepted?: () => void
   subjectOverride?: string
   sourceImageOriginUrl?: string
+  userAssets?: AssetRef[]
 }
 
 const CUSTOM_SUPPORTED = ['select', 'multi_select', 'style_picker']
@@ -315,12 +323,13 @@ function AddCustomForm({ fieldId, onSave, onCancel }: {
 
 // ─── Single field renderer ───────────────────────────────────────────────────
 
-function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
+function FieldInput({ field, value, onChange, customOptions, onAddOwn, userAssets }: {
   field: TemplateField
   value: unknown
   onChange: (val: unknown) => void
   customOptions: FieldOption[]
   onAddOwn?: () => void
+  userAssets?: AssetRef[]
 }) {
   const allOptions = [...(field.options ?? []), ...customOptions]
 
@@ -595,6 +604,13 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
     const [uploading, setUploading] = useState(false)
     const [uploadError, setUploadError] = useState<string | null>(null)
     const [dragging, setDragging] = useState(false)
+    const [browsing, setBrowsing] = useState(false)
+
+    // Filter to image assets only (no videos) for the browser
+    const imageAssets = useMemo(
+      () => (userAssets ?? []).filter(a => a.gen_type === 'txt2img' || a.gen_type === 'img2img').slice(0, 50),
+      [userAssets],
+    )
 
     async function processFile(file: File) {
       setUploadError(null)
@@ -663,10 +679,54 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn }: {
             </div>
           )}
         </label>
+
+        {/* Browse Library button */}
+        {imageAssets.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setBrowsing(!browsing)}
+            className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+            style={{ background: 'var(--pv-surface2)', color: 'var(--pv-text2)', border: '1px solid var(--pv-border)' }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth={1.5}/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth={1.5}/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth={1.5}/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth={1.5}/></svg>
+            {browsing ? 'Hide Library' : 'Browse My Images'}
+          </button>
+        )}
+
+        {/* Asset browser grid */}
+        {browsing && imageAssets.length > 0 && (
+          <div
+            className="mt-2 rounded-xl p-2 overflow-y-auto"
+            style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', maxHeight: 240 }}
+          >
+            <div className="grid grid-cols-4 gap-1.5">
+              {imageAssets.map(a => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => { onChange(a.url); setBrowsing(false) }}
+                  className="relative rounded-lg overflow-hidden aspect-square group transition-all hover:ring-2"
+                  style={{ '--tw-ring-color': 'var(--pv-accent)' } as React.CSSProperties}
+                >
+                  <img
+                    src={a.url}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                    <span className="text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">Use</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {uploadError && (
           <p className="text-xs mt-1.5 font-medium" style={{ color: '#c0392b' }}>{uploadError}</p>
         )}
-        {!uploadError && (
+        {!uploadError && !browsing && (
           <p className="text-xs mt-1.5" style={{ color: 'var(--pv-text3)' }}>Max {MAX_MB}MB · uploaded directly to storage</p>
         )}
         {field.hint && <p className="text-xs mt-0.5" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
@@ -798,7 +858,7 @@ function LivePromptPanel({
 
 // ─── Main form ───────────────────────────────────────────────────────────────
 
-export default function TemplateForm({ template, genType, onSubmit, submitting, initialValues, userTier, modelMinTier, promptMaxChars, generateError, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted, subjectOverride, sourceImageOriginUrl }: Props) {
+export default function TemplateForm({ template, genType, onSubmit, submitting, initialValues, userTier, modelMinTier, promptMaxChars, generateError, onTourSubjectTyped, onTourAiAssistClicked, onTourAiSuggestionReceived, onTourAiSuggestionAccepted, subjectOverride, sourceImageOriginUrl, userAssets }: Props) {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {})
 
   useEffect(() => {
@@ -993,6 +1053,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
           onAddOwn={showAddButton && (field.type === 'style_picker' || field.type === 'multi_select')
             ? () => setAddingTo(addingTo === field.id ? null : field.id)
             : undefined}
+          userAssets={field.type === 'image_upload' ? userAssets : undefined}
         />
         {aiSuggestion?.fieldId === field.id && (
           <div data-tour={field.id === 'subject' ? 'ai-suggestion-subject' : undefined} className="mt-2 rounded-xl border border-sky-300 dark:border-sky-500/40 bg-sky-50 dark:bg-sky-500/8 overflow-hidden">

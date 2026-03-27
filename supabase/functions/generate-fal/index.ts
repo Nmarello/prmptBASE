@@ -392,7 +392,7 @@ Deno.serve(async (req) => {
     }
 
     const isImg2Img = slug === 'flux-dev-img2img'
-    const isKontext = slug === 'flux-kontext-pro'
+    const isKontext = slug === 'flux-kontext-pro' || slug === 'flux-kontext-dev'
     const isRecraft = slug === 'recraft-v4-pro'
 
     // --- img2img path ---
@@ -524,7 +524,7 @@ Deno.serve(async (req) => {
         ...(seedVal !== undefined ? { seed: seedVal } : {}),
       }
 
-      const falRes = await falFetch(FAL_ENDPOINTS['flux-kontext-pro'], {
+      const falRes = await falFetch(FAL_ENDPOINTS[slug], {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
         body: JSON.stringify(falPayload),
