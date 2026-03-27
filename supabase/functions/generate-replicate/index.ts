@@ -23,6 +23,7 @@ interface BaseInput {
   _style?: string    // raw style key, used by model-specific builders (e.g. Recraft)
   _steps?: number    // num_inference_steps
   _guidance?: number // guidance_scale
+  _duration?: number // video duration in seconds
 }
 
 // Standard input for FLUX / SD-style models
@@ -190,18 +191,12 @@ const MODELS: Record<string, ModelConfig> = {
   'ltx-2.3-pro':  { path: 'lightricks/ltx-2.3-pro',  isVideo: true, maxOutputs: 1, costUsd: 0.10, buildInput: (b) => ({
     prompt: b.prompt,
     aspect_ratio: videoAR(b.aspectRatio),
-    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
-    ...(b._steps != null ? { num_inference_steps: b._steps } : {}),
-    ...(b._guidance != null ? { guidance_scale: b._guidance } : {}),
-    ...(b.seed != null ? { seed: b.seed } : {}),
+    ...(b._duration ? { duration: [6, 8, 10].includes(b._duration) ? b._duration : 6 } : {}),
   }) },
   'ltx-2.3-fast': { path: 'lightricks/ltx-2.3-fast', isVideo: true, maxOutputs: 1, costUsd: 0.05, buildInput: (b) => ({
     prompt: b.prompt,
     aspect_ratio: videoAR(b.aspectRatio),
-    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
-    ...(b._steps != null ? { num_inference_steps: b._steps } : {}),
-    ...(b._guidance != null ? { guidance_scale: b._guidance } : {}),
-    ...(b.seed != null ? { seed: b.seed } : {}),
+    ...(b._duration ? { duration: [6, 8, 10, 12, 14, 16, 18, 20].includes(b._duration) ? b._duration : 6 } : {}),
   }) },
 
   // ── ByteDance Seedream 4 & 5 Lite (same API shape as 4.5) ─────────────────
@@ -246,49 +241,60 @@ const MODELS: Record<string, ModelConfig> = {
   'sora2-pro':        { path: 'openai/sora-2-pro',          isVideo: true, maxOutputs: 1, costUsd: 0.20, buildInput: (b) => ({
     prompt: b.prompt,
     aspect_ratio: videoAR(b.aspectRatio),
-    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
-    ...(b.seed != null ? { seed: b.seed } : {}),
+    ...(b._duration ? { duration: [4, 8, 12].includes(b._duration) ? b._duration : 8 } : {}),
   }) },
   'veo-3':            { path: 'google/veo-3',               isVideo: true, maxOutputs: 1, costUsd: 0.25, buildInput: (b) => ({
     prompt: b.prompt,
     aspect_ratio: videoAR(b.aspectRatio),
+    ...(b._duration ? { duration: [4, 6, 8].includes(b._duration) ? b._duration : 8 } : {}),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
   'veo-3-fast':       { path: 'google/veo-3-fast',          isVideo: true, maxOutputs: 1, costUsd: 0.12, buildInput: (b) => ({
     prompt: b.prompt,
     aspect_ratio: videoAR(b.aspectRatio),
+    ...(b._duration ? { duration: [4, 6, 8].includes(b._duration) ? b._duration : 6 } : {}),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
   'veo-3.1':          { path: 'google/veo-3.1',             isVideo: true, maxOutputs: 1, costUsd: 0.25, buildInput: (b) => ({
     prompt: b.prompt,
     aspect_ratio: videoAR(b.aspectRatio),
+    ...(b._duration ? { duration: [4, 6, 8].includes(b._duration) ? b._duration : 8 } : {}),
     ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
-  'kling-v2.5-turbo': { path: 'kwaivgi/kling-v2.5-turbo-pro', isVideo: true, maxOutputs: 1, costUsd: 0.10, buildInput: (b) => ({
-    prompt: b.prompt,
-    aspect_ratio: videoAR(b.aspectRatio),
-    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
-  }) },
-  'wan-2.5-t2v':      { path: 'wan-video/wan-2.5-t2v',      isVideo: true, maxOutputs: 1, costUsd: 0.08, buildInput: (b) => ({
-    prompt: b.prompt,
-    aspect_ratio: videoAR(b.aspectRatio),
-    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
-    ...(b._steps != null ? { num_inference_steps: b._steps } : {}),
-    ...(b.seed != null ? { seed: b.seed } : {}),
-  }) },
+  'kling-v2.5-turbo': { path: 'kwaivgi/kling-v2.5-turbo-pro', isVideo: true, maxOutputs: 1, costUsd: 0.10, buildInput: (b) => {
+    const klingAR = ['16:9', '9:16', '1:1'].includes(b.aspectRatio) ? b.aspectRatio : '16:9'
+    return {
+      prompt: b.prompt,
+      aspect_ratio: klingAR,
+      ...(b._duration ? { duration: [5, 10].includes(b._duration) ? b._duration : 5 } : {}),
+      ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    }
+  } },
+  'wan-2.5-t2v':      { path: 'wan-video/wan-2.5-t2v',      isVideo: true, maxOutputs: 1, costUsd: 0.08, buildInput: (b) => {
+    const WAN_SIZE_MAP: Record<string, string> = { '16:9': '1280x720', '9:16': '720x1280' }
+    return {
+      prompt: b.prompt,
+      size: WAN_SIZE_MAP[b.aspectRatio] ?? '1280x720',
+      ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+      ...(b.seed != null ? { seed: b.seed } : {}),
+    }
+  } },
   'minimax-video':    { path: 'minimax/video-01',            isVideo: true, maxOutputs: 1, costUsd: 0.10, buildInput: (b) => ({
     prompt: b.prompt,
-    aspect_ratio: videoAR(b.aspectRatio),
-    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    prompt_optimizer: true,
   }) },
-  'gen-4.5':          { path: 'runway/gen-4.5',              isVideo: true, maxOutputs: 1, costUsd: 0.15, buildInput: (b) => ({
-    prompt: b.prompt,
-    aspect_ratio: videoAR(b.aspectRatio),
-    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
-  }) },
+  'gen-4.5':          { path: 'runwayml/gen-4.5',            isVideo: true, maxOutputs: 1, costUsd: 0.15, buildInput: (b) => {
+    const GEN45_AR_MAP: Record<string, string> = { '16:9': '1280:720', '9:16': '720:1280' }
+    return {
+      prompt: b.prompt,
+      aspect_ratio: GEN45_AR_MAP[b.aspectRatio] ?? '1280:720',
+      ...(b._duration ? { duration: Math.min(Math.max(b._duration, 2), 10) } : {}),
+      ...(b.seed != null ? { seed: b.seed } : {}),
+    }
+  } },
 
   // ── Tools — Editing & Upscaling (Replicate) ──────────────────────────────
   'flux-fill-pro':           { path: 'black-forest-labs/flux-fill-pro', costUsd: 0.05, maxOutputs: 1, buildInput: (b) => ({
@@ -461,6 +467,7 @@ Deno.serve(async (req) => {
       _style: body.style as string | undefined,
       _steps: body.num_inference_steps ? Number(body.num_inference_steps) : undefined,
       _guidance: body.guidance_scale ? Number(body.guidance_scale) : undefined,
+      _duration: body.duration ? Number(body.duration) : undefined,
     }
     const replicateInput = config.buildInput(baseInput)
 
