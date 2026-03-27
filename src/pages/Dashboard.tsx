@@ -855,7 +855,11 @@ export default function Dashboard() {
         analytics.rateLimitHit({ tier: data.tier ?? userTier, used: data.used ?? 0, limit: data.limit ?? 0 })
         throw new Error(`__RATE_LIMITED__:${data.used}:${data.limit}:${data.tier}`)
       }
-      if (!res.ok || data?.error) throw new Error(friendlyFalError(data?.error ?? data?.message ?? `HTTP ${res.status}`))
+      if (!res.ok || data?.error) {
+        const raw = data?._raw ?? ''
+        const friendly = friendlyFalError(data?.error ?? data?.message ?? `HTTP ${res.status}`)
+        throw new Error(raw ? `${friendly}\n\n[RAW: ${raw}]` : friendly)
+      }
 
       // Async pending (video or slow image model like hidream-full) — start polling
       if (data.status === 'pending') {

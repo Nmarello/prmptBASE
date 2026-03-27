@@ -515,7 +515,8 @@ Deno.serve(async (req) => {
 
     if (!repRes.ok) {
       const err = await repRes.text()
-      throw new Error(`Replicate error: ${err}`)
+      console.error(`[generate-replicate] ${slug} FAILED (${repRes.status}):`, err, 'INPUT:', JSON.stringify(replicateInput))
+      throw new Error(`Replicate error (${slug}): ${err}`)
     }
 
     let repData = await repRes.json()
@@ -537,7 +538,8 @@ Deno.serve(async (req) => {
     }
 
     if (repData.status === 'failed' || repData.error) {
-      throw new Error(`Replicate generation failed: ${repData.error ?? repData.status}`)
+      console.error(`[generate-replicate] ${slug} prediction failed:`, repData.error, 'INPUT:', JSON.stringify(replicateInput))
+      throw new Error(`Replicate generation failed (${slug}): ${repData.error ?? repData.status}`)
     }
 
     const outputUrls: string[] = Array.isArray(repData.output)
@@ -630,9 +632,10 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
     )
   } catch (err) {
-    console.error('[generate-replicate]', err)
+    const rawMsg = err instanceof Error ? err.message : String(err)
+    console.error('[generate-replicate]', rawMsg)
     return new Response(
-      JSON.stringify({ error: safeErrorMessage(err) }),
+      JSON.stringify({ error: safeErrorMessage(err), _raw: rawMsg }),
       { status: 500, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
     )
   }
