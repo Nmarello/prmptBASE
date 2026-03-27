@@ -759,7 +759,7 @@ export default function Dashboard() {
         'sd35-large', 'sd35-large-turbo', 'sd35-medium',
         'flux-schnell', 'flux-dev', 'flux-pro', 'flux-pro-ultra', 'flux2-pro', 'flux2-max',
         'recraft-v3', 'recraft-v4', 'recraft-v4-pro',
-        'ideogram-v3',
+        'ideogram-v2', 'ideogram-v3',
         'hidream-fast', 'hidream-full',
         'seedream-45',
         'nano-banana-pro',

@@ -153,6 +153,7 @@ const MODELS: Record<string, ModelConfig> = {
   }) },
 
   // ── Ideogram ────────────────────────────────────────────────────────────────
+  'ideogram-v2':      { path: 'ideogram-ai/ideogram-v2', costUsd: 0.05, buildInput: ideogramInput },
   'ideogram-v3':      { path: 'ideogram-ai/ideogram-v3-balanced', costUsd: 0.06, buildInput: ideogramInput },
 
   // ── HiDream (via PrunaAI) ───────────────────────────────────────────────────
