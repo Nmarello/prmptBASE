@@ -53,18 +53,21 @@ export default function FamilyRow({ category, models, userTier, onSelectModel, l
     )
 
   // Families with only 1 member → treat as solo cards
+  const singlesRemoved: string[] = []
   for (const [fam, arr] of familyMap) {
     if (arr.length === 1) {
       unfamilied.push(arr[0])
       familyMap.delete(fam)
+      singlesRemoved.push(fam)
     }
   }
+  const filteredFamilies = orderedFamilies.filter(f => !singlesRemoved.includes(f))
 
   // Coming-soon without a family go at the end as solo cards
   const soloComingSoon = unfamilied.filter(m => m.coming_soon)
   const soloActive = unfamilied.filter(m => !m.coming_soon)
 
-  if (orderedFamilies.length === 0 && soloActive.length === 0 && soloComingSoon.length === 0) {
+  if (filteredFamilies.length === 0 && soloActive.length === 0 && soloComingSoon.length === 0) {
     return null
   }
 
@@ -88,7 +91,7 @@ export default function FamilyRow({ category, models, userTier, onSelectModel, l
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overflowAnchor: 'none' } as React.CSSProperties}
       >
         {/* Family cards */}
-        {orderedFamilies.map(family => (
+        {filteredFamilies.map(family => (
           <div key={family} data-family={family}>
             <FamilyCard
               family={family}
