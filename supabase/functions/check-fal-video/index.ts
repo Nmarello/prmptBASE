@@ -39,11 +39,16 @@ Deno.serve(async (req) => {
     const status: string = statusData.status ?? ''
 
     if (status === 'FAILED') {
+      console.error('[check-fal-video] FAILED statusData:', JSON.stringify(statusData))
       const falErr = statusData.error ?? statusData.detail ?? statusData.message ?? statusData.reason
       const errMsg = (typeof falErr === 'string' && falErr)
         ? falErr
         : (falErr ? JSON.stringify(falErr) : JSON.stringify(statusData))
-      throw new Error(`fal.ai job failed: ${errMsg}`)
+      // Return error directly in response instead of throwing — avoids safeErrorMessage sanitization
+      return new Response(
+        JSON.stringify({ error: `fal.ai job failed: ${errMsg}` }),
+        { status: 400, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
+      )
     }
 
     if (status !== 'COMPLETED') {
@@ -129,7 +134,9 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
     )
   } catch (err) {
-    return new Response(JSON.stringify({ error: safeErrorMessage(err) }), {
+    const rawMsg = err instanceof Error ? err.message : String(err)
+    console.error('[check-fal-video] catch:', rawMsg)
+    return new Response(JSON.stringify({ error: rawMsg }), {
       status: 400,
       headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })

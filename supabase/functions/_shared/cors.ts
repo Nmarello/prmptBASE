@@ -35,7 +35,7 @@ export function optionsResponse(req: Request): Response {
   return new Response('ok', { headers: corsHeaders(req) })
 }
 
-/** Sanitize error messages before returning to client — never leak internals. */
+/** Sanitize error messages before returning to client — never leak internals. v2 */
 export function safeErrorMessage(err: unknown): string {
   if (!(err instanceof Error)) return 'An unexpected error occurred'
   const msg = err.message
