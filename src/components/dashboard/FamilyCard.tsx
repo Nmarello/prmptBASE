@@ -88,13 +88,14 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
           )
         })}
 
-        {/* Anchor card — on top of all slivers */}
+        {/* Anchor card — on top of all slivers, slightly inset so stack peeks out */}
         <button
           onClick={onToggle}
           className="group relative text-left rounded-[18px] border overflow-hidden flex flex-col transition-all duration-200 cursor-pointer select-none"
           style={{
-            width: 230,
-            minHeight: 301,
+            width: 222,
+            minHeight: 293,
+            margin: '4px 0 4px 0',
             background: 'var(--pv-surface)',
             borderColor: isOpen ? art.accent : 'var(--pv-border)',
             boxShadow: isOpen ? `0 0 0 1px ${art.accent}44` : undefined,
