@@ -431,6 +431,10 @@ export default function Dashboard() {
     'recraft-crisp-upscale':  { gradient: 'linear-gradient(145deg,#3d1a00,#994400,#dd8800)', initial: 'RC' },
     'recraft-creative-upscale':{ gradient: 'linear-gradient(145deg,#3d1a00,#7a3300,#cc7700)', initial: 'RU' },
     'google-upscaler':        { gradient: 'linear-gradient(145deg,#001a00,#004400,#009933)', initial: 'GU' },
+    'flux2-klein':            { gradient: 'linear-gradient(145deg,#003566,#0077cc,#33bbff)', initial: 'FK' },
+    'qwen-image-2-pro':       { gradient: 'linear-gradient(145deg,#1a0033,#4400aa,#7722ee)', initial: 'QI' },
+    'hailuo-2.3':             { gradient: 'linear-gradient(145deg,#002b36,#008888,#00ccbb)', initial: 'H3' },
+    'hunyuan-video-1.5':      { gradient: 'linear-gradient(145deg,#00001a,#0d0d80,#4444dd)', initial: 'HV' },
   } as const
 
   const SLUG_BRAND_MAP: Record<string, string> = {
@@ -498,6 +502,10 @@ export default function Dashboard() {
     'bria-eraser':              'Bria',
     'bria-genfill':             'Bria',
     'bria-expand':              'Bria',
+    'flux2-klein':            'Black Forest Labs',
+    'qwen-image-2-pro':       'Alibaba',
+    'hailuo-2.3':             'MiniMax',
+    'hunyuan-video-1.5':      'Tencent',
   }
 
   // Latest render per model slug (includes videos; showcase fallback for unused models)
@@ -765,13 +773,13 @@ export default function Dashboard() {
         'seedream-45', 'seedream-4', 'seedream-5-lite',
         'nano-banana-pro',
         'imagen-4-ultra', 'imagen-4-fast',
-        'gpt-image-1.5',
+        'gpt-image-1.5', 'flux2-klein', 'qwen-image-2-pro',
         // Img2img
         'flux-kontext-max',
         // Video
         'ltx-2.3-pro', 'ltx-2.3-fast',
         'sora2-pro', 'veo-3', 'veo-3-fast', 'veo-3.1',
-        'kling-v2.5-turbo', 'wan-2.5-t2v', 'minimax-video', 'gen-4.5',
+        'kling-v2.5-turbo', 'wan-2.5-t2v', 'minimax-video', 'hailuo-2.3', 'gen-4.5',
         // Tools
         'flux-fill-pro', 'bria-eraser', 'bria-genfill', 'bria-expand',
         'recraft-crisp-upscale', 'recraft-creative-upscale',

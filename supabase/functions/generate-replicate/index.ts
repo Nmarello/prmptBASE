@@ -215,6 +215,25 @@ const MODELS: Record<string, ModelConfig> = {
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
 
+  // ── FLUX.2 Klein ──────────────────────────────────────────────────────────
+  'flux2-klein':      { path: 'black-forest-labs/flux-2-klein-4b', costUsd: 0.003, buildInput: (b) => standardInput(b) },
+
+  // ── Qwen Image 2 Pro ─────────────────────────────────────────────────────
+  'qwen-image-2-pro': { path: 'qwen/qwen-image-2-pro', costUsd: 0.04, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    enable_prompt_expansion: true,
+    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
+
+  // ── MiniMax Hailuo 2.3 ───────────────────────────────────────────────────
+  'hailuo-2.3':       { path: 'minimax/hailuo-2.3', isVideo: true, maxOutputs: 1, costUsd: 0.12, buildInput: (b) => ({
+    prompt: b.prompt,
+    ...(b.aspectRatio === '9:16' ? { aspect_ratio: '9:16' } : b.aspectRatio === '1:1' ? { aspect_ratio: '1:1' } : { aspect_ratio: '16:9' }),
+    ...(b._duration ? { duration: [6, 10].includes(b._duration) ? b._duration : 6 } : {}),
+  }) },
+
   // ── Google Imagen 4 ────────────────────────────────────────────────────────
   'imagen-4-ultra':   { path: 'google/imagen-4-ultra',  costUsd: 0.10, buildInput: (b) => ({
     prompt: b.prompt,

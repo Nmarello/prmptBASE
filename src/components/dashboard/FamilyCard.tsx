@@ -22,6 +22,7 @@ const FAMILY_ART: Record<string, { gradient: string; accent: string; initial: st
   'Stable Diffusion': { gradient: 'linear-gradient(145deg,#1a1000,#4d3000,#996600)', accent: '#cc9900', initial: 'SD', maker: 'Stability AI', tagline: 'Open-source · Highly customizable generation' },
   'Bria':     { gradient: 'linear-gradient(145deg,#1a0010,#660033,#cc0055)', accent: '#ff2266', initial: 'BR', maker: 'Bria', tagline: 'Commercial-safe · Professional editing tools' },
   'GPT Image':   { gradient: 'linear-gradient(145deg,#001a0d,#00401a,#00a844)', accent: '#00cc55', initial: 'GP', maker: 'OpenAI', tagline: 'Instruction following · Native editing support' },
+  'Qwen Image': { gradient: 'linear-gradient(145deg,#1a0033,#4400aa,#7722ee)', accent: '#7722ee', initial: 'QI', maker: 'Alibaba', tagline: 'Unified generation & editing · Accurate text rendering' },
   'Nano Banana': { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', accent: '#00cc88', initial: 'NB', maker: 'Google', tagline: 'Experimental · High-efficiency image generation' },
 }
 

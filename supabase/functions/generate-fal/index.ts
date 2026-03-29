@@ -81,6 +81,10 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'txt2vid': 'fal-ai/hunyuan-video',
     'img2vid': 'fal-ai/hunyuan-video-image-to-video',
   },
+  'hunyuan-video-1.5': {
+    'txt2vid': 'fal-ai/hunyuan-video-v1.5/text-to-video',
+    'img2vid': 'fal-ai/hunyuan-video-v1.5/image-to-video',
+  },
   'seedance-1-pro-txt2vid': {
     'txt2vid': 'fal-ai/bytedance/seedance/v1/pro/text-to-video',
     'img2vid': 'fal-ai/bytedance/seedance/v1/pro/image-to-video',
