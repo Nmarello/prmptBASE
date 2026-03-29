@@ -97,6 +97,11 @@ const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
   'recraft-crisp-upscale':  { gradient: 'linear-gradient(145deg,#3d1a00,#994400,#dd8800)', initial: 'RC' },
   'recraft-creative-upscale':{ gradient: 'linear-gradient(145deg,#3d1a00,#7a3300,#cc7700)', initial: 'RU' },
   'google-upscaler':        { gradient: 'linear-gradient(145deg,#001a00,#004400,#009933)', initial: 'GU' },
+  'flux2-klein':            { gradient: 'linear-gradient(145deg,#003566,#0077cc,#33bbff)', initial: 'FK' },
+  'qwen-image-2-pro':       { gradient: 'linear-gradient(145deg,#1a0033,#4400aa,#7722ee)', initial: 'QI' },
+  'hailuo-2.3':             { gradient: 'linear-gradient(145deg,#002b36,#008888,#00ccbb)', initial: 'H3' },
+  'hunyuan-video-1.5':      { gradient: 'linear-gradient(145deg,#00001a,#0d0d80,#4444dd)', initial: 'HV' },
+  'nano-banana-pro':        { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NP' },
 }
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: '??' }
 
@@ -160,6 +165,10 @@ const slugBrandLabels: Record<string, string> = {
   'bria-eraser':              'Bria',
   'bria-genfill':             'Bria',
   'bria-expand':              'Bria',
+  'flux2-klein':              'Black Forest Labs',
+  'qwen-image-2-pro':         'Alibaba',
+  'hailuo-2.3':               'MiniMax',
+  'hunyuan-video-1.5':        'Tencent',
 }
 
 // Provider logo mark — SVG or styled wordmark
