@@ -67,20 +67,18 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
       {/* ── Collapsed stack: anchor card + peek slivers ── */}
       <div
         className="relative flex-shrink-0"
-        style={{ width: isOpen ? 230 : totalWidth, transition: 'width 0.3s ease' }}
+        style={{ width: isOpen ? 230 : totalWidth, padding: isOpen ? 0 : '5px 0', transition: 'width 0.3s ease' }}
       >
-        {/* Peek slivers — max 3 visible, consistent 10px peek each, extend 5px beyond anchor top/bottom */}
+        {/* Peek slivers — max 3 visible, consistent 10px peek each, full height of padded container */}
         {!isOpen && Array.from({ length: visibleSlivers }, (_, i) => {
           const rightEdge = 230 + (i + 1) * peekWidth
           const leftEdge = rightEdge - 230
           return (
             <div
               key={i}
-              className="absolute rounded-[18px] border overflow-hidden"
+              className="absolute inset-y-0 rounded-[18px] border overflow-hidden"
               style={{
                 left: leftEdge,
-                top: -5,
-                bottom: -5,
                 width: 230,
                 background: 'var(--pv-surface)',
                 borderColor: 'var(--pv-border)',
@@ -94,7 +92,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
           )
         })}
 
-        {/* Anchor card — on top of all slivers */}
+        {/* Anchor card — on top of all slivers, inset by container padding */}
         <button
           onClick={onToggle}
           className="group relative text-left rounded-[18px] border overflow-hidden flex flex-col transition-all duration-200 cursor-pointer select-none"
