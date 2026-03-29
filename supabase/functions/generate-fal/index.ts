@@ -772,6 +772,24 @@ Deno.serve(async (req) => {
       })
       if (!queueRes.ok) {
         const err = await queueRes.text()
+        // Parse known fal.ai validation errors into user-friendly messages
+        try {
+          const parsed = JSON.parse(err)
+          if (parsed.detail && Array.isArray(parsed.detail)) {
+            for (const d of parsed.detail) {
+              if (d.type === 'image_too_small') {
+                const minW = d.ctx?.min_width ?? 300
+                const minH = d.ctx?.min_height ?? 300
+                throw new Error(`Image is too small. This model requires at least ${minW}×${minH} pixels. Please upload a larger image.`)
+              }
+            }
+            // Generic validation error — use the first message
+            const firstMsg = parsed.detail[0]?.msg
+            if (firstMsg) throw new Error(firstMsg)
+          }
+        } catch (parseErr) {
+          if (parseErr instanceof Error && !parseErr.message.startsWith('fal.ai')) throw parseErr
+        }
         throw new Error(`fal.ai queue error: ${err}`)
       }
       const queueData = await queueRes.json()
