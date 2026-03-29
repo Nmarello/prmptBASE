@@ -216,7 +216,15 @@ const MODELS: Record<string, ModelConfig> = {
   }) },
 
   // ── FLUX.2 Klein ──────────────────────────────────────────────────────────
-  'flux2-klein':      { path: 'black-forest-labs/flux-2-klein-4b', costUsd: 0.003, buildInput: (b) => standardInput(b) },
+  'flux2-klein':      { path: 'black-forest-labs/flux-2-klein-4b', costUsd: 0.003, buildInput: (b) => ({
+    prompt: b.prompt,
+    aspect_ratio: b.aspectRatio,
+    num_outputs: Math.min(b.numOutputs, 4),
+    output_format: b.outputFormat,
+    num_inference_steps: 4,
+    ...(b.negPrompt ? { negative_prompt: b.negPrompt } : {}),
+    ...(b.seed != null ? { seed: b.seed } : {}),
+  }) },
 
   // ── Qwen Image 2 Pro ─────────────────────────────────────────────────────
   'qwen-image-2-pro': { path: 'qwen/qwen-image-2-pro', costUsd: 0.04, buildInput: (b) => ({
