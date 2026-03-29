@@ -68,16 +68,18 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
         className="relative flex-shrink-0"
         style={{ width: isOpen ? 230 : totalWidth, transition: 'width 0.3s ease' }}
       >
-        {/* Peek slivers — max 3 visible, consistent 10px peek each */}
+        {/* Peek slivers — max 3 visible, consistent 10px peek each, extend 5px beyond anchor top/bottom */}
         {!isOpen && Array.from({ length: visibleSlivers }, (_, i) => {
           const rightEdge = 230 + (i + 1) * peekWidth
           const leftEdge = rightEdge - 230
           return (
             <div
               key={i}
-              className="absolute inset-y-0 rounded-[18px] border overflow-hidden"
+              className="absolute rounded-[18px] border overflow-hidden"
               style={{
                 left: leftEdge,
+                top: -5,
+                bottom: -5,
                 width: 230,
                 background: 'var(--pv-surface)',
                 borderColor: 'var(--pv-border)',
@@ -86,12 +88,12 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
               }}
             >
               {/* Gradient only in the header zone — mirrors card structure */}
-              <div className="absolute top-0 left-0 right-0" style={{ height: 148, background: art.gradient }} />
+              <div className="absolute top-0 left-0 right-0" style={{ height: 153, background: art.gradient }} />
             </div>
           )
         })}
 
-        {/* Anchor card — on top of all slivers, scaled down so stack peeks on all edges */}
+        {/* Anchor card — on top of all slivers */}
         <button
           onClick={onToggle}
           className="group relative text-left rounded-[18px] border overflow-hidden flex flex-col transition-all duration-200 cursor-pointer select-none"
@@ -103,7 +105,6 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
             boxShadow: isOpen ? `0 0 0 1px ${art.accent}44` : undefined,
             zIndex: totalCount + 1,
             position: 'relative',
-            transform: isOpen ? 'none' : 'scale(0.95)',
           }}
         >
           {/* Gradient header — same 148px as ModelCard */}
