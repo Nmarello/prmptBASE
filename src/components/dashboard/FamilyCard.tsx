@@ -27,7 +27,9 @@ const FAMILY_ART: Record<string, { gradient: string; accent: string; initial: st
 
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', accent: '#888', initial: '??', maker: '', tagline: '' }
 
-const stackOverhang = (n: number) => n <= 4 ? 30 : 50
+// Fixed 10px peek per sliver, cap at 3 visible slivers so large families don't blow out
+const MAX_VISIBLE_SLIVERS = 3
+const PEEK_PER_SLIVER = 10
 
 // ── Main FamilyCard ───────────────────────────────────────────────────────────
 interface Props {
@@ -45,9 +47,10 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
   const activeCount = models.filter(m => !m.coming_soon).length
   const totalCount = models.length
 
-  // Peek sliver widths — 50px total overhang divided evenly, min 3px each
-  const overhang = stackOverhang(totalCount)
-  const peekWidth = Math.max(3, Math.floor(overhang / totalCount))
+  // Consistent peek width per sliver — cap visible slivers so stacks look uniform
+  const visibleSlivers = Math.min(totalCount, MAX_VISIBLE_SLIVERS)
+  const peekWidth = PEEK_PER_SLIVER
+  const overhang = visibleSlivers * peekWidth
   const totalWidth = 230 + overhang
 
   // Family latest render — most recent across all models in this family
@@ -65,8 +68,8 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
         className="relative flex-shrink-0"
         style={{ width: isOpen ? 230 : totalWidth, transition: 'width 0.3s ease' }}
       >
-        {/* Peek slivers — rendered back-to-front (last model furthest right, lowest z) */}
-        {!isOpen && sortedModels.map((_, i) => {
+        {/* Peek slivers — max 3 visible, consistent 10px peek each */}
+        {!isOpen && Array.from({ length: visibleSlivers }, (_, i) => {
           const rightEdge = 230 + (i + 1) * peekWidth
           const leftEdge = rightEdge - 230
           return (
@@ -78,8 +81,8 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
                 width: 230,
                 background: 'var(--pv-surface)',
                 borderColor: 'var(--pv-border)',
-                zIndex: totalCount - i,
-                opacity: 1 - (i * 0.12),
+                zIndex: visibleSlivers - i,
+                opacity: 1 - (i * 0.15),
               }}
             >
               {/* Gradient only in the header zone — mirrors card structure */}
@@ -88,7 +91,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
           )
         })}
 
-        {/* Anchor card — on top of all slivers, scaled down so stack peeks out */}
+        {/* Anchor card — on top of all slivers */}
         <button
           onClick={onToggle}
           className="group relative text-left rounded-[18px] border overflow-hidden flex flex-col transition-all duration-200 cursor-pointer select-none"
@@ -100,7 +103,6 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
             boxShadow: isOpen ? `0 0 0 1px ${art.accent}44` : undefined,
             zIndex: totalCount + 1,
             position: 'relative',
-            transform: isOpen ? 'none' : 'scale(0.96)',
           }}
         >
           {/* Gradient header — same 148px as ModelCard */}
