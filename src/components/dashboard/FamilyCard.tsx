@@ -91,7 +91,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
           )
         })}
 
-        {/* Anchor card — on top of all slivers */}
+        {/* Anchor card — on top of all slivers, scaled down so stack peeks on all edges */}
         <button
           onClick={onToggle}
           className="group relative text-left rounded-[18px] border overflow-hidden flex flex-col transition-all duration-200 cursor-pointer select-none"
@@ -103,6 +103,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
             boxShadow: isOpen ? `0 0 0 1px ${art.accent}44` : undefined,
             zIndex: totalCount + 1,
             position: 'relative',
+            transform: isOpen ? 'none' : 'scale(0.95)',
           }}
         >
           {/* Gradient header — same 148px as ModelCard */}
