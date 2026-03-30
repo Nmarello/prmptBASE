@@ -193,6 +193,7 @@ export default function Home() {
   const { user } = useAuth()
   const [showAuth, setShowAuth] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [mobileMenu, setMobileMenu] = useState(false)
   const { theme, setTheme } = useTheme()
   const dark = theme === 'dark'
   const T = dark ? DARK : LIGHT
@@ -309,25 +310,51 @@ export default function Home() {
       </nav>
 
       {/* MOBILE NAV */}
-      <nav className="md:hidden flex items-center justify-between px-5" style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, height: 52,
+      <nav className="md:hidden" style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
         background: T.navBg, backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${T.border}`,
       }}>
-        <Logo height={32} theme={dark ? 'dark' : 'light'} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={() => setTheme(dark ? 'light' : 'dark')} style={{
-            background: T.surface, border: `1px solid ${T.border}`, color: T.text2,
-            width: 32, height: 32, borderRadius: 100, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {dark ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>}
-          </button>
-          <button onClick={() => setShowAuth(true)} style={{
-            background: '#3d7fff', border: 'none', color: '#fff',
-            padding: '7px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}>Try 50+ models free</button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 52 }}>
+          <Logo height={32} theme={dark ? 'dark' : 'light'} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button onClick={() => setTheme(dark ? 'light' : 'dark')} style={{
+              background: T.surface, border: `1px solid ${T.border}`, color: T.text2,
+              width: 32, height: 32, borderRadius: 100, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {dark ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>}
+            </button>
+            <button onClick={() => setShowAuth(true)} style={{
+              background: '#3d7fff', border: 'none', color: '#fff',
+              padding: '7px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}>Try 50+ models free</button>
+            <button onClick={() => setMobileMenu(v => !v)} style={{
+              background: T.surface, border: `1px solid ${T.border}`, color: T.text2,
+              width: 32, height: 32, borderRadius: 100, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {mobileMenu ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              )}
+            </button>
+          </div>
         </div>
+        {mobileMenu && (
+          <div style={{ padding: '8px 20px 16px', display: 'flex', flexDirection: 'column', gap: 4, borderTop: `1px solid ${T.border}` }}>
+            {[{ label: 'Blog', href: 'https://blog.prmptvault.ai', ext: true }, { label: 'Gallery', href: '/gallery', ext: false }, { label: 'Pricing', href: '/pricing', ext: false }].map(l => (
+              <a key={l.label} href={l.href} {...(l.ext ? { target: '_blank', rel: 'noopener noreferrer' } : {})} onClick={() => setMobileMenu(false)} style={{
+                color: T.text2, textDecoration: 'none', fontSize: 15, fontWeight: 500, padding: '10px 0',
+                borderBottom: `1px solid ${T.border}`,
+              }}>{l.label}</a>
+            ))}
+            <button onClick={() => { setShowAuth(true); setMobileMenu(false) }} style={{
+              background: 'transparent', border: `1px solid ${T.border}`, color: T.text2,
+              padding: '10px 0', borderRadius: 100, fontSize: 15, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4,
+            }}>Sign in</button>
+          </div>
+        )}
       </nav>
 
       {/* ── HERO ─────────────────────────────────────── */}
