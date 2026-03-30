@@ -1,14 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, optionsResponse } from '../_shared/cors.ts'
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta'
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return optionsResponse(req)
 
   try {
     const { user_token, asset_id, operation_name } = await req.json()
@@ -29,6 +25,28 @@ Deno.serve(async (req) => {
       userId = user?.id ?? null
     }
 
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'Authentication required' }), {
+        status: 401,
+        headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Verify the authenticated user owns this asset
+    const { data: ownedAsset, error: ownershipError } = await adminClient
+      .from('assets')
+      .select('id')
+      .eq('id', asset_id)
+      .eq('user_id', userId)
+      .single()
+
+    if (ownershipError || !ownedAsset) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+      })
+    }
+
     // Poll Veo operation status
     const pollRes = await fetch(
       `${GEMINI_BASE}/${operation_name}?key=${geminiKey}`,
@@ -46,7 +64,7 @@ Deno.serve(async (req) => {
     if (!done) {
       return new Response(
         JSON.stringify({ status: 'pending' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }
 
@@ -92,12 +110,12 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ status: 'complete', video_url: videoUrl, asset }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
     )
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 })

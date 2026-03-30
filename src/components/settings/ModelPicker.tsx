@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
 const STUDIO_VIDEO_EXCLUDED = ['sora2', 'sora2-txt2vid', 'sora2-img2vid', 'kling', 'kling-txt2vid', 'kling-img2vid']
@@ -45,6 +45,13 @@ export default function ModelPicker({ tier, userId }: { tier: string; userId: st
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+    }
+  }, [])
 
   const limit = tier === 'creator' ? CREATOR_LIMIT : STUDIO_VIDEO_LIMIT
 
@@ -177,7 +184,8 @@ export default function ModelPicker({ tier, userId }: { tier: string; userId: st
       setLockedMap(newLockedMap)
       setSavedIds(new Set(selectedIds))
       setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+      savedTimerRef.current = setTimeout(() => setSaved(false), 2500)
     } catch {}
     setSaving(false)
   }

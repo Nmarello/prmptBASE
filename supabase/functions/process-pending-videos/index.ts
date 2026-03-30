@@ -1,10 +1,7 @@
 // Background worker: completes pending video assets even when browser is closed.
 // Called by pg_cron every 2 minutes. Also safe to call from client as a one-shot.
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, optionsResponse } from '../_shared/cors.ts'
 
 const SUPABASE_URL    = Deno.env.get('SUPABASE_URL')!
 const SERVICE_KEY     = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -26,7 +23,7 @@ async function sbRest(path: string, opts?: RequestInit) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return optionsResponse(req)
 
   try {
     // Fetch all pending video assets created within the last MAX_AGE_HOURS
@@ -39,7 +36,7 @@ Deno.serve(async (req) => {
 
     if (pending.length === 0) {
       return new Response(JSON.stringify({ processed: 0 }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
       })
     }
 
@@ -141,12 +138,12 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ processed: pending.length, completed, failed, skipped: pending.length - completed - failed }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
     )
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 })

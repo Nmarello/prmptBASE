@@ -6,10 +6,7 @@ const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? ''
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? ''
 const TELEGRAM_CHAT_ID = '821271234'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, optionsResponse } from '../_shared/cors.ts'
 
 // ── Base64url ───────────────────────────────────────────────────────────────
 function b64url(bytes: Uint8Array): string {
@@ -48,7 +45,7 @@ async function ghostFetch(path: string, opts: RequestInit = {}) {
 // 2. approve — publish Ghost draft + send emails to all users
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return optionsResponse(req)
 
   try {
     const body = await req.json()
@@ -168,7 +165,7 @@ End with a CTA section like:
       return new Response(JSON.stringify({
         ok: true,
         draft: { id: postId, title, excerpt, preview_url: previewUrl, admin_url: adminUrl },
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }), { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
     }
 
     // ── APPROVE ───────────────────────────────────────────────────────────
@@ -245,14 +242,15 @@ End with a CTA section like:
       return new Response(JSON.stringify({
         ok: true,
         published: { title: post.title, url: post.url, emails_sent: sent, emails_failed: errors.length, errors: errors.slice(0, 10) },
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }), { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
     }
 
     throw new Error(`Unknown action: ${action}`)
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    console.error('publish-blog error:', err)
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 })

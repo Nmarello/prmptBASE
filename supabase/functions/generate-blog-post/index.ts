@@ -4,10 +4,7 @@ const GHOST_ADMIN_KEY = Deno.env.get('GHOST_ADMIN_KEY') ?? ''
 const GHOST_URL = 'https://prmptvault-ai-news.ghost.io'
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? ''
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, optionsResponse } from '../_shared/cors.ts'
 
 // ── Base64url encode bytes ──────────────────────────────────────────────────
 function b64url(bytes: Uint8Array): string {
@@ -68,17 +65,13 @@ Return a JSON object with:
 
 // ── Main ────────────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return optionsResponse(req)
 
   try {
     const { model_slug, model_name, tag = 'New model drop', as_draft = false } = await req.json()
     if (!model_slug || !model_name) {
       return new Response(JSON.stringify({ error: 'model_slug and model_name required' }), { status: 400 })
     }
-
-    // Debug: confirm which key is loaded
-    const keyId = GHOST_ADMIN_KEY.split(':')[0] ?? 'MISSING'
-    const keyLen = GHOST_ADMIN_KEY.length
 
     const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
@@ -116,14 +109,11 @@ Deno.serve(async (req) => {
     try { ghostData = JSON.parse(ghostText) } catch { ghostData = { raw: ghostText } }
 
     if (!ghostRes.ok) {
+      console.error('Ghost API error', ghostRes.status, JSON.stringify(ghostData))
       return new Response(JSON.stringify({
         ok: false,
-        ghost_status: ghostRes.status,
-        ghost_error: ghostData,
-        debug_key_id: keyId,
-        debug_key_len: keyLen,
-        fn_version: 3,
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        error: 'Failed to create Ghost post',
+      }), { status: ghostRes.status, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
     }
 
     const post = ghostData.posts?.[0]
@@ -133,13 +123,12 @@ Deno.serve(async (req) => {
       title: post?.title,
       status: post?.status,
       fn_version: 3,
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }), { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
 
   } catch (err) {
+    console.error('generate-blog-post error:', err)
     return new Response(JSON.stringify({
-      error: String(err),
-      stack: (err as Error).stack,
-      fn_version: 3,
-    }), { status: 500, headers: corsHeaders })
+      error: 'Internal server error',
+    }), { status: 500, headers: corsHeaders(req) })
   }
 })

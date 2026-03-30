@@ -1,22 +1,8 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import type { Asset, Model, UserProject } from '../../types'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import ExportDialog from './ExportDialog'
-
-async function downloadAsset(url: string, filename: string) {
-  try {
-    const res = await fetch(url)
-    const blob = await res.blob()
-    const blobUrl = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = blobUrl
-    a.download = filename
-    a.click()
-    URL.revokeObjectURL(blobUrl)
-  } catch {
-    window.open(url, '_blank')
-  }
-}
+import { downloadFile } from '../../lib/download'
 
 interface Props {
   assets: Asset[]
@@ -347,7 +333,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
                       </div>
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end justify-end p-2 gap-1.5">
                         <button onClick={(e) => { e.stopPropagation(); onSendToImg2Img(asset.url) }} className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm">img2img</button>
-                        <button onClick={(e) => { e.stopPropagation(); downloadAsset(asset.url, `asset-${asset.id}`) }} className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm">↓</button>
+                        <button onClick={(e) => { e.stopPropagation(); downloadFile(asset.url, `asset-${asset.id}`) }} className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm">↓</button>
                         <button onClick={(e) => { e.stopPropagation(); onDelete(asset.id) }} className="px-2 py-1 bg-white/20 hover:bg-red-500/60 rounded-lg text-white text-[10px] font-medium transition-all cursor-pointer backdrop-blur-sm">✕</button>
                       </div>
                     </div>
@@ -401,13 +387,24 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
   const [savedToast, setSavedToast] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState(false)
   const [copiedSeed, setCopiedSeed] = useState(false)
+  const copiedUrlTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const copiedSeedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (copiedUrlTimerRef.current) clearTimeout(copiedUrlTimerRef.current)
+      if (savedToastTimerRef.current) clearTimeout(savedToastTimerRef.current)
+      if (copiedSeedTimerRef.current) clearTimeout(copiedSeedTimerRef.current)
+    }
+  }, [])
 
   async function handleShare() {
     try {
       if ('share' in navigator) {
         await navigator.share({ url: asset.url, title: 'prmptVAULT asset' })
       } else {
-        downloadAsset(asset.url, `asset-${asset.id}`)
+        downloadFile(asset.url, `asset-${asset.id}`)
       }
     } catch (_) { /* cancelled */ }
   }
@@ -415,7 +412,8 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
   async function handleCopyUrl() {
     await navigator.clipboard.writeText(asset.url)
     setCopiedUrl(true)
-    setTimeout(() => setCopiedUrl(false), 2000)
+    if (copiedUrlTimerRef.current) clearTimeout(copiedUrlTimerRef.current)
+    copiedUrlTimerRef.current = setTimeout(() => setCopiedUrl(false), 2000)
   }
 
   async function handleProjectChange(newId: string) {
@@ -423,7 +421,8 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
     if (!onMoveToProject) return
     await onMoveToProject(asset.id, newId || null)
     setSavedToast(true)
-    setTimeout(() => setSavedToast(false), 2000)
+    if (savedToastTimerRef.current) clearTimeout(savedToastTimerRef.current)
+    savedToastTimerRef.current = setTimeout(() => setSavedToast(false), 2000)
   }
 
   return (
@@ -510,7 +509,8 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
                   onClick={async () => {
                     await navigator.clipboard.writeText(seed)
                     setCopiedSeed(true)
-                    setTimeout(() => setCopiedSeed(false), 2000)
+                    if (copiedSeedTimerRef.current) clearTimeout(copiedSeedTimerRef.current)
+                    copiedSeedTimerRef.current = setTimeout(() => setCopiedSeed(false), 2000)
                   }}
                   style={{ color: copiedSeed ? 'var(--pv-accent)' : 'var(--pv-text3)', background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)' }}
                   className="text-xs px-2 py-0.5 border rounded-lg transition-colors cursor-pointer"
