@@ -258,7 +258,7 @@ export default function Home() {
       {/* NAV — desktop floating pill */}
       <nav className="hidden md:flex" style={{
         position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 50,
-        alignItems: 'center', gap: 32, padding: '0 20px', height: 48,
+        alignItems: 'center', gap: 32, padding: '0 6px 0 24px', height: 48,
         background: T.navBg, backdropFilter: 'blur(24px) saturate(1.6)',
         border: `1px solid ${T.border}`, borderRadius: 100,
         boxShadow: '0 2px 32px rgba(0,0,0,0.15)',
@@ -291,14 +291,16 @@ export default function Home() {
           </button>
           <button onClick={() => setShowAuth(true)} style={{
             background: 'transparent', border: `1px solid ${T.border}`, color: T.text2,
-            padding: '6px 14px', borderRadius: 100, fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
+            padding: '0 14px', borderRadius: 100, fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
+            height: 36, display: 'flex', alignItems: 'center',
           }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = T.borderHover; e.currentTarget.style.color = T.text }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.text2 }}
           >Sign in</button>
           <button onClick={() => setShowAuth(true)} style={{
             background: '#3d7fff', border: 'none', color: '#fff',
-            padding: '6px 16px', borderRadius: 100, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s',
+            padding: '0 16px', borderRadius: 100, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s',
+            height: 36, display: 'flex', alignItems: 'center',
           }}
             onMouseEnter={e => (e.currentTarget.style.background = '#5590ff')}
             onMouseLeave={e => (e.currentTarget.style.background = '#3d7fff')}
