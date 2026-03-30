@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
 
-const GHOST_KEY = '69b4e199fca1590001329776:fab8b688919123ab2aa43e92d1f09d62b1e58f6ad9111cc7360f4436aca3f54f'
+const GHOST_KEY = Deno.env.get('GHOST_ADMIN_KEY') ?? ''
 const GHOST_URL = 'https://prmptvault-ai-news.ghost.io'
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? ''
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? ''
