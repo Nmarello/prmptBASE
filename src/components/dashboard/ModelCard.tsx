@@ -289,7 +289,7 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
 
         {/* Hover CTA */}
         {!comingSoon && effectiveStatus !== 'next-month' && (
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10" style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(4px)' }}>
+          <div className="absolute inset-0 flex items-end justify-center pb-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
             <span className="text-[12.5px] font-bold px-4 py-1.5 rounded-full" style={{
               background: effectiveStatus === 'upgrade' ? '#f59e0b' : effectiveStatus === 'add' ? 'var(--pv-accent)' : '#fff',
               color: effectiveStatus === 'upgrade' || effectiveStatus === 'add' ? '#fff' : '#18140e',
