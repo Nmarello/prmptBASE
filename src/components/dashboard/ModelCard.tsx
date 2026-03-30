@@ -171,7 +171,15 @@ const slugBrandLabels: Record<string, string> = {
   'hunyuan-video-1.5':        'Tencent',
 }
 
-// Provider logo mark — SVG or styled wordmark
+// Supabase image transform — resize for card thumbnails (460px = 2x card width for retina)
+function thumbUrl(url: string, width = 460): string {
+  if (!url) return url
+  // Only transform Supabase storage URLs
+  if (url.includes('/storage/v1/object/public/')) {
+    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&quality=60&resize=contain'
+  }
+  return url
+}
 
 export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering, latestRenderUrl, latestRenderIsVideo, dataTour, modelStatus, upgradeTier, onAdd, onUpgrade, borderColor }: Props) {
   const accessible = tierCanAccess(userTier, model.min_tier)
@@ -222,16 +230,19 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
             {latestRenderIsVideo ? (
               <video
                 src={latestRenderUrl}
-                autoPlay
                 muted
                 loop
                 playsInline
+                preload="none"
+                onMouseEnter={e => (e.target as HTMLVideoElement).play()}
+                onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0 }}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : (
               <img
-                src={latestRenderUrl}
+                src={thumbUrl(latestRenderUrl!)}
                 alt=""
+                loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             )}

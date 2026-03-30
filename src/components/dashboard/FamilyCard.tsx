@@ -28,6 +28,14 @@ const FAMILY_ART: Record<string, { gradient: string; accent: string; initial: st
 
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', accent: '#888', initial: '??', maker: '', tagline: '' }
 
+function thumbUrl(url: string, width = 460): string {
+  if (!url) return url
+  if (url.includes('/storage/v1/object/public/')) {
+    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&quality=60&resize=contain'
+  }
+  return url
+}
+
 // Fixed 10px peek per sliver, cap at 3 visible slivers so large families don't blow out
 const MAX_VISIBLE_SLIVERS = 3
 const PEEK_PER_SLIVER = 10
@@ -114,13 +122,17 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
                 {familyRender.isVideo ? (
                   <video
                     src={familyRender.url}
-                    autoPlay muted loop playsInline
+                    muted loop playsInline
+                    preload="none"
+                    onMouseEnter={e => (e.target as HTMLVideoElement).play()}
+                    onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0 }}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
                   <img
-                    src={familyRender.url}
+                    src={thumbUrl(familyRender.url)}
                     alt=""
+                    loading="lazy"
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 )}

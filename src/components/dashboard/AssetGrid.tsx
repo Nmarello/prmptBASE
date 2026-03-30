@@ -324,7 +324,14 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
                       style={{ paddingBottom: `${pct}%`, background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}
                     >
                       {isVideo ? (
-                        <video src={asset.url} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover" />
+                        <video
+                          src={asset.url}
+                          muted loop playsInline
+                          preload="none"
+                          onMouseEnter={e => (e.target as HTMLVideoElement).play()}
+                          onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0 }}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
                       ) : (
                         <img src={asset.url} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                       )}
