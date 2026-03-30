@@ -391,8 +391,8 @@ export default function Home() {
         </FadeIn>
 
         {/* Text + Mockup row */}
-        <motion.div className="flex flex-col lg:flex-row lg:items-start" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%', y: heroMockupY }}>
-          <div className="hidden lg:block" style={{ flexShrink: 0, width: 260, position: 'relative', alignSelf: 'stretch' }}>
+        <motion.div className="flex flex-col xl:flex-row xl:items-start" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%', y: heroMockupY }}>
+          <div className="hidden xl:block" style={{ flexShrink: 0, width: 260, position: 'relative', alignSelf: 'stretch' }}>
             <FadeIn delay={0.5} x={-30} y={0}>
               <p style={{ position: 'absolute', top: 102, right: 0, width: '100%', fontSize: 17, color: T.text, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
                 Rough idea in. Polished prompt out. AI does the heavy lifting.
