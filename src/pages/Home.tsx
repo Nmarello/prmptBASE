@@ -256,13 +256,13 @@ export default function Home() {
     <div style={{ background: T.bg, color: T.text, fontFamily: "'Inter', -apple-system, sans-serif", overflowX: 'hidden' }}>
 
       {/* NAV — desktop floating pill */}
-      <nav className="hidden sm:flex" style={{
+      <nav className="hidden md:flex" style={{
         position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 50,
         alignItems: 'center', gap: 32, padding: '0 20px', height: 48,
         background: T.navBg, backdropFilter: 'blur(24px) saturate(1.6)',
         border: `1px solid ${T.border}`, borderRadius: 100,
         boxShadow: '0 2px 32px rgba(0,0,0,0.15)',
-        minWidth: 600, justifyContent: 'space-between',
+        minWidth: 600, justifyContent: 'space-between', whiteSpace: 'nowrap',
       }}>
         <Logo height={32} theme={dark ? 'dark' : 'light'} />
         <div style={{ display: 'flex', gap: 24 }}>
@@ -307,7 +307,7 @@ export default function Home() {
       </nav>
 
       {/* MOBILE NAV */}
-      <nav className="sm:hidden flex items-center justify-between px-5" style={{
+      <nav className="md:hidden flex items-center justify-between px-5" style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, height: 52,
         background: T.navBg, backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${T.border}`,
