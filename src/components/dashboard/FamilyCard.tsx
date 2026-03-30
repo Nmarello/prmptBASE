@@ -115,7 +115,12 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
           }}
         >
           {/* Gradient header — same 148px as ModelCard */}
-          <div className="relative overflow-hidden" style={{ height: 148 }}>
+          <div
+            className="relative overflow-hidden"
+            style={{ height: 148 }}
+            onMouseEnter={e => { const v = e.currentTarget.querySelector('video'); if (v) v.play() }}
+            onMouseLeave={e => { const v = e.currentTarget.querySelector('video'); if (v) { v.pause(); v.currentTime = 0 } }}
+          >
             {/* Latest family render or gradient fallback */}
             {familyRender ? (
               <>
@@ -123,9 +128,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
                   <video
                     src={familyRender.url}
                     muted loop playsInline
-                    preload="none"
-                    onMouseEnter={e => (e.target as HTMLVideoElement).play()}
-                    onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0 }}
+                    preload="metadata"
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (

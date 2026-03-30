@@ -222,7 +222,12 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
       }`}
     >
       {/* Art header */}
-      <div className="relative overflow-hidden" style={{ height: '148px' }}>
+      <div
+        className="relative overflow-hidden"
+        style={{ height: '148px' }}
+        onMouseEnter={e => { const v = e.currentTarget.querySelector('video'); if (v) v.play() }}
+        onMouseLeave={e => { const v = e.currentTarget.querySelector('video'); if (v) { v.pause(); v.currentTime = 0 } }}
+      >
 
         {/* Background */}
         {hasUserImage ? (
@@ -233,9 +238,7 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
                 muted
                 loop
                 playsInline
-                preload="none"
-                onMouseEnter={e => (e.target as HTMLVideoElement).play()}
-                onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0 }}
+                preload="metadata"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : (

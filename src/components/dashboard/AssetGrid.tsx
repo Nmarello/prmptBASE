@@ -322,14 +322,14 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
                       onClick={() => setLightbox(asset)}
                       className="relative w-full flex-shrink-0 rounded-xl overflow-hidden cursor-pointer group"
                       style={{ paddingBottom: `${pct}%`, background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}
+                      onMouseEnter={e => { const v = e.currentTarget.querySelector('video'); if (v) v.play() }}
+                      onMouseLeave={e => { const v = e.currentTarget.querySelector('video'); if (v) { v.pause(); v.currentTime = 0 } }}
                     >
                       {isVideo ? (
                         <video
                           src={asset.url}
                           muted loop playsInline
-                          preload="none"
-                          onMouseEnter={e => (e.target as HTMLVideoElement).play()}
-                          onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0 }}
+                          preload="metadata"
                           className="absolute inset-0 w-full h-full object-cover"
                         />
                       ) : (
