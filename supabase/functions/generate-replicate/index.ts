@@ -257,12 +257,16 @@ const MODELS: Record<string, ModelConfig> = {
   }) },
 
   // ── OpenAI GPT Image 1.5 ──────────────────────────────────────────────────
-  'gpt-image-1.5':    { path: 'openai/gpt-image-1.5',  costUsd: 0.04, buildInput: (b) => ({
-    prompt: b.prompt,
-    aspect_ratio: b.aspectRatio,
-    num_outputs: Math.min(b.numOutputs, 4),
-    ...(b.seed != null ? { seed: b.seed } : {}),
-  }) },
+  'gpt-image-1.5':    { path: 'openai/gpt-image-1.5',  costUsd: 0.04, buildInput: (b) => {
+    const GPT_AR = new Set(['1:1', '3:2', '2:3'])
+    const ar = GPT_AR.has(b.aspectRatio) ? b.aspectRatio : '1:1'
+    return {
+      prompt: b.prompt,
+      aspect_ratio: ar,
+      num_outputs: Math.min(b.numOutputs, 4),
+      ...(b.seed != null ? { seed: b.seed } : {}),
+    }
+  } },
 
   // ── Video — Replicate-only models ─────────────────────────────────────────
   'sora2-pro':        { path: 'openai/sora-2-pro',          isVideo: true, maxOutputs: 1, costUsd: 0.20, buildInput: (b) => ({
