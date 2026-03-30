@@ -194,6 +194,12 @@ export default function Home() {
   const [showAuth, setShowAuth] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [mobileMenu, setMobileMenu] = useState(false)
+  const [reelPlaying, setReelPlaying] = useState(true)
+  const [reelMuted, setReelMuted] = useState(true)
+  const reelRef = useRef<HTMLVideoElement>(null)
+  const reelSrc = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+    ? 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/videos/launch-reel-9x16.mp4'
+    : 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/videos/launch-reel-16x9.mp4'
   const { theme, setTheme } = useTheme()
   const dark = theme === 'dark'
   const T = dark ? DARK : LIGHT
@@ -378,6 +384,64 @@ export default function Home() {
           }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3d7fff', display: 'inline-block' }} />
             50+ models · 0 API keys needed · Free to start
+          </div>
+        </FadeIn>
+
+        {/* Launch Reel */}
+        <FadeIn delay={0.2}>
+          <div style={{ position: 'relative', maxWidth: 800, margin: '0 auto 32px', borderRadius: 16, overflow: 'hidden' }}>
+            <video
+              ref={reelRef}
+              autoPlay
+              muted
+              loop
+              playsInline
+              src={reelSrc}
+              style={{ width: '100%', display: 'block' }}
+            />
+            <div style={{
+              position: 'absolute', bottom: 12, right: 12, display: 'flex', gap: 6,
+            }}>
+              <button
+                onClick={() => {
+                  if (reelRef.current) {
+                    if (reelPlaying) reelRef.current.pause()
+                    else reelRef.current.play()
+                    setReelPlaying(!reelPlaying)
+                  }
+                }}
+                style={{
+                  width: 36, height: 36, borderRadius: 100, border: 'none', cursor: 'pointer',
+                  background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                {reelPlaying ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4z"/></svg>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  if (reelRef.current) {
+                    reelRef.current.muted = !reelMuted
+                    setReelMuted(!reelMuted)
+                  }
+                }}
+                style={{
+                  width: 36, height: 36, borderRadius: 100, border: 'none', cursor: 'pointer',
+                  background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                {reelMuted ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                )}
+              </button>
+            </div>
           </div>
         </FadeIn>
 
