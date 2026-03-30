@@ -229,7 +229,7 @@ export default function Gallery() {
               background: '#3d7fff', border: 'none', color: '#fff',
               padding: '6px 16px', borderRadius: 100, fontSize: 12, fontWeight: 600, textDecoration: 'none',
               fontFamily: 'inherit', transition: 'background 0.15s',
-            }}>Try 20+ models free</Link>
+            }}>Try 50+ models free</Link>
           </div>
         </div>
       </nav>

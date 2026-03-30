@@ -302,7 +302,7 @@ export default function Home() {
           }}
             onMouseEnter={e => (e.currentTarget.style.background = '#5590ff')}
             onMouseLeave={e => (e.currentTarget.style.background = '#3d7fff')}
-          >Try 20+ models free</button>
+          >Try 50+ models free</button>
         </div>
       </nav>
 
@@ -324,7 +324,7 @@ export default function Home() {
             background: '#3d7fff', border: 'none', color: '#fff',
             padding: '7px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
-          }}>Try 20+ models free</button>
+          }}>Try 50+ models free</button>
         </div>
       </nav>
 
@@ -348,7 +348,7 @@ export default function Home() {
             fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', marginBottom: 28,
           }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3d7fff', display: 'inline-block' }} />
-            20+ models · 0 API keys needed · Free to start
+            50+ models · 0 API keys needed · Free to start
           </div>
         </FadeIn>
 
@@ -362,8 +362,8 @@ export default function Home() {
         </FadeIn>
 
         {/* Text + Mockup row */}
-        <motion.div className="flex flex-col sm:flex-row sm:items-start" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%', y: heroMockupY }}>
-          <div className="hidden sm:block" style={{ flexShrink: 0, width: 260, position: 'relative', alignSelf: 'stretch' }}>
+        <motion.div className="flex flex-col lg:flex-row lg:items-start" style={{ gap: 40, marginTop: 40, textAlign: 'left', width: '100%', y: heroMockupY }}>
+          <div className="hidden lg:block" style={{ flexShrink: 0, width: 260, position: 'relative', alignSelf: 'stretch' }}>
             <FadeIn delay={0.5} x={-30} y={0}>
               <p style={{ position: 'absolute', top: 102, right: 0, width: '100%', fontSize: 17, color: T.text, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
                 Rough idea in. Polished prompt out. AI does the heavy lifting.
@@ -376,7 +376,7 @@ export default function Home() {
             </FadeIn>
             <FadeIn delay={0.9} x={-30} y={0}>
               <p style={{ position: 'absolute', top: 380, right: 0, width: '100%', fontSize: 17, color: T.text, fontWeight: 400, lineHeight: 1.7, margin: 0, textAlign: 'right' }}>
-                Over 20 models to choose from
+                Over 50 models to choose from
               </p>
             </FadeIn>
           </div>
@@ -408,9 +408,9 @@ export default function Home() {
               </div>
             </div>
             {/* App body — 2 columns */}
-            <div className="grid grid-cols-1 sm:grid-cols-[380px_1fr]" style={{ minHeight: 340 }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr]" style={{ minHeight: 340 }}>
               {/* Form panel */}
-              <div className="hidden sm:flex" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: 20, flexDirection: 'column', gap: 12, background: '#111009', position: 'relative' }}>
+              <div className="hidden lg:flex" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: 20, flexDirection: 'column', gap: 12, background: '#111009', position: 'relative' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                     <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(240,237,232,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prompt</div>
@@ -473,7 +473,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Mobile-only condensed fields */}
-              <div className="sm:hidden" style={{ background: '#111009', padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="lg:hidden" style={{ background: '#111009', padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
                   {[
                     { label: 'Subject', val: 'Luxury dinner...' },
@@ -707,7 +707,7 @@ export default function Home() {
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
                 'Structured fields for every model',
-                '20+ models in one workspace',
+                '50+ models in one workspace',
                 'Every output saved to your vault',
                 'Remix and iterate on anything',
               ].map(t => (
@@ -1038,7 +1038,7 @@ export default function Home() {
           }}
             onMouseEnter={e => { e.currentTarget.style.background = '#5590ff'; e.currentTarget.style.boxShadow = '0 0 56px rgba(61,127,255,0.45)' }}
             onMouseLeave={e => { e.currentTarget.style.background = '#3d7fff'; e.currentTarget.style.boxShadow = '0 0 40px rgba(61,127,255,0.3)' }}
-          >Try 20+ models free →</button>
+          >Try 50+ models free →</button>
           <a href="#models" style={{
             background: 'transparent', border: '1px solid ' + T.border, color: T.text2,
             padding: '14px 28px', borderRadius: 100, fontSize: 15, fontWeight: 600,
