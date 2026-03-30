@@ -437,9 +437,9 @@ export default function Home() {
               </div>
             </div>
             {/* App body — 2 columns */}
-            <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr]" style={{ minHeight: 340 }}>
+            <div className="grid grid-cols-1 xl:grid-cols-[380px_1fr]" style={{ minHeight: 340 }}>
               {/* Form panel */}
-              <div className="hidden lg:flex" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: 20, flexDirection: 'column', gap: 12, background: '#111009', position: 'relative' }}>
+              <div className="hidden xl:flex" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', padding: 20, flexDirection: 'column', gap: 12, background: '#111009', position: 'relative' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                     <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(240,237,232,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prompt</div>
@@ -502,7 +502,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Mobile-only condensed fields */}
-              <div className="lg:hidden" style={{ background: '#111009', padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="xl:hidden" style={{ background: '#111009', padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
                   {[
                     { label: 'Subject', val: 'Luxury dinner...' },
