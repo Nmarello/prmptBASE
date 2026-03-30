@@ -389,7 +389,11 @@ export default function Home() {
 
         {/* Launch Reel */}
         <FadeIn delay={0.2}>
-          <div style={{ position: 'relative', maxWidth: 800, margin: '0 auto 32px', borderRadius: 16, overflow: 'hidden' }}>
+          <div style={{
+            position: 'relative', width: '100%', margin: '0 auto 32px', borderRadius: 16, overflow: 'hidden',
+            border: dark ? '1px solid rgba(61,127,255,0.2)' : 'none',
+            boxShadow: dark ? '0 0 60px rgba(61,127,255,0.15), 0 0 120px rgba(61,127,255,0.08)' : '0 20px 60px rgba(0,0,0,0.15)',
+          }}>
             <video
               ref={reelRef}
               autoPlay
