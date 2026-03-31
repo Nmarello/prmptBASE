@@ -4,13 +4,13 @@ interface LogoProps {
   height?: number
   className?: string
   style?: React.CSSProperties
-  theme?: 'dark' | 'light'
+  theme?: 'dark' | 'light' | 'blue'
 }
 
 export default function Logo({ height = 22, className, style, theme: themeProp }: LogoProps) {
   const { theme: ctxTheme } = useTheme()
   const theme = themeProp ?? ctxTheme
-  const src = theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'
+  const src = (theme === 'dark' || theme === 'blue') ? '/logo-dark.png' : '/logo-light.png'
   return (
     <img
       src={src}

@@ -188,6 +188,13 @@ const LIGHT = {
   navBg: 'rgba(245,245,247,0.88)', cardBg: '#fff',
   socialBorder: '#f5f5f7', pricingFeatured: 'rgba(61,127,255,0.06)',
 }
+const BLUE = {
+  bg: '#060B18', surface: 'rgba(58,123,247,0.06)', surfaceHover: 'rgba(58,123,247,0.12)',
+  text: '#E8EDF5', text2: 'rgba(232,237,245,0.5)', text3: 'rgba(232,237,245,0.28)',
+  border: 'rgba(58,123,247,0.15)', borderHover: 'rgba(58,123,247,0.35)',
+  navBg: 'rgba(6,11,24,0.88)', cardBg: 'rgba(12,21,41,0.6)',
+  socialBorder: '#060B18', pricingFeatured: 'rgba(58,123,247,0.12)',
+}
 
 export default function Home() {
   const { user } = useAuth()
@@ -201,8 +208,8 @@ export default function Home() {
     ? 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/videos/launch-reel-9x16.mp4'
     : 'https://knlelqirhlvgvmmwiske.supabase.co/storage/v1/object/public/assets/videos/launch-reel-16x9.mp4'
   const { theme, setTheme } = useTheme()
-  const dark = theme === 'dark'
-  const T = dark ? DARK : LIGHT
+  const dark = theme === 'dark' || theme === 'blue'
+  const T = theme === 'blue' ? BLUE : dark ? DARK : LIGHT
   const navigate = useNavigate()
 
   // Mockup cursor animation

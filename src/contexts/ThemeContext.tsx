@@ -1,19 +1,21 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 
-export type Theme = 'light' | 'dark'
+export type Theme = 'light' | 'dark' | 'blue'
 const STORAGE_KEY = 'prmptVAULT_theme'
 
 function getSaved(): Theme {
   try {
     const v = localStorage.getItem(STORAGE_KEY)
-    if (v === 'dark' || v === 'light') return v
+    if (v === 'dark' || v === 'light' || v === 'blue') return v
   } catch {}
   return 'dark'
 }
 
 function applyTheme(t: Theme) {
-  if (t === 'dark') document.documentElement.classList.add('dark')
-  else document.documentElement.classList.remove('dark')
+  const cl = document.documentElement.classList
+  cl.remove('dark', 'blue')
+  if (t === 'dark' || t === 'blue') cl.add('dark')
+  if (t === 'blue') cl.add('blue')
 }
 
 interface Ctx { theme: Theme; setTheme: (t: Theme) => void }

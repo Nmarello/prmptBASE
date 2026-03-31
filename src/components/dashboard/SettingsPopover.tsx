@@ -129,19 +129,24 @@ export default function SettingsPopover({ onSignOut, userInitial = '?', inBottom
             <div className="flex items-center justify-between">
               <div>
                 <p style={{ fontSize: 13, color: 'var(--pv-text)' }}>Theme</p>
-                <p style={{ fontSize: 11, color: 'var(--pv-text3)' }}>Dark / Light</p>
               </div>
-              <button
-                type="button"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="flex items-center gap-2 cursor-pointer"
-                style={{ background: 'none', border: 'none' }}
-              >
-                <span style={{ fontSize: 12, color: 'var(--pv-text3)' }}>{theme === 'dark' ? 'Dark' : 'Light'}</span>
-                <div style={{ width: 40, height: 20, borderRadius: 99, position: 'relative', background: theme === 'dark' ? 'var(--pv-accent)' : 'var(--pv-surface2)', border: '1px solid var(--pv-border)', transition: 'background 0.2s', flexShrink: 0 }}>
-                  <div style={{ position: 'absolute', top: 2, width: 14, height: 14, background: '#fff', borderRadius: '50%', transition: 'left 0.2s', left: theme === 'dark' ? 22 : 2 }} />
-                </div>
-              </button>
+              <div className="flex" style={{ background: 'var(--pv-surface2)', borderRadius: 8, padding: 2, border: '1px solid var(--pv-border)' }}>
+                {(['dark', 'blue', 'light'] as const).map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTheme(t)}
+                    className="cursor-pointer"
+                    style={{
+                      fontSize: 11, fontWeight: 500, padding: '4px 10px', borderRadius: 6, border: 'none',
+                      background: theme === t ? 'var(--pv-accent)' : 'transparent',
+                      color: theme === t ? '#fff' : 'var(--pv-text3)',
+                      transition: 'all 0.2s',
+                      textTransform: 'capitalize',
+                    }}
+                  >{t}</button>
+                ))}
+              </div>
             </div>
           </div>
 

@@ -24,6 +24,16 @@
   --pv-text3:    #6e6760;
   --pv-accent:   #3d7fff;
 }
+.blue {
+  --pv-bg:       #060B18;
+  --pv-surface:  #0C1529;
+  --pv-surface2: #142444;
+  --pv-border:   #1a2d5a;
+  --pv-text:     #E8EDF5;
+  --pv-text2:    #7b8ba8;
+  --pv-text3:    #4a5a78;
+  --pv-accent:   #3A7BF7;
+}
 
 body {
   font-family: 'DM Sans', -apple-system, sans-serif;

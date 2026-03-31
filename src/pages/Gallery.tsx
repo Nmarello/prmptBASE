@@ -120,7 +120,7 @@ function extractParams(meta: Record<string, unknown> | null): [string, string][]
 
 export default function Gallery() {
   const { theme } = useTheme()
-  const dark = theme === 'dark'
+  const dark = theme === 'dark' || theme === 'blue'
 
   useEffect(() => {
     let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null
