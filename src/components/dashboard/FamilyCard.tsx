@@ -62,10 +62,12 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
   const overhang = visibleSlivers * peekWidth
   const totalWidth = 230 + overhang
 
-  // Family latest render — most recent across all models in this family
-  const familyRender = models
+  // Family renders — collect up to 4 unique images for montage (iOS folder style)
+  const familyRenders = models
     .map(m => latestRenderBySlug[m.slug])
-    .filter(Boolean)[0] // latestRenderBySlug is already ordered by recency
+    .filter((r): r is { url: string; isVideo: boolean } => !!r && !r.isVideo)
+    .slice(0, 4)
+  const familyRender = familyRenders[0] ?? null
 
   const sortedModels = [...models].sort((a, b) => (a.family_order ?? 0) - (b.family_order ?? 0))
 
@@ -121,25 +123,36 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
             onMouseEnter={e => { const v = e.currentTarget.querySelector('video'); if (v) v.play() }}
             onMouseLeave={e => { const v = e.currentTarget.querySelector('video'); if (v) { v.pause(); v.currentTime = 0 } }}
           >
-            {/* Latest family render or gradient fallback */}
-            {familyRender ? (
+            {/* Montage grid (iOS folder style) or gradient fallback */}
+            {familyRenders.length > 0 ? (
               <>
-                {familyRender.isVideo ? (
-                  <video
-                    src={familyRender.url}
-                    muted loop playsInline
-                    preload="metadata"
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                ) : (
-                  <img
-                    src={thumbUrl(familyRender.url)}
-                    alt=""
-                    loading="lazy"
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                )}
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom,rgba(0,0,0,0) 50%,rgba(0,0,0,0.28) 100%)' }} />
+                <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105" style={{ background: art.gradient }} />
+                <div
+                  className="absolute inset-0 grid gap-[3px] p-3 transition-transform duration-500 group-hover:scale-105"
+                  style={{ gridTemplateColumns: familyRenders.length === 1 ? '1fr' : '1fr 1fr', gridTemplateRows: familyRenders.length <= 2 ? '1fr' : '1fr 1fr' }}
+                >
+                  {familyRenders.map((r, i) => (
+                    <div key={i} className="relative rounded-[8px] overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                      <img
+                        src={thumbUrl(r.url, 200)}
+                        alt=""
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                  {/* Fill empty slots with gradient squares */}
+                  {familyRenders.length < 4 && familyRenders.length > 1 && Array.from({ length: 4 - familyRenders.length }, (_, i) => (
+                    <div key={`empty-${i}`} className="relative rounded-[8px] overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <svg className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.15)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom,rgba(0,0,0,0) 60%,rgba(0,0,0,0.35) 100%)' }} />
               </>
             ) : (
               <>

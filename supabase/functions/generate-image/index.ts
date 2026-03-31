@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
             prompt,
             n: 1,
             size: size ?? '1024x1024',
-            quality: quality ?? 'standard',
+            quality: (quality === 'hd' || quality === 'standard') ? quality : 'standard',
             response_format: 'url',
           }),
     })

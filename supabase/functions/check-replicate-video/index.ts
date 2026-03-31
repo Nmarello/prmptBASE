@@ -62,19 +62,27 @@ Deno.serve(async (req) => {
 
     const sourceUrl = outputUrls[0]
 
+    // Detect whether result is image or video based on URL/content-type
+    const isImage = /\.(png|jpg|jpeg|webp|gif)($|\?)/.test(sourceUrl) || !(/\.(mp4|mov|webm)($|\?)/.test(sourceUrl))
+
     // Download and re-upload to Supabase Storage
     let permanentUrl = sourceUrl
     try {
       if (!isSafeProviderUrl(sourceUrl)) throw new Error('Blocked unsafe URL')
       const mediaRes = await fetch(sourceUrl)
       const buf = await mediaRes.arrayBuffer()
-      const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`
+      const contentType = mediaRes.headers.get('content-type')?.split(';')[0].trim()
+      const ext = isImage
+        ? (contentType === 'image/png' ? 'png' : contentType === 'image/jpeg' ? 'jpg' : 'webp')
+        : 'mp4'
+      const mimeType = isImage ? (contentType ?? 'image/webp') : 'video/mp4'
+      const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
       const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/assets/${fileName}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${serviceKey}`,
           'apikey': serviceKey,
-          'Content-Type': 'video/mp4',
+          'Content-Type': mimeType,
           'x-upsert': 'false',
         },
         body: buf,
@@ -95,15 +103,13 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal',
         },
-        body: JSON.stringify({
-          url: permanentUrl,
-          cost_usd: repData.metrics?.predict_time ? null : null, // cost tracked on creation
-        }),
+        body: JSON.stringify({ url: permanentUrl }),
       },
     )
 
+    const resultKey = isImage ? 'image_url' : 'video_url'
     return new Response(
-      JSON.stringify({ status: 'complete', video_url: permanentUrl }),
+      JSON.stringify({ status: 'complete', [resultKey]: permanentUrl }),
       { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
     )
   } catch (err) {

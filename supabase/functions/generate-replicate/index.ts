@@ -10,6 +10,7 @@ interface ModelConfig {
   maxOutputs?: number   // default 4; set to 1 for models that don't support batch
   costUsd?: number      // per image/video
   isVideo?: boolean     // skip image storage, use gen_type 'txt2vid', extend polling deadline
+  isAsync?: boolean     // skip Prefer:wait, return pending immediately (for slow image models)
   buildInput: (base: BaseInput) => Record<string, unknown>
 }
 
@@ -257,7 +258,7 @@ const MODELS: Record<string, ModelConfig> = {
   }) },
 
   // ── OpenAI GPT Image 1.5 ──────────────────────────────────────────────────
-  'gpt-image-1.5':    { path: 'openai/gpt-image-1.5',  costUsd: 0.04, buildInput: (b) => {
+  'gpt-image-1.5':    { path: 'openai/gpt-image-1.5',  costUsd: 0.04, isAsync: true, buildInput: (b) => {
     const GPT_AR = new Set(['1:1', '3:2', '2:3'])
     const ar = GPT_AR.has(b.aspectRatio) ? b.aspectRatio : '1:1'
     return {
@@ -535,8 +536,8 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${replicateKey}`,
     }
-    // Prefer:wait only for non-video models; video returns pending immediately
-    if (!config.version && !config.isVideo) repHeaders['Prefer'] = 'wait'
+    // Prefer:wait only for non-video, non-async models; video/async return pending immediately
+    if (!config.version && !config.isVideo && !config.isAsync) repHeaders['Prefer'] = 'wait'
 
     const repRes = await fetch(repUrl, {
       method: 'POST',
@@ -552,8 +553,8 @@ Deno.serve(async (req) => {
 
     const repData = await repRes.json()
 
-    // ── Video: return pending immediately, let frontend poll ─────────────────
-    if (config.isVideo) {
+    // ── Async (video or slow image): return pending immediately, let frontend poll
+    if (config.isVideo || config.isAsync) {
       const pollUrl = repData.urls?.get ?? repData.url
       // If prediction already failed at creation time
       if (repData.status === 'failed' || repData.error) {
@@ -561,12 +562,13 @@ Deno.serve(async (req) => {
         throw new Error(`Replicate generation failed (${slug}): ${repData.error ?? repData.status}`)
       }
       // Create placeholder asset row
+      const isAsyncImage = config.isAsync && !config.isVideo
       const { data: asset, error: assetErr } = await adminClient.from('assets').insert({
         user_id: userId,
         prompt_id: prompt_id ?? null,
         model_id: model_id ?? null,
-        gen_type: 'txt2vid',
-        url: '',  // updated when video completes
+        gen_type: isAsyncImage ? 'txt2img' : 'txt2vid',
+        url: '',  // updated when generation completes
         cost_usd: config.costUsd ?? null,
         metadata: {
           prompt: builtPrompt,
@@ -576,7 +578,7 @@ Deno.serve(async (req) => {
           replicate_prediction_url: pollUrl,
         },
       }).select().single()
-      if (assetErr || !asset) console.error('[generate-replicate] video asset insert failed:', assetErr?.message)
+      if (assetErr || !asset) console.error('[generate-replicate] async asset insert failed:', assetErr?.message)
       return new Response(
         JSON.stringify({
           status: 'pending',
@@ -584,6 +586,7 @@ Deno.serve(async (req) => {
           provider: 'replicate',
           prediction_url: pollUrl,
           prompt: builtPrompt,
+          ...(isAsyncImage ? { is_image: true } : {}),
         }),
         { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
