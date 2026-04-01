@@ -37,6 +37,22 @@ const NANO_BANANA_ASPECT_DIMS: Record<string, [number, number]> = {
   'auto': [1024, 1024],
 }
 
+const FAL_3D_ENDPOINTS: Record<string, Record<string, string>> = {
+  'hyper3d-rodin': {
+    'txt23d': 'fal-ai/hyper3d/rodin',
+    'img23d': 'fal-ai/hyper3d/rodin',
+  },
+  'trellis': {
+    'img23d': 'fal-ai/trellis',
+  },
+  'triposr': {
+    'img23d': 'fal-ai/triposr',
+  },
+  'hunyuan-world': {
+    'img23d': 'fal-ai/hunyuan_world/image-to-world',
+  },
+}
+
 const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
   'kling': {
     'txt2vid': 'fal-ai/kling-video/v1.6/standard/text-to-video',
@@ -816,6 +832,101 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ asset, operation_name: statusUrl, status: 'pending', prompt, provider: 'fal.ai' }),
+        { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // --- 3D model path (async via queue) ---
+    const is3D = slug in FAL_3D_ENDPOINTS
+    if (is3D) {
+      const genType = (body.gen_type as string | undefined) ?? 'txt23d'
+      const isImg3D = genType === 'img23d'
+      const modelPath = FAL_3D_ENDPOINTS[slug]?.[genType] ?? FAL_3D_ENDPOINTS[slug]?.['txt23d'] ?? FAL_3D_ENDPOINTS[slug]?.['img23d']
+      if (!modelPath) throw new Error(`No fal endpoint for ${slug}/${genType}`)
+      const prompt = (body.prompt as string | undefined)?.trim() ?? ''
+
+      const falPayload: Record<string, unknown> = {}
+
+      // img23d: upload source image
+      if (isImg3D) {
+        if (!source_image) throw new Error('Source image is required for image-to-3D')
+        const src = source_image as string
+        if (src.startsWith('http')) {
+          falPayload.image_url = capSupabaseImageUrl(src, 1920)
+        } else {
+          const base64Data = src.replace(/^data:image\/\w+;base64,/, '')
+          const mimeMatch = src.match(/^data:(image\/\w+);base64,/)
+          const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+          const ext = mimeType.split('/')[1] ?? 'jpg'
+          const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+          const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
+          const { error: srcErr } = await adminClient.storage
+            .from('assets').upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
+          if (srcErr) throw new Error(`Source upload failed: ${srcErr.message}`)
+          const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
+          falPayload.image_url = capSupabaseImageUrl(publicUrl, 1920)
+        }
+      }
+
+      if (prompt) falPayload.prompt = prompt
+
+      // Model-specific params
+      if (slug === 'hyper3d-rodin') {
+        // Rodin supports: material (PBR/Shaded), quality (high/medium/low), geometry (mesh/quad)
+        falPayload.output_format = 'glb'
+        if (body.material) falPayload.material = body.material
+        if (body.quality) falPayload.quality = body.quality
+        if (body.tier) falPayload.tier = body.tier // Regular or Rodin-Sketch
+        if (body.geometry) falPayload.geometry = body.geometry
+        if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
+      } else if (slug === 'trellis') {
+        // Trellis: seed, ss_sampling_steps, slat_sampling_steps
+        if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
+        if (body.ss_sampling_steps) falPayload.ss_sampling_steps = Number(body.ss_sampling_steps)
+        if (body.slat_sampling_steps) falPayload.slat_sampling_steps = Number(body.slat_sampling_steps)
+      } else if (slug === 'triposr') {
+        // TripoSR: foreground_ratio, mc_resolution
+        if (body.foreground_ratio) falPayload.foreground_ratio = Number(body.foreground_ratio)
+        if (body.mc_resolution) falPayload.mc_resolution = Number(body.mc_resolution)
+      } else if (slug === 'hunyuan-world') {
+        // Hunyuan World: semantic labels for scene understanding
+        if (body.foreground_labels) falPayload.foreground_labels = body.foreground_labels
+        if (body.scene_labels) falPayload.scene_labels = body.scene_labels
+      }
+
+      // Submit to fal queue
+      const queueRes = await fetch(`${FAL_QUEUE_BASE}/${modelPath}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${falKey}` },
+        body: JSON.stringify(falPayload),
+      })
+      if (!queueRes.ok) {
+        const err = await queueRes.text()
+        throw new Error(`fal.ai queue error: ${err}`)
+      }
+      const queueData = await queueRes.json()
+      const statusUrl: string = queueData.status_url ?? ''
+      if (!statusUrl) throw new Error(`No status_url in fal response: ${JSON.stringify(queueData)}`)
+
+      // Insert pending asset
+      const { data: asset } = await adminClient.from('assets').insert({
+        user_id: userId,
+        prompt_id: prompt_id ?? null,
+        model_id: model_id ?? null,
+        gen_type: genType,
+        url: '',
+        metadata: {
+          prompt,
+          model_slug: slug,
+          status: 'pending',
+          status_url: statusUrl,
+          response_url: queueData.response_url ?? '',
+          is_3d: true,
+        },
+      }).select().single()
+
+      return new Response(
+        JSON.stringify({ asset, operation_name: statusUrl, status: 'pending', prompt, provider: 'fal.ai', is_3d: true }),
         { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
       )
     }

@@ -24,6 +24,10 @@ const FAMILY_ART: Record<string, { gradient: string; accent: string; initial: st
   'GPT Image':   { gradient: 'linear-gradient(145deg,#001a0d,#00401a,#00a844)', accent: '#00cc55', initial: 'GP', maker: 'OpenAI', tagline: 'Instruction following · Native editing support' },
   'Qwen Image': { gradient: 'linear-gradient(145deg,#1a0033,#4400aa,#7722ee)', accent: '#7722ee', initial: 'QI', maker: 'Alibaba', tagline: 'Unified generation & editing · Accurate text rendering' },
   'Nano Banana': { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', accent: '#00cc88', initial: 'NB', maker: 'Google', tagline: 'Experimental · High-efficiency image generation' },
+  'Hyper3D':    { gradient: 'linear-gradient(145deg,#1a0a2e,#5c1a8c,#b44aed)', accent: '#b44aed', initial: 'H3', maker: 'Hyper3D', tagline: 'Text & image to 3D · PBR-quality meshes' },
+  'Trellis':    { gradient: 'linear-gradient(145deg,#0a1a2e,#1a4d8c,#4a8ded)', accent: '#4a8ded', initial: 'TR', maker: 'Microsoft', tagline: 'Image to 3D · Structured latent representations' },
+  'TripoSR':    { gradient: 'linear-gradient(145deg,#2e1a0a,#8c4d1a,#ed8a4a)', accent: '#ed8a4a', initial: 'TS', maker: 'Stability AI', tagline: 'Fast single-image 3D reconstruction' },
+  'Hunyuan World': { gradient: 'linear-gradient(145deg,#0a2e1a,#1a8c4d,#4aed8a)', accent: '#4aed8a', initial: 'HW', maker: 'Tencent', tagline: 'Image to navigable 3D panoramic worlds' },
 }
 
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', accent: '#888', initial: '??', maker: '', tagline: '' }

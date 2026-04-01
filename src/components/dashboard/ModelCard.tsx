@@ -102,6 +102,11 @@ const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
   'hailuo-2.3':             { gradient: 'linear-gradient(145deg,#002b36,#008888,#00ccbb)', initial: 'H3' },
   'hunyuan-video-1.5':      { gradient: 'linear-gradient(145deg,#00001a,#0d0d80,#4444dd)', initial: 'HV' },
   'nano-banana-pro':        { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NP' },
+  // 3D Models
+  'hyper3d-rodin':          { gradient: 'linear-gradient(145deg,#1a0a2e,#5c1a8c,#b44aed)', initial: 'RD' },
+  'trellis':                { gradient: 'linear-gradient(145deg,#0a1a2e,#1a4d8c,#4a8ded)', initial: 'TR' },
+  'triposr':                { gradient: 'linear-gradient(145deg,#2e1a0a,#8c4d1a,#ed8a4a)', initial: 'TS' },
+  'hunyuan-world':          { gradient: 'linear-gradient(145deg,#0a2e1a,#1a8c4d,#4aed8a)', initial: 'HW' },
 }
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: '??' }
 
@@ -169,6 +174,11 @@ const slugBrandLabels: Record<string, string> = {
   'qwen-image-2-pro':         'Alibaba',
   'hailuo-2.3':               'MiniMax',
   'hunyuan-video-1.5':        'Tencent',
+  // 3D Models
+  'hyper3d-rodin':            'Hyper3D',
+  'trellis':                  'Microsoft',
+  'triposr':                  'Stability AI',
+  'hunyuan-world':            'Tencent',
 }
 
 // Supabase image transform — resize for card thumbnails (460px = 2x card width for retina)
@@ -187,7 +197,8 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
   const art = MODEL_ART[model.slug] ?? DEFAULT_ART
   const maker = slugBrandLabels[model.slug] ?? model.provider
   const isVideo = model.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid' || g === 'vid2vid')
-  const typeLabel = isVideo ? 'VIDEO' : 'IMAGE'
+  const is3D = model.supported_gen_types.some(g => g === 'txt23d' || g === 'img23d')
+  const typeLabel = is3D ? '3D' : isVideo ? 'VIDEO' : 'IMAGE'
   const hasUserImage = !!latestRenderUrl
 
   const effectiveStatus = modelStatus ?? (comingSoon ? 'coming-soon' : accessible ? 'active' : 'upgrade')

@@ -71,30 +71,43 @@ Deno.serve(async (req) => {
     const videoCostRaw = resultRes.headers.get('x-fal-billing-cost')
     const videoCost = videoCostRaw ? parseFloat(videoCostRaw) : (resultData.billing?.cost ?? null)
 
+    // Extract media URL — check video, then 3D/model, then image
     const videoUrl: string =
       resultData.video?.url ??
       resultData.videos?.[0]?.url ??
       resultData.output?.video?.url ??
       ''
-    const imageUrl: string = !videoUrl
+    // 3D model outputs: GLB mesh URL or model viewer URL
+    const modelUrl: string = !videoUrl
+      ? (resultData.model_mesh?.url ?? resultData.glb?.url ?? resultData.mesh?.url ?? resultData.output?.model?.url ?? resultData.model?.url ?? '')
+      : ''
+    // Some 3D models return a preview/thumbnail image alongside the mesh
+    const previewUrl: string = modelUrl
+      ? (resultData.preview?.url ?? resultData.thumbnail?.url ?? resultData.rendered_image?.url ?? resultData.images?.[0]?.url ?? '')
+      : ''
+    const imageUrl: string = (!videoUrl && !modelUrl)
       ? (resultData.images?.[0]?.url ?? resultData.image?.url ?? '')
       : ''
 
-    if (!videoUrl && !imageUrl) throw new Error(`No media URL in result: ${JSON.stringify(resultData)}`)
+    if (!videoUrl && !modelUrl && !imageUrl) throw new Error(`No media URL in result: ${JSON.stringify(resultData)}`)
 
-    const sourceUrl = videoUrl || imageUrl
-    const isImage = !videoUrl
+    const sourceUrl = videoUrl || modelUrl || imageUrl
+    const isImage = !videoUrl && !modelUrl
+    const is3D = !!modelUrl
 
     // Download and upload to Supabase Storage via REST
     let permanentUrl = sourceUrl
+    let permanentPreviewUrl = ''
     try {
       if (!isSafeProviderUrl(sourceUrl)) throw new Error('Blocked unsafe media URL')
       const mediaRes = await fetch(sourceUrl)
       const buf = await mediaRes.arrayBuffer()
-      const contentType = isImage
+      const contentType = is3D
+        ? 'model/gltf-binary'
+        : isImage
         ? (mediaRes.headers.get('content-type')?.split(';')[0].trim() ?? 'image/jpeg')
         : 'video/mp4'
-      const ext = isImage ? (contentType.includes('png') ? 'png' : 'jpg') : 'mp4'
+      const ext = is3D ? 'glb' : isImage ? (contentType.includes('png') ? 'png' : 'jpg') : 'mp4'
       const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
       const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/assets/${fileName}`, {
         method: 'POST',
@@ -111,7 +124,34 @@ Deno.serve(async (req) => {
       }
     } catch (_) { /* fall back to fal URL */ }
 
+    // Upload 3D preview image if available
+    if (is3D && previewUrl) {
+      try {
+        if (isSafeProviderUrl(previewUrl)) {
+          const prevRes = await fetch(previewUrl)
+          const prevBuf = await prevRes.arrayBuffer()
+          const prevFileName = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}-preview.png`
+          const prevUploadRes = await fetch(`${supabaseUrl}/storage/v1/object/assets/${prevFileName}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${serviceKey}`,
+              'apikey': serviceKey,
+              'Content-Type': 'image/png',
+              'x-upsert': 'false',
+            },
+            body: prevBuf,
+          })
+          if (prevUploadRes.ok) {
+            permanentPreviewUrl = `${supabaseUrl}/storage/v1/object/public/assets/${prevFileName}`
+          }
+        }
+      } catch (_) { /* preview is optional */ }
+    }
+
     // Update asset row via REST
+    const patchBody: Record<string, unknown> = { url: permanentUrl }
+    if (videoCost != null) patchBody.cost_usd = videoCost
+    if (permanentPreviewUrl) patchBody.thumbnail_url = permanentPreviewUrl
     await fetch(
       `${supabaseUrl}/rest/v1/assets?id=eq.${asset_id}`,
       {
@@ -122,14 +162,14 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal',
         },
-        body: JSON.stringify({ url: permanentUrl, ...(videoCost != null ? { cost_usd: videoCost } : {}) }),
+        body: JSON.stringify(patchBody),
       },
     )
 
     return new Response(
       JSON.stringify({
         status: 'complete',
-        ...(isImage ? { image_url: permanentUrl } : { video_url: permanentUrl }),
+        ...(is3D ? { model_url: permanentUrl, preview_url: permanentPreviewUrl || undefined } : isImage ? { image_url: permanentUrl } : { video_url: permanentUrl }),
       }),
       { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } },
     )

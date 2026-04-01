@@ -157,7 +157,7 @@ export default function Dashboard() {
   const [selectedGenType, setSelectedGenType] = useState<GenType | null>(null)
   const [template, setTemplate] = useState<Template | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string; isVideo?: boolean } | null>(null)
+  const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string; isVideo?: boolean; is3D?: boolean; modelUrl?: string } | null>(null)
   const [copiedUrl, setCopiedUrl] = useState(false)
   const [lightboxAsset, setLightboxAsset] = useState<Asset | null>(null)
   type PendingVideo = { assetId: string; operationName?: string; predictionUrl?: string; provider: 'google' | 'fal.ai' | 'replicate'; startedAt: number; isImage?: boolean; slug: string }
@@ -685,6 +685,7 @@ export default function Dashboard() {
       const isGoogle = GOOGLE_DIRECT_SLUGS.has(selectedModel.slug)
       const isImg2Img = selectedGenType === 'img2img'
       const isVideo = selectedGenType === 'txt2vid' || selectedGenType === 'img2vid'
+      const is3D = selectedGenType === 'txt23d' || selectedGenType === 'img23d'
 
       const endpoint = isReplicate
         ? 'generate-replicate'
@@ -784,7 +785,7 @@ export default function Dashboard() {
         await supabase.from('assets').update({ project_id: activeProjectId }).eq('id', assetId)
       }
 
-      analytics.generationCompleted({ model: selectedModel.slug, gen_type: isVideo ? 'txt2vid' : (selectedGenType === 'img2img' ? 'img2img' : 'txt2img'), tier: userTier, success: true })
+      analytics.generationCompleted({ model: selectedModel.slug, gen_type: is3D ? selectedGenType : isVideo ? 'txt2vid' : (selectedGenType === 'img2img' ? 'img2img' : 'txt2img'), tier: userTier, success: true })
       setPendingImage(null)
       setRenderingModelSlug(null)
       setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt, isVideo })
@@ -842,8 +843,9 @@ export default function Dashboard() {
             }
             return
           }
-          const completedUrl = data.video_url || data.image_url
-          const isImageResult = !!data.image_url && !data.video_url
+          const completedUrl = data.model_url || data.video_url || data.image_url
+          const isImageResult = !!data.image_url && !data.video_url && !data.model_url
+          const is3DResult = !!data.model_url
           if (data.status === 'complete' && completedUrl) {
             if (activeProjectId && pv.assetId) {
               await supabase.from('assets').update({ project_id: activeProjectId }).eq('id', pv.assetId)
@@ -852,10 +854,12 @@ export default function Dashboard() {
             if (pv.slug === renderingModelSlugRef.current) setRenderingModelSlug(null)
             // Paint canvas only if still on that model
             if (selectedModelRef.current?.slug === pv.slug) {
-              setResult({ url: completedUrl, prompt: '', isVideo: !isImageResult })
+              // For 3D results, show the preview image if available, otherwise the model URL
+              const displayUrl = is3DResult ? (data.preview_url || completedUrl) : completedUrl
+              setResult({ url: displayUrl, prompt: '', isVideo: !isImageResult && !is3DResult, is3D: is3DResult, modelUrl: is3DResult ? completedUrl : undefined })
             }
             loadAssets()
-            const readyMsg = isImageResult ? 'Your image is ready!' : 'Your video is ready!'
+            const readyMsg = is3DResult ? 'Your 3D model is ready!' : isImageResult ? 'Your image is ready!' : 'Your video is ready!'
             const modelName = pv.slug
             pushNotification({ type: isImageResult ? 'image_ready' : 'video_ready', message: readyMsg, modelName, assetUrl: completedUrl, assetId: pv.assetId })
             if ('Notification' in window && Notification.permission === 'granted') {
@@ -1737,7 +1741,7 @@ export default function Dashboard() {
                   <div className="relative z-10 flex flex-col items-center gap-4">
                     <div className="w-10 h-10 rounded-full pv-spin" style={{ border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'rgba(255,255,255,0.8)' }} />
                     <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: 500 }}>
-                      {(pendingVideo && !pendingVideo.isImage) || (pendingImage && ['ltx-2.3-pro', 'ltx-2.3-fast'].includes(pendingImage.slug)) ? 'Rendering video…' : 'Generating…'}
+                      {(pendingVideo && !pendingVideo.isImage) || (pendingImage && ['ltx-2.3-pro', 'ltx-2.3-fast'].includes(pendingImage.slug)) ? 'Rendering video…' : ['hyper3d-rodin', 'trellis', 'triposr', 'hunyuan-world'].includes(pendingVideo?.slug ?? '') ? 'Generating 3D model…' : 'Generating…'}
                     </p>
                     {pendingVideo && !pendingVideo.isImage && (() => {
                       const RENDER_HINTS: Record<string, string> = {
@@ -1752,6 +1756,10 @@ export default function Dashboard() {
                         'luma':            'Luma typically takes 2–5 min',
                         'pika':            'Pika typically takes 2–4 min',
                         'sora2':           'Sora 2 typically takes 3–8 min',
+                        'hyper3d-rodin':   'Rodin typically takes 1–3 min',
+                        'trellis':         'Trellis typically takes 30–90 sec',
+                        'triposr':         'TripoSR typically takes 15–30 sec',
+                        'hunyuan-world':   'Hunyuan World typically takes 2–5 min',
                       }
                       const hint = RENDER_HINTS[pendingVideo.slug]
                       return hint ? <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>{hint}</p> : null
@@ -1792,7 +1800,24 @@ export default function Dashboard() {
                 {/* Result */}
                 {result && (
                   <div data-tour="canvas-result" className="absolute inset-0 flex items-center justify-center p-2">
-                    {result.isVideo ? (
+                    {result.is3D ? (
+                      <div className="flex flex-col items-center gap-3">
+                        {/* @ts-expect-error model-viewer is a web component */}
+                        <model-viewer
+                          src={result.modelUrl || result.url}
+                          alt="3D Model"
+                          auto-rotate
+                          camera-controls
+                          shadow-intensity="1"
+                          style={{ width: '100%', height: '400px', maxWidth: '100%', borderRadius: '18px', background: 'radial-gradient(circle, #2a2a3e 0%, #0f0f1a 100%)' }}
+                        />
+                        {result.modelUrl && (
+                          <a href={result.modelUrl} download className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }}>
+                            Download .glb
+                          </a>
+                        )}
+                      </div>
+                    ) : result.isVideo ? (
                       <video src={result.url} controls autoPlay loop className="rounded-[18px]"
                         style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto' }} />
                     ) : (
