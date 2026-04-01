@@ -914,6 +914,9 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
   const [tooltipOpen, setTooltipOpen] = useState<string | null>(null)
   const [livePromptOverride, setLivePromptOverride] = useState<string | null>(null)
 
+  // First AI-assist-enabled field is the tour target (not always 'subject')
+  const tourFieldId = template.fields.find(f => f.ai_assist && f.id !== 'negative_prompt')?.id ?? 'subject'
+
   const autoPrompt = useMemo(() => buildLivePrompt(values), [values])
   const livePrompt = livePromptOverride ?? autoPrompt
   const isEdited = livePromptOverride !== null
@@ -954,7 +957,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
       const data = await res.json()
       if (data.suggestion) {
         setAiSuggestion({ fieldId, suggestion: data.suggestion })
-        if (fieldId === 'subject') onTourAiSuggestionReceived?.()
+        if (fieldId === tourFieldId) onTourAiSuggestionReceived?.()
       }
     } finally {
       setAssisting(null)
@@ -982,7 +985,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
 
   function set(id: string, val: unknown) {
     setValues((prev) => ({ ...prev, [id]: val }))
-    if (id === 'subject' && val && String(val).trim().length > 0) onTourSubjectTyped?.()
+    if (id === tourFieldId && val && String(val).trim().length > 0) onTourSubjectTyped?.()
   }
 
   function handleCustomSaved(fieldId: string, opt: CustomOption) {
@@ -1041,7 +1044,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
     const isTooltipOpen = tooltipOpen === field.id
 
     return (
-      <div key={field.id} data-tour={field.id === 'subject' ? 'field-subject' : undefined}>
+      <div key={field.id} data-tour={field.id === tourFieldId ? 'field-subject' : undefined}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
             <label className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>
@@ -1072,8 +1075,8 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
             {(field.ai_assist || field.id === 'negative_prompt') && (
               <button
                 type="button"
-                data-tour={field.id === 'subject' ? 'ai-assist-subject' : undefined}
-                onClick={() => { handleAiAssist(field.id); if (field.id === 'subject') onTourAiAssistClicked?.() }}
+                data-tour={field.id === tourFieldId ? 'ai-assist-subject' : undefined}
+                onClick={() => { handleAiAssist(field.id); if (field.id === tourFieldId) onTourAiAssistClicked?.() }}
                 disabled={assisting === field.id}
                 className="text-xs disabled:opacity-40 flex items-center gap-1 transition-opacity hover:opacity-70 cursor-pointer"
                 style={{ color: 'var(--pv-accent)' }}
@@ -1104,7 +1107,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
           userAssets={field.type === 'image_upload' ? userAssets : undefined}
         />
         {aiSuggestion?.fieldId === field.id && (
-          <div data-tour={field.id === 'subject' ? 'ai-suggestion-subject' : undefined} className="mt-2 rounded-xl border border-sky-300 dark:border-sky-500/40 bg-sky-50 dark:bg-sky-500/8 overflow-hidden">
+          <div data-tour={field.id === tourFieldId ? 'ai-suggestion-subject' : undefined} className="mt-2 rounded-xl border border-sky-300 dark:border-sky-500/40 bg-sky-50 dark:bg-sky-500/8 overflow-hidden">
             <div className="px-3 py-2 border-b border-sky-200 dark:border-sky-500/25 flex items-center gap-2">
               <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wider">AI Suggestion</span>
             </div>
@@ -1114,7 +1117,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
             <div className="px-3 py-2 border-t border-sky-200 dark:border-sky-500/25 flex gap-2">
               <button
                 type="button"
-                onClick={() => { set(field.id, aiSuggestion.suggestion); setAiSuggestion(null); if (field.id === 'subject') onTourAiSuggestionAccepted?.() }}
+                onClick={() => { set(field.id, aiSuggestion.suggestion); setAiSuggestion(null); if (field.id === tourFieldId) onTourAiSuggestionAccepted?.() }}
                 className="px-3 py-1.5 bg-sky-500 hover:bg-sky-600 rounded-lg text-xs font-semibold text-white transition-all cursor-pointer"
               >
                 Accept
