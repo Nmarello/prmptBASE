@@ -67,8 +67,6 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
     .map(m => latestRenderBySlug[m.slug])
     .filter((r): r is { url: string; isVideo: boolean } => !!r && !r.isVideo)
     .slice(0, 4)
-  const familyRender = familyRenders[0] ?? null
-
   const sortedModels = [...models].sort((a, b) => (a.family_order ?? 0) - (b.family_order ?? 0))
 
   return (
