@@ -64,6 +64,7 @@ const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
   'sd35-medium':        { gradient: 'linear-gradient(145deg,#001133,#003388,#0055cc)', initial: 'S3' },
   'seedance-1-pro':         { gradient: 'linear-gradient(145deg,#1a0a00,#663300,#cc6600)', initial: 'SC' },
   'seedance-1-pro-txt2vid': { gradient: 'linear-gradient(145deg,#1a0a00,#663300,#cc6600)', initial: 'SC' },
+  'seedance-2':             { gradient: 'linear-gradient(145deg,#0d0a1a,#3d1a66,#8833cc)', initial: 'S2' },
   // Vid2vid coming soon
   'kling-o1-edit':      { gradient: 'linear-gradient(145deg,#4a0040,#cc0066,#ff4d94)', initial: 'KE' },
   'kling-o1-reference': { gradient: 'linear-gradient(145deg,#3d0030,#990055,#cc3377)', initial: 'KR' },
@@ -136,6 +137,7 @@ const slugBrandLabels: Record<string, string> = {
   'sd35-medium':      'Stability AI',
   'seedance-1-pro':           'ByteDance',
   'seedance-1-pro-txt2vid':   'ByteDance',
+  'seedance-2':               'ByteDance',
   'kling-o1-edit':    'Kuaishou',
   'kling-o1-reference': 'Kuaishou',
   'luma-modify':      'Luma AI',

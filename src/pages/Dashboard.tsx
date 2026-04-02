@@ -95,7 +95,7 @@ function getModelStatus(
     return { status: 'active' }
   }
 
-  const isVideo = model.supported_gen_types.some(g => ['txt2vid', 'img2vid', 'vid2vid'].includes(g))
+  const isVideo = model.supported_gen_types.some(g => ['txt2vid', 'img2vid', 'ref2vid', 'vid2vid'].includes(g))
   const modelMinTierIdx = TIER_ORDER.indexOf(model.min_tier ?? 'newbie')
 
   // Pro: everything active
@@ -412,7 +412,7 @@ export default function Dashboard() {
       if (!asset.model_id) continue
       const slug = slugById[asset.model_id]
       if (slug && !map[slug]) {
-        const isVideo = asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid'
+        const isVideo = asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid' || asset.gen_type === 'ref2vid'
         map[slug] = { url: asset.url, isVideo }
       }
     }
@@ -478,7 +478,7 @@ export default function Dashboard() {
       .select('id, metadata, created_at')
       .eq('user_id', user.id)
       .eq('url', '')
-      .in('gen_type', ['txt2vid', 'img2vid'])
+      .in('gen_type', ['txt2vid', 'img2vid', 'ref2vid'])
       .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
       .order('created_at', { ascending: false })
       .limit(1)
@@ -684,7 +684,7 @@ export default function Dashboard() {
       const isFal = !isReplicate && !DIRECT_API_SLUGS.has(selectedModel.slug)
       const isGoogle = GOOGLE_DIRECT_SLUGS.has(selectedModel.slug)
       const isImg2Img = selectedGenType === 'img2img'
-      const isVideo = selectedGenType === 'txt2vid' || selectedGenType === 'img2vid'
+      const isVideo = selectedGenType === 'txt2vid' || selectedGenType === 'img2vid' || selectedGenType === 'ref2vid'
 
       const endpoint = isReplicate
         ? 'generate-replicate'
@@ -784,7 +784,7 @@ export default function Dashboard() {
         await supabase.from('assets').update({ project_id: activeProjectId }).eq('id', assetId)
       }
 
-      analytics.generationCompleted({ model: selectedModel.slug, gen_type: isVideo ? 'txt2vid' : (selectedGenType === 'img2img' ? 'img2img' : 'txt2img'), tier: userTier, success: true })
+      analytics.generationCompleted({ model: selectedModel.slug, gen_type: selectedGenType ?? 'txt2img', tier: userTier, success: true })
       setPendingImage(null)
       setRenderingModelSlug(null)
       setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt, isVideo })
@@ -1123,7 +1123,7 @@ export default function Dashboard() {
                       const counts = {
                         all: liveModels.length,
                         images: liveModels.filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))).length,
-                        videos: liveModels.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid')).length,
+                        videos: liveModels.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid' || g === 'ref2vid')).length,
                       }
                       const active = modelFilter === f
                       return (

@@ -40,6 +40,7 @@ const SLUG_PROVIDER: Record<string, string> = {
   'hidream-full':            'hidream',
   'seedream-45':             'bytedance',
   'seedance-1-pro':          'bytedance',
+  'seedance-2':              'bytedance',
   'ltx-2.3-pro':             'lightricks',
   'ltx-2.3-fast':            'lightricks',
   'sd35-medium':             'stability',
