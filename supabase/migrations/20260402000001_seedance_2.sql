@@ -35,13 +35,7 @@ SELECT id, 'txt2vid', 'Seedance 2.0 — Text to Video',
       {"value":"3:4","label":"3:4 — Tall"},
       {"value":"21:9","label":"21:9 — Ultrawide"}
     ]},
-    {"id":"duration","label":"Duration","type":"select","options":[
-      {"value":"auto","label":"Auto"},
-      {"value":"5","label":"5 seconds"},
-      {"value":"8","label":"8 seconds"},
-      {"value":"10","label":"10 seconds"},
-      {"value":"15","label":"15 seconds"}
-    ]},
+    {"id":"duration","label":"Duration (seconds)","type":"number","placeholder":"auto","hint":"4\u201315 seconds, or leave blank for auto"},
     {"id":"resolution","label":"Resolution","type":"select","options":[
       {"value":"720p","label":"720p"},
       {"value":"480p","label":"480p (faster)"}
@@ -61,7 +55,7 @@ SELECT id, 'img2vid', 'Seedance 2.0 — Image to Video',
   'Animate a starting image with a text prompt. Optionally provide an ending frame for transitions.',
   '[
     {"id":"prompt","label":"Prompt","type":"textarea","required":true,"ai_assist":true,"placeholder":"The subject slowly turns their head and smiles, soft wind blowing through their hair..."},
-    {"id":"source_image","label":"Starting Image","type":"image","required":true},
+    {"id":"source_image","label":"Starting Image","type":"image_upload","required":true},
     {"id":"aspect_ratio","label":"Aspect Ratio","type":"select","options":[
       {"value":"auto","label":"Auto (match image)"},
       {"value":"16:9","label":"16:9 — Landscape"},
@@ -70,13 +64,7 @@ SELECT id, 'img2vid', 'Seedance 2.0 — Image to Video',
       {"value":"4:3","label":"4:3 — Standard"},
       {"value":"3:4","label":"3:4 — Tall"}
     ]},
-    {"id":"duration","label":"Duration","type":"select","options":[
-      {"value":"auto","label":"Auto"},
-      {"value":"5","label":"5 seconds"},
-      {"value":"8","label":"8 seconds"},
-      {"value":"10","label":"10 seconds"},
-      {"value":"15","label":"15 seconds"}
-    ]},
+    {"id":"duration","label":"Duration (seconds)","type":"number","placeholder":"auto","hint":"4\u201315 seconds, or leave blank for auto"},
     {"id":"resolution","label":"Resolution","type":"select","options":[
       {"value":"720p","label":"720p"},
       {"value":"480p","label":"480p (faster)"}
@@ -96,7 +84,7 @@ SELECT id, 'ref2vid', 'Seedance 2.0 — Reference to Video',
   'Generate video using a reference image for character and style consistency. The reference guides the visual identity while the prompt drives the action.',
   '[
     {"id":"prompt","label":"Prompt","type":"textarea","required":true,"ai_assist":true,"placeholder":"The character walks confidently down a futuristic corridor, dramatic lighting, camera follows from behind..."},
-    {"id":"source_image","label":"Reference Image","type":"image","required":true},
+    {"id":"source_image","label":"Reference Image","type":"image_upload","required":true},
     {"id":"aspect_ratio","label":"Aspect Ratio","type":"select","options":[
       {"value":"auto","label":"Auto"},
       {"value":"16:9","label":"16:9 — Landscape"},
@@ -105,13 +93,7 @@ SELECT id, 'ref2vid', 'Seedance 2.0 — Reference to Video',
       {"value":"4:3","label":"4:3 — Standard"},
       {"value":"3:4","label":"3:4 — Tall"}
     ]},
-    {"id":"duration","label":"Duration","type":"select","options":[
-      {"value":"auto","label":"Auto"},
-      {"value":"5","label":"5 seconds"},
-      {"value":"8","label":"8 seconds"},
-      {"value":"10","label":"10 seconds"},
-      {"value":"15","label":"15 seconds"}
-    ]},
+    {"id":"duration","label":"Duration (seconds)","type":"number","placeholder":"auto","hint":"4\u201315 seconds, or leave blank for auto"},
     {"id":"resolution","label":"Resolution","type":"select","options":[
       {"value":"720p","label":"720p"},
       {"value":"480p","label":"480p (faster)"}

@@ -765,7 +765,7 @@ Deno.serve(async (req) => {
       } else if (slug.startsWith('seedance')) {
         const SEEDANCE_AR = ['auto', '21:9', '16:9', '4:3', '1:1', '3:4', '9:16']
         falPayload.aspect_ratio = SEEDANCE_AR.includes(body.aspect_ratio as string) ? body.aspect_ratio : '16:9'
-        if (body.duration) falPayload.duration = String(body.duration)
+        if (body.duration && String(body.duration) !== 'auto') falPayload.duration = String(body.duration)
         if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
         // Seedance 2.0: resolution, generate_audio, end_image_url
         if (body.resolution) falPayload.resolution = body.resolution
