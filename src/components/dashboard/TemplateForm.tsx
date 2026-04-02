@@ -323,27 +323,31 @@ function AddCustomForm({ fieldId, onSave, onCancel }: {
 
 // ─── Single field renderer ───────────────────────────────────────────────────
 
-function FieldInput({ field, value, onChange, customOptions, onAddOwn, userAssets }: {
+function FieldInput({ field, value, onChange, customOptions, onAddOwn, userAssets, aiAssistSlot }: {
   field: TemplateField
   value: unknown
   onChange: (val: unknown) => void
   customOptions: FieldOption[]
   onAddOwn?: () => void
   userAssets?: AssetRef[]
+  aiAssistSlot?: React.ReactNode
 }) {
   const allOptions = [...(field.options ?? []), ...customOptions]
 
   if (field.type === 'textarea') {
     return (
       <div>
-        <textarea
-          value={(value as string) ?? ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          rows={4}
-          style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text)' }}
-          className="w-full border rounded-xl px-4 py-3 text-sm pv-placeholder focus:outline-none focus:border-sky-500/50 resize-none"
-        />
+        <div className="overflow-hidden rounded-xl border" style={{ borderColor: 'var(--pv-border)' }}>
+          <textarea
+            value={(value as string) ?? ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={field.placeholder}
+            rows={4}
+            style={{ background: 'var(--pv-surface2)', color: 'var(--pv-text)' }}
+            className="w-full border-0 px-4 py-3 text-sm pv-placeholder focus:outline-none resize-none"
+          />
+          {aiAssistSlot}
+        </div>
         {field.hint && <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
       </div>
     )
@@ -914,6 +918,9 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
   const [tooltipOpen, setTooltipOpen] = useState<string | null>(null)
   const [livePromptOverride, setLivePromptOverride] = useState<string | null>(null)
 
+  // First AI-assist-enabled field is the tour target (not always 'subject')
+  const tourFieldId = template.fields.find(f => f.ai_assist && f.id !== 'negative_prompt')?.id ?? 'subject'
+
   const autoPrompt = useMemo(() => buildLivePrompt(values), [values])
   const livePrompt = livePromptOverride ?? autoPrompt
   const isEdited = livePromptOverride !== null
@@ -954,7 +961,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
       const data = await res.json()
       if (data.suggestion) {
         setAiSuggestion({ fieldId, suggestion: data.suggestion })
-        if (fieldId === 'subject') onTourAiSuggestionReceived?.()
+        if (fieldId === tourFieldId) onTourAiSuggestionReceived?.()
       }
     } finally {
       setAssisting(null)
@@ -982,7 +989,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
 
   function set(id: string, val: unknown) {
     setValues((prev) => ({ ...prev, [id]: val }))
-    if (id === 'subject' && val && String(val).trim().length > 0) onTourSubjectTyped?.()
+    if (id === tourFieldId && val && String(val).trim().length > 0) onTourSubjectTyped?.()
   }
 
   function handleCustomSaved(fieldId: string, opt: CustomOption) {
@@ -1041,7 +1048,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
     const isTooltipOpen = tooltipOpen === field.id
 
     return (
-      <div key={field.id} data-tour={field.id === 'subject' ? 'field-subject' : undefined}>
+      <div key={field.id} data-tour={field.id === tourFieldId ? 'field-subject' : undefined}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
             <label className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>
@@ -1069,18 +1076,6 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
             )}
           </div>
           <div className="flex items-center gap-3">
-            {(field.ai_assist || field.id === 'negative_prompt') && (
-              <button
-                type="button"
-                data-tour={field.id === 'subject' ? 'ai-assist-subject' : undefined}
-                onClick={() => { handleAiAssist(field.id); if (field.id === 'subject') onTourAiAssistClicked?.() }}
-                disabled={assisting === field.id}
-                className="text-xs disabled:opacity-40 flex items-center gap-1 transition-opacity hover:opacity-70 cursor-pointer"
-                style={{ color: 'var(--pv-accent)' }}
-              >
-                {assisting === field.id ? 'Thinking…' : field.id === 'negative_prompt' ? 'Auto-suggest' : 'AI assist'}
-              </button>
-            )}
             {showAddButton && field.type === 'select' && (
               <button
                 type="button"
@@ -1102,9 +1097,31 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
             ? () => setAddingTo(addingTo === field.id ? null : field.id)
             : undefined}
           userAssets={field.type === 'image_upload' ? userAssets : undefined}
+          aiAssistSlot={field.type === 'textarea' && (field.ai_assist || field.id === 'negative_prompt') ? (
+            <button
+              type="button"
+              data-tour={field.id === tourFieldId ? 'ai-assist-subject' : undefined}
+              onClick={() => { handleAiAssist(field.id); if (field.id === tourFieldId) onTourAiAssistClicked?.() }}
+              disabled={assisting === field.id}
+              className="w-full flex items-center justify-center gap-1.5 py-1.5 disabled:opacity-40 transition-all hover:brightness-110 cursor-pointer rounded-b-xl text-xs font-semibold text-white -mt-px"
+              style={{ background: 'var(--pv-accent)' }}
+            >
+              {assisting === field.id ? (
+                <>
+                  <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeLinecap="round" /></svg>
+                  <span>Thinking…</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.63 8.41m5.96 5.96a14.926 14.926 0 0 1-5.84 2.58m0 0a6 6 0 0 1-7.38-5.84h4.8m2.58-5.84a14.927 14.927 0 0 0-2.58 5.84m2.58-5.84L2.25 2.25l3.96 3.96" /></svg>
+                  <span>{field.id === 'negative_prompt' ? 'Auto-suggest' : 'AI Assist'}</span>
+                </>
+              )}
+            </button>
+          ) : undefined}
         />
         {aiSuggestion?.fieldId === field.id && (
-          <div data-tour={field.id === 'subject' ? 'ai-suggestion-subject' : undefined} className="mt-2 rounded-xl border border-sky-300 dark:border-sky-500/40 bg-sky-50 dark:bg-sky-500/8 overflow-hidden">
+          <div data-tour={field.id === tourFieldId ? 'ai-suggestion-subject' : undefined} className="mt-2 rounded-xl border border-sky-300 dark:border-sky-500/40 bg-sky-50 dark:bg-sky-500/8 overflow-hidden">
             <div className="px-3 py-2 border-b border-sky-200 dark:border-sky-500/25 flex items-center gap-2">
               <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wider">AI Suggestion</span>
             </div>
@@ -1114,7 +1131,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
             <div className="px-3 py-2 border-t border-sky-200 dark:border-sky-500/25 flex gap-2">
               <button
                 type="button"
-                onClick={() => { set(field.id, aiSuggestion.suggestion); setAiSuggestion(null); if (field.id === 'subject') onTourAiSuggestionAccepted?.() }}
+                onClick={() => { set(field.id, aiSuggestion.suggestion); setAiSuggestion(null); if (field.id === tourFieldId) onTourAiSuggestionAccepted?.() }}
                 className="px-3 py-1.5 bg-sky-500 hover:bg-sky-600 rounded-lg text-xs font-semibold text-white transition-all cursor-pointer"
               >
                 Accept

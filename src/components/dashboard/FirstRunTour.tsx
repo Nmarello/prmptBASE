@@ -70,7 +70,7 @@ const STEPS: Step[] = [
   {
     target: '[data-tour="field-subject"]',
     position: 'left',
-    title: 'Start with the Subject',
+    title: 'Start with your Prompt',
     special: 'subject',
     hasButton: true,
     buttonLabel: 'Next →',
@@ -80,7 +80,7 @@ const STEPS: Step[] = [
     target: '[data-tour="ai-assist-subject"]',
     position: 'left',
     title: 'Try AI Assist',
-    body: 'Click the "AI assist" button next to Subject. It\'ll expand your simple idea into a detailed, effective prompt.',
+    body: 'Click the "AI assist" button next to your prompt. It\'ll expand your simple idea into a detailed, effective prompt.',
     actionPrompt: 'Click AI Assist to continue →',
   },
   // 6 – waiting for AI response
@@ -433,7 +433,7 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, 
         {/* Special: subject */}
         {current.special === 'subject' && (
           <div style={{ fontSize: 13, color: 'var(--pv-text2)', lineHeight: 1.6, marginBottom: 8 }}>
-            Type a description in the Subject field, or use this sample:
+            Type a description in the prompt field, or use this sample:
             <div style={{ margin: '8px 0', padding: '8px 10px 8px 12px', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--pv-text)', letterSpacing: '-0.01em', flex: 1 }}>{SUBJECT_SAMPLE}</span>
               {onAutoFillSubject && (
@@ -455,7 +455,7 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, 
         {current.special === 'thinking' && (
           <div>
             <div style={{ fontSize: 13, color: 'var(--pv-text2)', lineHeight: 1.6, marginBottom: 14 }}>
-              Give it a moment — it's reading your subject and crafting a detailed prompt.
+              Give it a moment — it's reading your prompt and crafting a detailed version.
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid var(--pv-border)', borderTopColor: 'var(--pv-accent)', flexShrink: 0 }} className="pv-spin" />
@@ -480,7 +480,7 @@ export default function FirstRunTour({ step, onNext, onSkip, onDone, onExplore, 
         {/* Special: optional settings explainer */}
         {current.special === 'settings' && (
           <div style={{ fontSize: 13, color: 'var(--pv-text2)', lineHeight: 1.6, marginBottom: 16 }}>
-            Below the Subject you'll find optional settings — <strong style={{ color: 'var(--pv-text)' }}>Style, Lighting, Mood, Lens,</strong> and more.
+            Below your prompt you'll find optional settings — <strong style={{ color: 'var(--pv-text)' }}>Style, Lighting, Mood, Lens,</strong> and more.
             <br /><br />
             You don't need to touch any of these right now. They're there for when you're ready to go deeper.
           </div>
