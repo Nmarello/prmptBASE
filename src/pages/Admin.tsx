@@ -188,7 +188,33 @@ function SbBtn({ tip, active, onClick, children }: { tip?: string; active?: bool
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-type AdminView = 'stats' | 'users' | 'feedback' | 'support' | 'model-status' | 'blog'
+type AdminView = 'stats' | 'users' | 'feedback' | 'support' | 'model-status' | 'blog' | 'api-usage'
+
+interface ApiUsageAlert { severity: 'warning' | 'critical'; message: string }
+interface ApiUsageData {
+  days: number
+  fal: {
+    total_cost: number
+    balance: number | null
+    by_endpoint: { endpoint_id: string; cost: number; quantity: number }[]
+    error: string | null
+  }
+  replicate: {
+    total_predictions: number
+    total_seconds: number
+    total_est_cost: number
+    by_model: { model: string; count: number; total_seconds: number; est_cost: number }[]
+    error: string | null
+  }
+  internal: {
+    total_count: number
+    fal: { count: number; cost: number }
+    replicate: { count: number; cost: number }
+    other: { count: number; cost: number }
+    by_model: { slug: string; count: number; cost: number; provider: string; route: string }[]
+  }
+  alerts: ApiUsageAlert[]
+}
 
 interface ModelRow {
   slug: string
@@ -276,6 +302,11 @@ export default function Admin() {
   const [modelStatuses, setModelStatuses] = useState<ModelStatusMerged[]>([])
   const [modelsLoading, setModelsLoading] = useState(false)
 
+  // API Usage state
+  const [apiUsage, setApiUsage] = useState<ApiUsageData | null>(null)
+  const [apiUsageLoading, setApiUsageLoading] = useState(false)
+  const [apiUsageDays, setApiUsageDays] = useState(30)
+
   // Blog publisher state
   const [blogModels, setBlogModels] = useState<Array<{ name: string; image_url: string }>>([{ name: '', image_url: '' }])
   const [blogSubmitting, setBlogSubmitting] = useState(false)
@@ -290,6 +321,7 @@ export default function Admin() {
     else if (view === 'support' && supportConvs.length === 0) loadSupport()
     else if (view === 'model-status' && modelStatuses.length === 0) loadModels()
     else if (view === 'blog') loadBlogDrafts()
+    else if (view === 'api-usage' && !apiUsage) loadApiUsage()
   }, [view])
 
   async function loadAll() {
@@ -322,6 +354,23 @@ export default function Admin() {
       image_by_model: data.image_by_model ?? [],
     })
     setLoading(false)
+  }
+
+  async function loadApiUsage(overrideDays?: number) {
+    setApiUsageLoading(true)
+    const d = overrideDays ?? apiUsageDays
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) { setApiUsageLoading(false); return }
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-api-usage`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY }, body: JSON.stringify({ user_token: token, days: d }) }
+      )
+      const data = await res.json()
+      if (!data.error) setApiUsage(data)
+    } catch { /* silent */ }
+    setApiUsageLoading(false)
   }
 
   async function loadFeedback() {
@@ -666,6 +715,13 @@ export default function Admin() {
           </svg>
         </SbBtn>
 
+        {/* Nav: API Usage */}
+        <SbBtn tip="API Usage" active={view === 'api-usage'} onClick={() => setView('api-usage')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+          </svg>
+        </SbBtn>
+
       </aside>
 
       {/* ── Main Content ── */}
@@ -687,7 +743,7 @@ export default function Admin() {
             {/* Page header */}
             <div className="mb-6">
               <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 24, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.05em', lineHeight: 1.1 }}>
-                {view === 'stats' ? 'Stats' : view === 'users' ? 'Users' : view === 'feedback' ? 'Feedback' : view === 'support' ? 'Support' : view === 'model-status' ? 'Model Status' : 'Blog Publisher'}
+                {view === 'stats' ? 'Stats' : view === 'users' ? 'Users' : view === 'feedback' ? 'Feedback' : view === 'support' ? 'Support' : view === 'model-status' ? 'Model Status' : view === 'api-usage' ? 'API Usage' : 'Blog Publisher'}
               </h1>
               <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginTop: 3 }}>{user?.email}</p>
             </div>
@@ -1236,6 +1292,141 @@ export default function Admin() {
                   </div>
                 )}
               </Card>
+            )}
+
+            {/* ── API Usage view ── */}
+            {view === 'api-usage' && (
+              <>
+              {apiUsageLoading && <div className="flex items-center justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--pv-accent)] border-t-transparent" /></div>}
+              {!apiUsageLoading && apiUsage && (
+                <>
+                {/* Alerts */}
+                {apiUsage.alerts.length > 0 && (
+                  <div className="space-y-2 mb-4">
+                    {apiUsage.alerts.map((a, i) => (
+                      <div key={i} style={{
+                        background: a.severity === 'critical' ? 'rgba(239,68,68,0.1)' : 'rgba(251,191,36,0.1)',
+                        border: `1px solid ${a.severity === 'critical' ? 'rgba(239,68,68,0.3)' : 'rgba(251,191,36,0.3)'}`,
+                        borderRadius: 12, padding: '12px 16px', fontSize: 13,
+                        color: a.severity === 'critical' ? '#f87171' : '#fbbf24',
+                      }}>
+                        <span style={{ fontWeight: 700, marginRight: 8 }}>{a.severity === 'critical' ? 'CRITICAL' : 'WARNING'}</span>
+                        {a.message}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Time range selector + refresh */}
+                <div className="flex items-center gap-3 mb-4">
+                  {[7, 14, 30, 90].map(d => (
+                    <button key={d} onClick={() => { setApiUsageDays(d); setApiUsage(null); loadApiUsage(d) }}
+                      style={{
+                        padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600, border: '1px solid var(--pv-border)',
+                        background: apiUsageDays === d ? 'var(--pv-accent)' : 'var(--pv-surface2)',
+                        color: apiUsageDays === d ? '#fff' : 'var(--pv-text2)',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                      }}
+                      className="hover:opacity-80 transition-opacity"
+                    >{d}d</button>
+                  ))}
+                  <button onClick={() => { setApiUsage(null); loadApiUsage() }}
+                    style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600, border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)', color: 'var(--pv-text2)', cursor: 'pointer', fontFamily: 'inherit' }}
+                    className="hover:opacity-80 transition-opacity"
+                  >Refresh</button>
+                </div>
+
+                {/* Summary cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-4">
+                  <StatCard label="FAL Spend (API)" value={`$${apiUsage.fal.total_cost.toFixed(2)}`} accent="#38bdf8" />
+                  <StatCard label="FAL Spend (Site)" value={`$${apiUsage.internal.fal.cost.toFixed(2)}`} accent="var(--pv-accent)" />
+                  <StatCard label="FAL Balance" value={apiUsage.fal.balance !== null ? `$${apiUsage.fal.balance.toFixed(2)}` : 'N/A'} accent={apiUsage.fal.balance !== null && apiUsage.fal.balance < 10 ? '#f87171' : '#4ade80'} />
+                  <StatCard label="Replicate (API)" value={`$${apiUsage.replicate.total_est_cost.toFixed(2)}`} accent="#c084fc" />
+                  <StatCard label="Replicate (Site)" value={`$${apiUsage.internal.replicate.cost.toFixed(2)}`} accent="var(--pv-accent)" />
+                  <StatCard label="Replicate Preds" value={apiUsage.replicate.total_predictions} accent="#c084fc" />
+                  <StatCard label="Total API Spend" value={`$${(apiUsage.fal.total_cost + apiUsage.replicate.total_est_cost).toFixed(2)}`} accent="#f5c842" />
+                  <StatCard label="Site Total" value={apiUsage.internal.total_count} accent="var(--pv-text)" />
+                </div>
+
+                {/* FAL + Replicate side by side */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                  {/* FAL breakdown */}
+                  <Card>
+                    <div style={{ padding: 20 }}>
+                      <h3 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 12, color: 'var(--pv-text)' }}>
+                        FAL API Usage
+                        {apiUsage.fal.error && <span style={{ fontSize: 11, color: '#f87171', marginLeft: 8 }}>({apiUsage.fal.error})</span>}
+                      </h3>
+                      {apiUsage.fal.by_endpoint.length === 0 && !apiUsage.fal.error && (
+                        <p style={{ fontSize: 13, color: 'var(--pv-text3)' }}>No FAL usage in this period</p>
+                      )}
+                      <div className="space-y-1">
+                        {apiUsage.fal.by_endpoint.sort((a, b) => b.cost - a.cost).map(ep => (
+                          <div key={ep.endpoint_id} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: '1px solid var(--pv-border)', fontSize: 13 }}>
+                            <span style={{ color: 'var(--pv-text2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: 12 }}>{ep.endpoint_id}</span>
+                            <span style={{ color: 'var(--pv-text3)', marginRight: 16, flexShrink: 0 }}>{ep.quantity} calls</span>
+                            <span style={{ color: '#38bdf8', fontWeight: 600, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>${ep.cost.toFixed(4)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Replicate breakdown */}
+                  <Card>
+                    <div style={{ padding: 20 }}>
+                      <h3 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 12, color: 'var(--pv-text)' }}>
+                        Replicate API Usage
+                        {apiUsage.replicate.error && <span style={{ fontSize: 11, color: '#f87171', marginLeft: 8 }}>({apiUsage.replicate.error})</span>}
+                      </h3>
+                      {apiUsage.replicate.by_model.length === 0 && !apiUsage.replicate.error && (
+                        <p style={{ fontSize: 13, color: 'var(--pv-text3)' }}>No Replicate usage in this period</p>
+                      )}
+                      <div className="space-y-1">
+                        {apiUsage.replicate.by_model.map(m => (
+                          <div key={m.model} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: '1px solid var(--pv-border)', fontSize: 13 }}>
+                            <span style={{ color: 'var(--pv-text2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: 12 }}>{m.model}</span>
+                            <span style={{ color: 'var(--pv-text3)', marginRight: 16, flexShrink: 0 }}>{m.count} preds</span>
+                            <span style={{ color: 'var(--pv-text3)', marginRight: 16, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{m.total_seconds.toFixed(1)}s</span>
+                            <span style={{ color: '#c084fc', fontWeight: 600, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>${m.est_cost.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Internal usage by model */}
+                <Card>
+                  <div style={{ padding: 20 }}>
+                    <h3 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 12, color: 'var(--pv-text)' }}>
+                      Site Usage by Model (tracked)
+                    </h3>
+                    <div className="space-y-1">
+                      {apiUsage.internal.by_model.map(m => (
+                        <div key={m.slug} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: '1px solid var(--pv-border)', fontSize: 13 }}>
+                          <span style={{ color: 'var(--pv-text)', fontWeight: 500, flex: 1 }}>{m.slug}</span>
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6, marginRight: 8, flexShrink: 0,
+                            background: m.route === 'replicate' ? 'rgba(192,132,252,0.12)' : m.route === 'fal' ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.06)',
+                            color: m.route === 'replicate' ? '#c084fc' : m.route === 'fal' ? '#38bdf8' : 'var(--pv-text3)',
+                          }}>{m.route.toUpperCase()}</span>
+                          <span style={{ color: 'var(--pv-text3)', marginRight: 16, flexShrink: 0 }}>{m.provider}</span>
+                          <span style={{ color: 'var(--pv-text2)', marginRight: 16, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{m.count} gens</span>
+                          <span style={{ color: '#4ade80', fontWeight: 600, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>${m.cost.toFixed(4)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+                </>
+              )}
+              {!apiUsageLoading && !apiUsage && (
+                <div className="flex items-center justify-center py-20">
+                  <button onClick={() => loadApiUsage()} style={{ padding: '10px 20px', borderRadius: 12, background: 'var(--pv-accent)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }} className="hover:opacity-90 transition-opacity">Load API Usage</button>
+                </div>
+              )}
+              </>
             )}
 
             {/* ── Blog Publisher view ── */}
