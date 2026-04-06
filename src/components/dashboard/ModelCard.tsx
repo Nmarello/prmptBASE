@@ -195,7 +195,9 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
   // Reset state + catch already-cached images when URL changes
   useEffect(() => {
     setMediaLoaded(false)
-    if (!latestRenderUrl || latestRenderIsVideo) return
+    if (!latestRenderUrl) return
+    // Video renders: show gradient immediately — video plays on hover
+    if (latestRenderIsVideo) { setMediaLoaded(true); return }
     const img = imgRef.current
     if (img?.complete && img.naturalWidth > 0) setMediaLoaded(true)
   }, [latestRenderUrl, latestRenderIsVideo])
