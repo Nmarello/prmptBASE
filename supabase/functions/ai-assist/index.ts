@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return optionsResponse(req)
 
   try {
-    const { user_token, field_id, field_label, current_value, form_values, source_image_url, is_negative_prompt, gen_type } = await req.json()
+    const { user_token, field_id, field_label, current_value, form_values, source_image_url, end_image_url, is_negative_prompt, gen_type } = await req.json()
 
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -13,10 +13,13 @@ Deno.serve(async (req) => {
     )
     if (user_token) await adminClient.auth.getUser(user_token)
 
+    const supabaseStorageBase = Deno.env.get('SUPABASE_URL') + '/storage/v1/object/public/'
     // Validate that source_image_url is from our own Supabase storage (not an arbitrary external URL)
     if (source_image_url) {
-      const supabaseStorageBase = Deno.env.get('SUPABASE_URL') + '/storage/v1/object/public/'
       if (!source_image_url.startsWith(supabaseStorageBase)) throw new Error('Invalid source image URL')
+    }
+    if (end_image_url) {
+      if (!end_image_url.startsWith(supabaseStorageBase)) throw new Error('Invalid end image URL')
     }
 
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
@@ -71,9 +74,12 @@ Deno.serve(async (req) => {
       const positivePrompt = (form_values?.prompt as string) || (form_values?.subject as string) || ''
       textContent = `Generate negative prompt terms for this ${genTypeStr} generation.\nPositive prompt: "${positivePrompt}"${context}`
     } else if (isVideo) {
-      systemPrompt = hasSourceImage
-        ? `You are an expert at writing motion prompts for AI image-to-video models. The user has uploaded a source image (shown). Describe how the scene should come to life: what moves, how it moves, camera behavior, lighting changes, and atmosphere. Be specific about motion direction, speed, and style. Keep it to 2-3 sentences max. Return only the motion prompt text, no explanation, no quotes.`
-        : `You are an expert at writing prompts for AI video generation models. When given a rough description, expand it into a vivid, cinematic motion prompt. Be specific about what moves, camera behavior (push in, pan, orbit), lighting, atmosphere, and visual style. Keep it to 2-3 sentences max. Return only the improved prompt text, no explanation, no quotes.`
+      const hasEndImage = !!end_image_url
+      systemPrompt = hasEndImage
+        ? `You are an expert at writing motion prompts for AI image-to-video models. The user has uploaded both a start frame and an end frame (both shown). Write a motion prompt that describes the transition between these two images — what changes, what moves, how the scene evolves from start to end. Be specific about motion, camera behavior, and any visual transformation. Keep it to 2-3 sentences max. Return only the motion prompt text, no explanation, no quotes.`
+        : hasSourceImage
+          ? `You are an expert at writing motion prompts for AI image-to-video models. The user has uploaded a source image (shown). Describe how the scene should come to life: what moves, how it moves, camera behavior, lighting changes, and atmosphere. Be specific about motion direction, speed, and style. Keep it to 2-3 sentences max. Return only the motion prompt text, no explanation, no quotes.`
+          : `You are an expert at writing prompts for AI video generation models. When given a rough description, expand it into a vivid, cinematic motion prompt. Be specific about what moves, camera behavior (push in, pan, orbit), lighting, atmosphere, and visual style. Keep it to 2-3 sentences max. Return only the improved prompt text, no explanation, no quotes.`
 
       textContent = current_value?.trim()
         ? `Improve this motion prompt for a video generation model:\n\n${current_value}${context}`
@@ -97,6 +103,7 @@ Deno.serve(async (req) => {
     const userMessage: MessageContent = useVision
       ? [
           { type: 'image_url', image_url: { url: source_image_url } },
+          ...(end_image_url ? [{ type: 'image_url', image_url: { url: end_image_url } }] : []),
           { type: 'text', text: textContent },
         ]
       : textContent

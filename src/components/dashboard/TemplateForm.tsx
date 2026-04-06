@@ -1034,6 +1034,12 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
               if (src.startsWith('http')) return src
               return sourceImageOriginUrl ?? undefined
             })(),
+            end_image_url: (() => {
+              const src = values.tail_image_url as string | undefined
+              if (!src) return undefined
+              if (src.startsWith('http')) return src
+              return undefined
+            })(),
             is_negative_prompt: fieldId === 'negative_prompt',
             gen_type: genType ?? null,
           }),
