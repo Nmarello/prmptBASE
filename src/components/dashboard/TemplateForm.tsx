@@ -996,6 +996,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [assisting, setAssisting] = useState<string | null>(null)
   const [aiSuggestion, setAiSuggestion] = useState<{ fieldId: string; suggestion: string } | null>(null)
+  const [aiAssistError, setAiAssistError] = useState<string | null>(null)
   const [tooltipOpen, setTooltipOpen] = useState<string | null>(null)
   const [livePromptOverride, setLivePromptOverride] = useState<string | null>(null)
 
@@ -1011,6 +1012,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
 
   async function handleAiAssist(fieldId: string) {
     setAssisting(fieldId)
+    setAiAssistError(null)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch(
@@ -1049,7 +1051,11 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
       if (data.suggestion) {
         setAiSuggestion({ fieldId, suggestion: data.suggestion })
         if (fieldId === tourFieldId) onTourAiSuggestionReceived?.()
+      } else if (data.error) {
+        setAiAssistError(data.error)
       }
+    } catch (err) {
+      setAiAssistError(err instanceof Error ? err.message : 'AI assist failed')
     } finally {
       setAssisting(null)
     }
@@ -1207,6 +1213,9 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
             </button>
           ) : undefined}
         />
+        {aiAssistError && assisting === null && (
+          <p className="mt-1.5 text-xs px-1" style={{ color: 'var(--pv-error, #ef4444)' }}>AI Assist failed: {aiAssistError}</p>
+        )}
         {aiSuggestion?.fieldId === field.id && (
           <div data-tour={field.id === tourFieldId ? 'ai-suggestion-subject' : undefined} className="mt-2 rounded-xl border border-sky-300 dark:border-sky-500/40 bg-sky-50 dark:bg-sky-500/8 overflow-hidden">
             <div className="px-3 py-2 border-b border-sky-200 dark:border-sky-500/25 flex items-center gap-2">
