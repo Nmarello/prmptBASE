@@ -70,6 +70,14 @@ Deno.serve(async (req) => {
 
       const positivePrompt = (form_values?.prompt as string) || (form_values?.subject as string) || ''
       textContent = `Generate negative prompt terms for this ${genTypeStr} generation.\nPositive prompt: "${positivePrompt}"${context}`
+    } else if (isVideo) {
+      systemPrompt = hasSourceImage
+        ? `You are an expert at writing motion prompts for AI image-to-video models. The user has uploaded a source image (shown). Describe how the scene should come to life: what moves, how it moves, camera behavior, lighting changes, and atmosphere. Be specific about motion direction, speed, and style. Keep it to 2-3 sentences max. Return only the motion prompt text, no explanation, no quotes.`
+        : `You are an expert at writing prompts for AI video generation models. When given a rough description, expand it into a vivid, cinematic motion prompt. Be specific about what moves, camera behavior (push in, pan, orbit), lighting, atmosphere, and visual style. Keep it to 2-3 sentences max. Return only the improved prompt text, no explanation, no quotes.`
+
+      textContent = current_value?.trim()
+        ? `Improve this motion prompt for a video generation model:\n\n${current_value}${context}`
+        : `Generate a compelling motion prompt for a video generation model.${context}`
     } else {
       systemPrompt = isSubject
         ? hasSourceImage
