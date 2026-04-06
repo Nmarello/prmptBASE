@@ -1,3 +1,4 @@
+import React, { useState } from 'react'
 import type { Model, GenType } from '../../types'
 import { tierCanAccess, GEN_TYPE_LABELS } from '../../types'
 
@@ -189,6 +190,7 @@ function thumbUrl(url: string, width = 460): string {
 }
 
 export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering, latestRenderUrl, latestRenderIsVideo, dataTour, modelStatus, upgradeTier, onAdd, onUpgrade, borderColor }: Props) {
+  const [imgLoaded, setImgLoaded] = useState(false)
   const accessible = tierCanAccess(userTier, model.min_tier)
   const comingSoon = comingSoonProp || modelStatus === 'coming-soon' || false
   const art = MODEL_ART[model.slug] ?? DEFAULT_ART
@@ -253,8 +255,32 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
                 src={thumbUrl(latestRenderUrl!)}
                 alt=""
                 loading="lazy"
+                decoding="async"
+                onLoad={() => setImgLoaded(true)}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
+            )}
+            {/* Option D skeleton — shown until image loads */}
+            {!imgLoaded && !latestRenderIsVideo && (
+              <div className="absolute inset-0" style={{ background: 'var(--pv-surface2)' }}>
+                {/* Corner brackets */}
+                {([
+                  { top: 6, left: 6,    borderTop: '2px solid white', borderLeft:  '2px solid white' },
+                  { top: 6, right: 6,   borderTop: '2px solid white', borderRight: '2px solid white' },
+                  { bottom: 6, left: 6,  borderBottom: '2px solid white', borderLeft:  '2px solid white' },
+                  { bottom: 6, right: 6, borderBottom: '2px solid white', borderRight: '2px solid white' },
+                ] as React.CSSProperties[]).map((s, i) => (
+                  <div key={i} style={{ position: 'absolute', width: 16, height: 16, opacity: 0.22, ...s }} />
+                ))}
+                {/* Centered PV logo */}
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', opacity: 0.22 }}>
+                  <svg width={40} height={40} viewBox="0 0 782.7 783.64" style={{ display: 'block' }}>
+                    <polygon fillRule="evenodd" fill="white" points="497.7 457.59 673.63 281.67 391.96 0 0 391.98 304.38 696.38 304.7 696.38 391.96 783.64 454.47 721.4 307.39 574.04 307.05 574.04 124.99 391.98 391.96 125.03 548.61 281.69 435.21 395.09 497.7 457.59" />
+                    <polygon fillRule="evenodd" fill="white" points="499.94 548.65 720.2 328.67 782.7 391.16 499.96 673.64 218.29 391.98 280.78 329.5 499.94 548.65" />
+                  </svg>
+                </div>
+                <div className="pv-skeleton-shimmer" />
+              </div>
             )}
             <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom,rgba(0,0,0,0) 50%,rgba(0,0,0,0.28) 100%)' }} />
           </>

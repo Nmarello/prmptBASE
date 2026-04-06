@@ -1,3 +1,4 @@
+import React, { useState } from 'react'
 import type { Model } from '../../types'
 import ModelCard from './ModelCard'
 
@@ -52,6 +53,7 @@ interface Props {
 }
 
 export default function FamilyCard({ family, models, userTier, isOpen, onToggle, onSelectModel, latestRenderBySlug }: Props) {
+  const [cellLoaded, setCellLoaded] = useState<boolean[]>([false, false, false, false])
   const art = FAMILY_ART[family] ?? DEFAULT_ART
   const activeCount = models.filter(m => !m.coming_soon).length
   const totalCount = models.length
@@ -143,12 +145,35 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
                           className="absolute inset-0 w-full h-full object-cover"
                         />
                       ) : (
-                        <img
-                          src={thumbUrl(r.url, 200)}
-                          alt=""
-                          loading="lazy"
-                          className="absolute inset-0 w-full h-full object-cover"
-                        />
+                        <>
+                          <img
+                            src={thumbUrl(r.url, 200)}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            onLoad={() => setCellLoaded(prev => { const n = [...prev]; n[i] = true; return n })}
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                          {!cellLoaded[i] && (
+                            <div className="absolute inset-0" style={{ background: 'var(--pv-surface2)' }}>
+                              {([
+                                { top: 4, left: 4,    borderTop: '1.5px solid white', borderLeft:  '1.5px solid white' },
+                                { top: 4, right: 4,   borderTop: '1.5px solid white', borderRight: '1.5px solid white' },
+                                { bottom: 4, left: 4,  borderBottom: '1.5px solid white', borderLeft:  '1.5px solid white' },
+                                { bottom: 4, right: 4, borderBottom: '1.5px solid white', borderRight: '1.5px solid white' },
+                              ] as React.CSSProperties[]).map((s, j) => (
+                                <div key={j} style={{ position: 'absolute', width: 10, height: 10, opacity: 0.22, ...s }} />
+                              ))}
+                              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', opacity: 0.22 }}>
+                                <svg width={20} height={20} viewBox="0 0 782.7 783.64" style={{ display: 'block' }}>
+                                  <polygon fillRule="evenodd" fill="white" points="497.7 457.59 673.63 281.67 391.96 0 0 391.98 304.38 696.38 304.7 696.38 391.96 783.64 454.47 721.4 307.39 574.04 307.05 574.04 124.99 391.98 391.96 125.03 548.61 281.69 435.21 395.09 497.7 457.59" />
+                                  <polygon fillRule="evenodd" fill="white" points="499.94 548.65 720.2 328.67 782.7 391.16 499.96 673.64 218.29 391.98 280.78 329.5 499.94 548.65" />
+                                </svg>
+                              </div>
+                              <div className="pv-skeleton-shimmer" />
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   ))}

@@ -68,6 +68,18 @@ body {
 }
 .pv-spin { animation: pv-spin 0.65s linear infinite; }
 
+@keyframes pv-shimmer {
+  from { background-position: -460px 0; }
+  to   { background-position: 460px 0; }
+}
+.pv-skeleton-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 25%, rgba(255,255,255,0.07) 50%, transparent 75%);
+  background-size: 920px 100%;
+  animation: pv-shimmer 1.6s linear infinite;
+}
+
 /* Unified placeholder color using design tokens */
 .pv-placeholder::placeholder { color: var(--pv-text3); }
 
