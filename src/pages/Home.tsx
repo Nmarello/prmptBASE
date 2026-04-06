@@ -250,7 +250,7 @@ export default function Home() {
 
   const [liveModels, setLiveModels] = useState<{ name: string; provider: string; slug: string }[]>([])
   useEffect(() => {
-    supabase.from('models').select('name, provider, slug').eq('is_active', true).order('sort_order')
+    supabase.from('models').select('name, provider, slug').eq('is_active', true).eq('sandbox', false).order('sort_order')
       .then(({ data }) => { if (data) setLiveModels(data) })
   }, [])
 
@@ -1082,7 +1082,7 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <button onClick={() => !tier.comingSoon && setShowAuth(true)} style={{
+              <button onClick={() => { if (!tier.comingSoon) window.location.href = tier.name === 'Free' ? '/pricing' : `/pricing?highlight=${tier.name.toLowerCase()}` }} style={{
                 width: '100%', padding: '9px', borderRadius: 10, fontSize: 12, fontWeight: 600,
                 cursor: tier.comingSoon ? 'default' : 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
                 background: tier.ctaFilled ? '#3d7fff' : 'transparent',

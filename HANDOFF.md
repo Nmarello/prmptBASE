@@ -1,34 +1,37 @@
-# Handoff — prmptVAULT
-**Session date**: 2026-03-30
-**Next action**: Address deferred security items (rate limiting, unsubscribe tokens) or move on to feature work.
+# Handoff — prmptVAULT (prmptBASE)
+**Session date**: 2026-04-04
+**Next action**: Test full upgrade flow with new account (Nick was mid-test when session ended) — verify Creator → Studio → Pro with new email works end-to-end.
 
 ## What we did
-- Deployed all 34 edge functions to Supabase (security audit from 2026-03-29 session)
-- Tested staging: image generation (CORS), Veo video check (ownership gate), support chat, feedback — all passing
-- Moved Ghost Admin API key from hardcoded in `publish-blog` to `GHOST_ADMIN_KEY` Supabase secret
-- Rotated Ghost key in `claude-automation` integration, deleted unused `automated blog` integration
-- Committed and pushed to staging (`73484c2`)
+- Fixed "Invalid JWT" on checkout: root cause was user JWT sent directly in Authorization header; switched to anon key + `user_token` in body pattern
+- Fixed `stripe-webhook` returning 401: was deployed without `--no-verify-jwt` — Supabase gateway was rejecting Stripe's requests before code ran
+- Fixed upgrade creating duplicate subscriptions: webhook now calls `cancel_at_period_end` on old sub when new checkout completes
+- Fixed upgrade → Newbie regression: `customer.subscription.deleted` handler now guards profile downgrade (only downgrades if deleted sub is still user's current sub)
+- Fixed Studio video model quota bug: `selectedVideoIds` (video-only) now used for quota check instead of `selectedIds` (all models including image)
+- Reduced checkout latency: removed `auth.getUser()` network call, decode JWT locally; removed pre-emptive Stripe customer creation
 
 ## Files changed
 | File | What changed |
 |------|-------------|
-| `supabase/functions/publish-blog/index.ts` | Hardcoded Ghost key → `Deno.env.get('GHOST_ADMIN_KEY')` |
+| `src/lib/stripe.ts` | Switched to anon key in Authorization + `user_token` in body; back to `getSession()` |
+| `src/pages/Dashboard.tsx` | Added `selectedVideoIds` derived set; fixed `getModelStatus` to use it for Studio quota |
+| `supabase/functions/create-checkout-session/index.ts` | Full rewrite: JWT decoded locally, user_token from body, skip pre-creating Stripe customer |
+| `supabase/functions/stripe-webhook/index.ts` | Added old-sub cancellation (cancel_at_period_end); fixed deleted handler to guard profile downgrade |
 
 ## Current state
-- ✅ Working: All 34 edge functions deployed with CORS fixes, ownership gates, stack trace removal
-- ✅ Working: Ghost key rotated and reading from env var across all 3 blog functions
-- ✅ Working: Staging tested — generation, Veo, support, feedback all confirmed
-- 🔧 Deferred: Rate limiting on `support-chat`, `submit-feedback`, `ai-assist`, `generate-blog-post`
-- 🔧 Deferred: Weak unsubscribe links in `publish-blog` (plain email → should use signed tokens)
-- 🔧 Deferred: Auth token embedded in Telegram approval URLs (`publish-blog`)
-- 🔧 Deferred: Service role JWT in migration `20260313000019` (in git history, repo private, rotation = nuclear)
-- ❌ Not done: `is_admin` column on profiles still unverified (may be manual dashboard addition)
+- ✅ Checkout flow: working (anon key pattern, ~3-5s vs 15s before)
+- ✅ Webhook: receiving and processing (deployed with --no-verify-jwt)
+- ✅ Upgrade path: cancels old sub safely, updates tier correctly
+- ✅ Studio video quota: now counts video-only selections
+- ⚠️ Nick's test account: cancelled all 3 test subscriptions manually — profile may be on Newbie; reset via /admin if needed
+- ❌ Changes not committed to git (all local + deployed via Wrangler/Supabase CLI)
 
 ## Start here next session
-All security audit work from 2026-03-29 is deployed and verified on staging. The remaining audit items are lower priority — rate limiting on 4 edge functions that make external API calls, signed unsubscribe tokens, and the auth token in Telegram URLs. The service role JWT in git history is a known risk but rotation would invalidate all tokens (not recommended unless leaked publicly). Main branch is 2 commits ahead of origin/main — staging is current. If Nick says ship, push main to origin.
+Nick was testing the full upgrade flow with a new account. The billing/webhook system is now working. Verify the new-account flow end-to-end: signup → upgrade to Creator → upgrade to Studio → verify only 5 video model slots available → upgrade to Pro → verify all models open. Then commit all the changed files to git on staging.
 
 ## Gotchas
-- `GHOST_ADMIN_KEY` Supabase secret is shared by 3 functions: `publish-blog`, `generate-blog-post`, `generate-blog-post-v2`
-- The old Ghost `automated blog` integration was deleted — only `claude-automation` remains
-- Edge function deploys are separate from CF Pages — `supabase functions deploy` is a manual step after code changes
-- Main is ahead of origin/main by 2 commits (`703fae3` security audit + `73484c2` Ghost key env var)
+- `stripe-webhook` MUST be deployed with `--no-verify-jwt` — if redeployed without it, webhook silently fails again
+- Immediate `stripe.subscriptions.cancel()` triggers `customer.subscription.deleted` which resets tier to newbie — always use `cancel_at_period_end: true`
+- User JWT in Authorization header → Supabase gateway 401. Always use anon key in header + user_token in body for user-facing edge fns
+- Studio video model quota: `selectedIds` includes image models (from Creator tier); must use video-only subset for the 5-slot limit
+- All session changes deployed but NOT committed to git — do a `git status` at start of next session to see everything pending

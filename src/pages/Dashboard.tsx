@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { friendlyFalError } from '../lib/errorMessages'
 import { downloadFile } from '../lib/download'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
+import { supabase, isSandbox } from '../lib/supabase'
 import type { Asset, Model, Template, GenType, UserProject } from '../types'
 import { GEN_TYPE_LABELS } from '../types'
 import ModelCard from '../components/dashboard/ModelCard'
@@ -84,6 +84,7 @@ function getModelStatus(
   model: Model,
   userTier: string,
   selectedIds: Set<string>,
+  selectedVideoIds: Set<string>,
 ): { status: ModelStatus; upgradeTier?: string } {
   if (model.coming_soon) return { status: 'coming-soon' }
 
@@ -106,9 +107,7 @@ function getModelStatus(
     if (!isVideo) return { status: 'active' } // all image models always active
     if (modelMinTierIdx > tierIdx) return { status: 'upgrade', upgradeTier: model.min_tier }
     if (selectedIds.has(model.id)) return { status: 'active' }
-    // Count only selected video models for quota check
-    // (selectedIds may include image models from before; video check is approximate here)
-    if (selectedIds.size < STUDIO_VIDEO_LIMIT) return { status: 'add' }
+    if (selectedVideoIds.size < STUDIO_VIDEO_LIMIT) return { status: 'add' }
     return { status: 'next-month' }
   }
 
@@ -148,6 +147,10 @@ export default function Dashboard() {
 
   const [models, setModels] = useState<Model[]>([])
   const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(new Set())
+  const VIDEO_GEN_TYPES = new Set(['txt2vid', 'img2vid', 'ref2vid', 'vid2vid'])
+  const selectedVideoIds = new Set(
+    models.filter(m => m.supported_gen_types.some(g => VIDEO_GEN_TYPES.has(g)) && selectedModelIds.has(m.id)).map(m => m.id)
+  )
   const [_pickerLockedUntil, setPickerLockedUntil] = useState<Date | null>(null)
   const [modelFilter, setModelFilter] = useState<'all' | 'images' | 'videos'>('all')
   const [modelSearch, setModelSearch] = useState('')
@@ -160,6 +163,11 @@ export default function Dashboard() {
   const [result, setResult] = useState<{ url: string; prompt: string; revised_prompt?: string; isVideo?: boolean } | null>(null)
   const [copiedUrl, setCopiedUrl] = useState(false)
   const [lightboxAsset, setLightboxAsset] = useState<Asset | null>(null)
+  // Notification sound on generation complete
+  const notifSound = useRef<HTMLAudioElement | null>(null)
+  useEffect(() => { notifSound.current = new Audio('/sounds/generation-done.mp3'); notifSound.current.volume = 0.5 }, [])
+  function playNotifSound() { notifSound.current?.play().catch(() => {}) }
+
   type PendingVideo = { assetId: string; operationName?: string; predictionUrl?: string; provider: 'google' | 'fal.ai' | 'replicate'; startedAt: number; isImage?: boolean; slug: string }
   const PENDING_VIDEO_KEY = 'prmptVAULT_pendingVideo'
   const [pendingVideos, setPendingVideosRaw] = useState<PendingVideo[]>(() => {
@@ -412,7 +420,7 @@ export default function Dashboard() {
       if (!asset.model_id) continue
       const slug = slugById[asset.model_id]
       if (slug && !map[slug]) {
-        const isVideo = asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid' || asset.gen_type === 'ref2vid'
+        const isVideo = asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid' || asset.gen_type === 'ref2vid' || asset.gen_type === 'vid2vid'
         map[slug] = { url: asset.url, isVideo }
       }
     }
@@ -421,7 +429,9 @@ export default function Dashboard() {
 
   const refreshModels = useCallback(async () => {
     if (!user) return
-    const { data } = await supabase.from('models').select('*').or('is_active.eq.true,coming_soon.eq.true').order('sort_order')
+    let q = supabase.from('models').select('*').or('is_active.eq.true,coming_soon.eq.true').order('sort_order')
+    if (!isSandbox) q = q.eq('sandbox', false)
+    const { data } = await q
     if (data) setModels(data as Model[])
   }, [user])
 
@@ -466,8 +476,10 @@ export default function Dashboard() {
           }
         }
       })
-    supabase.from('models').select('*').or('is_active.eq.true,coming_soon.eq.true').order('sort_order')
-      .then(({ data }) => { if (data) setModels(data as Model[]) })
+    ;(isSandbox
+      ? supabase.from('models').select('*').or('is_active.eq.true,coming_soon.eq.true').order('sort_order')
+      : supabase.from('models').select('*').or('is_active.eq.true,coming_soon.eq.true').eq('sandbox', false).order('sort_order')
+    ).then(({ data }) => { if (data) setModels(data as Model[]) })
     supabase.from('showcase_assets').select('url,gen_type').order('created_at', { ascending: false }).limit(80)
       .then(({ data }) => { if (data) setShowcase(data as { url: string; gen_type: string | null }[]) })
     supabase.from('user_projects').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
@@ -478,7 +490,7 @@ export default function Dashboard() {
       .select('id, metadata, created_at')
       .eq('user_id', user.id)
       .eq('url', '')
-      .in('gen_type', ['txt2vid', 'img2vid', 'ref2vid'])
+      .in('gen_type', ['txt2vid', 'img2vid', 'ref2vid', 'vid2vid'])
       .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
       .order('created_at', { ascending: false })
       .limit(1)
@@ -675,7 +687,7 @@ export default function Dashboard() {
         // Video
         'ltx-2.3-pro', 'ltx-2.3-fast',
         'sora2-pro', 'veo-3', 'veo-3-fast', 'veo-3.1',
-        'kling-v2.5-turbo', 'wan-2.5-t2v', 'minimax-video', 'hailuo-2.3', 'gen-4.5',
+        'kling-v2.5-turbo', 'wan-2.5-t2v', 'wan-2.2-animate', 'minimax-video', 'hailuo-2.3', 'gen-4.5',
         // Tools
         'flux-fill-pro', 'bria-eraser', 'bria-genfill', 'bria-expand',
         'recraft-crisp-upscale', 'recraft-creative-upscale',
@@ -684,7 +696,7 @@ export default function Dashboard() {
       const isFal = !isReplicate && !DIRECT_API_SLUGS.has(selectedModel.slug)
       const isGoogle = GOOGLE_DIRECT_SLUGS.has(selectedModel.slug)
       const isImg2Img = selectedGenType === 'img2img'
-      const isVideo = selectedGenType === 'txt2vid' || selectedGenType === 'img2vid' || selectedGenType === 'ref2vid'
+      const isVideo = selectedGenType === 'txt2vid' || selectedGenType === 'img2vid' || selectedGenType === 'ref2vid' || selectedGenType === 'vid2vid'
 
       const endpoint = isReplicate
         ? 'generate-replicate'
@@ -790,6 +802,7 @@ export default function Dashboard() {
       setResult({ url: imageUrl, prompt: data.prompt, revised_prompt: data.revised_prompt, isVideo })
       loadAssets()
       pushNotification({ type: 'image_ready', message: 'Your image is ready!', modelName: selectedModel.name, assetUrl: imageUrl, assetId })
+      playNotifSound()
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('Your image is ready!', { body: `${selectedModel.name} · prmptVAULT`, icon: '/favicon.ico' })
       }
@@ -858,6 +871,7 @@ export default function Dashboard() {
             const readyMsg = isImageResult ? 'Your image is ready!' : 'Your video is ready!'
             const modelName = pv.slug
             pushNotification({ type: isImageResult ? 'image_ready' : 'video_ready', message: readyMsg, modelName, assetUrl: completedUrl, assetId: pv.assetId })
+            playNotifSound()
             if ('Notification' in window && Notification.permission === 'granted') {
               new Notification(readyMsg, { body: `${modelName} · prmptVAULT`, icon: '/favicon.ico' })
             }
@@ -1123,7 +1137,7 @@ export default function Dashboard() {
                       const counts = {
                         all: liveModels.length,
                         images: liveModels.filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))).length,
-                        videos: liveModels.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid' || g === 'ref2vid')).length,
+                        videos: liveModels.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid' || g === 'ref2vid' || g === 'vid2vid')).length,
                       }
                       const active = modelFilter === f
                       return (
@@ -1399,7 +1413,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex gap-3.5 overflow-x-auto pb-3">
                       {featuredModels.map((m) => {
-                        const { status, upgradeTier } = getModelStatus(m, userTier, selectedModelIds)
+                        const { status, upgradeTier } = getModelStatus(m, userTier, selectedModelIds, selectedVideoIds)
                         return (
                           <ModelCard
                             key={m.id}
@@ -1525,7 +1539,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex gap-3.5 overflow-x-auto pb-3">
                       {recentModels.map((m) => {
-                        const { status, upgradeTier } = getModelStatus(m, userTier, selectedModelIds)
+                        const { status, upgradeTier } = getModelStatus(m, userTier, selectedModelIds, selectedVideoIds)
                         return (
                           <ModelCard
                             key={m.id}

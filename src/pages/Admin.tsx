@@ -396,7 +396,7 @@ export default function Admin() {
   async function loadModels() {
     setModelsLoading(true)
     const [{ data: models, error: modelsErr }, { data: sources, error: sourcesErr }] = await Promise.all([
-      supabase.from('models').select('slug,name,provider,supported_gen_types,is_active,coming_soon,sort_order').order('sort_order'),
+      supabase.from('models').select('slug,name,provider,supported_gen_types,is_active,coming_soon,sort_order,sandbox').order('sort_order'),
       supabase.from('model_status').select('model_slug,source,tested'),
     ])
     if (modelsErr) console.error('[loadModels] models error:', modelsErr)

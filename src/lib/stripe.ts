@@ -29,14 +29,16 @@ export async function createCheckoutSession(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
       },
-      body: JSON.stringify({ priceId, tier, billing }),
+      body: JSON.stringify({ priceId, tier, billing, user_token: session.access_token }),
     }
   )
 
   const data = await res.json()
-  if (data.error) throw new Error(data.error)
+  if (!res.ok || data.error) throw new Error(data.error || data.message || `Checkout failed (${res.status})`)
+  if (!data.url) throw new Error('No checkout URL returned')
 
   window.location.href = data.url
 }

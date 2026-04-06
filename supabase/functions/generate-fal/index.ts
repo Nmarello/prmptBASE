@@ -94,6 +94,9 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'img2vid': 'fal-ai/bytedance/seedance/v2/image-to-video',
     'ref2vid': 'fal-ai/bytedance/seedance/v2/reference-to-video',
   },
+  'kling-v2.6-motion': {
+    'vid2vid': 'fal-ai/kling-video/v2.6/standard/motion-control',
+  },
 }
 
 const FAL_QUEUE_BASE = 'https://queue.fal.run'
@@ -584,6 +587,7 @@ Deno.serve(async (req) => {
     if (isVideo) {
       const genType = (body.gen_type as string | undefined) ?? 'txt2vid'
       const isImgVid = genType === 'img2vid' || genType === 'ref2vid'
+      const isVid2Vid = genType === 'vid2vid'
       const modelPath = FAL_VIDEO_ENDPOINTS[slug]?.[genType] ?? FAL_VIDEO_ENDPOINTS[slug]?.['txt2vid']
       if (!modelPath) throw new Error(`No fal endpoint for ${slug}/${genType}`)
       const prompt = (body.prompt as string | undefined)?.trim() ?? ''
@@ -591,8 +595,8 @@ Deno.serve(async (req) => {
       // Build fal payload
       const falPayload: Record<string, unknown> = {}
 
-      // img2vid: get a public URL for the source image
-      if (isImgVid) {
+      // img2vid / vid2vid: get a public URL for the source image
+      if (isImgVid || isVid2Vid) {
         if (!source_image) throw new Error('Source image is required for image-to-video')
         const src = source_image as string
         if (src.startsWith('http')) {
@@ -614,15 +618,45 @@ Deno.serve(async (req) => {
         }
       }
 
+      // vid2vid: attach reference video URL
+      if (isVid2Vid) {
+        const videoUrl = body.reference_video as string | undefined
+        if (!videoUrl) throw new Error('Reference video is required for vid2vid / motion control')
+        falPayload.video_url = videoUrl
+      }
+
       if (prompt) falPayload.prompt = prompt
       if (body.negative_prompt) falPayload.negative_prompt = body.negative_prompt
 
       // Model-specific params
       if (slug.startsWith('kling')) {
-        falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
-        falPayload.duration = body.duration ?? '5'
+        // Motion control (vid2vid) — character_orientation is required, no aspect_ratio/duration needed
+        if (slug === 'kling-v2.6-motion' && isVid2Vid) {
+          falPayload.character_orientation = body.character_orientation ?? 'image'
+          if (body.keep_original_sound != null) falPayload.keep_original_sound = body.keep_original_sound === 'true' || body.keep_original_sound === true
+        } else {
+          falPayload.aspect_ratio = body.aspect_ratio ?? '16:9'
+          falPayload.duration = body.duration ?? '5'
+        }
         if (body.cfg_scale) falPayload.cfg_scale = Number(body.cfg_scale)
-        if (isImgVid && body.tail_image_url) falPayload.tail_image_url = body.tail_image_url
+        if (isImgVid && body.tail_image_url) {
+          const tailSrc = body.tail_image_url as string
+          if (tailSrc.startsWith('http')) {
+            falPayload.tail_image_url = capSupabaseImageUrl(tailSrc, 1920)
+          } else {
+            const base64Data = tailSrc.replace(/^data:image\/\w+;base64,/, '')
+            const mimeMatch = tailSrc.match(/^data:(image\/\w+);base64,/)
+            const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+            const ext = mimeType.split('/')[1] ?? 'jpg'
+            const tailBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+            const tailFileName = `${userId ?? 'anon'}/tail-${Date.now()}.${ext}`
+            const { error: tailErr } = await adminClient.storage
+              .from('assets').upload(tailFileName, tailBytes, { contentType: mimeType, upsert: false })
+            if (tailErr) throw new Error(`End frame upload failed: ${tailErr.message}`)
+            const { data: { publicUrl: tailPublicUrl } } = adminClient.storage.from('assets').getPublicUrl(tailFileName)
+            falPayload.tail_image_url = capSupabaseImageUrl(tailPublicUrl, 1920)
+          }
+        }
 
         // Camera movement — map preset to camera_control object
         const camMove = body.camera_movement as string | undefined

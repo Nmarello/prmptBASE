@@ -11,6 +11,9 @@ const ALLOWED_ORIGINS = new Set([
   'https://www.prmptbase.ai',
   'https://prmptbase.pages.dev',
   'https://staging.prmptbase.pages.dev',
+  // Testing / sandbox
+  'https://testing.prmptvault.ai',
+  'https://testing-prmptvault.pages.dev',
   // Local dev
   'http://localhost:5173',
   'http://localhost:5174',

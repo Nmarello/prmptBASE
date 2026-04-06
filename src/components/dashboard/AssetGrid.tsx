@@ -95,8 +95,9 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
 
   const filtered = useMemo(() => {
     let out = [...assets]
-    if (mediaFilter === 'images') out = out.filter((a) => a.gen_type !== 'txt2vid' && a.gen_type !== 'img2vid')
-    if (mediaFilter === 'videos') out = out.filter((a) => a.gen_type === 'txt2vid' || a.gen_type === 'img2vid')
+    const isVidType = (t: string | null) => t === 'txt2vid' || t === 'img2vid' || t === 'ref2vid' || t === 'vid2vid'
+    if (mediaFilter === 'images') out = out.filter((a) => !isVidType(a.gen_type))
+    if (mediaFilter === 'videos') out = out.filter((a) => isVidType(a.gen_type))
     if (modelFilter !== 'all') out = out.filter((a) => a.model_id === modelFilter)
     if (projectFilter !== 'all') {
       if (projectFilter === '__none__') out = out.filter((a) => !a.project_id)
@@ -298,7 +299,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
               <div key={ci} className="flex-1 flex flex-col gap-2">
                 {colItems.map(({ asset, aspectW, aspectH }) => {
                   const pct = (aspectH / aspectW) * 100
-                  const isVideo = asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid'
+                  const isVideo = asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid' || asset.gen_type === 'ref2vid' || asset.gen_type === 'vid2vid'
                   const modelName = asset.model_id ? (modelMap[asset.model_id]?.name ?? null) : null
                   const projectName = asset.project_id ? (projectMap[asset.project_id] ?? null) : null
                   const projectColor = asset.project_id ? (projectColorMap[asset.project_id] ?? PROJECT_COLORS[0]) : null
@@ -437,7 +438,7 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-1 flex items-center justify-center min-h-48 max-h-[50vh] lg:max-h-none" style={{ background: 'var(--pv-surface2)' }}>
-          {asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid' ? (
+          {asset.gen_type === 'txt2vid' || asset.gen_type === 'img2vid' || asset.gen_type === 'ref2vid' || asset.gen_type === 'vid2vid' ? (
             <video src={asset.url} controls autoPlay loop className="max-w-full max-h-[50vh] lg:max-h-[80vh]" />
           ) : (
             <img src={asset.url} alt={prompt ?? ''} className="max-w-full max-h-[50vh] lg:max-h-[80vh] object-contain" />
@@ -522,7 +523,7 @@ export function Lightbox({ asset, projects, projectName, projectColor, modelName
           )}
 
           <div className="flex flex-col gap-2 mt-auto pt-2">
-            {asset.gen_type !== 'txt2vid' && asset.gen_type !== 'img2vid' && (
+            {asset.gen_type !== 'txt2vid' && asset.gen_type !== 'img2vid' && asset.gen_type !== 'ref2vid' && asset.gen_type !== 'vid2vid' && (
               <button
                 onClick={() => { onSendToImg2Vid(asset.url); onClose() }}
                 style={{ background: 'var(--pv-surface2)', borderColor: 'var(--pv-border)', color: 'var(--pv-text2)' }}

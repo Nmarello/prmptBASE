@@ -65,7 +65,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
   // Family renders — collect up to 4 unique assets for montage (iOS folder style)
   const familyRenders = models
     .map(m => latestRenderBySlug[m.slug])
-    .filter((r): r is { url: string; isVideo: boolean } => !!r)
+    .filter((r): r is { url: string; isVideo: boolean } => !!r && !!r.url)
     .slice(0, 4)
   const sortedModels = [...models].sort((a, b) => (a.family_order ?? 0) - (b.family_order ?? 0))
 
@@ -125,7 +125,6 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
             {familyRenders.length > 0 ? (() => {
               // 4 or 3 images → 2x2, 2 or 1 images → 2-up (single row)
               const use4up = familyRenders.length >= 3
-              const slots = use4up ? 4 : 2
               return (
               <>
                 <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105" style={{ background: art.gradient }} />
@@ -133,30 +132,36 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
                   className="absolute inset-0 grid gap-[3px] p-3 transition-transform duration-500 group-hover:scale-105"
                   style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: use4up ? '1fr 1fr' : '1fr' }}
                 >
-                  {Array.from({ length: slots }, (_, i) => {
-                    const r = familyRenders[i]
-                    return r ? (
-                      <div key={i} className="relative rounded-[8px] overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
-                        {r.isVideo ? (
-                          <video
-                            src={r.url}
-                            muted
-                            preload="metadata"
-                            className="absolute inset-0 w-full h-full object-cover"
-                          />
-                        ) : (
-                          <img
-                            src={thumbUrl(r.url, 200)}
-                            alt=""
-                            loading="lazy"
-                            className="absolute inset-0 w-full h-full object-cover"
-                          />
-                        )}
+                  {familyRenders.map((r, i) => (
+                    <div key={i} className="relative rounded-[8px] overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                      {r.isVideo ? (
+                        <video
+                          src={r.url}
+                          muted
+                          playsInline
+                          preload="metadata"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src={thumbUrl(r.url, 200)}
+                          alt=""
+                          loading="lazy"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                  ))}
+                  {/* Fill empty slots with gradient squares */}
+                  {familyRenders.length < 4 && familyRenders.length > 1 && Array.from({ length: 4 - familyRenders.length }, (_, i) => (
+                    <div key={`empty-${i}`} className="relative rounded-[8px] overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <svg className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.15)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
                       </div>
-                    ) : (
-                      <div key={i} className="rounded-[8px]" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                    )
-                  })}
+                    </div>
+                  ))}
                 </div>
                 <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom,rgba(0,0,0,0) 60%,rgba(0,0,0,0.35) 100%)' }} />
               </>

@@ -157,7 +157,7 @@ a { text-decoration: none; }
   text-transform: uppercase; color: #ffffff; margin-bottom: 14px;
 }
 .post-title em { font-style: normal; color: #2952E3; }
-.post-excerpt { font-size: 84px; font-weight: 900; line-height: 1.0; letter-spacing: -0.04em; text-transform: uppercase; color: #ffffff; margin-bottom: 14px; }
+.post-excerpt { font-size: 18px; font-weight: 400; line-height: 1.6; color: rgba(255,255,255,0.7); margin-bottom: 14px; }
 .post-feature-image { margin: 20px 0; }
 .post-feature-image img { width: 100%; max-width: 100%; height: auto; border-radius: 10px; display: block; }
 .post-meta { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #999; }
@@ -172,6 +172,7 @@ a { text-decoration: none; }
   padding: 32px 40px 48px;
   border: 1px solid #e4ebff;
 }
+.post-content-feature { width: 100%; height: auto; border-radius: 8px; margin: 0 0 28px; display: block; }
 .post-content p { font-size: 15px; color: #444; line-height: 1.85; margin-bottom: 20px; }
 .post-content h2:first-child { margin-top: 0; }
 .post-content h2 { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase; color: #0a0a0a; margin: 44px 0 14px; }
@@ -184,6 +185,12 @@ a { text-decoration: none; }
 .post-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 28px auto; display: block; object-fit: contain; }
 .post-content a { color: #2952E3; }
 .post-content a:hover { text-decoration: underline; }
+
+/* ── Series: Announcement (big excerpt, feature in header) ── */
+.post-excerpt--announcement { font-size: 84px; font-weight: 900; line-height: 1.0; letter-spacing: -0.04em; text-transform: uppercase; color: #ffffff; margin-bottom: 14px; }
+
+/* ── Series: AI Pulse (news accent) ── */
+.post-tag--pulse { color: #00c853; border-color: #00c853; }
 
 /* ── CTA Block (injected in post HTML) ── */
 .pv-cta-block {
@@ -223,7 +230,7 @@ a { text-decoration: none; }
   .post-card-featured .card-image { height: 220px; }
   .page-hero h1 { font-size: 28px; }
   .post-title { font-size: 30px; }
-  .post-excerpt { font-size: 56px; }
+  .post-excerpt--announcement { font-size: 56px; }
   .post-content { padding: 24px 20px 32px; }
   .site-footer { padding: 20px; }
 }

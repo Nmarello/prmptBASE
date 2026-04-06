@@ -163,7 +163,7 @@ const MODELS: Record<string, ModelConfig> = {
 
   // ── HiDream (via PrunaAI) ───────────────────────────────────────────────────
   'hidream-fast':     { path: 'prunaai/hidream-l1-fast', costUsd: 0.03, buildInput: (b) => standardInput(b) },
-  'hidream-full':     { path: 'prunaai/hidream-l1-full', version: '4ac54871d9e2152baf74c89729f9c17a1b770e1ca2c10989b69e8ebea480ca40', costUsd: 0.05, buildInput: (b) => standardInput(b) },
+  'hidream-full':     { path: 'prunaai/hidream-l1-full', version: '4ac54871d9e2152baf74c89729f9c17a1b770e1ca2c10989b69e8ebea480ca40', costUsd: 0.05, isAsync: true, buildInput: (b) => standardInput(b) },
 
   // ── ByteDance Seedream ───────────────────────────────────────────────────────
   'seedream-45':      { path: 'bytedance/seedream-4.5',   costUsd: 0.025, buildInput: (b) => ({
@@ -328,6 +328,11 @@ const MODELS: Record<string, ModelConfig> = {
     }
   } },
 
+  // ── Motion / Animate ─────────────────────────────────────────────────────
+  'wan-2.2-animate':  { path: 'wan-video/wan-2.2-animate-animation', isVideo: true, maxOutputs: 1, costUsd: 0.12, buildInput: (b) => ({
+    ...(b.prompt ? { prompt: b.prompt } : {}),
+  }) },
+
   // ── Tools — Editing & Upscaling (Replicate) ──────────────────────────────
   'flux-fill-pro':           { path: 'black-forest-labs/flux-fill-pro', costUsd: 0.05, maxOutputs: 1, buildInput: (b) => ({
     prompt: b.prompt,
@@ -480,7 +485,8 @@ Deno.serve(async (req) => {
     if (!config) throw new Error(`Unknown Replicate model slug: ${slug}`)
 
     const builtPrompt = buildPrompt(body)
-    if (!builtPrompt.trim()) throw new Error('Prompt is required')
+    const genType_ = body.gen_type as string | undefined
+    if (!builtPrompt.trim() && genType_ !== 'vid2vid') throw new Error('Prompt is required')
 
     const fmt = ['png', 'jpg', 'webp'].includes(output_format) ? output_format : 'webp'
     const seedVal = (seed != null && seed !== '') ? Number(seed) : undefined
@@ -522,6 +528,35 @@ Deno.serve(async (req) => {
         if (srcUploadErr) throw new Error(`Source upload failed: ${srcUploadErr.message}`)
         const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
         replicateInput.image_url = publicUrl
+      }
+    }
+
+    // Inject source image + reference video for vid2vid models
+    const genType = body.gen_type as string | undefined
+    if (genType === 'vid2vid') {
+      // Wan 2.2 Animate uses character_image + driving_video; other models may differ
+      const imgKey = slug === 'wan-2.2-animate' ? 'character_image' : 'image'
+      const vidKey = 'video'
+      if (body.source_image) {
+        const src = body.source_image as string
+        if (src.startsWith('http')) {
+          replicateInput[imgKey] = src
+        } else {
+          const base64Data = src.replace(/^data:image\/\w+;base64,/, '')
+          const mimeMatch = src.match(/^data:(image\/\w+);base64,/)
+          const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+          const ext = mimeType.split('/')[1] ?? 'jpg'
+          const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+          const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
+          const { error: srcUploadErr } = await adminClient.storage
+            .from('assets').upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
+          if (srcUploadErr) throw new Error(`Source upload failed: ${srcUploadErr.message}`)
+          const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
+          replicateInput[imgKey] = publicUrl
+        }
+      }
+      if (body.reference_video) {
+        replicateInput[vidKey] = body.reference_video as string
       }
     }
 

@@ -103,6 +103,9 @@ const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
   'hailuo-2.3':             { gradient: 'linear-gradient(145deg,#002b36,#008888,#00ccbb)', initial: 'H3' },
   'hunyuan-video-1.5':      { gradient: 'linear-gradient(145deg,#00001a,#0d0d80,#4444dd)', initial: 'HV' },
   'nano-banana-pro':        { gradient: 'linear-gradient(145deg,#003322,#007755,#00cc88)', initial: 'NP' },
+  // Motion control / animate
+  'kling-v2.6-motion':      { gradient: 'linear-gradient(145deg,#3d0030,#990055,#ff2277)', initial: 'KM' },
+  'wan-2.2-animate':        { gradient: 'linear-gradient(145deg,#0d2d0d,#1a6b1a,#33cc33)', initial: 'WA' },
 }
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', initial: '??' }
 
@@ -171,6 +174,8 @@ const slugBrandLabels: Record<string, string> = {
   'qwen-image-2-pro':         'Alibaba',
   'hailuo-2.3':               'MiniMax',
   'hunyuan-video-1.5':        'Tencent',
+  'kling-v2.6-motion':        'Kuaishou',
+  'wan-2.2-animate':          'Alibaba',
 }
 
 // Supabase image transform — resize for card thumbnails (460px = 2x card width for retina)

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase, isSandbox } from '../../lib/supabase'
 
 const STUDIO_VIDEO_EXCLUDED = ['sora2', 'sora2-txt2vid', 'sora2-img2vid', 'kling', 'kling-txt2vid', 'kling-img2vid']
 const CREATOR_LIMIT = 10
@@ -69,12 +69,11 @@ export default function ModelPicker({ tier, userId }: { tier: string; userId: st
   useEffect(() => {
     async function load() {
       const [modelsRes, selsRes] = await Promise.all([
-        supabase
-          .from('models')
-          .select('id, slug, name, provider, supported_gen_types')
-          .eq('is_active', true)
-          .eq('coming_soon', false)
-          .order('sort_order'),
+        (() => {
+          let q = supabase.from('models').select('id, slug, name, provider, supported_gen_types').eq('is_active', true).eq('coming_soon', false)
+          if (!isSandbox) q = q.eq('sandbox', false)
+          return q.order('sort_order')
+        })(),
         supabase
           .from('user_model_selections')
           .select('model_id, locked_until')

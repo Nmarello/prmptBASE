@@ -1,6 +1,6 @@
 export type GenType = 'txt2img' | 'img2img' | 'multi_img2img' | 'txt2vid' | 'img2vid' | 'ref2vid' | 'vid2vid'
 
-export type FieldType = 'textarea' | 'text' | 'number' | 'range' | 'pill_select' | 'select' | 'multi_select' | 'style_picker' | 'image_upload' | 'note'
+export type FieldType = 'textarea' | 'text' | 'number' | 'range' | 'pill_select' | 'select' | 'multi_select' | 'style_picker' | 'image_upload' | 'video_upload' | 'note'
 
 export interface FieldOption {
   value: string
@@ -36,6 +36,7 @@ export interface Model {
   family: string | null
   family_order: number
   released_at: string | null
+  sandbox: boolean
 }
 
 export interface Template {

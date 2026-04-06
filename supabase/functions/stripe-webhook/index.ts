@@ -68,6 +68,22 @@ Deno.serve(async (req) => {
       const tier = await resolvedTier(s)
       if (!tier) { console.error('[stripe-webhook] Could not resolve tier for session', s.id); break }
 
+      // Cancel previous subscription if upgrading/changing plan
+      const { data: existing } = await supabase
+        .from('subscriptions')
+        .select('stripe_subscription_id')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (existing?.stripe_subscription_id && existing.stripe_subscription_id !== subscriptionId) {
+        try {
+          // cancel_at_period_end avoids triggering customer.subscription.deleted immediately
+          await stripe.subscriptions.update(existing.stripe_subscription_id, { cancel_at_period_end: true })
+        } catch (e) {
+          console.error('[stripe-webhook] Failed to cancel old subscription', e)
+        }
+      }
+
       await supabase.from('subscriptions').upsert({
         user_id: userId,
         stripe_customer_id: customerId,
@@ -117,7 +133,17 @@ Deno.serve(async (req) => {
       await supabase.from('subscriptions').update({ status: 'canceled', tier: 'newbie' })
         .eq('stripe_subscription_id', s.id)
 
-      await supabase.from('profiles').update({ tier: 'newbie' }).eq('id', userId)
+      // Only downgrade profile if this is still the user's active subscription
+      // (if they've already upgraded, their DB record points to the new sub)
+      const { data: current } = await supabase
+        .from('subscriptions')
+        .select('stripe_subscription_id')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (current?.stripe_subscription_id === s.id) {
+        await supabase.from('profiles').update({ tier: 'newbie' }).eq('id', userId)
+      }
       break
     }
   }

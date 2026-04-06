@@ -5,12 +5,17 @@
   <div class="post-header">
     {{#primary_tag}}<span class="post-tag">{{name}}</span>{{/primary_tag}}
     <h1 class="post-title">{{title}}</h1>
-    {{#if custom_excerpt}}<p class="post-excerpt">{{custom_excerpt}}</p>{{/if}}
+    {{#if custom_excerpt}}<p class="post-excerpt post-excerpt--announcement">{{custom_excerpt}}</p>{{/if}}
+    {{#if feature_image}}
+    <div class="post-feature-image">
+      <img src="{{feature_image}}" alt="{{title}}">
+    </div>
+    {{/if}}
     <div class="post-meta">
       <span>{{@site.title}}</span>
-      <span>·</span>
+      <span>&middot;</span>
       <span>{{date published_at format="MMMM D, YYYY"}}</span>
-      <span>·</span>
+      <span>&middot;</span>
       <span>{{reading_time}}</span>
     </div>
   </div>
@@ -18,9 +23,6 @@
 
 <div class="post-content-wrap">
   <div class="post-content">
-    {{#if feature_image}}
-    <img src="{{feature_image}}" alt="{{title}}" class="post-content-feature">
-    {{/if}}
     {{{content}}}
   </div>
 </div>

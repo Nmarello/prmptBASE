@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Template, TemplateField, GenType, FieldOption } from '../../types'
 import { tierCanAccess } from '../../types'
 import { supabase } from '../../lib/supabase'
+import AssetPickerModal from './AssetPickerModal'
 
 // ─── Tooltip content — universal fields ─────────────────────────────────────
 const FIELD_TOOLTIPS: Record<string, string> = {
@@ -645,12 +646,6 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn, userAsset
     const [dragging, setDragging] = useState(false)
     const [browsing, setBrowsing] = useState(false)
 
-    // Filter to image assets only (no videos) for the browser
-    const imageAssets = useMemo(
-      () => (userAssets ?? []).filter(a => a.gen_type === 'txt2img' || a.gen_type === 'img2img').slice(0, 50),
-      [userAssets],
-    )
-
     async function processFile(file: File) {
       setUploadError(null)
       if (file.size > MAX_BYTES) {
@@ -719,54 +714,140 @@ function FieldInput({ field, value, onChange, customOptions, onAddOwn, userAsset
           )}
         </label>
 
-        {/* Browse Library button */}
-        {imageAssets.length > 0 && (
+        {/* Browse Library — opens full modal */}
+        {(userAssets ?? []).length > 0 && (
           <button
             type="button"
-            onClick={() => setBrowsing(!browsing)}
+            onClick={() => setBrowsing(true)}
             className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all hover:opacity-80"
             style={{ background: 'var(--pv-surface2)', color: 'var(--pv-text2)', border: '1px solid var(--pv-border)' }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth={1.5}/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth={1.5}/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth={1.5}/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth={1.5}/></svg>
-            {browsing ? 'Hide Library' : 'Browse My Images'}
+            Browse My Library
           </button>
         )}
-
-        {/* Asset browser grid */}
-        {browsing && imageAssets.length > 0 && (
-          <div
-            className="mt-2 rounded-xl p-2 overflow-y-auto"
-            style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', maxHeight: 240 }}
-          >
-            <div className="grid grid-cols-4 gap-1.5">
-              {imageAssets.map(a => (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => { onChange(a.url); setBrowsing(false) }}
-                  className="relative rounded-lg overflow-hidden aspect-square group transition-all hover:ring-2"
-                  style={{ '--tw-ring-color': 'var(--pv-accent)' } as React.CSSProperties}
-                >
-                  <img
-                    src={a.url}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                    <span className="text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">Use</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+        {browsing && (
+          <AssetPickerModal
+            assets={userAssets ?? []}
+            mediaType="images"
+            title="Choose an image"
+            onPick={url => { onChange(url); setBrowsing(false) }}
+            onClose={() => setBrowsing(false)}
+          />
         )}
 
         {uploadError && (
           <p className="text-xs mt-1.5 font-medium" style={{ color: '#c0392b' }}>{uploadError}</p>
         )}
-        {!uploadError && !browsing && (
+        {!uploadError && (
           <p className="text-xs mt-1.5" style={{ color: 'var(--pv-text3)' }}>Max {MAX_MB}MB · uploaded directly to storage</p>
+        )}
+        {field.hint && <p className="text-xs mt-0.5" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
+      </div>
+    )
+  }
+
+  if (field.type === 'video_upload') {
+    const preview = value as string | undefined
+    const MAX_MB = 100
+    const MAX_BYTES = MAX_MB * 1024 * 1024
+    const [uploading, setUploading] = useState(false)
+    const [uploadError, setUploadError] = useState<string | null>(null)
+    const [dragging, setDragging] = useState(false)
+    const [browsing, setBrowsing] = useState(false)
+
+    async function processVideoFile(file: File) {
+      setUploadError(null)
+      if (file.size > MAX_BYTES) {
+        setUploadError(`File is ${(file.size / 1024 / 1024).toFixed(1)}MB — max is ${MAX_MB}MB.`)
+        return
+      }
+      setUploading(true)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        const ext = file.name.split('.').pop() ?? 'mp4'
+        const path = `uploads/${user?.id ?? 'anon'}/vid-${Date.now()}.${ext}`
+        const { error } = await supabase.storage.from('assets').upload(path, file, { contentType: file.type, upsert: false })
+        if (error) throw new Error(error.message)
+        const { data: { publicUrl } } = supabase.storage.from('assets').getPublicUrl(path)
+        onChange(publicUrl)
+      } catch (err) {
+        setUploadError(`Upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      } finally {
+        setUploading(false)
+      }
+    }
+
+    return (
+      <div>
+        <label className="block cursor-pointer">
+          <input
+            type="file"
+            accept="video/mp4,video/mov,video/webm,video/quicktime"
+            className="hidden"
+            disabled={uploading}
+            onChange={e => { const f = e.target.files?.[0]; if (f) processVideoFile(f); e.target.value = '' }}
+          />
+          {preview ? (
+            <div className="relative group">
+              <video src={preview} className="rounded-xl w-full max-h-48 object-cover border border-white/10" muted playsInline />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+                <span className="text-sm text-white font-medium">{uploading ? 'Uploading…' : 'Click to change'}</span>
+              </div>
+            </div>
+          ) : (
+            <div
+              onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) processVideoFile(f) }}
+              onDragOver={e => { e.preventDefault(); setDragging(true) }}
+              onDragLeave={() => setDragging(false)}
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${uploading ? 'opacity-60' : ''}`}
+              style={{
+                borderColor: dragging ? 'var(--pv-accent)' : 'var(--pv-border)',
+                background: dragging ? 'color-mix(in srgb, var(--pv-accent) 6%, transparent)' : 'transparent',
+              }}
+            >
+              {uploading ? (
+                <>
+                  <div className="w-6 h-6 rounded-full mx-auto mb-2 pv-spin" style={{ border: '2px solid var(--pv-border)', borderTopColor: 'var(--pv-accent)' }} />
+                  <p className="text-sm font-medium" style={{ color: 'var(--pv-text2)' }}>Uploading…</p>
+                </>
+              ) : (
+                <>
+                  <svg className="w-7 h-7 mx-auto mb-2" style={{ color: dragging ? 'var(--pv-accent)' : 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                  <p className="text-sm font-medium" style={{ color: dragging ? 'var(--pv-accent)' : 'var(--pv-text2)' }}>
+                    {dragging ? 'Drop to upload' : 'Drop or click to upload video'}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--pv-text3)' }}>MP4, MOV, WEBM · Max {MAX_MB}MB</p>
+                </>
+              )}
+            </div>
+          )}
+        </label>
+
+        {/* Browse Library — opens full modal filtered to videos */}
+        {(userAssets ?? []).length > 0 && (
+          <button
+            type="button"
+            onClick={() => setBrowsing(true)}
+            className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+            style={{ background: 'var(--pv-surface2)', color: 'var(--pv-text2)', border: '1px solid var(--pv-border)' }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth={1.5}/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth={1.5}/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth={1.5}/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth={1.5}/></svg>
+            Browse My Videos
+          </button>
+        )}
+        {browsing && (
+          <AssetPickerModal
+            assets={userAssets ?? []}
+            mediaType="videos"
+            title="Choose a video"
+            onPick={url => { onChange(url); setBrowsing(false) }}
+            onClose={() => setBrowsing(false)}
+          />
+        )}
+
+        {uploadError && (
+          <p className="text-xs mt-1.5 font-medium" style={{ color: '#c0392b' }}>{uploadError}</p>
         )}
         {field.hint && <p className="text-xs mt-0.5" style={{ color: 'var(--pv-text3)' }}>{field.hint}</p>}
       </div>
@@ -798,7 +879,7 @@ function LivePromptPanel({
   // Collect API params that have values set (non-prompt fields)
   const apiParams = fields.filter((f) =>
     API_PARAM_FIELDS.has(f.id) && values[f.id] != null && values[f.id] !== '' &&
-    f.type !== 'image_upload'
+    f.type !== 'image_upload' && f.type !== 'video_upload'
   )
 
   // Recraft style is also an API param
@@ -1096,7 +1177,7 @@ export default function TemplateForm({ template, genType, onSubmit, submitting, 
           onAddOwn={showAddButton && (field.type === 'style_picker' || field.type === 'multi_select')
             ? () => setAddingTo(addingTo === field.id ? null : field.id)
             : undefined}
-          userAssets={field.type === 'image_upload' ? userAssets : undefined}
+          userAssets={field.type === 'image_upload' || field.type === 'video_upload' ? userAssets : undefined}
           aiAssistSlot={field.type === 'textarea' && (field.ai_assist || field.id === 'negative_prompt') ? (
             <button
               type="button"

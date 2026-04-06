@@ -110,6 +110,7 @@ export default function Pricing() {
   const highlightTier = new URLSearchParams(location.search).get('highlight')
   const [showAuth, setShowAuth] = useState(false)
   const [loading, setLoading] = useState<string | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [userTier, setUserTier] = useState<string | null>(null)
   const [billing, setBilling] = useState<BillingCycle>('monthly')
   const [teamsEmail, setTeamsEmail] = useState('')
@@ -132,11 +133,13 @@ export default function Pricing() {
       return
     }
     setLoading(tier.tier)
+    setCheckoutError(null)
     analytics.checkoutStarted({ tier: tier.tier, billing })
     try {
       await createCheckoutSession(tier.tier as 'creator' | 'studio' | 'pro', billing)
     } catch (err) {
       console.error(err)
+      setCheckoutError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
       setLoading(null)
     }
@@ -206,6 +209,12 @@ export default function Pricing() {
             </button>
           </div>
         </div>
+
+        {checkoutError && (
+          <div style={{ textAlign: 'center', marginBottom: 24, padding: '10px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, color: '#ef4444', fontSize: 13 }}>
+            {checkoutError}
+          </div>
+        )}
 
         {/* Cards grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 16, alignItems: 'start' }}>
