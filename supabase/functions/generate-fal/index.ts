@@ -90,9 +90,9 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'img2vid': 'fal-ai/bytedance/seedance/v1/pro/image-to-video',
   },
   'seedance-2': {
-    'txt2vid': 'fal-ai/bytedance/seedance/v2/text-to-video',
-    'img2vid': 'fal-ai/bytedance/seedance/v2/image-to-video',
-    'ref2vid': 'fal-ai/bytedance/seedance/v2/reference-to-video',
+    'txt2vid': 'fal-ai/bytedance/seedance-2.0/text-to-video',
+    'img2vid': 'fal-ai/bytedance/seedance-2.0/image-to-video',
+    'ref2vid': 'fal-ai/bytedance/seedance-2.0/reference-to-video',
   },
   'kling-v2.6-motion': {
     'vid2vid': 'fal-ai/kling-video/v2.6/standard/motion-control',
