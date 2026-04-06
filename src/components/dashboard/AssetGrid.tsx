@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 
 function thumbUrl(url: string, width = 360): string {
   if (!url) return url
@@ -6,6 +6,47 @@ function thumbUrl(url: string, width = 360): string {
     return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&format=webp&quality=65&resize=contain'
   }
   return url
+}
+
+function AssetImg({ url, className }: { url: string; className: string }) {
+  const [loaded, setLoaded] = useState(false)
+  const ref = useRef<HTMLImageElement>(null)
+  useEffect(() => {
+    setLoaded(false)
+    if (ref.current?.complete && ref.current.naturalWidth > 0) setLoaded(true)
+  }, [url])
+  return (
+    <>
+      <img
+        ref={ref}
+        src={thumbUrl(url)}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        className={className}
+      />
+      {!loaded && (
+        <div className="absolute inset-0" style={{ background: 'var(--pv-surface2)' }}>
+          {([
+            { top: 6, left: 6,    borderTop: '2px solid white', borderLeft:  '2px solid white' },
+            { top: 6, right: 6,   borderTop: '2px solid white', borderRight: '2px solid white' },
+            { bottom: 6, left: 6,  borderBottom: '2px solid white', borderLeft:  '2px solid white' },
+            { bottom: 6, right: 6, borderBottom: '2px solid white', borderRight: '2px solid white' },
+          ] as React.CSSProperties[]).map((s, i) => (
+            <div key={i} style={{ position: 'absolute', width: 14, height: 14, opacity: 0.22, ...s }} />
+          ))}
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', opacity: 0.22 }}>
+            <svg width={32} height={32} viewBox="0 0 782.7 783.64" style={{ display: 'block' }}>
+              <polygon fillRule="evenodd" fill="white" points="497.7 457.59 673.63 281.67 391.96 0 0 391.98 304.38 696.38 304.7 696.38 391.96 783.64 454.47 721.4 307.39 574.04 307.05 574.04 124.99 391.98 391.96 125.03 548.61 281.69 435.21 395.09 497.7 457.59" />
+              <polygon fillRule="evenodd" fill="white" points="499.94 548.65 720.2 328.67 782.7 391.16 499.96 673.64 218.29 391.98 280.78 329.5 499.94 548.65" />
+            </svg>
+          </div>
+          <div className="pv-skeleton-shimmer" />
+        </div>
+      )}
+    </>
+  )
 }
 import type { Asset, Model, UserProject } from '../../types'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
@@ -328,7 +369,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
                           className="absolute inset-0 w-full h-full object-cover"
                         />
                       ) : (
-                        <img src={thumbUrl(asset.url)} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+                        <AssetImg url={asset.url} className="absolute inset-0 w-full h-full object-cover" />
                       )}
                       <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start pointer-events-none">
                         {projectName && projectColor && (

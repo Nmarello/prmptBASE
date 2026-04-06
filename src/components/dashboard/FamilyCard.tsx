@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import type { Model } from '../../types'
 import ModelCard from './ModelCard'
 
@@ -37,6 +37,49 @@ function thumbUrl(url: string, width = 140): string {
   return url
 }
 
+// ── Montage cell image with Option D skeleton ─────────────────────────────────
+function MontageCellImg({ url, gradient }: { url: string; gradient: string }) {
+  const [loaded, setLoaded] = useState(false)
+  const ref = useRef<HTMLImageElement>(null)
+  useEffect(() => {
+    setLoaded(false)
+    if (ref.current?.complete && ref.current.naturalWidth > 0) setLoaded(true)
+  }, [url])
+  return (
+    <>
+      <img
+        ref={ref}
+        src={thumbUrl(url)}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+      {!loaded && (
+        <div className="absolute inset-0" style={{ background: gradient }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} />
+          {([
+            { top: 4, left: 4,    borderTop: '1.5px solid white', borderLeft:  '1.5px solid white' },
+            { top: 4, right: 4,   borderTop: '1.5px solid white', borderRight: '1.5px solid white' },
+            { bottom: 4, left: 4,  borderBottom: '1.5px solid white', borderLeft:  '1.5px solid white' },
+            { bottom: 4, right: 4, borderBottom: '1.5px solid white', borderRight: '1.5px solid white' },
+          ] as React.CSSProperties[]).map((s, j) => (
+            <div key={j} style={{ position: 'absolute', width: 10, height: 10, opacity: 0.22, ...s }} />
+          ))}
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', opacity: 0.22 }}>
+            <svg width={20} height={20} viewBox="0 0 782.7 783.64" style={{ display: 'block' }}>
+              <polygon fillRule="evenodd" fill="white" points="497.7 457.59 673.63 281.67 391.96 0 0 391.98 304.38 696.38 304.7 696.38 391.96 783.64 454.47 721.4 307.39 574.04 307.05 574.04 124.99 391.98 391.96 125.03 548.61 281.69 435.21 395.09 497.7 457.59" />
+              <polygon fillRule="evenodd" fill="white" points="499.94 548.65 720.2 328.67 782.7 391.16 499.96 673.64 218.29 391.98 280.78 329.5 499.94 548.65" />
+            </svg>
+          </div>
+          <div className="pv-skeleton-shimmer" />
+        </div>
+      )}
+    </>
+  )
+}
+
 // Fixed 10px peek per sliver, cap at 3 visible slivers so large families don't blow out
 const MAX_VISIBLE_SLIVERS = 3
 const PEEK_PER_SLIVER = 10
@@ -53,7 +96,6 @@ interface Props {
 }
 
 export default function FamilyCard({ family, models, userTier, isOpen, onToggle, onSelectModel, latestRenderBySlug }: Props) {
-  const [cellLoaded, setCellLoaded] = useState<boolean[]>([false, false, false, false])
   const art = FAMILY_ART[family] ?? DEFAULT_ART
   const activeCount = models.filter(m => !m.coming_soon).length
   const totalCount = models.length
@@ -145,35 +187,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
                           className="absolute inset-0 w-full h-full object-cover"
                         />
                       ) : (
-                        <>
-                          <img
-                            src={thumbUrl(r.url)}
-                            alt=""
-                            loading="lazy"
-                            decoding="async"
-                            onLoad={() => setCellLoaded(prev => { const n = [...prev]; n[i] = true; return n })}
-                            className="absolute inset-0 w-full h-full object-cover"
-                          />
-                          {!cellLoaded[i] && (
-                            <div className="absolute inset-0" style={{ background: 'var(--pv-surface2)' }}>
-                              {([
-                                { top: 4, left: 4,    borderTop: '1.5px solid white', borderLeft:  '1.5px solid white' },
-                                { top: 4, right: 4,   borderTop: '1.5px solid white', borderRight: '1.5px solid white' },
-                                { bottom: 4, left: 4,  borderBottom: '1.5px solid white', borderLeft:  '1.5px solid white' },
-                                { bottom: 4, right: 4, borderBottom: '1.5px solid white', borderRight: '1.5px solid white' },
-                              ] as React.CSSProperties[]).map((s, j) => (
-                                <div key={j} style={{ position: 'absolute', width: 10, height: 10, opacity: 0.22, ...s }} />
-                              ))}
-                              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', opacity: 0.22 }}>
-                                <svg width={20} height={20} viewBox="0 0 782.7 783.64" style={{ display: 'block' }}>
-                                  <polygon fillRule="evenodd" fill="white" points="497.7 457.59 673.63 281.67 391.96 0 0 391.98 304.38 696.38 304.7 696.38 391.96 783.64 454.47 721.4 307.39 574.04 307.05 574.04 124.99 391.98 391.96 125.03 548.61 281.69 435.21 395.09 497.7 457.59" />
-                                  <polygon fillRule="evenodd" fill="white" points="499.94 548.65 720.2 328.67 782.7 391.16 499.96 673.64 218.29 391.98 280.78 329.5 499.94 548.65" />
-                                </svg>
-                              </div>
-                              <div className="pv-skeleton-shimmer" />
-                            </div>
-                          )}
-                        </>
+                        <MontageCellImg url={r.url} gradient={art.gradient} />
                       )}
                     </div>
                   ))}

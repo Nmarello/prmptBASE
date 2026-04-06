@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import type { Model, GenType } from '../../types'
 import { tierCanAccess, GEN_TYPE_LABELS } from '../../types'
 
@@ -189,7 +189,17 @@ function thumbUrl(url: string, width = 320): string {
 }
 
 export default function ModelCard({ model, userTier, selected, onClick, comingSoon: comingSoonProp, rendering, latestRenderUrl, latestRenderIsVideo, dataTour, modelStatus, upgradeTier, onAdd, onUpgrade, borderColor }: Props) {
-  const [imgLoaded, setImgLoaded] = useState(false)
+  const [mediaLoaded, setMediaLoaded] = useState(false)
+  const imgRef = useRef<HTMLImageElement>(null)
+
+  // Reset state + catch already-cached images when URL changes
+  useEffect(() => {
+    setMediaLoaded(false)
+    if (!latestRenderUrl || latestRenderIsVideo) return
+    const img = imgRef.current
+    if (img?.complete && img.naturalWidth > 0) setMediaLoaded(true)
+  }, [latestRenderUrl, latestRenderIsVideo])
+
   const accessible = tierCanAccess(userTier, model.min_tier)
   const comingSoon = comingSoonProp || modelStatus === 'coming-soon' || false
   const art = MODEL_ART[model.slug] ?? DEFAULT_ART
@@ -240,6 +250,8 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
         {/* Background */}
         {hasUserImage ? (
           <>
+            {/* Always render gradient art underneath — visible through skeleton */}
+            <div className="absolute inset-0" style={{ background: art.gradient }} />
             {latestRenderIsVideo ? (
               <video
                 src={latestRenderUrl}
@@ -247,22 +259,23 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
                 loop
                 playsInline
                 preload="metadata"
+                onLoadedData={() => setMediaLoaded(true)}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : (
               <img
+                ref={imgRef}
                 src={thumbUrl(latestRenderUrl!)}
                 alt=""
                 loading="lazy"
                 decoding="async"
-                onLoad={() => setImgLoaded(true)}
+                onLoad={() => setMediaLoaded(true)}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             )}
-            {/* Option D skeleton — shown until image loads */}
-            {!imgLoaded && !latestRenderIsVideo && (
-              <div className="absolute inset-0" style={{ background: 'var(--pv-surface2)' }}>
-                {/* Corner brackets */}
+            {/* Option D skeleton — overlays art gradient until media loads */}
+            {!mediaLoaded && (
+              <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.35)' }}>
                 {([
                   { top: 6, left: 6,    borderTop: '2px solid white', borderLeft:  '2px solid white' },
                   { top: 6, right: 6,   borderTop: '2px solid white', borderRight: '2px solid white' },
@@ -271,7 +284,6 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
                 ] as React.CSSProperties[]).map((s, i) => (
                   <div key={i} style={{ position: 'absolute', width: 16, height: 16, opacity: 0.22, ...s }} />
                 ))}
-                {/* Centered PV logo */}
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', opacity: 0.22 }}>
                   <svg width={40} height={40} viewBox="0 0 782.7 783.64" style={{ display: 'block' }}>
                     <polygon fillRule="evenodd" fill="white" points="497.7 457.59 673.63 281.67 391.96 0 0 391.98 304.38 696.38 304.7 696.38 391.96 783.64 454.47 721.4 307.39 574.04 307.05 574.04 124.99 391.98 391.96 125.03 548.61 281.69 435.21 395.09 497.7 457.59" />
