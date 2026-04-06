@@ -75,7 +75,7 @@ body {
 .pv-skeleton-shimmer {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, transparent 25%, rgba(255,255,255,0.07) 50%, transparent 75%);
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%);
   background-size: 920px 100%;
   animation: pv-shimmer 1.6s linear infinite;
 }

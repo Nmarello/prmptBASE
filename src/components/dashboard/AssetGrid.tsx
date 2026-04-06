@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react'
 function thumbUrl(url: string, width = 360): string {
   if (!url) return url
   if (url.includes('/storage/v1/object/public/')) {
-    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&format=webp&quality=65&resize=contain'
+    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&quality=65&resize=contain'
   }
   return url
 }
@@ -24,6 +24,7 @@ function AssetImg({ url, className }: { url: string; className: string }) {
         loading="lazy"
         decoding="async"
         onLoad={() => setLoaded(true)}
+        onError={e => { (e.currentTarget as HTMLImageElement).src = url; setLoaded(true) }}
         className={className}
       />
       {!loaded && (

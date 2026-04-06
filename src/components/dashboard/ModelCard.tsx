@@ -183,7 +183,7 @@ const slugBrandLabels: Record<string, string> = {
 function thumbUrl(url: string, width = 320): string {
   if (!url) return url
   if (url.includes('/storage/v1/object/public/')) {
-    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&format=webp&quality=60&resize=contain'
+    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&quality=60&resize=contain'
   }
   return url
 }
@@ -260,6 +260,7 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
                 playsInline
                 preload="metadata"
                 onLoadedData={() => setMediaLoaded(true)}
+                onError={() => setMediaLoaded(true)}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : (
@@ -267,9 +268,10 @@ export default function ModelCard({ model, userTier, selected, onClick, comingSo
                 ref={imgRef}
                 src={thumbUrl(latestRenderUrl!)}
                 alt=""
-                loading="lazy"
+                loading="eager"
                 decoding="async"
                 onLoad={() => setMediaLoaded(true)}
+                onError={e => { (e.currentTarget as HTMLImageElement).src = latestRenderUrl!; setMediaLoaded(true) }}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             )}

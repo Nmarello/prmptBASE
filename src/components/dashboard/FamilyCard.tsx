@@ -32,7 +32,7 @@ const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', accent: 
 function thumbUrl(url: string, width = 140): string {
   if (!url) return url
   if (url.includes('/storage/v1/object/public/')) {
-    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&format=webp&quality=60&resize=contain'
+    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&quality=60&resize=contain'
   }
   return url
 }
@@ -51,9 +51,10 @@ function MontageCellImg({ url, gradient }: { url: string; gradient: string }) {
         ref={ref}
         src={thumbUrl(url)}
         alt=""
-        loading="lazy"
+        loading="eager"
         decoding="async"
         onLoad={() => setLoaded(true)}
+        onError={e => { (e.currentTarget as HTMLImageElement).src = url; setLoaded(true) }}
         className="absolute inset-0 w-full h-full object-cover"
       />
       {!loaded && (
