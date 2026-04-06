@@ -69,15 +69,27 @@ body {
 .pv-spin { animation: pv-spin 0.65s linear infinite; }
 
 @keyframes pv-shimmer {
-  from { background-position: -460px 0; }
-  to   { background-position: 460px 0; }
+  from { transform: translateX(-100%) rotate(20deg); }
+  to   { transform: translateX(500%) rotate(20deg); }
 }
+/* Clip container — overflow hidden so the strip doesn't bleed outside */
 .pv-skeleton-shimmer {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%);
-  background-size: 920px 100%;
-  animation: pv-shimmer 1.6s linear infinite;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* Moving strip — transform-only animation runs on GPU compositor, never blocked */
+.pv-skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: 0;
+  width: 30%;
+  height: 200%;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.09), transparent);
+  will-change: transform;
+  animation: pv-shimmer 1.8s linear infinite;
 }
 
 /* Unified placeholder color using design tokens */

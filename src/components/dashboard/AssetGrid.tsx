@@ -21,7 +21,7 @@ function AssetImg({ url, className }: { url: string; className: string }) {
         ref={ref}
         src={thumbUrl(url)}
         alt=""
-        loading="eager"
+        loading="lazy"
         decoding="async"
         onLoad={() => setLoaded(true)}
         onError={e => { (e.currentTarget as HTMLImageElement).src = url; setLoaded(true) }}
