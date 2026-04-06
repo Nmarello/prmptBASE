@@ -1,4 +1,12 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
+
+function thumbUrl(url: string, width = 360): string {
+  if (!url) return url
+  if (url.includes('/storage/v1/object/public/')) {
+    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&format=webp&quality=65&resize=contain'
+  }
+  return url
+}
 import type { Asset, Model, UserProject } from '../../types'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import ExportDialog from './ExportDialog'
@@ -320,7 +328,7 @@ export default function AssetGrid({ assets, models, projects, loading, title, on
                           className="absolute inset-0 w-full h-full object-cover"
                         />
                       ) : (
-                        <img src={asset.url} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                        <img src={thumbUrl(asset.url)} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
                       )}
                       <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start pointer-events-none">
                         {projectName && projectColor && (

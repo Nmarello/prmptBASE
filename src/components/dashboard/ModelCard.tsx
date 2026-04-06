@@ -179,12 +179,11 @@ const slugBrandLabels: Record<string, string> = {
   'wan-2.2-animate':          'Alibaba',
 }
 
-// Supabase image transform — resize for card thumbnails (460px = 2x card width for retina)
-function thumbUrl(url: string, width = 460): string {
+// Supabase image transform — resize for card thumbnails (320px = 2x card width for retina)
+function thumbUrl(url: string, width = 320): string {
   if (!url) return url
-  // Only transform Supabase storage URLs
   if (url.includes('/storage/v1/object/public/')) {
-    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&quality=60&resize=contain'
+    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&format=webp&quality=60&resize=contain'
   }
   return url
 }

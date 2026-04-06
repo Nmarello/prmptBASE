@@ -29,10 +29,10 @@ const FAMILY_ART: Record<string, { gradient: string; accent: string; initial: st
 
 const DEFAULT_ART = { gradient: 'linear-gradient(145deg,#222,#3a3a3a)', accent: '#888', initial: '??', maker: '', tagline: '' }
 
-function thumbUrl(url: string, width = 460): string {
+function thumbUrl(url: string, width = 140): string {
   if (!url) return url
   if (url.includes('/storage/v1/object/public/')) {
-    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&quality=60&resize=contain'
+    return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=' + width + '&format=webp&quality=60&resize=contain'
   }
   return url
 }
@@ -147,7 +147,7 @@ export default function FamilyCard({ family, models, userTier, isOpen, onToggle,
                       ) : (
                         <>
                           <img
-                            src={thumbUrl(r.url, 200)}
+                            src={thumbUrl(r.url)}
                             alt=""
                             loading="lazy"
                             decoding="async"
