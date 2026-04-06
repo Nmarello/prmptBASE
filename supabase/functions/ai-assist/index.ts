@@ -35,21 +35,25 @@ Deno.serve(async (req) => {
     if (form_values?.time_of_day) contextParts.push(`Time of day: ${form_values.time_of_day}`)
     if (form_values?.weather) contextParts.push(`Weather: ${form_values.weather}`)
 
-    // If a source image URL is present, try to look up the original prompt from the assets table
-    let sourceAssetPrompt: string | null = null
-    if (source_image_url) {
+    // Look up original prompts from asset DB for source image and reference video
+    const assetUrlsToLookup: { url: string; label: string }[] = []
+    if (source_image_url) assetUrlsToLookup.push({ url: source_image_url, label: 'Source image' })
+
+    // vid2vid: reference_video is a generated asset — look up its original prompt for context
+    const referenceVideoUrl = form_values?.reference_video as string | undefined
+    if (referenceVideoUrl && typeof referenceVideoUrl === 'string' && referenceVideoUrl.startsWith(supabaseStorageBase)) {
+      assetUrlsToLookup.push({ url: referenceVideoUrl, label: 'Reference video' })
+    }
+
+    for (const { url, label } of assetUrlsToLookup) {
       const { data: asset } = await adminClient
         .from('assets')
         .select('metadata')
-        .eq('url', source_image_url)
+        .eq('url', url)
         .maybeSingle()
       if (asset?.metadata?.prompt) {
-        sourceAssetPrompt = asset.metadata.prompt as string
+        contextParts.push(`${label} was generated with this prompt: "${asset.metadata.prompt as string}"`)
       }
-    }
-
-    if (sourceAssetPrompt) {
-      contextParts.push(`Source image was generated with this prompt: "${sourceAssetPrompt}"`)
     }
 
     const context = contextParts.length ? `\n\nOther selected settings:\n${contextParts.join('\n')}` : ''
@@ -71,7 +75,14 @@ Deno.serve(async (req) => {
         ? `You are an expert at writing negative prompts for AI image and video generation models. The user has uploaded a source image (shown). Based on the positive prompt, form settings, and visible content in the source image, generate a concise comma-separated list of terms that describe what to EXCLUDE from the output. Focus on: visible artifacts or quality issues in the source image, content that conflicts with the desired style or mood, and common model weak-spots (e.g. blurry, low quality, watermark, deformed, extra limbs). Return only comma-separated terms, no explanation, no quotes.`
         : `You are an expert at writing negative prompts for AI ${isVideo ? 'video' : 'image'} generation models. Based on the positive prompt and form settings provided, generate a concise comma-separated list of terms that describe what to EXCLUDE from the output. Focus on: common artifacts (blurry, noise, low quality, watermark), content that conflicts with the described style or mood, and model-specific weak-spots (deformed, extra limbs, bad anatomy). Return only comma-separated terms, no explanation, no quotes.`
 
-      const positivePrompt = (form_values?.prompt as string) || (form_values?.subject as string) || ''
+      // Scan known prompt field names — 'prompt' covers all current templates; others future-proof
+      const positivePrompt = (
+        (form_values?.prompt as string) ||
+        (form_values?.subject as string) ||
+        (form_values?.motion_prompt as string) ||
+        (form_values?.text as string) ||
+        ''
+      )
       textContent = `Generate negative prompt terms for this ${genTypeStr} generation.\nPositive prompt: "${positivePrompt}"${context}`
     } else if (isVideo) {
       const hasEndImage = !!end_image_url
