@@ -4,13 +4,6 @@ import type { Model } from '../../types'
 import FamilyCard from './FamilyCard'
 import ModelCard from './ModelCard'
 
-// Family display order per row
-const FAMILY_ORDER: Record<string, string[]> = {
-  images:     ['Flux', 'Imagen', 'Recraft', 'Ideogram', 'HiDream', 'GPT Image', 'Qwen Image', 'Stable Diffusion', 'Bria', 'Seedream', 'Nano Banana'],
-  video:      ['Kling', 'LTX', 'Luma', 'Sora', 'Veo', 'MiniMax', 'WAN', 'Hunyuan', 'Pika'],
-  characters: [],
-}
-
 interface Props {
   category: 'images' | 'video' | 'characters'
   models: Model[]        // all models for this category (active + coming_soon)
@@ -23,6 +16,17 @@ const LABELS: Record<string, string> = {
   images: 'Images',
   video: 'Video',
   characters: 'Characters',
+}
+
+// Returns a comparable date string for sorting (nulls sort last)
+function effectiveDate(released_at: string | null): string {
+  return released_at ?? '0000-00-00'
+}
+
+// Sort comparator: newest first, nulls last
+function byDateDesc(a: string, b: string): number {
+  if (a === b) return 0
+  return a > b ? -1 : 1
 }
 
 export default function FamilyRow({ category, models, userTier, onSelectModel, latestRenderBySlug }: Props) {
@@ -43,31 +47,46 @@ export default function FamilyRow({ category, models, userTier, onSelectModel, l
     }
   }
 
-  // Order families by the defined order, then any extras alphabetically
-  const orderedFamilies = FAMILY_ORDER[category]
-    .filter(f => familyMap.has(f))
-    .concat(
-      [...familyMap.keys()]
-        .filter(f => !FAMILY_ORDER[category].includes(f))
-        .sort()
-    )
-
   // Families with only 1 member → treat as solo cards
-  const singlesRemoved: string[] = []
   for (const [fam, arr] of familyMap) {
     if (arr.length === 1) {
       unfamilied.push(arr[0])
       familyMap.delete(fam)
-      singlesRemoved.push(fam)
     }
   }
-  const filteredFamilies = orderedFamilies.filter(f => !singlesRemoved.includes(f))
 
-  // Coming-soon without a family go at the end as solo cards
-  const soloComingSoon = unfamilied.filter(m => m.coming_soon)
-  const soloActive = unfamilied.filter(m => !m.coming_soon)
+  // Each family's effective date = latest released_at among its members
+  function familyDate(family: string): string {
+    const members = familyMap.get(family) ?? []
+    const best = members.reduce<string>((acc, m) => {
+      const d = effectiveDate(m.released_at)
+      return d > acc ? d : acc
+    }, '0000-00-00')
+    return best
+  }
 
-  if (filteredFamilies.length === 0 && soloActive.length === 0 && soloComingSoon.length === 0) {
+  // Sort families by effective date descending
+  const sortedFamilies = [...familyMap.keys()].sort((a, b) =>
+    byDateDesc(familyDate(a), familyDate(b))
+  )
+
+  // Split solos into active and coming-soon, each sorted by released_at desc
+  const soloActive = unfamilied
+    .filter(m => !m.coming_soon)
+    .sort((a, b) => byDateDesc(effectiveDate(a.released_at), effectiveDate(b.released_at)))
+
+  const soloComingSoon = unfamilied
+    .filter(m => m.coming_soon)
+    .sort((a, b) => byDateDesc(effectiveDate(a.released_at), effectiveDate(b.released_at)))
+
+  // Interleave families and solo actives by effective date
+  type Card = { type: 'family'; name: string; date: string } | { type: 'solo'; model: Model; date: string }
+  const activeCards: Card[] = [
+    ...sortedFamilies.map(name => ({ type: 'family' as const, name, date: familyDate(name) })),
+    ...soloActive.map(model => ({ type: 'solo' as const, model, date: effectiveDate(model.released_at) })),
+  ].sort((a, b) => byDateDesc(a.date, b.date))
+
+  if (activeCards.length === 0 && soloComingSoon.length === 0) {
     return null
   }
 
@@ -90,36 +109,35 @@ export default function FamilyRow({ category, models, userTier, onSelectModel, l
         className="flex gap-3 overflow-x-auto pb-2 scroll-smooth"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overflowAnchor: 'none' } as React.CSSProperties}
       >
-        {/* Family cards */}
-        {filteredFamilies.map(family => (
-          <div key={family} data-family={family}>
-            <FamilyCard
-              family={family}
-              models={familyMap.get(family)!}
+        {/* Active families + solo models interleaved by release date */}
+        {activeCards.map(card =>
+          card.type === 'family' ? (
+            <div key={card.name} data-family={card.name}>
+              <FamilyCard
+                family={card.name}
+                models={familyMap.get(card.name)!}
+                userTier={userTier}
+                isOpen={openFamily === card.name}
+                onToggle={() => handleToggle(card.name)}
+                onSelectModel={m => { onSelectModel(m); setOpenFamily(null) }}
+                latestRenderBySlug={latestRenderBySlug}
+              />
+            </div>
+          ) : (
+            <ModelCard
+              key={card.model.id}
+              model={card.model}
               userTier={userTier}
-              isOpen={openFamily === family}
-              onToggle={() => handleToggle(family)}
-              onSelectModel={m => { onSelectModel(m); setOpenFamily(null) }}
-              latestRenderBySlug={latestRenderBySlug}
+              selected={false}
+              onClick={() => onSelectModel(card.model)}
+              latestRenderUrl={latestRenderBySlug[card.model.slug]?.url}
+              latestRenderIsVideo={latestRenderBySlug[card.model.slug]?.isVideo}
+              dataTour={card.model.slug === 'dalle' ? 'dalle-card' : undefined}
             />
-          </div>
-        ))}
+          )
+        )}
 
-        {/* Solo active models (no family) */}
-        {soloActive.map(model => (
-          <ModelCard
-            key={model.id}
-            model={model}
-            userTier={userTier}
-            selected={false}
-            onClick={() => onSelectModel(model)}
-            latestRenderUrl={latestRenderBySlug[model.slug]?.url}
-            latestRenderIsVideo={latestRenderBySlug[model.slug]?.isVideo}
-            dataTour={model.slug === 'dalle' ? 'dalle-card' : undefined}
-          />
-        ))}
-
-        {/* Coming soon without a family — at the end */}
+        {/* Coming soon — at the end */}
         {soloComingSoon.map(model => (
           <ModelCard
             key={model.id}
