@@ -1,10 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react'
 import type { Model } from '../../types'
+import { tierCanAccess } from '../../types'
 import ModelCard from './ModelCard'
 
 export type CategoryKey = 'images' | 'video'
 
-interface InlineMessage { role: 'user' | 'bot'; content: string }
+interface InlineRec { slug: string; reason: string }
+interface InlineMessage { role: 'user' | 'bot'; content: string; recommendations?: InlineRec[] }
 
 interface Props {
   models: Model[]
@@ -133,7 +135,11 @@ export default function HomeView({
           },
           body: JSON.stringify({
             message: q,
-            models: [],
+            models: models.filter(m => m.is_active && !m.coming_soon).map(m => ({
+              slug: m.slug, name: m.name, provider: m.provider,
+              description: m.description, supported_gen_types: m.supported_gen_types,
+              is_active: m.is_active, coming_soon: m.coming_soon,
+            })),
             conversation_history: chatMessages.slice(-6).map(m => ({
               role: m.role === 'bot' ? 'assistant' : 'user',
               content: m.content,
@@ -143,7 +149,7 @@ export default function HomeView({
       )
       const data = await res.json()
       const reply = data.reply ?? data.message ?? 'Sorry, something went wrong.'
-      setChatMessages(prev => [...prev, { role: 'bot', content: reply }])
+      setChatMessages(prev => [...prev, { role: 'bot', content: reply, recommendations: data.recommendations ?? [] }])
     } catch {
       setChatMessages(prev => [...prev, { role: 'bot', content: 'Sorry, something went wrong.' }])
     } finally {
@@ -279,10 +285,7 @@ export default function HomeView({
               </button>
               <div className="flex flex-col gap-2 pt-6">
                 {chatMessages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
+                  <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                     <div
                       style={{
                         maxWidth: '80%', padding: '10px 14px', borderRadius: 14,
@@ -294,6 +297,53 @@ export default function HomeView({
                     >
                       {msg.content}
                     </div>
+                    {msg.recommendations && msg.recommendations.length > 0 && (
+                      <div style={{ width: '100%', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                        {msg.recommendations.map(rec => {
+                          const model = models.find(m => m.slug === rec.slug)
+                          if (!model) return null
+                          const canAccess = tierCanAccess(userTier, model.min_tier)
+                          return (
+                            <div
+                              key={rec.slug}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 10,
+                                padding: '8px 12px', borderRadius: 12,
+                                background: 'var(--pv-surface2)',
+                                border: '1px solid var(--pv-border)',
+                              }}
+                            >
+                              <div style={{
+                                width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                                background: `hsl(${model.slug.length * 37 % 360}, 55%, 45%)`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: '#fff', fontSize: 11, fontWeight: 700,
+                              }}>
+                                {model.name.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--pv-text)', lineHeight: 1.2 }}>{model.name}</div>
+                                <div style={{ fontSize: 11.5, color: 'var(--pv-text3)', lineHeight: 1.4, marginTop: 2 }}>{rec.reason}</div>
+                              </div>
+                              <button
+                                onClick={() => onSelectModel(model)}
+                                style={{
+                                  flexShrink: 0, fontSize: 12, fontWeight: 700,
+                                  padding: '5px 11px', borderRadius: 8, border: 'none',
+                                  background: canAccess ? '#0050ff' : 'var(--pv-surface)',
+                                  color: canAccess ? '#fff' : 'var(--pv-text2)',
+                                  cursor: 'pointer', fontFamily: 'inherit',
+                                  ...(canAccess ? {} : { border: '1px solid var(--pv-border)' }),
+                                }}
+                                className="hover:opacity-80 transition-opacity"
+                              >
+                                {canAccess ? 'Use' : 'Upgrade'}
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {chatLoading && (
