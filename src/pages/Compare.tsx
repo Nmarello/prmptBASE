@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { Model, Template } from '../types'
 import { invokeGenerate } from '../lib/generateRequest'
+import { friendlyFalError } from '../lib/errorMessages'
 import { downloadFile } from '../lib/download'
 import Logo from '../components/Logo'
 import CompareColumn from '../components/compare/CompareColumn'
@@ -31,6 +32,7 @@ function makeColumn(): ColumnState {
     result: null,
     error: null,
     generating: false,
+    polling: null,
   }
 }
 
@@ -61,9 +63,9 @@ export default function Compare() {
   const [lineupName, setLineupName] = useState('')
   const [anyGenerating, setAnyGenerating] = useState(false)
 
-  // Track anyGenerating derived from columns
+  // Track anyGenerating derived from columns (includes polling)
   useEffect(() => {
-    setAnyGenerating(columns.some(c => c.generating))
+    setAnyGenerating(columns.some(c => c.generating || c.polling !== null))
   }, [columns])
 
   // Fetch models + user tier on mount
@@ -89,6 +91,47 @@ export default function Compare() {
       .single()
     return data as Template | null
   }, [])
+
+  // Polling interval — checks all columns with pending async generations every 5s
+  const columnsRef = useRef(columns)
+  useEffect(() => { columnsRef.current = columns }, [columns])
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const cols = columnsRef.current
+      if (!cols.some(c => c.polling)) return
+      const { data: { session } } = await supabase.auth.getSession()
+      await Promise.allSettled(cols.map(async (col, i) => {
+        if (!col.polling) return
+        const pv = col.polling
+        if (Date.now() - pv.startedAt > 30 * 60 * 1000) {
+          setColumns(prev => prev.map((c, j) => j === i ? { ...c, polling: null, error: 'Generation timed out after 30 minutes.' } : c))
+          return
+        }
+        const endpoint = pv.provider === 'replicate' ? 'check-replicate-video' : pv.provider === 'fal.ai' ? 'check-fal-video' : 'check-veo-job'
+        const pollBody = pv.provider === 'replicate'
+          ? { user_token: session?.access_token ?? null, asset_id: pv.assetId, prediction_url: pv.predictionUrl }
+          : { user_token: session?.access_token ?? null, asset_id: pv.assetId, operation_name: pv.operationName }
+        try {
+          const res = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY }, body: JSON.stringify(pollBody) }
+          )
+          const data = await res.json()
+          if (data.error) {
+            setColumns(prev => prev.map((c, j) => j === i ? { ...c, polling: null, error: friendlyFalError(data.error) } : c))
+            return
+          }
+          const completedUrl = data.image_url || data.video_url
+          if (data.status === 'complete' && completedUrl) {
+            const genTimeMs = Date.now() - pv.startedAt
+            setColumns(prev => prev.map((c, j) => j === i ? { ...c, polling: null, result: { url: completedUrl, assetId: pv.assetId, genTimeMs } } : c))
+          }
+        } catch { /* network hiccup — keep polling */ }
+      }))
+    }, 5000)
+    return () => clearInterval(interval)
+  }, []) // mount only — reads live state via columnsRef
 
   function handleModelChange(colIndex: number, slug: string) {
     if (!slug) {
@@ -181,11 +224,16 @@ export default function Compare() {
             promptId: (promptRecord as { id: string } | null)?.id ?? null,
           })
 
-          const genTimeMs = Date.now() - start
-
-          setColumns(prev => prev.map((c, j) =>
-            j === i ? { ...c, generating: false, result: { url: result.imageUrl, assetId: result.assetId, genTimeMs } } : c
-          ))
+          if (result.status === 'pending') {
+            setColumns(prev => prev.map((c, j) =>
+              j === i ? { ...c, generating: false, polling: { assetId: result.assetId, provider: result.provider, predictionUrl: result.predictionUrl, operationName: result.operationName, startedAt: Date.now() } } : c
+            ))
+          } else {
+            const genTimeMs = Date.now() - start
+            setColumns(prev => prev.map((c, j) =>
+              j === i ? { ...c, generating: false, result: { url: result.imageUrl, assetId: result.assetId, genTimeMs } } : c
+            ))
+          }
         } catch (err) {
           setColumns(prev => prev.map((c, j) =>
             j === i

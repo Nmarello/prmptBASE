@@ -4,8 +4,13 @@ import { downloadFile } from '../../lib/download'
 import ProviderLogo from '../dashboard/ProviderLogo'
 import AdvancedSettings from './AdvancedSettings'
 
-// Models known to return status:pending (async) — not supported in Compare
-const ASYNC_SLUGS = new Set(['gpt-image-1.5', 'hidream-full'])
+export interface ColumnPolling {
+  assetId: string
+  provider: 'replicate' | 'fal.ai' | 'google'
+  predictionUrl?: string
+  operationName?: string
+  startedAt: number
+}
 
 export interface ColumnState {
   id: string
@@ -16,6 +21,7 @@ export interface ColumnState {
   result: { url: string; assetId?: string; genTimeMs?: number } | null
   error: string | null
   generating: boolean
+  polling: ColumnPolling | null
 }
 
 interface CompareColumnProps {
@@ -28,13 +34,38 @@ interface CompareColumnProps {
   canRemove: boolean
 }
 
-// Group models by provider
+// Map slug prefix → human-readable brand name
+function getBrand(model: Model): string {
+  const s = model.slug
+  if (s.startsWith('flux') || s.startsWith('flux2')) return 'Black Forest Labs'
+  if (s.startsWith('dalle') || s.startsWith('gpt-image') || s.startsWith('sora')) return 'OpenAI'
+  if (s.startsWith('recraft')) return 'Recraft'
+  if (s.startsWith('ideogram')) return 'Ideogram'
+  if (s.startsWith('imagen') || s.startsWith('nano-banana') || s.startsWith('veo') || s.startsWith('gemini')) return 'Google'
+  if (s.startsWith('sd') || s.startsWith('stable')) return 'Stability AI'
+  if (s.startsWith('hidream')) return 'HiDream'
+  if (s.startsWith('seedream') || s.startsWith('seedance')) return 'Seedance'
+  if (s.startsWith('kling')) return 'Kuaishou'
+  if (s.startsWith('wan')) return 'Wan'
+  if (s.startsWith('minimax')) return 'MiniMax'
+  if (s.startsWith('hailuo')) return 'Hailuo'
+  if (s.startsWith('luma')) return 'Luma'
+  if (s.startsWith('ltx')) return 'Lightricks'
+  if (s.startsWith('runway') || s.startsWith('gen-')) return 'Runway'
+  if (s.startsWith('qwen')) return 'Alibaba'
+  // Fall back to capitalized provider name
+  const p = model.provider ?? ''
+  return p.charAt(0).toUpperCase() + p.slice(1)
+}
+
+// Group models by brand
 function groupByProvider(models: Model[]): Map<string, Model[]> {
   const map = new Map<string, Model[]>()
   for (const m of models) {
-    const group = map.get(m.provider) ?? []
+    const brand = getBrand(m)
+    const group = map.get(brand) ?? []
     group.push(m)
-    map.set(m.provider, group)
+    map.set(brand, group)
   }
   return map
 }
@@ -44,7 +75,7 @@ function formatMs(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`
 }
 
-function Spinner() {
+function Spinner({ label = 'Generating…' }: { label?: string }) {
   return (
     <div className="flex flex-col items-center gap-3">
       <div
@@ -55,7 +86,7 @@ function Spinner() {
           borderTopColor: 'var(--pv-accent)',
         }}
       />
-      <span style={{ fontSize: 13, color: 'var(--pv-text3)' }}>Generating…</span>
+      <span style={{ fontSize: 13, color: 'var(--pv-text3)' }}>{label}</span>
     </div>
   )
 }
@@ -65,7 +96,7 @@ export default function CompareColumn({
   onModelChange, onAdvancedChange, onRemove, canRemove,
 }: CompareColumnProps) {
   const grouped = groupByProvider(
-    models.filter(m => m.supported_gen_types.includes('txt2img') && !m.coming_soon && !ASYNC_SLUGS.has(m.slug))
+    models.filter(m => m.supported_gen_types.includes('txt2img') && !m.coming_soon)
   )
 
   const isRateLimit = column.error?.startsWith('__RATE_LIMITED__')
@@ -108,8 +139,8 @@ export default function CompareColumn({
             }}
           >
             <option value="">Select a model…</option>
-            {Array.from(grouped.entries()).map(([provider, provModels]) => (
-              <optgroup key={provider} label={provider.charAt(0).toUpperCase() + provider.slice(1)}>
+            {Array.from(grouped.entries()).map(([brand, provModels]) => (
+              <optgroup key={brand} label={brand}>
                 {provModels.map(m => {
                   const accessible = tierCanAccess(userTier, m.min_tier)
                   return (
@@ -153,8 +184,8 @@ export default function CompareColumn({
           border: '1px solid var(--pv-border)',
         }}
       >
-        {column.generating ? (
-          <Spinner />
+        {column.generating || column.polling ? (
+          <Spinner label={column.polling ? 'Processing…' : 'Generating…'} />
         ) : column.error ? (
           <div className="flex flex-col items-center gap-2 px-5 text-center">
             {isRateLimit ? (

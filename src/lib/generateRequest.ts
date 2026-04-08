@@ -25,10 +25,15 @@ const REPLICATE_SLUGS = new Set([
   'recraft-crisp-upscale', 'recraft-creative-upscale',
 ])
 
-export interface GenerateResult {
-  imageUrl: string
-  assetId?: string
-}
+export type GenerateResult =
+  | { status: 'complete'; imageUrl: string; assetId?: string }
+  | {
+      status: 'pending'
+      assetId: string
+      provider: 'replicate' | 'fal.ai' | 'google'
+      predictionUrl?: string
+      operationName?: string
+    }
 
 export async function invokeGenerate(params: {
   model: Model
@@ -117,13 +122,23 @@ export async function invokeGenerate(params: {
   if (data?.rate_limited) {
     throw new Error(`__RATE_LIMITED__:${data.used}:${data.limit}:${data.tier}`)
   }
-  if (data?.status === 'pending') {
-    throw new Error('This model requires async processing — not supported in Compare mode. Try an image model instead.')
-  }
   if (!res.ok || data?.error) {
     const raw = data?._raw ?? ''
     const friendly = friendlyFalError(data?.error ?? data?.message ?? `HTTP ${res.status}`)
     throw new Error(raw ? `${friendly}\n\n[RAW: ${raw}]` : friendly)
+  }
+
+  // Async model — return pending state for caller to poll
+  if (data?.status === 'pending') {
+    const provider: 'replicate' | 'fal.ai' | 'google' =
+      data.provider === 'replicate' ? 'replicate' : data.provider === 'google' ? 'google' : 'fal.ai'
+    return {
+      status: 'pending',
+      assetId: data.asset?.id ?? '',
+      provider,
+      predictionUrl: data.prediction_url,
+      operationName: data.operation_name,
+    }
   }
 
   const imageUrl = data?.asset?.url ?? data?.image_url
@@ -131,5 +146,5 @@ export async function invokeGenerate(params: {
     throw new Error(`No image URL returned. Response: ${JSON.stringify(data)}`)
   }
 
-  return { imageUrl, assetId: data?.asset?.id as string | undefined }
+  return { status: 'complete', imageUrl, assetId: data?.asset?.id as string | undefined }
 }
