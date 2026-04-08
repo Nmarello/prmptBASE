@@ -305,12 +305,25 @@ export default function Compare() {
           <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--pv-text)', letterSpacing: '-0.02em', fontFamily: "'Bricolage Grotesque', sans-serif" }}>
             Compare
           </span>
-          <span
-            className="px-2 py-0.5 rounded-full text-[11px] font-semibold"
-            style={{ background: 'rgba(0,80,255,0.1)', color: 'var(--pv-accent)' }}
-          >
-            Text → Image
-          </span>
+          {/* Gen type pills — Text→Image active, others ghosted (coming soon) */}
+          <div className="flex items-center gap-1.5">
+            <span
+              className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
+              style={{ background: 'rgba(0,80,255,0.12)', color: 'var(--pv-accent)', border: '1px solid rgba(0,80,255,0.25)' }}
+            >
+              Text → Image
+            </span>
+            {(['Image → Image', 'Text → Video'] as const).map(label => (
+              <span
+                key={label}
+                title="Coming soon"
+                className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                style={{ background: 'var(--pv-surface2)', color: 'var(--pv-text3)', border: '1px solid var(--pv-border)', opacity: 0.45, cursor: 'not-allowed' }}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -540,6 +553,8 @@ export default function Compare() {
             onChange={(field, value) => setCommonValues(prev => ({ ...prev, [field]: value }))}
             seedLocked={seedLocked}
             onToggleSeedLock={() => setSeedLocked(v => !v)}
+            sharedPrompt={sharedPrompt}
+            activeModelNames={columns.filter(c => c.model).map(c => c.model!.name)}
           />
 
           {/* Bottom spacer */}

@@ -30,4 +30,4 @@
 ## Build & Dev
 - `npm run dev` — local dev server
 - `npx supabase functions serve` — local edge functions
-- `npx wrangler pages deploy dist` — deploy to CF Pages (Git builds are broken, use Wrangler)
+- `npx wrangler pages deploy dist --project-name prmptbase --branch staging` — deploy to CF Pages (Git builds are broken, use Wrangler)
