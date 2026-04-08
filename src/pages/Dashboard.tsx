@@ -2060,8 +2060,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Model Advisor floating bubble — models view only ── */}
-      {view === 'models' && (
+      {/* ── Model Advisor floating bubble — models view only, hide when drawer open ── */}
+      {view === 'models' && !drawerModel && (
         <ModelAdvisor
           models={models}
           userTier={userTier}
