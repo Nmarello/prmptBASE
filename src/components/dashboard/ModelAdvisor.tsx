@@ -26,7 +26,6 @@ export default function ModelAdvisor({ models, userTier, onSelectModel }: Props)
   const [messages, setMessages] = useState<AdvisorMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [hovered, setHovered] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -135,13 +134,13 @@ export default function ModelAdvisor({ models, userTier, onSelectModel }: Props)
   const showSuggestions = messages.length <= 1 && !loading
 
   return (
-    <div style={{ position: 'fixed', bottom: 24, right: 76, zIndex: 9999 }}>
+    <div style={{ position: 'fixed', top: 14, right: 16, zIndex: 9999 }}>
       {/* Chat panel */}
       {open && (
         <div
           style={{
             position: 'absolute',
-            bottom: 60,
+            top: 54,
             right: 0,
             width: 320,
             height: 480,
@@ -326,42 +325,30 @@ export default function ModelAdvisor({ models, userTier, onSelectModel }: Props)
       {/* Trigger bubble */}
       <button
         onClick={() => setOpen(v => !v)}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
         title="Model Advisor"
         style={{
-          height: 44,
-          width: (!open && hovered) ? 148 : 44,
+          height: 38,
           borderRadius: 9999,
           background: ADVISOR_COLOR,
           border: 'none',
-          boxShadow: '0 4px 16px rgba(124,58,237,0.45)',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-          paddingRight: 12, paddingLeft: (!open && hovered) ? 14 : 12,
-          overflow: 'hidden', whiteSpace: 'nowrap',
+          boxShadow: '0 4px 16px rgba(124,58,237,0.5)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center',
+          gap: 7,
+          paddingLeft: 12, paddingRight: 14,
           color: '#fff',
-          transition: 'width 0.22s ease, padding-left 0.22s ease',
+          transition: 'box-shadow 0.2s ease',
         }}
       >
-        {!open && (
-          <span style={{
-            flex: 1, fontSize: 12.5, fontWeight: 600, minWidth: 0,
-            opacity: hovered ? 1 : 0,
-            transition: 'opacity 0.12s 0.08s',
-            overflow: 'hidden',
-          }}>Model Advisor</span>
-        )}
         {open ? (
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         ) : (
-          <SparkleIcon
-            size={19}
-            color="#fff"
-            style={{ flexShrink: 0, marginLeft: hovered ? 7 : 0, transition: 'margin-left 0.22s ease' }}
-          />
+          <SparkleIcon size={15} color="#fff" />
         )}
+        <span style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
+          {open ? 'Close' : 'Model Advisor'}
+        </span>
       </button>
 
       <style>{`
