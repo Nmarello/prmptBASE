@@ -1164,12 +1164,6 @@ export default function Dashboard() {
                     })}
                   </div>
                 </div>
-                {/* AI Model Advisor — right */}
-                <ModelAdvisor
-                  models={models}
-                  userTier={userTier}
-                  onSelectModel={m => setDrawerModel(m)}
-                />
               </div>
             </div>
 
@@ -2065,6 +2059,13 @@ export default function Dashboard() {
           <button onClick={() => setRenderToast(null)} className="ml-2 text-base leading-none cursor-pointer" style={{ color: 'var(--pv-text3)' }}>✕</button>
         </div>
       )}
+
+      {/* ── Model Advisor floating bubble ── */}
+      <ModelAdvisor
+        models={models}
+        userTier={userTier}
+        onSelectModel={m => { setDrawerModel(m) }}
+      />
     </div>
   )
 }

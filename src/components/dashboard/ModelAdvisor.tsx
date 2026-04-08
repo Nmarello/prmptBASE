@@ -19,42 +19,49 @@ interface Props {
   onSelectModel: (model: Model) => void
 }
 
+const ADVISOR_COLOR = '#7c3aed'
+
 export default function ModelAdvisor({ models, userTier, onSelectModel }: Props) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<AdvisorMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [hovered, setHovered] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  // Greeting on first open
   useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 100)
-      if (messages.length === 0) {
-        setMessages([{
-          role: 'bot',
-          content: 'Tell me what you want to create — I\'ll find the best models for you. Try something like "photorealistic portraits", "animated logo", or "a cinematic drone shot."',
-        }])
-      }
+    if (open && messages.length === 0) {
+      setMessages([{
+        role: 'bot',
+        content: 'Tell me what you want to create and I\'ll find the best models for you. Try "photorealistic portraits", "animated logo", or "cinematic drone shot".',
+      }])
     }
   }, [open])
 
+  // Scroll to bottom
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, open])
 
-  // Close on Escape key
+  // Auto-resize textarea
   useEffect(() => {
-    if (!open) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open])
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 80) + 'px'
+  }, [input])
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  function clearConversation() {
+    setMessages([{
+      role: 'bot',
+      content: 'Tell me what you want to create and I\'ll find the best models for you. Try "photorealistic portraits", "animated logo", or "cinematic drone shot".',
+    }])
+    setInput('')
+  }
+
+  async function send() {
     const text = input.trim()
     if (!text || loading) return
     setInput('')
@@ -111,6 +118,10 @@ export default function ModelAdvisor({ models, userTier, onSelectModel }: Props)
     }
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+  }
+
   function handleSelect(slug: string) {
     const model = models.find(m => m.slug === slug)
     if (model) {
@@ -119,236 +130,256 @@ export default function ModelAdvisor({ models, userTier, onSelectModel }: Props)
     }
   }
 
-  return (
-    <>
-      {/* Trigger */}
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-sm py-1.5 pl-2.5 pr-3.5 rounded-full transition-colors hover:opacity-80"
-        style={{
-          background: 'var(--pv-surface)',
-          border: '1px solid var(--pv-border)',
-          color: 'var(--pv-text3)',
-        }}
-      >
-        <SparkleIcon />
-        <span className="hidden sm:inline text-xs">Find the right model…</span>
-        <span className="sm:hidden text-xs">Ask AI</span>
-      </button>
+  // Suggestion chips shown before first user message
+  const suggestions = ['Photorealistic portraits', 'Product photography', 'Animated video clip', 'Edit an existing photo']
+  const showSuggestions = messages.length <= 1 && !loading
 
-      {/* Overlay */}
+  return (
+    <div style={{ position: 'fixed', bottom: 24, right: 76, zIndex: 9999 }}>
+      {/* Chat panel */}
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
-          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
-          onClick={e => { if (e.target === e.currentTarget) setOpen(false) }}
+          style={{
+            position: 'absolute',
+            bottom: 60,
+            right: 0,
+            width: 320,
+            height: 480,
+            background: 'var(--pv-surface)',
+            border: '1px solid var(--pv-border)',
+            borderRadius: 18,
+            boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            fontFamily: "'DM Sans', sans-serif",
+          }}
         >
-          <div
-            className="w-full sm:max-w-lg flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden"
-            style={{
-              background: 'var(--pv-bg)',
-              border: '1px solid var(--pv-border)',
-              maxHeight: '85vh',
-            }}
-          >
-            {/* Header */}
-            <div
-              className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
-              style={{ borderBottom: '1px solid var(--pv-border)' }}
-            >
-              <div className="flex items-center gap-2">
-                <SparkleIcon size={16} />
-                <span
-                  style={{
-                    fontFamily: "'Bricolage Grotesque',sans-serif",
-                    fontWeight: 800,
-                    fontSize: 16,
-                    color: 'var(--pv-text)',
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  Model Advisor
-                </span>
+          {/* Header */}
+          <div style={{ padding: '13px 16px 11px', borderBottom: '1px solid var(--pv-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: ADVISOR_COLOR, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <SparkleIcon size={14} color="#fff" />
               </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--pv-text)', fontFamily: "'Bricolage Grotesque', sans-serif", lineHeight: 1.2 }}>Model Advisor</div>
+                <div style={{ fontSize: 10, color: 'var(--pv-text3)' }}>prmptVAULT</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <button
+                onClick={clearConversation}
+                title="New conversation"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--pv-text3)', fontSize: 11, padding: '3px 6px', borderRadius: 6, fontFamily: 'inherit' }}
+                className="hover:text-[var(--pv-text)] hover:bg-white/5 transition-all"
+              >New</button>
               <button
                 onClick={() => setOpen(false)}
-                style={{ color: 'var(--pv-text3)' }}
-                className="hover:opacity-70 transition-opacity p-1"
-              >
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--pv-text3)', fontSize: 16, lineHeight: 1, padding: 2 }}
+                className="hover:text-[var(--pv-text)] transition-colors"
+              >✕</button>
             </div>
+          </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-0">
-              {messages.map((msg, i) => (
-                <div key={i}>
-                  {msg.role === 'user' ? (
-                    <div className="flex justify-end">
-                      <div
-                        className="max-w-xs px-4 py-2.5 rounded-2xl rounded-br-sm text-sm leading-relaxed"
-                        style={{ background: 'var(--pv-accent)', color: '#fff' }}
-                      >
-                        {msg.content}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <p className="text-sm leading-relaxed" style={{ color: 'var(--pv-text2)' }}>
-                        {msg.content}
-                      </p>
-                      {msg.recommendations && msg.recommendations.length > 0 && (
-                        <div className="space-y-2">
-                          {msg.recommendations.map(rec => {
-                            const model = models.find(m => m.slug === rec.slug)
-                            if (!model) return null
-                            return (
-                              <RecommendationCard
-                                key={rec.slug}
-                                model={model}
-                                reason={rec.reason}
-                                userTier={userTier}
-                                onSelect={() => handleSelect(rec.slug)}
-                              />
-                            )
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {loading && (
-                <div className="flex items-center gap-2">
-                  <LoadingDots />
-                  <span className="text-xs" style={{ color: 'var(--pv-text3)' }}>Finding models…</span>
-                </div>
-              )}
-              <div ref={bottomRef} />
-            </div>
-
-            {/* Input */}
-            <form
-              onSubmit={handleSubmit}
-              className="px-4 pb-5 pt-2 flex-shrink-0"
-              style={{ borderTop: '1px solid var(--pv-border)' }}
-            >
-              <div
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl mt-3"
-                style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}
-              >
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  placeholder="Describe what you want to create…"
-                  className="flex-1 bg-transparent text-sm outline-none pv-placeholder"
-                  style={{ color: 'var(--pv-text)' }}
-                  disabled={loading}
-                />
-                <button
-                  type="submit"
-                  disabled={!input.trim() || loading}
-                  className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-40"
-                  style={{ background: 'var(--pv-accent)', color: '#fff' }}
+          {/* Messages */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 4px' }}>
+            {messages.map((msg, i) => (
+              <div key={i} style={{ marginBottom: 10, display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                <div
+                  style={{
+                    maxWidth: '88%',
+                    padding: '8px 12px',
+                    borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                    background: msg.role === 'user' ? ADVISOR_COLOR : 'var(--pv-surface2)',
+                    color: msg.role === 'user' ? '#fff' : 'var(--pv-text)',
+                    fontSize: 12.5,
+                    lineHeight: 1.6,
+                    border: msg.role === 'bot' ? '1px solid var(--pv-border)' : 'none',
+                  }}
                 >
-                  Ask
-                </button>
+                  {msg.content.split('\n').map((line, j, arr) => (
+                    <span key={j}>{line}{j < arr.length - 1 && <br />}</span>
+                  ))}
+                </div>
+
+                {/* Recommendation cards */}
+                {msg.recommendations && msg.recommendations.length > 0 && (
+                  <div style={{ maxWidth: '94%', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 5, alignSelf: 'flex-start' }}>
+                    {msg.recommendations.map(rec => {
+                      const model = models.find(m => m.slug === rec.slug)
+                      if (!model) return null
+                      const canAccess = tierCanAccess(userTier, model.min_tier)
+                      return (
+                        <div
+                          key={rec.slug}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8,
+                            padding: '7px 10px 7px 8px',
+                            background: 'var(--pv-surface2)',
+                            border: '1px solid var(--pv-border)',
+                            borderRadius: 12,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                              background: modelGradient(model.slug),
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: '#fff', fontSize: 10, fontWeight: 700,
+                            }}
+                          >
+                            {model.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--pv-text)', lineHeight: 1.2 }}>{model.name}</div>
+                            <div style={{ fontSize: 10.5, color: 'var(--pv-text3)', lineHeight: 1.4, marginTop: 1 }}>{rec.reason}</div>
+                          </div>
+                          <button
+                            onClick={() => handleSelect(rec.slug)}
+                            style={{
+                              flexShrink: 0, fontSize: 11, fontWeight: 700,
+                              padding: '4px 9px', borderRadius: 7, border: 'none',
+                              background: canAccess ? ADVISOR_COLOR : 'var(--pv-surface)',
+                              color: canAccess ? '#fff' : 'var(--pv-text2)',
+                              cursor: 'pointer', fontFamily: 'inherit',
+                              ...(canAccess ? {} : { border: '1px solid var(--pv-border)' }),
+                            }}
+                            className="hover:opacity-80 transition-opacity"
+                          >
+                            {canAccess ? 'Use' : 'Upgrade'}
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-              <p className="text-center mt-2 text-xs" style={{ color: 'var(--pv-text3)' }}>
-                Powered by AI — describes capabilities, not guaranteed results
-              </p>
-            </form>
+            ))}
+
+            {/* Loading dots */}
+            {loading && (
+              <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
+                <div style={{ padding: '8px 14px', borderRadius: '14px 14px 14px 4px', background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', display: 'flex', gap: 4, alignItems: 'center' }}>
+                  {[0, 1, 2].map(d => (
+                    <div key={d} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--pv-text3)', animation: `pvBounce 1s ${d * 0.2}s infinite` }} />
+                  ))}
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Suggestion chips */}
+          {showSuggestions && (
+            <div style={{ padding: '0 10px 6px', flexShrink: 0, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {suggestions.map(s => (
+                <button
+                  key={s}
+                  onClick={() => { setInput(s); setTimeout(() => textareaRef.current?.focus(), 0) }}
+                  style={{
+                    fontSize: 11, padding: '4px 9px', borderRadius: 20,
+                    border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)',
+                    color: 'var(--pv-text3)', cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                  className="hover:border-[#7c3aed] hover:text-[#7c3aed] transition-all"
+                >{s}</button>
+              ))}
+            </div>
+          )}
+
+          {/* Input bar */}
+          <div style={{ padding: '8px 10px 10px', borderTop: '1px solid var(--pv-border)', flexShrink: 0, display: 'flex', gap: 6, alignItems: 'flex-end' }}>
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="What do you want to create?"
+              rows={1}
+              style={{
+                flex: 1, resize: 'none', boxSizing: 'border-box',
+                background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)',
+                borderRadius: 10, padding: '7px 10px', fontSize: 12.5,
+                color: 'var(--pv-text)', outline: 'none', fontFamily: 'inherit', lineHeight: 1.4,
+                maxHeight: 80, overflowY: 'auto',
+              }}
+              className="pv-placeholder focus:border-[#7c3aed] transition-colors"
+            />
+            <button
+              onClick={send}
+              disabled={!input.trim() || loading}
+              style={{
+                width: 32, height: 32, background: ADVISOR_COLOR, border: 'none',
+                borderRadius: 9, cursor: 'pointer', color: '#fff', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}
+              className="hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
           </div>
         </div>
       )}
-    </>
-  )
-}
 
-function SparkleIcon({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" style={{ color: 'var(--pv-accent)', flexShrink: 0 }}>
-      <path
-        fill="currentColor"
-        d="M12 2l1.8 5.4 5.7.6-4.35 3.75 1.5 5.7L12 14.45l-4.65 3 1.5-5.7L4.5 8l5.7-.6z"
-      />
-    </svg>
-  )
-}
-
-function LoadingDots() {
-  return (
-    <div className="flex gap-1">
-      {[0, 1, 2].map(i => (
-        <div
-          key={i}
-          className="w-1.5 h-1.5 rounded-full animate-bounce"
-          style={{ background: 'var(--pv-text3)', animationDelay: `${i * 0.15}s` }}
-        />
-      ))}
-    </div>
-  )
-}
-
-function RecommendationCard({
-  model,
-  reason,
-  userTier,
-  onSelect,
-}: {
-  model: Model
-  reason: string
-  userTier: string
-  onSelect: () => void
-}) {
-  const canAccess = tierCanAccess(userTier, model.min_tier)
-
-  return (
-    <div
-      className="flex items-start gap-3 p-3 rounded-xl"
-      style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}
-    >
-      {/* Avatar */}
-      <div
-        className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold"
-        style={{ background: modelGradient(model.slug), fontSize: 11 }}
-      >
-        {model.name.slice(0, 2).toUpperCase()}
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-0.5">
-          <span className="text-sm font-semibold" style={{ color: 'var(--pv-text)' }}>
-            {model.name}
-          </span>
-          <span className="text-xs" style={{ color: 'var(--pv-text3)' }}>
-            {model.provider}
-          </span>
-        </div>
-        <p className="text-xs leading-snug" style={{ color: 'var(--pv-text2)' }}>
-          {reason}
-        </p>
-      </div>
-
-      {/* CTA */}
+      {/* Trigger bubble */}
       <button
-        onClick={onSelect}
-        className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
+        onClick={() => setOpen(v => !v)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        title="Model Advisor"
         style={{
-          background: canAccess ? 'var(--pv-accent)' : 'var(--pv-surface2)',
-          color: canAccess ? '#fff' : 'var(--pv-text2)',
-          border: canAccess ? 'none' : '1px solid var(--pv-border)',
+          height: 44,
+          width: (!open && hovered) ? 148 : 44,
+          borderRadius: 9999,
+          background: ADVISOR_COLOR,
+          border: 'none',
+          boxShadow: '0 4px 16px rgba(124,58,237,0.45)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+          paddingRight: 12, paddingLeft: (!open && hovered) ? 14 : 12,
+          overflow: 'hidden', whiteSpace: 'nowrap',
+          color: '#fff',
+          transition: 'width 0.22s ease, padding-left 0.22s ease',
         }}
       >
-        {canAccess ? 'Use' : 'Upgrade'}
+        {!open && (
+          <span style={{
+            flex: 1, fontSize: 12.5, fontWeight: 600, minWidth: 0,
+            opacity: hovered ? 1 : 0,
+            transition: 'opacity 0.12s 0.08s',
+            overflow: 'hidden',
+          }}>Model Advisor</span>
+        )}
+        {open ? (
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        ) : (
+          <SparkleIcon
+            size={19}
+            color="#fff"
+            style={{ flexShrink: 0, marginLeft: hovered ? 7 : 0, transition: 'margin-left 0.22s ease' }}
+          />
+        )}
       </button>
+
+      <style>{`
+        @keyframes pvBounce {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+          30% { transform: translateY(-4px); opacity: 1; }
+        }
+      `}</style>
     </div>
+  )
+}
+
+function SparkleIcon({ size = 14, color = 'currentColor', style }: { size?: number; color?: string; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={style}>
+      <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74z"/>
+      <path d="M19 2l.9 2.7 2.6.9-2.6.9L19 9l-.9-2.7L15.5 5.6l2.6-.9z" opacity=".6"/>
+    </svg>
   )
 }
 
@@ -367,6 +398,6 @@ function modelGradient(slug: string): string {
   if (slug.startsWith('minimax') || slug.startsWith('wan')) return 'linear-gradient(145deg,#002b36,#007070,#00c9a7)'
   if (slug.startsWith('ideogram')) return 'linear-gradient(145deg,#1a0040,#5500cc,#aa44ff)'
   if (slug.startsWith('hidream') || slug.startsWith('ltx')) return 'linear-gradient(145deg,#002233,#005577,#00aabb)'
-  if (slug.startsWith('runway') || slug.startsWith('cs-runway')) return 'linear-gradient(145deg,#001a00,#004400,#00aa44)'
+  if (slug.startsWith('runway')) return 'linear-gradient(145deg,#001a00,#004400,#00aa44)'
   return 'linear-gradient(145deg,#1a1a2e,#16213e,#0f3460)'
 }
