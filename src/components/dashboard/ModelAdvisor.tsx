@@ -22,7 +22,7 @@ interface Props {
   onTriggerConsumed?: () => void
 }
 
-const ADVISOR_COLOR = '#7c3aed'
+const ADVISOR_COLOR = '#0050ff'
 
 export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQuery, onTriggerConsumed }: Props) {
   const navigate = useNavigate()
@@ -288,7 +288,7 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
                           style={{
                             display: 'flex', alignItems: 'center', gap: 8,
                             padding: '7px 10px 7px 8px',
-                            background: checked ? 'rgba(124,58,237,0.08)' : 'var(--pv-surface2)',
+                            background: checked ? 'rgba(0,80,255,0.08)' : 'var(--pv-surface2)',
                             border: `1px solid ${checked ? ADVISOR_COLOR : 'var(--pv-border)'}`,
                             borderRadius: 12,
                             transition: 'background 0.15s, border-color 0.15s',
@@ -300,8 +300,8 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
                             title={maxReached ? 'Max 4 models' : checked ? 'Remove from comparison' : 'Add to comparison'}
                             style={{
                               flexShrink: 0, width: 18, height: 18, borderRadius: 5,
-                              border: `2px solid ${checked ? ADVISOR_COLOR : 'rgba(124,58,237,0.45)'}`,
-                              background: checked ? ADVISOR_COLOR : 'rgba(124,58,237,0.07)',
+                              border: `2px solid ${checked ? ADVISOR_COLOR : 'rgba(0,80,255,0.35)'}`,
+                              background: checked ? ADVISOR_COLOR : 'rgba(0,80,255,0.06)',
                               cursor: maxReached ? 'not-allowed' : 'pointer',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               padding: 0, opacity: maxReached ? 0.35 : 1,
@@ -366,7 +366,7 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
 
           {/* Compare bar — shown when ≥2 models selected */}
           {selectedSlugs.size >= 2 && (
-            <div style={{ padding: '8px 10px', borderTop: '1px solid var(--pv-border)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(124,58,237,0.07)' }}>
+            <div style={{ padding: '8px 10px', borderTop: '1px solid var(--pv-border)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,80,255,0.06)' }}>
               <span style={{ fontSize: 11.5, color: 'var(--pv-text2)', fontWeight: 500 }}>
                 {selectedSlugs.size} model{selectedSlugs.size > 1 ? 's' : ''} selected
               </span>
@@ -400,7 +400,7 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
                     border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)',
                     color: 'var(--pv-text3)', cursor: 'pointer', fontFamily: 'inherit',
                   }}
-                  className="hover:border-[#7c3aed] hover:text-[#7c3aed] transition-all"
+                  className="hover:border-[#0050ff] hover:text-[#0050ff] transition-all"
                 >{s}</button>
               ))}
             </div>
@@ -422,7 +422,7 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
                 color: 'var(--pv-text)', outline: 'none', fontFamily: 'inherit', lineHeight: 1.4,
                 maxHeight: 80, overflowY: 'auto',
               }}
-              className="pv-placeholder focus:border-[#7c3aed] transition-colors"
+              className="pv-placeholder focus:border-[#0050ff] transition-colors"
             />
             <button
               onClick={send}
@@ -451,7 +451,7 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
           borderRadius: 9999,
           background: ADVISOR_COLOR,
           border: 'none',
-          boxShadow: '0 4px 16px rgba(124,58,237,0.5)',
+          boxShadow: '0 4px 16px rgba(0,80,255,0.4)',
           cursor: 'pointer', display: 'flex', alignItems: 'center',
           gap: 7,
           paddingLeft: 12, paddingRight: 14,

@@ -31,7 +31,7 @@ const CATEGORIES: { key: CategoryKey | 'tools'; label: string; color: string; ic
   {
     key: 'images',
     label: 'Images',
-    color: '#7c3aed',
+    color: '#0050ff',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
@@ -42,7 +42,7 @@ const CATEGORIES: { key: CategoryKey | 'tools'; label: string; color: string; ic
   {
     key: 'video',
     label: 'Video',
-    color: '#059669',
+    color: '#0891b2',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
@@ -53,7 +53,7 @@ const CATEGORIES: { key: CategoryKey | 'tools'; label: string; color: string; ic
   {
     key: 'tools',
     label: 'Tools',
-    color: '#ec4899',
+    color: '#6366f1',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
@@ -158,8 +158,8 @@ export default function HomeView({
             <span>Describe your vision —</span>
             <br />
             <span>the </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#7c3aed', fontWeight: 600, verticalAlign: 'middle' }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="#7c3aed" style={{ flexShrink: 0, display: 'inline' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#0050ff', fontWeight: 600, verticalAlign: 'middle' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="#0050ff" style={{ flexShrink: 0, display: 'inline' }}>
                 <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74z"/>
                 <path d="M19 2l.9 2.7 2.6.9-2.6.9L19 9l-.9-2.7L15.5 5.6l2.6-.9z" opacity=".6"/>
               </svg>
@@ -185,14 +185,14 @@ export default function HomeView({
                 fontFamily: 'inherit', lineHeight: 1.5, maxHeight: 100,
                 overflowY: 'auto', display: 'block',
               }}
-              className="pv-placeholder focus:border-[#7c3aed] transition-colors"
+              className="pv-placeholder focus:border-[#0050ff] transition-colors"
             />
             <button
               onClick={handleSubmit}
               disabled={!query.trim()}
               style={{
                 position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                width: 36, height: 36, background: '#7c3aed', border: 'none',
+                width: 36, height: 36, background: '#0050ff', border: 'none',
                 borderRadius: 10, cursor: 'pointer', color: '#fff', display: 'flex',
                 alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}
@@ -215,7 +215,7 @@ export default function HomeView({
                   border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)',
                   color: 'var(--pv-text3)', cursor: 'pointer', fontFamily: 'inherit',
                 }}
-                className="hover:border-[#7c3aed] hover:text-[#7c3aed] transition-all"
+                className="hover:border-[#0050ff] hover:text-[#0050ff] transition-all"
               >
                 {s}
               </button>

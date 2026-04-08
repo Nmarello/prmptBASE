@@ -12,12 +12,24 @@
 
 ## Key Directories
 - `src/` — React app (components, pages, contexts, hooks, lib, types)
+- `src/components/dashboard/HomeView.tsx` — Home screen: hero, inline advisor, 3 category cards (Images/Video/Tools), Featured + Last Used rows (full ModelCard)
+- `src/components/dashboard/ModelsPageView.tsx` — Images/Video sub-pages: Featured + Last Used + per-family horizontal ModelCard rows
+- `src/components/dashboard/MiniModelCard.tsx` — Compact card (still used in some views, NOT used in HomeView)
 - `src/components/compare/` — Compare tool components (CompareColumn, CommonSettings, AdvancedSettings, GhostColumn)
 - `src/components/dashboard/ModelAdvisor.tsx` — AI chat bubble (violet, fixed top-right, models view only)
 - `src/lib/generateRequest.ts` — shared generation routing utility (replicate/fal/google/openai)
 - `supabase/functions/` — 35 Deno edge functions (added: model-advisor)
 - `supabase/migrations/` — 92+ database migrations
 - `ghost-theme/` — Custom Ghost blog theme
+
+## Dashboard architecture
+- `view` state: `'models' | 'builder' | 'assets' | 'projects' | 'tools'`
+- `categoryView` state: `'images' | 'video' | null` — set by sidebar Images/Video buttons; null = Home
+- Sidebar order: Home → Images → Video → Compare → Tools → Assets → Projects → Bell → Theme
+- Images/Video pages use `ModelsPageView` (not the old tier-aware FamilyRow layout)
+- `CategoryKey = 'images' | 'video'` — 'characters' and '3d' removed
+- Model Advisor: renders when `view === 'models' && !drawerModel && (!!categoryView || advisorOpenedFromHome)`
+- Compare page has matching left icon sidebar; non-Compare items navigate('/dashboard')
 
 ## Gotchas
 - Edge function deploys are separate from CF Pages — run `supabase functions deploy`
@@ -27,12 +39,14 @@
 - Edge fn auth pattern: `Bearer <anon-key>` header + `user_token` in body
 - Storage uploads: use the shared `src/lib/supabase.ts` client — new createClient() with anon key fails
 - Video assets: always upload to Supabase storage — provider temp URLs expire
-- CF Pages treats unused imports/vars as hard build failures — always clean up
+- CF Pages treats unused imports/vars as hard build failures — always clean up (`noUnusedLocals: true`)
+- CF Pages wrangler deploy needs `--commit-message "..."` flag or it errors on special chars in git message
 - Generation errors must tell users what to change (actionable messages)
 - Compare tool: `columnsRef` polling pattern is intentional — do NOT add `columns` to the polling `useEffect` deps
 - Compare tool: `getBrand()` in CompareColumn maps slug → display brand; update when adding new model families
 - Compare tool: accepts `location.state = { models: string[], prompt: string }` from Model Advisor — pre-populates columns + sharedPrompt
 - Model Advisor: only renders when `view === 'models' && !drawerModel` in Dashboard — intentional, not a bug
+- Favorites: `favoriteModelSlugs` read from localStorage on mount; setter prefixed `_setFavoriteModelSlugs` — no toggle UI yet
 
 ## Build & Dev
 - `npm run dev` — local dev server
