@@ -2060,12 +2060,14 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Model Advisor floating bubble ── */}
-      <ModelAdvisor
-        models={models}
-        userTier={userTier}
-        onSelectModel={m => { setDrawerModel(m) }}
-      />
+      {/* ── Model Advisor floating bubble — models view only ── */}
+      {view === 'models' && (
+        <ModelAdvisor
+          models={models}
+          userTier={userTier}
+          onSelectModel={m => { setDrawerModel(m) }}
+        />
+      )}
     </div>
   )
 }
