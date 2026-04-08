@@ -1069,6 +1069,13 @@ export default function Dashboard() {
           </SbBtn>
         ))}
 
+        {/* Compare nav */}
+        <SbBtn tip="Compare" onClick={() => navigate('/compare')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/>
+          </svg>
+        </SbBtn>
+
         {/* Notification Bell — below Projects */}
         <NotificationBell
           dataTour="nav-alerts"

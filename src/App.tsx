@@ -12,6 +12,7 @@ import Settings from './pages/Settings'
 import Tos from './pages/Tos'
 import Privacy from './pages/Privacy'
 import Gallery from './pages/Gallery'
+import Compare from './pages/Compare'
 import NotFound from './pages/NotFound'
 import AuthCallback from './pages/AuthCallback'
 import FeedbackWidget from './components/support/FeedbackWidget'
@@ -52,6 +53,14 @@ export default function App() {
               <AdminRoute>
                 <Admin />
               </AdminRoute>
+            }
+          />
+          <Route
+            path="/compare"
+            element={
+              <ProtectedRoute>
+                <Compare />
+              </ProtectedRoute>
             }
           />
           <Route path="*" element={<NotFound />} />
