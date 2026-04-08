@@ -227,20 +227,20 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
                 <SparkleIcon size={14} color="#fff" />
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--pv-text)', fontFamily: "'Bricolage Grotesque', sans-serif", lineHeight: 1.2 }}>Model Advisor</div>
-                <div style={{ fontSize: 10, color: 'var(--pv-text3)' }}>prmptVAULT</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--pv-text)', fontFamily: "'Bricolage Grotesque', sans-serif", lineHeight: 1.2 }}>Model Advisor</div>
+                <div style={{ fontSize: 13, color: 'var(--pv-text3)' }}>prmptVAULT</div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
               <button
                 onClick={clearConversation}
                 title="New conversation"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--pv-text3)', fontSize: 11, padding: '3px 6px', borderRadius: 6, fontFamily: 'inherit' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--pv-text3)', fontSize: 14, padding: '3px 6px', borderRadius: 6, fontFamily: 'inherit' }}
                 className="hover:text-[var(--pv-text)] hover:bg-white/5 transition-all"
               >New</button>
               <button
                 onClick={() => setOpen(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--pv-text3)', fontSize: 16, lineHeight: 1, padding: 2 }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--pv-text3)', fontSize: 18, lineHeight: 1, padding: 2 }}
                 className="hover:text-[var(--pv-text)] transition-colors"
               >✕</button>
             </div>
@@ -257,7 +257,7 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
                     borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
                     background: msg.role === 'user' ? ADVISOR_COLOR : 'var(--pv-surface2)',
                     color: msg.role === 'user' ? '#fff' : 'var(--pv-text)',
-                    fontSize: 12.5,
+                    fontSize: 15.5,
                     lineHeight: 1.6,
                     border: msg.role === 'bot' ? '1px solid var(--pv-border)' : 'none',
                   }}
@@ -274,7 +274,7 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={ADVISOR_COLOR} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
                       </svg>
-                      <span style={{ fontSize: 10.5, fontWeight: 600, color: ADVISOR_COLOR, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Compare</span>
+                      <span style={{ fontSize: 13.5, fontWeight: 600, color: ADVISOR_COLOR, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Compare</span>
                     </div>
                     {msg.recommendations.map(rec => {
                       const model = models.find(m => m.slug === rec.slug)
@@ -320,19 +320,19 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
                               width: 30, height: 30, borderRadius: 8, flexShrink: 0,
                               background: modelGradient(model.slug),
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: '#fff', fontSize: 10, fontWeight: 700,
+                              color: '#fff', fontSize: 13, fontWeight: 700,
                             }}
                           >
                             {model.name.slice(0, 2).toUpperCase()}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--pv-text)', lineHeight: 1.2 }}>{model.name}</div>
-                            <div style={{ fontSize: 10.5, color: 'var(--pv-text3)', lineHeight: 1.4, marginTop: 1 }}>{rec.reason}</div>
+                            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--pv-text)', lineHeight: 1.2 }}>{model.name}</div>
+                            <div style={{ fontSize: 13.5, color: 'var(--pv-text3)', lineHeight: 1.4, marginTop: 1 }}>{rec.reason}</div>
                           </div>
                           <button
                             onClick={() => handleSelect(rec.slug)}
                             style={{
-                              flexShrink: 0, fontSize: 11, fontWeight: 700,
+                              flexShrink: 0, fontSize: 14, fontWeight: 700,
                               padding: '4px 9px', borderRadius: 7, border: 'none',
                               background: canAccess ? ADVISOR_COLOR : 'var(--pv-surface)',
                               color: canAccess ? '#fff' : 'var(--pv-text2)',
@@ -367,13 +367,13 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
           {/* Compare bar — shown when ≥2 models selected */}
           {selectedSlugs.size >= 2 && (
             <div style={{ padding: '8px 10px', borderTop: '1px solid var(--pv-border)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,80,255,0.06)' }}>
-              <span style={{ fontSize: 11.5, color: 'var(--pv-text2)', fontWeight: 500 }}>
+              <span style={{ fontSize: 14.5, color: 'var(--pv-text2)', fontWeight: 500 }}>
                 {selectedSlugs.size} model{selectedSlugs.size > 1 ? 's' : ''} selected
               </span>
               <button
                 onClick={handleCompare}
                 style={{
-                  fontSize: 12, fontWeight: 700, padding: '5px 14px',
+                  fontSize: 15, fontWeight: 700, padding: '5px 14px',
                   borderRadius: 8, border: 'none', cursor: 'pointer',
                   background: ADVISOR_COLOR, color: '#fff', fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', gap: 5,
@@ -396,7 +396,7 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
                   key={s}
                   onClick={() => { setInput(s); setTimeout(() => textareaRef.current?.focus(), 0) }}
                   style={{
-                    fontSize: 11, padding: '4px 9px', borderRadius: 20,
+                    fontSize: 14, padding: '4px 9px', borderRadius: 20,
                     border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)',
                     color: 'var(--pv-text3)', cursor: 'pointer', fontFamily: 'inherit',
                   }}
@@ -418,7 +418,7 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
               style={{
                 flex: 1, resize: 'none', boxSizing: 'border-box',
                 background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)',
-                borderRadius: 10, padding: '7px 10px', fontSize: 12.5,
+                borderRadius: 10, padding: '7px 10px', fontSize: 15.5,
                 color: 'var(--pv-text)', outline: 'none', fontFamily: 'inherit', lineHeight: 1.4,
                 maxHeight: 80, overflowY: 'auto',
               }}
@@ -466,7 +466,7 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
         ) : (
           <SparkleIcon size={15} color="#fff" />
         )}
-        <span style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
+        <span style={{ fontSize: 16, fontWeight: 700, whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
           {open ? 'Close' : 'Model Advisor'}
         </span>
       </button>

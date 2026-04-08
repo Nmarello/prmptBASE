@@ -11,7 +11,7 @@
   --pv-border:   #cbc7be;
   --pv-text:     #111009;
   --pv-text2:    #5e574a;
-  --pv-text3:    #9e9688;
+  --pv-text3:    #726c62;
   --pv-accent:   #0050ff;
 }
 .dark {
@@ -21,7 +21,7 @@
   --pv-border:   #302d29;
   --pv-text:     #f2ede4;
   --pv-text2:    #9e9488;
-  --pv-text3:    #6e6760;
+  --pv-text3:    #a09890;
   --pv-accent:   #3d7fff;
 }
 .blue {
@@ -31,7 +31,7 @@
   --pv-border:   #1a2d5a;
   --pv-text:     #E8EDF5;
   --pv-text2:    #7b8ba8;
-  --pv-text3:    #4a5a78;
+  --pv-text3:    #7a8aaa;
   --pv-accent:   #3A7BF7;
 }
 
