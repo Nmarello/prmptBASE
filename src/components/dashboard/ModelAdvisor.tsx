@@ -235,6 +235,12 @@ export default function ModelAdvisor({ models, userTier, onSelectModel }: Props)
                 {/* Recommendation cards */}
                 {msg.recommendations && msg.recommendations.length > 0 && (
                   <div style={{ maxWidth: '94%', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 5, alignSelf: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, paddingLeft: 2, marginBottom: 2 }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={ADVISOR_COLOR} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                      </svg>
+                      <span style={{ fontSize: 10.5, fontWeight: 600, color: ADVISOR_COLOR, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Compare</span>
+                    </div>
                     {msg.recommendations.map(rec => {
                       const model = models.find(m => m.slug === rec.slug)
                       if (!model) return null
@@ -259,8 +265,8 @@ export default function ModelAdvisor({ models, userTier, onSelectModel }: Props)
                             title={maxReached ? 'Max 4 models' : checked ? 'Remove from comparison' : 'Add to comparison'}
                             style={{
                               flexShrink: 0, width: 18, height: 18, borderRadius: 5,
-                              border: `2px solid ${checked ? ADVISOR_COLOR : 'var(--pv-border)'}`,
-                              background: checked ? ADVISOR_COLOR : 'transparent',
+                              border: `2px solid ${checked ? ADVISOR_COLOR : 'rgba(124,58,237,0.45)'}`,
+                              background: checked ? ADVISOR_COLOR : 'rgba(124,58,237,0.07)',
                               cursor: maxReached ? 'not-allowed' : 'pointer',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               padding: 0, opacity: maxReached ? 0.35 : 1,
@@ -305,11 +311,6 @@ export default function ModelAdvisor({ models, userTier, onSelectModel }: Props)
                         </div>
                       )
                     })}
-                    {msg.recommendations.length >= 2 && (
-                      <p style={{ fontSize: 10.5, color: 'var(--pv-text3)', margin: '2px 2px 0', lineHeight: 1.4 }}>
-                        Check models to compare side by side (up to 4)
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
