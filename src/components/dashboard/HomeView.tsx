@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react'
 import type { Model } from '../../types'
 import MiniModelCard from './MiniModelCard'
 
-export type CategoryKey = 'images' | 'video' | 'characters' | '3d'
+export type CategoryKey = 'images' | 'video'
 
 interface Props {
   models: Model[]
@@ -16,10 +16,8 @@ interface Props {
   onFavoriteToggle: (slug: string) => void
 }
 
-const FEATURED_SLUGS = [
-  'flux-kontext-pro', 'gpt-image-1', 'nano-banana-pro', 'ideogram-v3',
-  'recraft-v4-pro', 'flux-pro-ultra', 'hidream-fast', 'kling-v3', 'luma-txt2vid',
-]
+const IMAGE_GEN = ['txt2img', 'img2img', 'multi_img2img']
+const VIDEO_GEN = ['txt2vid', 'img2vid', 'ref2vid', 'vid2vid']
 
 const SUGGESTIONS = [
   'Photorealistic portrait',
@@ -39,7 +37,7 @@ const CATEGORIES: { key: CategoryKey | 'tools'; label: string; color: string; ic
         <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
       </svg>
     ),
-    countFn: (ms) => ms.filter(m => m.is_active && !m.coming_soon && m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))).length,
+    countFn: (ms) => ms.filter(m => m.is_active && !m.coming_soon && m.supported_gen_types.some(g => IMAGE_GEN.includes(g))).length,
   },
   {
     key: 'video',
@@ -50,29 +48,7 @@ const CATEGORIES: { key: CategoryKey | 'tools'; label: string; color: string; ic
         <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
       </svg>
     ),
-    countFn: (ms) => ms.filter(m => m.is_active && !m.coming_soon && m.supported_gen_types.some(g => ['txt2vid','img2vid','ref2vid','vid2vid'].includes(g))).length,
-  },
-  {
-    key: 'characters',
-    label: 'Characters',
-    color: '#0ea5e9',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-      </svg>
-    ),
-    countFn: (ms) => ms.filter(m => m.is_active && !m.coming_soon && m.family === 'Characters').length,
-  },
-  {
-    key: '3d',
-    label: '3D Worlds',
-    color: '#f59e0b',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="4" ry="10"/><line x1="2" y1="12" x2="22" y2="12"/>
-      </svg>
-    ),
-    countFn: () => 0,
+    countFn: (ms) => ms.filter(m => m.is_active && !m.coming_soon && m.supported_gen_types.some(g => VIDEO_GEN.includes(g))).length,
   },
   {
     key: 'tools',
@@ -149,15 +125,19 @@ export default function HomeView({
     .map(slug => activeModels.find(m => m.slug === slug))
     .filter(Boolean) as Model[]
 
-  const featuredModels = FEATURED_SLUGS
-    .map(slug => activeModels.find(m => m.slug === slug))
-    .filter(Boolean) as Model[]
+  // Featured: top 3 newest image + top 3 newest video by released_at
+  const imageModels = activeModels.filter(m => m.supported_gen_types.some(g => IMAGE_GEN.includes(g)))
+  const videoModels = activeModels.filter(m => m.supported_gen_types.some(g => VIDEO_GEN.includes(g)))
+  const top3Image = [...imageModels].sort((a, b) => (b.released_at ?? '').localeCompare(a.released_at ?? '')).slice(0, 3)
+  const top3Video = [...videoModels].sort((a, b) => (b.released_at ?? '').localeCompare(a.released_at ?? '')).slice(0, 3)
+  const featuredModels = [...top3Image, ...top3Video]
 
-  const recentModels = recentModelSlugs
-    .map(slug => activeModels.find(m => m.slug === slug))
-    .filter(Boolean) as Model[]
+  // Recently used: last 3 image + last 3 video from recentModelSlugs
+  const recentImageSlugs = recentModelSlugs.filter(slug => imageModels.some(m => m.slug === slug)).slice(0, 3)
+  const recentVideoSlugs = recentModelSlugs.filter(slug => videoModels.some(m => m.slug === slug)).slice(0, 3)
+  const recentSlugs = [...new Set([...recentImageSlugs, ...recentVideoSlugs])]
+  const recentModels = recentSlugs.map(slug => activeModels.find(m => m.slug === slug)).filter(Boolean) as Model[]
 
-  // If no favorites and no recent, show featured full-width as first row
   const showFavorites = favoriteModels.length > 0
   const showRecent = recentModels.length > 0
 
@@ -248,11 +228,10 @@ export default function HomeView({
         {/* ── Category cards ───────────────────────────────────────────────── */}
         <div className="mb-7">
           <p style={{ fontSize: 11, color: 'var(--pv-text3)', marginBottom: 10 }}>Browse by category</p>
-          <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-5">
+          <div className="grid gap-2.5 grid-cols-3">
             {CATEGORIES.map(cat => {
               const count = cat.countFn(models)
               const isTools = cat.key === 'tools'
-              const is3d = cat.key === '3d'
               return (
                 <button
                   key={cat.key}
@@ -291,14 +270,8 @@ export default function HomeView({
                     {cat.label}
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--pv-text3)' }}>
-                    {is3d ? 'Coming soon' : isTools ? '8 tools' : `${count} models`}
+                    {isTools ? '8 tools' : `${count} models`}
                   </div>
-
-                  {is3d && (
-                    <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 8, fontWeight: 700, letterSpacing: '0.05em', background: cat.color + '22', color: cat.color, padding: '2px 6px', borderRadius: 20 }}>
-                      SOON
-                    </div>
-                  )}
                 </button>
               )
             })}

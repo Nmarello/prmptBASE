@@ -31,6 +31,7 @@ import ToolsRow from '../components/dashboard/ToolsRow'
 import ModelAdvisor from '../components/dashboard/ModelAdvisor'
 import HomeView from '../components/dashboard/HomeView'
 import type { CategoryKey } from '../components/dashboard/HomeView'
+import ModelsPageView from '../components/dashboard/ModelsPageView'
 import { useAnalytics, useIdentify } from '../hooks/useAnalytics'
 
 type View = 'models' | 'builder' | 'assets' | 'projects' | 'tools'
@@ -1071,28 +1072,56 @@ export default function Dashboard() {
         </>)}
 
         {/* Main nav buttons */}
-        {([
-          { id: 'models', tip: 'Generate', icon: <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/></> },
-          { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
-          { id: 'projects', tip: 'Projects', icon: <><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></> },
-          { id: 'tools', tip: 'Tools', icon: <><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></> },
-        ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (
-          <SbBtn
-            key={id} tip={tip} active={view === id} onClick={() => setView(id as View)}
-            dataTour={id === 'models' ? 'sidebar-generate' : id === 'assets' ? 'assets-nav' : id === 'projects' ? 'sidebar-projects' : id === 'tools' ? 'nav-tools' : undefined}
-          >
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
-          </SbBtn>
-        ))}
+        {/* Home */}
+        <SbBtn tip="Home" active={view === 'models' && !categoryView} onClick={() => { setView('models'); setCategoryView(null); setAdvisorOpenedFromHome(false) }} dataTour="sidebar-generate">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/>
+          </svg>
+        </SbBtn>
 
-        {/* Compare nav */}
+        {/* Images */}
+        <SbBtn tip="Images" active={view === 'models' && categoryView === 'images'} onClick={() => { setView('models'); setCategoryView('images'); setModelFilter('images') }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </SbBtn>
+
+        {/* Video */}
+        <SbBtn tip="Video" active={view === 'models' && categoryView === 'video'} onClick={() => { setView('models'); setCategoryView('video'); setModelFilter('videos') }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+          </svg>
+        </SbBtn>
+
+        {/* Tools */}
+        <SbBtn tip="Tools" active={view === 'tools'} onClick={() => setView('tools')} dataTour="nav-tools">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+        </SbBtn>
+
+        {/* Compare */}
         <SbBtn tip="Compare" onClick={() => navigate('/compare')}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/>
           </svg>
         </SbBtn>
 
-        {/* Notification Bell — below Projects */}
+        {/* Assets */}
+        <SbBtn tip="Assets" active={view === 'assets'} onClick={() => setView('assets')} dataTour="assets-nav">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </SbBtn>
+
+        {/* Projects */}
+        <SbBtn tip="Projects" active={view === 'projects'} onClick={() => setView('projects')} dataTour="sidebar-projects">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+        </SbBtn>
+
+        {/* Notification Bell */}
         <NotificationBell
           dataTour="nav-alerts"
           onViewAsset={(assetId, _assetUrl, _isVideo) => {
@@ -1147,7 +1176,7 @@ export default function Dashboard() {
                     </button>
                     <Logo height={32} style={{ flexShrink: 0 }} />
                     <h2 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
-                      {{ images: 'Images', video: 'Video', characters: 'Characters', '3d': '3D Worlds' }[categoryView]}
+                      {{ images: 'Images', video: 'Video' }[categoryView]}
                     </h2>
                   </>
                 ) : (
@@ -1166,7 +1195,7 @@ export default function Dashboard() {
                 onSelectModel={m => setDrawerModel(m)}
                 onCategorySelect={cat => {
                   setCategoryView(cat)
-                  if (cat === 'images' || cat === 'characters') setModelFilter('images')
+                  if (cat === 'images') setModelFilter('images')
                   else if (cat === 'video') setModelFilter('videos')
                   else setModelFilter('all')
                 }}
@@ -1176,24 +1205,23 @@ export default function Dashboard() {
               />
             )}
 
-            {/* Category view — 3D coming soon */}
-            {categoryView === '3d' && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 sm:px-7">
-                <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f59e0b' }}>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="4" ry="10"/><line x1="2" y1="12" x2="22" y2="12"/>
-                  </svg>
-                </div>
-                <div className="text-center">
-                  <h3 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 20, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em', marginBottom: 6 }}>3D Worlds</h3>
-                  <p style={{ fontSize: 13, color: 'var(--pv-text3)', maxWidth: 320 }}>3D generation models are coming soon. We're working on it — check back shortly.</p>
-                </div>
-              </div>
+
+            {/* Category view — Images / Video */}
+            {(categoryView === 'images' || categoryView === 'video') && (
+              <ModelsPageView
+                type={categoryView}
+                models={models}
+                recentModelSlugs={recentModelSlugs}
+                latestRenderBySlug={latestRenderBySlug}
+                userTier={userTier}
+                onSelectModel={m => setDrawerModel(m)}
+                renderingModelSlug={renderingModelSlug}
+              />
             )}
 
-            {/* Category view — model grid */}
-            {categoryView && categoryView !== '3d' && (
-            <div ref={generateScrollRef} data-tour="sidebar" className="flex-1 overflow-y-auto px-4 sm:px-7 pb-28 sm:pb-10 space-y-5">
+            {/* Legacy layout — unreachable, preserved below for reference only */}
+            {false && (
+            <div ref={generateScrollRef} className="flex-1 overflow-y-auto px-4 sm:px-7 pb-28 sm:pb-10 space-y-5">
               <PullIndicator distance={generatePullDist} refreshing={generateRefreshing} />
 
               {/* ── NEWBIE LAYOUT ─────────────────────────────────────────── */}
@@ -1664,21 +1692,20 @@ export default function Dashboard() {
           }}
         >
           {([
-            { id: 'models', tip: 'Generate', icon: <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/></> },
-            { id: 'assets', tip: 'Assets', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
-            { id: 'projects', tip: 'Projects', icon: <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/> },
-            { id: 'tools', tip: 'Tools', icon: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/> },
-          ] as { id: View; tip: string; icon: React.ReactNode }[]).map(({ id, tip, icon }) => (
+            { id: 'home',   tip: 'Home',   isActive: view === 'models' && !categoryView,          onClick: () => { setView('models'); setCategoryView(null); setAdvisorOpenedFromHome(false) }, icon: <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/></> },
+            { id: 'images', tip: 'Images', isActive: view === 'models' && categoryView === 'images', onClick: () => { setView('models'); setCategoryView('images'); setModelFilter('images') }, icon: <><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"></polyline></> },
+            { id: 'video',  tip: 'Video',  isActive: view === 'models' && categoryView === 'video',  onClick: () => { setView('models'); setCategoryView('video'); setModelFilter('videos') }, icon: <><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></> },
+            { id: 'tools',  tip: 'Tools',  isActive: view === 'tools',                               onClick: () => setView('tools'), icon: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/> },
+          ] as { id: string; tip: string; isActive: boolean; onClick: () => void; icon: React.ReactNode }[]).map(({ id, tip, isActive, onClick, icon }) => (
             <button
               key={id}
-              onClick={() => setView(id)}
-              data-tour={id === 'models' ? 'sidebar-generate' : id === 'assets' ? 'assets-nav' : id === 'projects' ? 'sidebar-projects' : id === 'tools' ? 'nav-tools' : undefined}
+              onClick={onClick}
               className="flex flex-col items-center gap-0.5 cursor-pointer transition-all rounded-full"
               style={{
-                color: view === id ? 'var(--pv-accent)' : 'var(--pv-text3)',
-                background: view === id ? 'color-mix(in srgb, var(--pv-accent) 12%, transparent)' : 'none',
+                color: isActive ? 'var(--pv-accent)' : 'var(--pv-text3)',
+                background: isActive ? 'color-mix(in srgb, var(--pv-accent) 12%, transparent)' : 'none',
                 border: 'none',
-                padding: '7px 16px',
+                padding: '7px 12px',
                 touchAction: 'manipulation',
               }}
             >
