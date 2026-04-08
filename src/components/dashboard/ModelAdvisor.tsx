@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { Model } from '../../types'
 import { tierCanAccess } from '../../types'
 
@@ -22,12 +23,42 @@ interface Props {
 const ADVISOR_COLOR = '#7c3aed'
 
 export default function ModelAdvisor({ models, userTier, onSelectModel }: Props) {
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<AdvisorMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set())
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  // Clear selections when panel closes
+  useEffect(() => {
+    if (!open) setSelectedSlugs(new Set())
+  }, [open])
+
+  function toggleSlug(slug: string) {
+    setSelectedSlugs(prev => {
+      const next = new Set(prev)
+      if (next.has(slug)) {
+        next.delete(slug)
+      } else if (next.size < 4) {
+        next.add(slug)
+      }
+      return next
+    })
+  }
+
+  function handleCompare() {
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')?.content ?? ''
+    navigate('/compare', {
+      state: {
+        models: [...selectedSlugs],
+        prompt: lastUserMsg,
+      },
+    })
+    setOpen(false)
+  }
 
   // Greeting on first open
   useEffect(() => {
@@ -208,17 +239,41 @@ export default function ModelAdvisor({ models, userTier, onSelectModel }: Props)
                       const model = models.find(m => m.slug === rec.slug)
                       if (!model) return null
                       const canAccess = tierCanAccess(userTier, model.min_tier)
+                      const checked = selectedSlugs.has(rec.slug)
+                      const maxReached = selectedSlugs.size >= 4 && !checked
                       return (
                         <div
                           key={rec.slug}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 8,
                             padding: '7px 10px 7px 8px',
-                            background: 'var(--pv-surface2)',
-                            border: '1px solid var(--pv-border)',
+                            background: checked ? 'rgba(124,58,237,0.08)' : 'var(--pv-surface2)',
+                            border: `1px solid ${checked ? ADVISOR_COLOR : 'var(--pv-border)'}`,
                             borderRadius: 12,
+                            transition: 'background 0.15s, border-color 0.15s',
                           }}
                         >
+                          {/* Checkbox */}
+                          <button
+                            onClick={() => !maxReached && toggleSlug(rec.slug)}
+                            title={maxReached ? 'Max 4 models' : checked ? 'Remove from comparison' : 'Add to comparison'}
+                            style={{
+                              flexShrink: 0, width: 18, height: 18, borderRadius: 5,
+                              border: `2px solid ${checked ? ADVISOR_COLOR : 'var(--pv-border)'}`,
+                              background: checked ? ADVISOR_COLOR : 'transparent',
+                              cursor: maxReached ? 'not-allowed' : 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              padding: 0, opacity: maxReached ? 0.35 : 1,
+                              transition: 'background 0.15s, border-color 0.15s',
+                            }}
+                          >
+                            {checked && (
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            )}
+                          </button>
+
                           <div
                             style={{
                               width: 30, height: 30, borderRadius: 8, flexShrink: 0,
@@ -250,6 +305,11 @@ export default function ModelAdvisor({ models, userTier, onSelectModel }: Props)
                         </div>
                       )
                     })}
+                    {msg.recommendations.length >= 2 && (
+                      <p style={{ fontSize: 10.5, color: 'var(--pv-text3)', margin: '2px 2px 0', lineHeight: 1.4 }}>
+                        Check models to compare side by side (up to 4)
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -267,6 +327,30 @@ export default function ModelAdvisor({ models, userTier, onSelectModel }: Props)
             )}
             <div ref={bottomRef} />
           </div>
+
+          {/* Compare bar — shown when ≥2 models selected */}
+          {selectedSlugs.size >= 2 && (
+            <div style={{ padding: '8px 10px', borderTop: '1px solid var(--pv-border)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(124,58,237,0.07)' }}>
+              <span style={{ fontSize: 11.5, color: 'var(--pv-text2)', fontWeight: 500 }}>
+                {selectedSlugs.size} model{selectedSlugs.size > 1 ? 's' : ''} selected
+              </span>
+              <button
+                onClick={handleCompare}
+                style={{
+                  fontSize: 12, fontWeight: 700, padding: '5px 14px',
+                  borderRadius: 8, border: 'none', cursor: 'pointer',
+                  background: ADVISOR_COLOR, color: '#fff', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 5,
+                }}
+                className="hover:opacity-90 transition-opacity"
+              >
+                Compare
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </button>
+            </div>
+          )}
 
           {/* Suggestion chips */}
           {showSuggestions && (

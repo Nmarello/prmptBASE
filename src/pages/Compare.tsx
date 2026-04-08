@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { Model, Template } from '../types'
@@ -47,10 +47,17 @@ function loadLineups(): SavedLineup[] {
 export default function Compare() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [models, setModels] = useState<Model[]>([])
   const [userTier, setUserTier] = useState('newbie')
   const [columns, setColumns] = useState<ColumnState[]>([makeColumn(), makeColumn()])
+  // Ref holds the pending initial state from Model Advisor navigation — consumed once models load
+  const pendingInitRef = useRef<{ models: string[]; prompt?: string } | null>(
+    (location.state as { models?: string[]; prompt?: string } | null)?.models?.length
+      ? (location.state as { models: string[]; prompt?: string })
+      : null
+  )
   const [sharedPrompt, setSharedPrompt] = useState('')
   const [commonValues, setCommonValues] = useState<Record<string, unknown>>({
     output_format: 'jpeg',
@@ -80,6 +87,37 @@ export default function Compare() {
     }
     load()
   }, [user])
+
+  // Apply initial state from Model Advisor once models are loaded
+  useEffect(() => {
+    const init = pendingInitRef.current
+    if (!init || models.length === 0) return
+    pendingInitRef.current = null
+
+    const slugs = init.models.slice(0, MAX_COLUMNS)
+    if (slugs.length < MIN_COLUMNS) return
+
+    if (init.prompt) setSharedPrompt(init.prompt)
+
+    const newCols: ColumnState[] = slugs.map(slug => ({
+      ...makeColumn(),
+      model: models.find(m => m.slug === slug) ?? null,
+      templateLoading: true,
+    }))
+    setColumns(newCols)
+
+    // Fetch templates async
+    slugs.forEach((slug, i) => {
+      const model = models.find(m => m.slug === slug)
+      if (!model) return
+      fetchTemplate(model).then(template => {
+        setColumns(prev => {
+          if (prev[i]?.model?.slug !== slug) return prev
+          return prev.map((c, j) => j === i ? { ...c, template, templateLoading: false } : c)
+        })
+      })
+    })
+  }, [models])
 
   // Fetch template for a given model
   const fetchTemplate = useCallback(async (model: Model): Promise<Template | null> => {
