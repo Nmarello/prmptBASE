@@ -557,8 +557,46 @@ export default function Compare() {
             activeModelNames={columns.filter(c => c.model).map(c => c.model!.name)}
           />
 
-          {/* Bottom spacer */}
-          <div style={{ height: 40 }} />
+          {/* Bottom Run All */}
+          <div
+            className="flex items-center justify-between rounded-2xl px-5 py-4"
+            style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)' }}
+          >
+            <div style={{ fontSize: 13, color: 'var(--pv-text3)' }}>
+              {readyColumns === 0
+                ? 'Select models above to generate'
+                : `${readyColumns} model${readyColumns === 1 ? '' : 's'} ready`}
+            </div>
+            <button
+              onClick={handleRunAll}
+              disabled={anyGenerating || readyColumns === 0 || !sharedPrompt.trim()}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: 'var(--pv-accent)', color: '#fff' }}
+              onMouseEnter={e => { if (!anyGenerating) (e.currentTarget as HTMLButtonElement).style.opacity = '0.88' }}
+              onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.opacity = '1'}
+            >
+              {anyGenerating ? (
+                <>
+                  <div className="pv-spin" style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
+                  Generating…
+                </>
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
+                  Run All
+                  {readyColumns > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ background: 'rgba(255,255,255,0.2)' }}>
+                      {readyColumns}
+                    </span>
+                  )}
+                </>
+              )}
+            </button>
+          </div>
+
+          <div style={{ height: 24 }} />
         </div>
       </div>
     </div>

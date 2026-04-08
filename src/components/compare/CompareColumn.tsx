@@ -4,6 +4,9 @@ import { downloadFile } from '../../lib/download'
 import ProviderLogo from '../dashboard/ProviderLogo'
 import AdvancedSettings from './AdvancedSettings'
 
+// Models known to return status:pending (async) — not supported in Compare
+const ASYNC_SLUGS = new Set(['gpt-image-1.5', 'hidream-full'])
+
 export interface ColumnState {
   id: string
   model: Model | null
@@ -62,7 +65,7 @@ export default function CompareColumn({
   onModelChange, onAdvancedChange, onRemove, canRemove,
 }: CompareColumnProps) {
   const grouped = groupByProvider(
-    models.filter(m => m.supported_gen_types.includes('txt2img') && !m.coming_soon)
+    models.filter(m => m.supported_gen_types.includes('txt2img') && !m.coming_soon && !ASYNC_SLUGS.has(m.slug))
   )
 
   const isRateLimit = column.error?.startsWith('__RATE_LIMITED__')

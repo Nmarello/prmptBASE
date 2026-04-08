@@ -3,6 +3,8 @@ import type { Template, TemplateField } from '../../types'
 
 const COMMON_FIELD_IDS = new Set([
   'aspect_ratio', 'negative_prompt', 'seed', 'output_format', 'num_images',
+  // Prompt fields are handled at the top-level shared prompt — skip in advanced
+  'prompt', 'subject', 'additional_details',
 ])
 
 const SKIP_FIELD_TYPES = new Set(['note', 'image_upload', 'video_upload'])
