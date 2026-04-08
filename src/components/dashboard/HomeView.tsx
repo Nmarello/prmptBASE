@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
 import type { Model } from '../../types'
-import MiniModelCard from './MiniModelCard'
+import ModelCard from './ModelCard'
 
 export type CategoryKey = 'images' | 'video'
 
@@ -9,11 +9,11 @@ interface Props {
   favoriteModelSlugs: string[]
   recentModelSlugs: string[]
   latestRenderBySlug: Record<string, { url: string; isVideo: boolean }>
+  userTier: string
   onSelectModel: (m: Model) => void
   onCategorySelect: (cat: CategoryKey) => void
   onToolsSelect: () => void
   onAdvisorQuery: (query: string) => void
-  onFavoriteToggle: (slug: string) => void
 }
 
 const IMAGE_GEN = ['txt2img', 'img2img', 'multi_img2img']
@@ -63,14 +63,12 @@ const CATEGORIES: { key: CategoryKey | 'tools'; label: string; color: string; ic
   },
 ]
 
-function BrowseRow({ title, models, latestRenderBySlug, favoriteModelSlugs, onSelectModel, onFavoriteToggle, showFavoriteToggle = false }: {
+function BrowseRow({ title, models, latestRenderBySlug, userTier, onSelectModel }: {
   title: string
   models: Model[]
   latestRenderBySlug: Record<string, { url: string; isVideo: boolean }>
-  favoriteModelSlugs: string[]
+  userTier: string
   onSelectModel: (m: Model) => void
-  onFavoriteToggle: (slug: string) => void
-  showFavoriteToggle?: boolean
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   if (models.length === 0) return null
@@ -81,18 +79,18 @@ function BrowseRow({ title, models, latestRenderBySlug, favoriteModelSlugs, onSe
       </h3>
       <div
         ref={scrollRef}
-        className="flex gap-2.5 overflow-x-auto pb-1"
+        className="flex gap-3 overflow-x-auto pb-1"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}
       >
         {models.map(m => (
-          <MiniModelCard
+          <ModelCard
             key={m.id}
             model={m}
+            userTier={userTier}
+            selected={false}
             onClick={() => onSelectModel(m)}
             latestRenderUrl={latestRenderBySlug[m.slug]?.url}
             latestRenderIsVideo={latestRenderBySlug[m.slug]?.isVideo}
-            isFavorite={favoriteModelSlugs.includes(m.slug)}
-            onFavoriteToggle={showFavoriteToggle ? onFavoriteToggle : undefined}
           />
         ))}
       </div>
@@ -102,8 +100,8 @@ function BrowseRow({ title, models, latestRenderBySlug, favoriteModelSlugs, onSe
 
 export default function HomeView({
   models, favoriteModelSlugs, recentModelSlugs,
-  latestRenderBySlug, onSelectModel, onCategorySelect, onToolsSelect,
-  onAdvisorQuery, onFavoriteToggle,
+  latestRenderBySlug, userTier, onSelectModel, onCategorySelect, onToolsSelect,
+  onAdvisorQuery,
 }: Props) {
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -285,10 +283,8 @@ export default function HomeView({
               title="⭐  Favorites"
               models={favoriteModels}
               latestRenderBySlug={latestRenderBySlug}
-              favoriteModelSlugs={favoriteModelSlugs}
+              userTier={userTier}
               onSelectModel={onSelectModel}
-              onFavoriteToggle={onFavoriteToggle}
-              showFavoriteToggle
             />
           )}
 
@@ -296,10 +292,8 @@ export default function HomeView({
             title="✦  Featured"
             models={featuredModels}
             latestRenderBySlug={latestRenderBySlug}
-            favoriteModelSlugs={favoriteModelSlugs}
+            userTier={userTier}
             onSelectModel={onSelectModel}
-            onFavoriteToggle={onFavoriteToggle}
-            showFavoriteToggle
           />
 
           {showRecent && (
@@ -307,10 +301,8 @@ export default function HomeView({
               title="🕐  Last Used"
               models={recentModels}
               latestRenderBySlug={latestRenderBySlug}
-              favoriteModelSlugs={favoriteModelSlugs}
+              userTier={userTier}
               onSelectModel={onSelectModel}
-              onFavoriteToggle={onFavoriteToggle}
-              showFavoriteToggle
             />
           )}
         </div>

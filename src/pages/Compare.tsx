@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -378,41 +378,94 @@ export default function Compare() {
   const readyColumns = columns.filter(c => c.model && c.template).length
   const ghostCount = MAX_COLUMNS - columns.length
 
-  return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--pv-bg)', color: 'var(--pv-text)' }}>
-      {/* Top bar */}
-      <header
-        className="flex items-center justify-between px-5 py-3 flex-shrink-0"
-        style={{ borderBottom: '1px solid var(--pv-border)', background: 'var(--pv-surface)' }}
+  // Shared sidebar button style
+  function SbBtn({ tip, active, onClick, children }: { tip: string; active?: boolean; onClick: () => void; children: React.ReactNode }) {
+    return (
+      <button
+        onClick={onClick}
+        title={tip}
+        className="relative flex items-center justify-center rounded-[11px] transition-all cursor-pointer group"
+        style={{ width: 40, height: 40, color: active ? 'var(--pv-accent)' : 'var(--pv-text3)', background: active ? 'var(--pv-surface2)' : 'transparent', border: 'none', flexShrink: 0 }}
       >
-        <div className="flex items-center gap-3">
-          <Logo height={34} />
-          <div style={{ width: 1, height: 20, background: 'var(--pv-border)' }} />
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--pv-text)', letterSpacing: '-0.02em', fontFamily: "'Bricolage Grotesque', sans-serif" }}>
-            Compare
-          </span>
-          {/* Gen type pills — Text→Image active, others ghosted (coming soon) */}
-          <div className="flex items-center gap-1.5">
-            <span
-              className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
-              style={{ background: 'rgba(0,80,255,0.12)', color: 'var(--pv-accent)', border: '1px solid rgba(0,80,255,0.25)' }}
-            >
-              Text → Image
-            </span>
-            {(['Image → Image', 'Text → Video'] as const).map(label => (
-              <span
-                key={label}
-                title="Coming soon"
-                className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                style={{ background: 'var(--pv-surface2)', color: 'var(--pv-text3)', border: '1px solid var(--pv-border)', opacity: 0.45, cursor: 'not-allowed' }}
-              >
-                {label}
-              </span>
-            ))}
-          </div>
-        </div>
+        {children}
+        <span
+          className="pointer-events-none absolute left-full ml-2 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-all duration-150 translate-x-[-4px] group-hover:translate-x-0"
+          style={{ background: 'var(--pv-surface2)', color: 'var(--pv-text)', border: '1px solid var(--pv-border)', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 50 }}
+        >
+          {tip}
+        </span>
+      </button>
+    )
+  }
 
-        <div className="flex items-center gap-2">
+  return (
+    <div className="flex overflow-hidden" style={{ height: '100dvh', background: 'var(--pv-bg)', color: 'var(--pv-text)', fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* ── Icon Sidebar ── */}
+      <aside className="hidden sm:flex flex-col items-center py-4 gap-1 flex-shrink-0 z-20" style={{ width: 60, background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}>
+        <Logo height={28} style={{ marginBottom: 8 }} />
+
+        <SbBtn tip="Home" onClick={() => navigate('/dashboard')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/>
+          </svg>
+        </SbBtn>
+        <SbBtn tip="Images" onClick={() => navigate('/dashboard')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </SbBtn>
+        <SbBtn tip="Video" onClick={() => navigate('/dashboard')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+          </svg>
+        </SbBtn>
+        <SbBtn tip="Compare" active onClick={() => {}}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/>
+          </svg>
+        </SbBtn>
+        <SbBtn tip="Tools" onClick={() => navigate('/dashboard')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+        </SbBtn>
+        <SbBtn tip="Assets" onClick={() => navigate('/dashboard')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </SbBtn>
+        <SbBtn tip="Projects" onClick={() => navigate('/dashboard')}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+        </SbBtn>
+      </aside>
+
+      {/* ── Main content ── */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+
+        {/* Slim top bar */}
+        <header
+          className="flex items-center justify-between px-5 py-3 flex-shrink-0"
+          style={{ borderBottom: '1px solid var(--pv-border)', background: 'var(--pv-surface)' }}
+        >
+          <div className="flex items-center gap-3">
+            <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--pv-text)', letterSpacing: '-0.02em', fontFamily: "'Bricolage Grotesque', sans-serif" }}>
+              Compare
+            </span>
+            {/* Gen type pills */}
+            <div className="flex items-center gap-1.5">
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(0,80,255,0.12)', color: 'var(--pv-accent)', border: '1px solid rgba(0,80,255,0.25)' }}>
+                Text → Image
+              </span>
+              {(['Image → Image', 'Text → Video'] as const).map(label => (
+                <span key={label} title="Coming soon" className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'var(--pv-surface2)', color: 'var(--pv-text3)', border: '1px solid var(--pv-border)', opacity: 0.45, cursor: 'not-allowed' }}>
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
           {hasAnyResult && (
             <button
               onClick={handleDownloadAll}
@@ -427,24 +480,10 @@ export default function Compare() {
               Download All
             </button>
           )}
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-            style={{ background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)', color: 'var(--pv-text3)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--pv-text)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--pv-text3)')}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/>
-              <polyline points="9 21 9 13 15 13 15 21"/>
-            </svg>
-            Dashboard
-          </button>
-        </div>
-      </header>
+        </header>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-5">
 
           {/* Shared Prompt */}
@@ -684,6 +723,7 @@ export default function Compare() {
 
           <div style={{ height: 24 }} />
         </div>
+      </div>
       </div>
     </div>
   )

@@ -204,7 +204,7 @@ export default function Dashboard() {
   const [recentModelSlugs, setRecentModelSlugs] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('pv_recent_models') ?? '[]') } catch { return [] }
   })
-  const [favoriteModelSlugs, setFavoriteModelSlugs] = useState<string[]>(() => {
+  const [favoriteModelSlugs, _setFavoriteModelSlugs] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('pv_favorites') ?? '[]') } catch { return [] }
   })
   const [categoryView, setCategoryView] = useState<CategoryKey | null>(null)
@@ -444,13 +444,6 @@ export default function Dashboard() {
     if (data) setModels(data as Model[])
   }, [user])
 
-  function toggleFavorite(slug: string) {
-    setFavoriteModelSlugs(prev => {
-      const next = prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
-      try { localStorage.setItem('pv_favorites', JSON.stringify(next)) } catch {}
-      return next
-    })
-  }
 
   async function handleAddModel(modelId: string) {
     if (!user) return
@@ -1093,17 +1086,17 @@ export default function Dashboard() {
           </svg>
         </SbBtn>
 
-        {/* Tools */}
-        <SbBtn tip="Tools" active={view === 'tools'} onClick={() => setView('tools')} dataTour="nav-tools">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-          </svg>
-        </SbBtn>
-
         {/* Compare */}
         <SbBtn tip="Compare" onClick={() => navigate('/compare')}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/>
+          </svg>
+        </SbBtn>
+
+        {/* Tools */}
+        <SbBtn tip="Tools" active={view === 'tools'} onClick={() => setView('tools')} dataTour="nav-tools">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
           </svg>
         </SbBtn>
 
@@ -1192,6 +1185,7 @@ export default function Dashboard() {
                 favoriteModelSlugs={favoriteModelSlugs}
                 recentModelSlugs={recentModelSlugs}
                 latestRenderBySlug={latestRenderBySlug}
+                userTier={userTier}
                 onSelectModel={m => setDrawerModel(m)}
                 onCategorySelect={cat => {
                   setCategoryView(cat)
@@ -1201,7 +1195,6 @@ export default function Dashboard() {
                 }}
                 onToolsSelect={() => setView('tools')}
                 onAdvisorQuery={q => { setAdvisorTriggerQuery(q); setAdvisorOpenedFromHome(true) }}
-                onFavoriteToggle={toggleFavorite}
               />
             )}
 
