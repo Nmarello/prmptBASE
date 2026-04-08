@@ -28,6 +28,7 @@ import ModelDrawer from '../components/dashboard/ModelDrawer'
 import ProviderLogo from '../components/dashboard/ProviderLogo'
 import ToolsPanel from '../components/dashboard/ToolsPanel'
 import ToolsRow from '../components/dashboard/ToolsRow'
+import ModelAdvisor from '../components/dashboard/ModelAdvisor'
 import { useAnalytics, useIdentify } from '../hooks/useAnalytics'
 
 type View = 'models' | 'builder' | 'assets' | 'projects' | 'tools'
@@ -153,7 +154,6 @@ export default function Dashboard() {
   )
   const [_pickerLockedUntil, setPickerLockedUntil] = useState<Date | null>(null)
   const [modelFilter, setModelFilter] = useState<'all' | 'images' | 'videos'>('all')
-  const [modelSearch, setModelSearch] = useState('')
   const [_mediaTab, _setMediaTab] = useState<'image' | 'video'>('image')
   const [_selectedProvider, setSelectedProvider] = useState<string | null>(null)
   const [selectedModel, setSelectedModel] = useState<Model | null>(null)
@@ -1164,20 +1164,12 @@ export default function Dashboard() {
                     })}
                   </div>
                 </div>
-                {/* Search — right */}
-                <div className="relative flex items-center flex-shrink-0">
-                  <svg className="absolute left-2.5 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-                  </svg>
-                  <input
-                    type="text"
-                    value={modelSearch}
-                    onChange={e => setModelSearch(e.target.value)}
-                    placeholder="Search…"
-                    className="text-sm pl-7 pr-3 py-1.5 rounded-full pv-placeholder outline-none w-24 sm:w-36"
-                    style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}
-                  />
-                </div>
+                {/* AI Model Advisor — right */}
+                <ModelAdvisor
+                  models={models}
+                  userTier={userTier}
+                  onSelectModel={m => setDrawerModel(m)}
+                />
               </div>
             </div>
 
@@ -1186,7 +1178,7 @@ export default function Dashboard() {
               <PullIndicator distance={generatePullDist} refreshing={generateRefreshing} />
 
               {/* ── NEWBIE LAYOUT ─────────────────────────────────────────── */}
-              {userTier === 'newbie' && !modelSearch && (() => {
+              {userTier === 'newbie' && (() => {
                 const heroModels = models.filter(m => ['dalle', 'flux-schnell'].includes(m.slug))
                 // Curated teaser: pick exciting creator-tier models
                 const TEASER_SLUGS = ['flux-pro-ultra', 'ideogram-v3', 'recraft-v4-pro', 'gpt-image-1', 'nano-banana', 'hidream-fast']
@@ -1258,7 +1250,7 @@ export default function Dashboard() {
               })()}
 
               {/* ── CREATOR LAYOUT ────────────────────────────────────────── */}
-              {userTier === 'creator' && !modelSearch && (() => {
+              {userTier === 'creator' && (() => {
                 const yourModels = models.filter(m =>
                   selectedModelIds.has(m.id) && !m.coming_soon && m.slug !== 'flux-dev-img2img'
                 )
@@ -1326,7 +1318,7 @@ export default function Dashboard() {
               })()}
 
               {/* ── STUDIO LAYOUT ─────────────────────────────────────────── */}
-              {userTier === 'studio' && !modelSearch && (() => {
+              {userTier === 'studio' && (() => {
                 const imgModels = models.filter(m =>
                   !m.coming_soon &&
                   m.slug !== 'flux-dev-img2img' &&
@@ -1400,7 +1392,7 @@ export default function Dashboard() {
               })()}
 
               {/* ── Featured row — Creator/Studio/Pro only (not newbie) ──── */}
-              {userTier !== 'newbie' && !modelSearch && (() => {
+              {userTier !== 'newbie' && (() => {
                 const featuredModels = [...models]
                   .filter(m => m.is_active && !m.coming_soon)
                   .sort((a, b) => {
@@ -1448,10 +1440,6 @@ export default function Dashboard() {
                 let imgModels = models
                   .filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g)))
                   .filter(m => m.slug !== 'flux-dev-img2img')
-                if (modelSearch) {
-                  const q = modelSearch.toLowerCase()
-                  imgModels = imgModels.filter(m => m.name?.toLowerCase().includes(q) || m.provider?.toLowerCase().includes(q) || m.description?.toLowerCase().includes(q))
-                }
                 if (imgModels.length === 0) return null
                 return (
                   <FamilyRow
@@ -1487,10 +1475,6 @@ export default function Dashboard() {
                   m.supported_gen_types.some(g => ['txt2vid','img2vid','vid2vid'].includes(g))
                 )
                 vidModels = [...vidModels, ...COMING_SOON_VIDEO.map(m => ({ ...m as Model, coming_soon: true }))]
-                if (modelSearch) {
-                  const q = modelSearch.toLowerCase()
-                  vidModels = vidModels.filter(m => m.name?.toLowerCase().includes(q) || m.provider?.toLowerCase().includes(q) || m.description?.toLowerCase().includes(q))
-                }
                 if (vidModels.length === 0) return null
                 return (
                   <FamilyRow
@@ -1504,7 +1488,7 @@ export default function Dashboard() {
               })()}
 
               {/* ── Pro Exclusive teaser — Studio only ───────────────────── */}
-              {userTier === 'studio' && !modelSearch && (() => {
+              {userTier === 'studio' && (() => {
                 const PRO_TEASER_SLUGS = ['sora2', 'kling']
                 const proTeaserModels = PRO_TEASER_SLUGS.map(s => models.find(m => m.slug === s)).filter(Boolean) as Model[]
                 if (proTeaserModels.length === 0) return null
@@ -1522,7 +1506,7 @@ export default function Dashboard() {
               })()}
 
               {/* ── Tools row — Creator+ only ───────────────────────────── */}
-              {userTier !== 'newbie' && !modelSearch && (
+              {userTier !== 'newbie' && (
                 <ToolsRow
                   onSelectTool={(tool: string) => {
                     setActiveTool(tool)
@@ -1532,7 +1516,7 @@ export default function Dashboard() {
               )}
 
               {/* ── Recently Used row — all tiers ───────────────────────── */}
-              {!modelSearch && recentModelSlugs.length > 0 && (() => {
+              {recentModelSlugs.length > 0 && (() => {
                 const recentModels = recentModelSlugs
                   .map(slug => models.find(m => m.slug === slug))
                   .filter(Boolean) as Model[]

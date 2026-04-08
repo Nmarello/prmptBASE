@@ -12,6 +12,8 @@
 
 ## Key Directories
 - `src/` — React app (components, pages, contexts, hooks, lib, types)
+- `src/components/compare/` — Compare tool components (CompareColumn, CommonSettings, AdvancedSettings, GhostColumn)
+- `src/lib/generateRequest.ts` — shared generation routing utility (replicate/fal/google/openai)
 - `supabase/functions/` — 34 Deno edge functions
 - `supabase/migrations/` — 92+ database migrations
 - `ghost-theme/` — Custom Ghost blog theme
@@ -26,6 +28,8 @@
 - Video assets: always upload to Supabase storage — provider temp URLs expire
 - CF Pages treats unused imports/vars as hard build failures — always clean up
 - Generation errors must tell users what to change (actionable messages)
+- Compare tool: `columnsRef` polling pattern is intentional — do NOT add `columns` to the polling `useEffect` deps
+- Compare tool: `getBrand()` in CompareColumn maps slug → display brand; update when adding new model families
 
 ## Build & Dev
 - `npm run dev` — local dev server
