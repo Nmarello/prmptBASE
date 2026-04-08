@@ -171,13 +171,24 @@ export default function HomeView({
         {/* ── Hero ─────────────────────────────────────────────────────────── */}
         <div className="flex flex-col items-center text-center mb-6">
           <h1
-            style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: 6 }}
+            style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: 8 }}
           >
             What do you want to create?
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--pv-text3)', marginBottom: 16, maxWidth: 420 }}>
-            Describe your vision — the Model Advisor picks the right model for you.
-          </p>
+          {/* Two-line subtitle with inline Model Advisor badge */}
+          <div style={{ fontSize: 13, color: 'var(--pv-text3)', marginBottom: 16, lineHeight: 1.6 }}>
+            <span>Describe your vision —</span>
+            <br />
+            <span>the </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#7c3aed', fontWeight: 600, verticalAlign: 'middle' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="#7c3aed" style={{ flexShrink: 0, display: 'inline' }}>
+                <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74z"/>
+                <path d="M19 2l.9 2.7 2.6.9-2.6.9L19 9l-.9-2.7L15.5 5.6l2.6-.9z" opacity=".6"/>
+              </svg>
+              Model Advisor
+            </span>
+            <span> picks the right model for you</span>
+          </div>
 
           {/* Prompt input */}
           <div className="w-full max-w-2xl relative">
@@ -186,7 +197,7 @@ export default function HomeView({
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder='e.g. "cinematic drone shot at golden hour"…'
+              placeholder="photorealistic red house"
               rows={1}
               style={{
                 width: '100%', resize: 'none', boxSizing: 'border-box',
@@ -237,7 +248,7 @@ export default function HomeView({
         {/* ── Category cards ───────────────────────────────────────────────── */}
         <div className="mb-7">
           <p style={{ fontSize: 11, color: 'var(--pv-text3)', marginBottom: 10 }}>Browse by category</p>
-          <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+          <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-5">
             {CATEGORIES.map(cat => {
               const count = cat.countFn(models)
               const isTools = cat.key === 'tools'

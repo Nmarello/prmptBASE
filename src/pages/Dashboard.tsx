@@ -208,6 +208,7 @@ export default function Dashboard() {
   })
   const [categoryView, setCategoryView] = useState<CategoryKey | null>(null)
   const [advisorTriggerQuery, setAdvisorTriggerQuery] = useState<string | null>(null)
+  const [advisorOpenedFromHome, setAdvisorOpenedFromHome] = useState(false)
   const renderingModelSlugRef = useRef<string | null>(null)
   useEffect(() => { renderingModelSlugRef.current = renderingModelSlug }, [renderingModelSlug])
   // Derived: pending video for the currently selected model (for canvas spinner)
@@ -1135,7 +1136,7 @@ export default function Dashboard() {
                 {categoryView ? (
                   <>
                     <button
-                      onClick={() => { setCategoryView(null); setModelFilter('all') }}
+                      onClick={() => { setCategoryView(null); setModelFilter('all'); setAdvisorOpenedFromHome(false) }}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--pv-text3)', display: 'flex', alignItems: 'center', gap: 4, padding: 0, fontFamily: 'inherit', fontSize: 13 }}
                       className="hover:text-[var(--pv-text)] transition-colors flex-shrink-0"
                     >
@@ -1170,7 +1171,7 @@ export default function Dashboard() {
                   else setModelFilter('all')
                 }}
                 onToolsSelect={() => setView('tools')}
-                onAdvisorQuery={q => setAdvisorTriggerQuery(q)}
+                onAdvisorQuery={q => { setAdvisorTriggerQuery(q); setAdvisorOpenedFromHome(true) }}
                 onFavoriteToggle={toggleFavorite}
               />
             )}
@@ -2085,8 +2086,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Model Advisor — show as floating bubble in category view, or triggered from home prompt ── */}
-      {view === 'models' && !drawerModel && (
+      {/* ── Model Advisor — hidden on home until triggered; always shows in category view ── */}
+      {view === 'models' && !drawerModel && (!!categoryView || advisorOpenedFromHome) && (
         <ModelAdvisor
           models={models}
           userTier={userTier}
