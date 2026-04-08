@@ -120,7 +120,9 @@ export default function CommonSettings({
       {expanded && (
         <div className="p-5 flex flex-col gap-5">
 
-          {/* Row 1: Aspect Ratio (full width) */}
+          {/* Row 1: Aspect Ratio + Negative Prompt side by side */}
+          <div className="grid gap-5" style={{ gridTemplateColumns: 'auto 1fr' }}>
+
           <div>
             <FieldLabel label="Aspect Ratio" />
             <div className="flex flex-wrap gap-2">
@@ -151,7 +153,7 @@ export default function CommonSettings({
             </div>
           </div>
 
-          {/* Row 2: Negative Prompt (full width) */}
+          {/* Negative Prompt */}
           <div>
             <FieldLabel label="Negative Prompt" />
             <div
@@ -226,7 +228,9 @@ export default function CommonSettings({
             )}
           </div>
 
-          {/* Row 3: Seed | Output Format | Images per model — explicit 3-col grid */}
+          </div>{/* end side-by-side grid */}
+
+          {/* Row 2: Seed | Output Format | Images per model — explicit 3-col grid */}
           <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
 
             {/* Seed */}
