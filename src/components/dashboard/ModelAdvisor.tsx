@@ -280,6 +280,7 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
                       const model = models.find(m => m.slug === rec.slug)
                       if (!model) return null
                       const canAccess = tierCanAccess(userTier, model.min_tier)
+                      const canCompare = model.supported_gen_types.some(t => ['txt2img', 'txt2vid'].includes(t))
                       const checked = selectedSlugs.has(rec.slug)
                       const maxReached = selectedSlugs.size >= 4 && !checked
                       return (
@@ -294,26 +295,28 @@ export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQ
                             transition: 'background 0.15s, border-color 0.15s',
                           }}
                         >
-                          {/* Checkbox */}
-                          <button
-                            onClick={() => !maxReached && toggleSlug(rec.slug)}
-                            title={maxReached ? 'Max 4 models' : checked ? 'Remove from comparison' : 'Add to comparison'}
-                            style={{
-                              flexShrink: 0, width: 18, height: 18, borderRadius: 5,
-                              border: `2px solid ${checked ? ADVISOR_COLOR : 'rgba(0,80,255,0.35)'}`,
-                              background: checked ? ADVISOR_COLOR : 'rgba(0,80,255,0.06)',
-                              cursor: maxReached ? 'not-allowed' : 'pointer',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              padding: 0, opacity: maxReached ? 0.35 : 1,
-                              transition: 'background 0.15s, border-color 0.15s',
-                            }}
-                          >
-                            {checked && (
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12"/>
-                              </svg>
-                            )}
-                          </button>
+                          {/* Checkbox — only for txt2img/txt2vid models */}
+                          {canCompare && (
+                            <button
+                              onClick={() => !maxReached && toggleSlug(rec.slug)}
+                              title={maxReached ? 'Max 4 models' : checked ? 'Remove from comparison' : 'Add to comparison'}
+                              style={{
+                                flexShrink: 0, width: 18, height: 18, borderRadius: 5,
+                                border: `2px solid ${checked ? ADVISOR_COLOR : 'rgba(0,80,255,0.35)'}`,
+                                background: checked ? ADVISOR_COLOR : 'rgba(0,80,255,0.06)',
+                                cursor: maxReached ? 'not-allowed' : 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                padding: 0, opacity: maxReached ? 0.35 : 1,
+                                transition: 'background 0.15s, border-color 0.15s',
+                              }}
+                            >
+                              {checked && (
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                              )}
+                            </button>
+                          )}
 
                           <div
                             style={{
