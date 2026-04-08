@@ -1194,7 +1194,6 @@ export default function Dashboard() {
                   else setModelFilter('all')
                 }}
                 onToolsSelect={() => setView('tools')}
-                onAdvisorQuery={q => { setAdvisorTriggerQuery(q); setAdvisorOpenedFromHome(true) }}
               />
             )}
 

@@ -125,12 +125,21 @@ Deno.serve(async (req) => {
     const numImages = Math.min(Math.max(Number(body.num_images ?? 1), 1), 4)
     const aspectRatio = body.aspect_ratio ?? '1:1'
 
+    const personGenerationMap: Record<string, string> = {
+      allow_adult: 'ALLOW_ADULT',
+      allow_all: 'ALLOW_ALL',
+      dont_allow: 'DONT_ALLOW',
+    }
+
     const imagenBody = {
       instances: [{ prompt }],
       parameters: {
         sampleCount: numImages,
         aspectRatio,
         ...(body.seed != null && body.seed !== '' ? { seed: Number(body.seed) } : {}),
+        ...(body.negative_prompt && body.negative_prompt.trim() !== '' ? { negativePrompt: body.negative_prompt } : {}),
+        ...(body.person_generation && personGenerationMap[body.person_generation] ? { personGeneration: personGenerationMap[body.person_generation] } : {}),
+        ...(body.add_watermark != null && body.add_watermark !== '' ? { addWatermark: body.add_watermark === 'true' } : { addWatermark: false }),
       },
     }
 

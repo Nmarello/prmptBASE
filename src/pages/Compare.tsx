@@ -11,6 +11,8 @@ import CompareColumn from '../components/compare/CompareColumn'
 import type { ColumnState } from '../components/compare/CompareColumn'
 import GhostColumn from '../components/compare/GhostColumn'
 import CommonSettings from '../components/compare/CommonSettings'
+import { Lightbox } from '../components/dashboard/AssetGrid'
+import type { Asset } from '../types'
 
 const MAX_COLUMNS = 4
 const MIN_COLUMNS = 2
@@ -374,6 +376,13 @@ export default function Compare() {
     downloadingRef.current = false
   }
 
+  const [lightboxAsset, setLightboxAsset] = useState<Asset | null>(null)
+
+  async function openLightbox(assetId: string) {
+    const { data } = await supabase.from('assets').select('*').eq('id', assetId).single()
+    if (data) setLightboxAsset(data as Asset)
+  }
+
   const hasAnyResult = columns.some(c => c.result)
   const readyColumns = columns.filter(c => c.model && c.template).length
   const ghostCount = MAX_COLUMNS - columns.length
@@ -403,8 +412,6 @@ export default function Compare() {
 
       {/* ── Icon Sidebar ── */}
       <aside className="hidden sm:flex flex-col items-center py-4 gap-1 flex-shrink-0 z-20" style={{ width: 60, background: 'var(--pv-surface)', borderRight: '1px solid var(--pv-border)' }}>
-        <Logo height={28} style={{ marginBottom: 8 }} />
-
         <SbBtn tip="Home" onClick={() => navigate('/dashboard')}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/>
@@ -451,6 +458,7 @@ export default function Compare() {
           style={{ borderBottom: '1px solid var(--pv-border)', background: 'var(--pv-surface)' }}
         >
           <div className="flex items-center gap-3">
+            <Logo height={24} style={{ marginRight: 8 }} />
             <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--pv-text)', letterSpacing: '-0.02em', fontFamily: "'Bricolage Grotesque', sans-serif" }}>
               Compare
             </span>
@@ -665,6 +673,7 @@ export default function Compare() {
                 onAdvancedChange={(fieldId, value) => handleAdvancedChange(i, fieldId, value)}
                 onRemove={() => handleRemoveColumn(i)}
                 canRemove={columns.length > MIN_COLUMNS}
+                onImageClick={assetId => openLightbox(assetId)}
               />
             ))}
             {Array.from({ length: ghostCount }).map((_, i) => (
@@ -725,6 +734,20 @@ export default function Compare() {
         </div>
       </div>
       </div>
+
+      {lightboxAsset && (
+        <Lightbox
+          asset={lightboxAsset}
+          projects={[]}
+          projectName={null}
+          projectColor={null}
+          modelName={columns.find(c => c.result?.assetId === lightboxAsset.id)?.model?.name ?? null}
+          onClose={() => setLightboxAsset(null)}
+          onDelete={() => setLightboxAsset(null)}
+          onSendToImg2Img={() => {}}
+          onSendToImg2Vid={() => {}}
+        />
+      )}
     </div>
   )
 }

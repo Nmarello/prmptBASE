@@ -32,6 +32,7 @@ interface CompareColumnProps {
   onAdvancedChange: (fieldId: string, value: unknown) => void
   onRemove: () => void
   canRemove: boolean
+  onImageClick?: (assetId: string) => void
 }
 
 // Map slug prefix → human-readable brand name
@@ -93,7 +94,7 @@ function Spinner({ label = 'Generating…' }: { label?: string }) {
 
 export default function CompareColumn({
   column, models, userTier,
-  onModelChange, onAdvancedChange, onRemove, canRemove,
+  onModelChange, onAdvancedChange, onRemove, canRemove, onImageClick,
 }: CompareColumnProps) {
   const grouped = groupByProvider(
     models.filter(m => m.supported_gen_types.includes('txt2img') && !m.coming_soon)
@@ -213,7 +214,8 @@ export default function CompareColumn({
             src={column.result.url}
             alt="Generated result"
             className="w-full h-full object-contain"
-            style={{ maxHeight: 480 }}
+            style={{ maxHeight: 480, cursor: column.result.assetId && onImageClick ? 'zoom-in' : 'default' }}
+            onClick={() => { if (column.result?.assetId && onImageClick) onImageClick(column.result.assetId) }}
           />
         ) : column.templateLoading ? (
           <div style={{ fontSize: 13, color: 'var(--pv-text3)' }}>Loading model…</div>

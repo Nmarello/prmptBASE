@@ -1,8 +1,10 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import type { Model } from '../../types'
 import ModelCard from './ModelCard'
 
 export type CategoryKey = 'images' | 'video'
+
+interface InlineMessage { role: 'user' | 'bot'; content: string }
 
 interface Props {
   models: Model[]
@@ -13,7 +15,6 @@ interface Props {
   onSelectModel: (m: Model) => void
   onCategorySelect: (cat: CategoryKey) => void
   onToolsSelect: () => void
-  onAdvisorQuery: (query: string) => void
 }
 
 const IMAGE_GEN = ['txt2img', 'img2img', 'multi_img2img']
@@ -101,16 +102,53 @@ function BrowseRow({ title, models, latestRenderBySlug, userTier, onSelectModel 
 export default function HomeView({
   models, favoriteModelSlugs, recentModelSlugs,
   latestRenderBySlug, userTier, onSelectModel, onCategorySelect, onToolsSelect,
-  onAdvisorQuery,
 }: Props) {
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const [chatMessages, setChatMessages] = useState<InlineMessage[]>([])
+  const [chatLoading, setChatLoading] = useState(false)
+  const chatEndRef = useRef<HTMLDivElement>(null)
 
-  function handleSubmit() {
+  useEffect(() => {
+    if (chatMessages.length > 0 || chatLoading) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [chatMessages, chatLoading])
+
+  async function handleSubmit() {
     const q = query.trim()
     if (!q) return
-    onAdvisorQuery(q)
     setQuery('')
+    setChatMessages(prev => [...prev, { role: 'user', content: q }])
+    setChatLoading(true)
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/model-advisor`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            message: q,
+            models: [],
+            conversation_history: chatMessages.slice(-6).map(m => ({
+              role: m.role === 'bot' ? 'assistant' : 'user',
+              content: m.content,
+            })),
+          }),
+        }
+      )
+      const data = await res.json()
+      const reply = data.reply ?? data.message ?? 'Sorry, something went wrong.'
+      setChatMessages(prev => [...prev, { role: 'bot', content: reply }])
+    } catch {
+      setChatMessages(prev => [...prev, { role: 'bot', content: 'Sorry, something went wrong.' }])
+    } finally {
+      setChatLoading(false)
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -204,23 +242,86 @@ export default function HomeView({
             </button>
           </div>
 
-          {/* Suggestion chips */}
-          <div className="flex flex-wrap gap-1.5 justify-center mt-3 max-w-2xl">
-            {SUGGESTIONS.map(s => (
+          {/* Suggestion chips — hidden once chat is active */}
+          {chatMessages.length === 0 && (
+            <div className="flex flex-wrap gap-1.5 justify-center mt-3 max-w-2xl">
+              {SUGGESTIONS.map(s => (
+                <button
+                  key={s}
+                  onClick={() => { setQuery(s); setTimeout(() => inputRef.current?.focus(), 0) }}
+                  style={{
+                    fontSize: 11, padding: '4px 10px', borderRadius: 20,
+                    border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)',
+                    color: 'var(--pv-text3)', cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                  className="hover:border-[#0050ff] hover:text-[#0050ff] transition-all"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Inline chat thread */}
+          {(chatMessages.length > 0 || chatLoading) && (
+            <div className="w-full max-w-2xl mt-4 relative">
               <button
-                key={s}
-                onClick={() => { setQuery(s); setTimeout(() => inputRef.current?.focus(), 0) }}
+                onClick={() => setChatMessages([])}
                 style={{
-                  fontSize: 11, padding: '4px 10px', borderRadius: 20,
+                  position: 'absolute', top: 0, right: 0,
+                  fontSize: 11, padding: '3px 8px', borderRadius: 8,
                   border: '1px solid var(--pv-border)', background: 'var(--pv-surface2)',
                   color: 'var(--pv-text3)', cursor: 'pointer', fontFamily: 'inherit',
                 }}
                 className="hover:border-[#0050ff] hover:text-[#0050ff] transition-all"
               >
-                {s}
+                Clear
               </button>
-            ))}
-          </div>
+              <div className="flex flex-col gap-2 pt-6">
+                {chatMessages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      style={{
+                        maxWidth: '80%', padding: '10px 14px', borderRadius: 14,
+                        fontSize: 13, lineHeight: 1.55,
+                        background: msg.role === 'user' ? '#0050ff' : 'var(--pv-surface2)',
+                        color: msg.role === 'user' ? '#fff' : 'var(--pv-text)',
+                        border: msg.role === 'user' ? 'none' : '1px solid var(--pv-border)',
+                      }}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div className="flex justify-start">
+                    <div
+                      style={{
+                        padding: '10px 14px', borderRadius: 14,
+                        background: 'var(--pv-surface2)', border: '1px solid var(--pv-border)',
+                        display: 'flex', gap: 4, alignItems: 'center',
+                      }}
+                    >
+                      {[0, 1, 2].map(d => (
+                        <div
+                          key={d}
+                          style={{
+                            width: 6, height: 6, borderRadius: '50%',
+                            background: 'var(--pv-text3)',
+                            animation: `pulse 1.2s ease-in-out ${d * 0.2}s infinite`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Category cards ───────────────────────────────────────────────── */}
