@@ -13,8 +13,9 @@
 ## Key Directories
 - `src/` — React app (components, pages, contexts, hooks, lib, types)
 - `src/components/compare/` — Compare tool components (CompareColumn, CommonSettings, AdvancedSettings, GhostColumn)
+- `src/components/dashboard/ModelAdvisor.tsx` — AI chat bubble (violet, fixed top-right, models view only)
 - `src/lib/generateRequest.ts` — shared generation routing utility (replicate/fal/google/openai)
-- `supabase/functions/` — 34 Deno edge functions
+- `supabase/functions/` — 35 Deno edge functions (added: model-advisor)
 - `supabase/migrations/` — 92+ database migrations
 - `ghost-theme/` — Custom Ghost blog theme
 
@@ -30,6 +31,8 @@
 - Generation errors must tell users what to change (actionable messages)
 - Compare tool: `columnsRef` polling pattern is intentional — do NOT add `columns` to the polling `useEffect` deps
 - Compare tool: `getBrand()` in CompareColumn maps slug → display brand; update when adding new model families
+- Compare tool: accepts `location.state = { models: string[], prompt: string }` from Model Advisor — pre-populates columns + sharedPrompt
+- Model Advisor: only renders when `view === 'models' && !drawerModel` in Dashboard — intentional, not a bug
 
 ## Build & Dev
 - `npm run dev` — local dev server

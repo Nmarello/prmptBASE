@@ -18,11 +18,13 @@ interface Props {
   models: Model[]
   userTier: string
   onSelectModel: (model: Model) => void
+  triggerQuery?: string | null
+  onTriggerConsumed?: () => void
 }
 
 const ADVISOR_COLOR = '#7c3aed'
 
-export default function ModelAdvisor({ models, userTier, onSelectModel }: Props) {
+export default function ModelAdvisor({ models, userTier, onSelectModel, triggerQuery, onTriggerConsumed }: Props) {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<AdvisorMessage[]>([])
@@ -69,6 +71,39 @@ export default function ModelAdvisor({ models, userTier, onSelectModel }: Props)
       }])
     }
   }, [open])
+
+  // Fire query triggered from outside (e.g. HomeView inline prompt)
+  useEffect(() => {
+    if (!triggerQuery) return
+    setOpen(true)
+    setInput(triggerQuery)
+    onTriggerConsumed?.()
+    // Small delay so panel renders before we send
+    setTimeout(() => {
+      setInput('')
+      const text = triggerQuery.trim()
+      if (!text) return
+      const userMsg: AdvisorMessage = { role: 'user', content: text }
+      setMessages(prev => {
+        // Seed greeting if empty
+        const base = prev.length === 0 ? [{ role: 'bot' as const, content: 'Tell me what you want to create and I\'ll find the best models for you.' }] : prev
+        return [...base, userMsg]
+      })
+      setLoading(true)
+      const activeModels = models
+        .filter(m => m.is_active && !m.coming_soon)
+        .map(m => ({ slug: m.slug, name: m.name, provider: m.provider, description: m.description, supported_gen_types: m.supported_gen_types, is_active: m.is_active, coming_soon: m.coming_soon }))
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/model-advisor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body: JSON.stringify({ message: text, models: activeModels, conversation_history: [] }),
+      })
+        .then(r => r.json())
+        .then(data => setMessages(prev => [...prev, { role: 'bot', content: data.message ?? '', recommendations: data.recommendations ?? [] }]))
+        .catch(() => setMessages(prev => [...prev, { role: 'bot', content: 'Something went wrong — please try again.' }]))
+        .finally(() => setLoading(false))
+    }, 80)
+  }, [triggerQuery])
 
   // Scroll to bottom
   useEffect(() => {

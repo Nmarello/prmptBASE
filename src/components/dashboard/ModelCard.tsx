@@ -21,7 +21,7 @@ interface Props {
   borderColor?: string
 }
 
-const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
+export const MODEL_ART: Record<string, { gradient: string; initial: string }> = {
   'dalle':              { gradient: 'linear-gradient(145deg,#c0392b,#e8570a,#f5a623)', initial: 'D3' },
   'flux-schnell':       { gradient: 'linear-gradient(145deg,#003566,#0096c7,#48cae4)', initial: 'FS' },
   'flux-dev':           { gradient: 'linear-gradient(145deg,#3d0066,#7b2ff7,#c084fc)', initial: 'FD' },

@@ -29,6 +29,8 @@ import ProviderLogo from '../components/dashboard/ProviderLogo'
 import ToolsPanel from '../components/dashboard/ToolsPanel'
 import ToolsRow from '../components/dashboard/ToolsRow'
 import ModelAdvisor from '../components/dashboard/ModelAdvisor'
+import HomeView from '../components/dashboard/HomeView'
+import type { CategoryKey } from '../components/dashboard/HomeView'
 import { useAnalytics, useIdentify } from '../hooks/useAnalytics'
 
 type View = 'models' | 'builder' | 'assets' | 'projects' | 'tools'
@@ -201,6 +203,11 @@ export default function Dashboard() {
   const [recentModelSlugs, setRecentModelSlugs] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('pv_recent_models') ?? '[]') } catch { return [] }
   })
+  const [favoriteModelSlugs, setFavoriteModelSlugs] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('pv_favorites') ?? '[]') } catch { return [] }
+  })
+  const [categoryView, setCategoryView] = useState<CategoryKey | null>(null)
+  const [advisorTriggerQuery, setAdvisorTriggerQuery] = useState<string | null>(null)
   const renderingModelSlugRef = useRef<string | null>(null)
   useEffect(() => { renderingModelSlugRef.current = renderingModelSlug }, [renderingModelSlug])
   // Derived: pending video for the currently selected model (for canvas spinner)
@@ -434,6 +441,14 @@ export default function Dashboard() {
     const { data } = await q
     if (data) setModels(data as Model[])
   }, [user])
+
+  function toggleFavorite(slug: string) {
+    setFavoriteModelSlugs(prev => {
+      const next = prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
+      try { localStorage.setItem('pv_favorites', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
 
   async function handleAddModel(modelId: string) {
     if (!user) return
@@ -1114,60 +1129,69 @@ export default function Dashboard() {
         {/* GENERATE VIEW */}
         {view === 'models' && (
           <div className="flex flex-col h-full overflow-hidden">
-            {/* Header */}
-            <div className="px-4 sm:px-7 pb-4 flex-shrink-0" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
-              <div className="flex items-center">
-                {/* Logo — left */}
-                <Logo height={42} style={{ marginBottom: 2, flexShrink: 0 }} />
-                {/* Filter — dropdown on mobile, pills on desktop */}
-                <div className="flex-1 flex justify-center">
-                  {/* Mobile dropdown */}
-                  <div className="sm:hidden relative">
-                    <select
-                      value={modelFilter}
-                      onChange={e => setModelFilter(e.target.value as 'all' | 'images' | 'videos')}
-                      className="appearance-none text-sm font-medium pl-3 pr-7 py-1.5 rounded-full cursor-pointer outline-none"
-                      style={{ background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text)' }}
+            {/* Shared header */}
+            <div className="px-4 sm:px-7 pb-3 flex-shrink-0" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
+              <div className="flex items-center gap-3">
+                {categoryView ? (
+                  <>
+                    <button
+                      onClick={() => { setCategoryView(null); setModelFilter('all') }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--pv-text3)', display: 'flex', alignItems: 'center', gap: 4, padding: 0, fontFamily: 'inherit', fontSize: 13 }}
+                      className="hover:text-[var(--pv-text)] transition-colors flex-shrink-0"
                     >
-                      <option value="all">All</option>
-                      <option value="images">Images</option>
-                      <option value="videos">Videos</option>
-                    </select>
-                    <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3" style={{ color: 'var(--pv-text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7"/>
-                    </svg>
-                  </div>
-                  {/* Desktop pills */}
-                  <div className="hidden sm:flex gap-1.5">
-                    {(['all', 'images', 'videos'] as const).map(f => {
-                      const liveModels = models.filter(m => m.is_active && !m.coming_soon)
-                      const counts = {
-                        all: liveModels.length,
-                        images: liveModels.filter(m => m.supported_gen_types.some(g => ['txt2img','img2img','multi_img2img'].includes(g))).length,
-                        videos: liveModels.filter(m => m.supported_gen_types.some(g => g === 'txt2vid' || g === 'img2vid' || g === 'ref2vid' || g === 'vid2vid')).length,
-                      }
-                      const active = modelFilter === f
-                      return (
-                        <button
-                          key={f}
-                          onClick={() => setModelFilter(f)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer"
-                          style={active
-                            ? { background: 'var(--pv-accent)', color: '#fff' }
-                            : { background: 'var(--pv-surface)', border: '1px solid var(--pv-border)', color: 'var(--pv-text2)' }
-                          }
-                        >
-                          {f.charAt(0).toUpperCase() + f.slice(1)}
-                          <span className="text-xs opacity-70">{counts[f]}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+                      </svg>
+                      Home
+                    </button>
+                    <Logo height={32} style={{ flexShrink: 0 }} />
+                    <h2 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 18, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em' }}>
+                      {{ images: 'Images', video: 'Video', characters: 'Characters', '3d': '3D Worlds' }[categoryView]}
+                    </h2>
+                  </>
+                ) : (
+                  <Logo height={42} style={{ marginBottom: 2, flexShrink: 0 }} />
+                )}
               </div>
             </div>
 
-            {/* Scrollable model rows — tier-aware layout */}
+            {/* Home view */}
+            {!categoryView && (
+              <HomeView
+                models={models}
+                favoriteModelSlugs={favoriteModelSlugs}
+                recentModelSlugs={recentModelSlugs}
+                latestRenderBySlug={latestRenderBySlug}
+                onSelectModel={m => setDrawerModel(m)}
+                onCategorySelect={cat => {
+                  setCategoryView(cat)
+                  if (cat === 'images' || cat === 'characters') setModelFilter('images')
+                  else if (cat === 'video') setModelFilter('videos')
+                  else setModelFilter('all')
+                }}
+                onToolsSelect={() => setView('tools')}
+                onAdvisorQuery={q => setAdvisorTriggerQuery(q)}
+                onFavoriteToggle={toggleFavorite}
+              />
+            )}
+
+            {/* Category view — 3D coming soon */}
+            {categoryView === '3d' && (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 sm:px-7">
+                <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f59e0b' }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="4" ry="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <h3 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 20, fontWeight: 800, color: 'var(--pv-text)', letterSpacing: '-0.03em', marginBottom: 6 }}>3D Worlds</h3>
+                  <p style={{ fontSize: 13, color: 'var(--pv-text3)', maxWidth: 320 }}>3D generation models are coming soon. We're working on it — check back shortly.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Category view — model grid */}
+            {categoryView && categoryView !== '3d' && (
             <div ref={generateScrollRef} data-tour="sidebar" className="flex-1 overflow-y-auto px-4 sm:px-7 pb-28 sm:pb-10 space-y-5">
               <PullIndicator distance={generatePullDist} refreshing={generateRefreshing} />
 
@@ -1548,6 +1572,7 @@ export default function Dashboard() {
               })()}
 
             </div>
+            )}
           </div>
         )}
 
@@ -2060,12 +2085,14 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Model Advisor floating bubble — models view only, hide when drawer open ── */}
+      {/* ── Model Advisor — show as floating bubble in category view, or triggered from home prompt ── */}
       {view === 'models' && !drawerModel && (
         <ModelAdvisor
           models={models}
           userTier={userTier}
           onSelectModel={m => { setDrawerModel(m) }}
+          triggerQuery={advisorTriggerQuery}
+          onTriggerConsumed={() => setAdvisorTriggerQuery(null)}
         />
       )}
     </div>

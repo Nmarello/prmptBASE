@@ -212,6 +212,10 @@ export default function Home() {
   const T = theme === 'blue' ? BLUE : dark ? DARK : LIGHT
   const navigate = useNavigate()
 
+  useEffect(() => {
+    if (user) navigate('/dashboard', { replace: true })
+  }, [user])
+
   // Mockup cursor animation
   const [animCursor, setAnimCursor] = useState({ x: 185, y: 81 })
   const [animDropdown, setAnimDropdown] = useState(false)
@@ -264,7 +268,7 @@ export default function Home() {
   const { scrollYProgress: ctaProgress } = useScroll({ target: ctaRef, offset: ['start end', 'end start'] })
   const ctaGlowY = useTransform(ctaProgress, [0, 1], [60, -60])
 
-  if (user) navigate('/dashboard')
+  // redirect handled in useEffect above
 
   return (
     <div style={{ background: T.bg, color: T.text, fontFamily: "'Inter', -apple-system, sans-serif", overflowX: 'hidden' }}>
