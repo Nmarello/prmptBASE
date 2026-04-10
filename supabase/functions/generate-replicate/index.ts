@@ -239,11 +239,11 @@ const MODELS: Record<string, ModelConfig> = {
   // ── ByteDance Seedance 2.0 ───────────────────────────────────────────────
   'seedance-2': { path: 'bytedance/seedance-2.0', isVideo: true, maxOutputs: 1, costUsd: 0.15, buildInput: (b) => {
     const VALID_AR = ['21:9', '16:9', '4:3', '1:1', '3:4', '9:16']
-    const VALID_DUR = [4, 5, 6, 8, 10, 12, 15]
+    const VALID_DUR = [4, 5, 6, 8, 10, 12]
     return {
       prompt: b.prompt,
       aspect_ratio: VALID_AR.includes(b.aspectRatio) ? b.aspectRatio : '16:9',
-      ...(b._duration && VALID_DUR.includes(b._duration) ? { duration: b._duration } : {}),
+      duration: (b._duration && VALID_DUR.includes(b._duration)) ? b._duration : -1,
       ...(b.seed != null ? { seed: b.seed } : {}),
     }
   } },
