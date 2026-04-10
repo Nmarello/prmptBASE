@@ -489,6 +489,7 @@ Deno.serve(async (req) => {
     const slug = (model_slug as string) ?? 'sd35-large'
     const config = MODELS[slug]
     if (!config) throw new Error(`Unknown Replicate model slug: ${slug}`)
+    if (slug === 'seedance-2') throw new Error('CANARY: reached generate-replicate for seedance-2')
 
     const builtPrompt = buildPrompt(body)
     const genType_ = body.gen_type as string | undefined
