@@ -243,7 +243,7 @@ const MODELS: Record<string, ModelConfig> = {
     return {
       prompt: b.prompt,
       aspect_ratio: VALID_AR.includes(b.aspectRatio) ? b.aspectRatio : '16:9',
-      duration: (b._duration && VALID_DUR.includes(b._duration)) ? b._duration : -1,
+      duration: (b._duration && VALID_DUR.includes(b._duration)) ? b._duration : 5,
       ...(b.seed != null ? { seed: b.seed } : {}),
     }
   } },
@@ -614,6 +614,7 @@ Deno.serve(async (req) => {
     // Prefer:wait only for non-video, non-async models; video/async return pending immediately
     if (!config.version && !config.isVideo && !config.isAsync) repHeaders['Prefer'] = 'wait'
 
+    console.log(`[generate-replicate] ${slug} INPUT:`, JSON.stringify(replicateInput))
     const repRes = await fetch(repUrl, {
       method: 'POST',
       headers: repHeaders,
@@ -623,7 +624,20 @@ Deno.serve(async (req) => {
     if (!repRes.ok) {
       const err = await repRes.text()
       console.error(`[generate-replicate] ${slug} FAILED (${repRes.status}):`, err, 'INPUT:', JSON.stringify(replicateInput))
-      throw new Error(`Replicate error (${slug}): ${err}`)
+      // Extract field path from Pydantic validation errors for better debugging
+      let errMsg = err
+      try {
+        const parsed = JSON.parse(err)
+        const detail = parsed?.detail
+        if (Array.isArray(detail)) {
+          const loc = detail[0]?.loc?.slice(2).join('.') ?? ''
+          const msg = detail[0]?.msg ?? ''
+          errMsg = loc ? `[${loc}] ${msg}` : msg || err
+        } else if (typeof detail === 'string') {
+          errMsg = detail
+        }
+      } catch { /* not JSON, use raw */ }
+      throw new Error(`Replicate error (${slug}): ${errMsg}`)
     }
 
     const repData = await repRes.json()
