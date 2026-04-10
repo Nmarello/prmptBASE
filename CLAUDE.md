@@ -16,7 +16,7 @@
 - `src/components/dashboard/ModelsPageView.tsx` — Images/Video sub-pages: Featured + Last Used + per-family horizontal ModelCard rows
 - `src/components/dashboard/MiniModelCard.tsx` — Compact card (still used in some views, NOT used in HomeView)
 - `src/components/compare/` — Compare tool components (CompareColumn, CommonSettings, AdvancedSettings, GhostColumn)
-- `src/components/dashboard/ModelAdvisor.tsx` — AI chat bubble (violet, fixed top-right, models view only)
+- `src/components/dashboard/ModelAdvisor.tsx` — AI chat bubble (blue #0050ff, fixed top-right, models view only)
 - `src/lib/generateRequest.ts` — shared generation routing utility (replicate/fal/google/openai)
 - `supabase/functions/` — 35 Deno edge functions (added: model-advisor)
 - `supabase/migrations/` — 92+ database migrations
@@ -29,6 +29,7 @@
 - Images/Video pages use `ModelsPageView` (not the old tier-aware FamilyRow layout)
 - `CategoryKey = 'images' | 'video'` — 'characters' and '3d' removed
 - Model Advisor: renders when `view === 'models' && !drawerModel && (!!categoryView || advisorOpenedFromHome)`
+- HomeView inline chat: self-contained, calls model-advisor edge fn directly, no onAdvisorQuery prop
 - Compare page has matching left icon sidebar; non-Compare items navigate('/dashboard')
 
 ## Gotchas
@@ -47,6 +48,9 @@
 - Compare tool: accepts `location.state = { models: string[], prompt: string }` from Model Advisor — pre-populates columns + sharedPrompt
 - Model Advisor: only renders when `view === 'models' && !drawerModel` in Dashboard — intentional, not a bug
 - Favorites: `favoriteModelSlugs` read from localStorage on mount; setter prefixed `_setFavoriteModelSlugs` — no toggle UI yet
+- Imagen 4 base model slug is `imagen-4.0-generate-001` (not `imagen-4`) — matters for migrations
+- TemplateForm renders ALL template fields with no filtering — add field to DB template, it appears in workspace + Compare
+- Compare lightbox: clicking result image fetches asset by assetId from Supabase, opens standard Lightbox
 
 ## Build & Dev
 - `npm run dev` — local dev server

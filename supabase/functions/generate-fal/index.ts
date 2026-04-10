@@ -89,11 +89,7 @@ const FAL_VIDEO_ENDPOINTS: Record<string, Record<string, string>> = {
     'txt2vid': 'fal-ai/bytedance/seedance/v1/pro/text-to-video',
     'img2vid': 'fal-ai/bytedance/seedance/v1/pro/image-to-video',
   },
-  'seedance-2': {
-    'txt2vid': 'fal-ai/bytedance/seedance-2.0/text-to-video',
-    'img2vid': 'fal-ai/bytedance/seedance-2.0/image-to-video',
-    'ref2vid': 'fal-ai/bytedance/seedance-2.0/reference-to-video',
-  },
+
   'kling-v2.6-motion': {
     'vid2vid': 'fal-ai/kling-video/v2.6/standard/motion-control',
   },
@@ -395,7 +391,7 @@ Deno.serve(async (req) => {
     const PROMPT_CHAR_LIMITS: Record<string, number> = {
       'luma': 2000, 'kling': 2500, 'kling-v3': 2500, 'minimax-txt2vid': 2000,
       'sora2': 4000, 'sora2-pro': 4000, 'pika': 2000, 'ltx-video': 2000, 'ltx-2.3-pro': 2000, 'ltx-2.3-fast': 2000,
-      'wan-21-txt2vid': 2000, 'hunyuan-video': 2000, 'seedance-1-pro-txt2vid': 2000, 'seedance-2': 2000,
+      'wan-21-txt2vid': 2000, 'hunyuan-video': 2000, 'seedance-1-pro-txt2vid': 2000,
       'flux-schnell': 2000, 'flux-dev': 2000, 'flux-pro': 2000, 'flux-pro-ultra': 2000,
       'flux2-pro': 2000, 'flux2-max': 2000, 'flux-kontext-pro': 2000, 'flux-dev-img2img': 2000,
       'recraft-v3': 1000, 'recraft-v4-pro': 1000,
@@ -801,10 +797,6 @@ Deno.serve(async (req) => {
         falPayload.aspect_ratio = SEEDANCE_AR.includes(body.aspect_ratio as string) ? body.aspect_ratio : '16:9'
         if (body.duration && String(body.duration) !== 'auto') falPayload.duration = String(body.duration)
         if (body.seed != null && body.seed !== '') falPayload.seed = Number(body.seed)
-        // Seedance 2.0: resolution, generate_audio, end_image_url
-        if (body.resolution) falPayload.resolution = body.resolution
-        if (body.generate_audio != null) falPayload.generate_audio = body.generate_audio === 'true' || body.generate_audio === true
-        if (isImgVid && body.end_image_url) falPayload.end_image_url = body.end_image_url
       }
 
       // Submit to fal queue

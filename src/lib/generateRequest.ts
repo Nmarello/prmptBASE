@@ -19,7 +19,7 @@ const REPLICATE_SLUGS = new Set([
   // Video
   'ltx-2.3-pro', 'ltx-2.3-fast',
   'sora2-pro', 'veo-3', 'veo-3-fast', 'veo-3.1',
-  'kling-v2.5-turbo', 'wan-2.5-t2v', 'wan-2.2-animate', 'minimax-video', 'hailuo-2.3', 'gen-4.5',
+  'kling-v2.5-turbo', 'wan-2.5-t2v', 'wan-2.2-animate', 'minimax-video', 'hailuo-2.3', 'gen-4.5', 'seedance-2',
   // Tools
   'flux-fill-pro', 'bria-eraser', 'bria-genfill', 'bria-expand',
   'recraft-crisp-upscale', 'recraft-creative-upscale',

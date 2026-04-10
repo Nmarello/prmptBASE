@@ -236,6 +236,18 @@ const MODELS: Record<string, ModelConfig> = {
     ...(b.seed != null ? { seed: b.seed } : {}),
   }) },
 
+  // ── ByteDance Seedance 2.0 ───────────────────────────────────────────────
+  'seedance-2': { path: 'bytedance/seedance-2.0', isVideo: true, maxOutputs: 1, costUsd: 0.15, buildInput: (b) => {
+    const VALID_AR = ['21:9', '16:9', '4:3', '1:1', '3:4', '9:16']
+    const VALID_DUR = [4, 5, 6, 8, 10, 12, 15]
+    return {
+      prompt: b.prompt,
+      aspect_ratio: VALID_AR.includes(b.aspectRatio) ? b.aspectRatio : '16:9',
+      ...(b._duration && VALID_DUR.includes(b._duration) ? { duration: b._duration } : {}),
+      ...(b.seed != null ? { seed: b.seed } : {}),
+    }
+  } },
+
   // ── MiniMax Hailuo 2.3 ───────────────────────────────────────────────────
   'hailuo-2.3':       { path: 'minimax/hailuo-2.3', isVideo: true, maxOutputs: 1, costUsd: 0.12, buildInput: (b) => ({
     prompt: b.prompt,
@@ -528,6 +540,34 @@ Deno.serve(async (req) => {
         if (srcUploadErr) throw new Error(`Source upload failed: ${srcUploadErr.message}`)
         const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
         replicateInput.image_url = publicUrl
+      }
+    }
+
+    // Inject source image for Seedance 2.0 img2vid
+    if (slug === 'seedance-2') {
+      if (body.generate_audio != null) {
+        replicateInput.generate_audio = body.generate_audio === 'true' || body.generate_audio === true
+      }
+      if (genType_ === 'img2vid' && body.source_image) {
+        const src = body.source_image as string
+        if (src.startsWith('http')) {
+          replicateInput.first_frame_url = src
+        } else {
+          const base64Data = src.replace(/^data:image\/\w+;base64,/, '')
+          const mimeMatch = src.match(/^data:(image\/\w+);base64,/)
+          const mimeType = mimeMatch?.[1] ?? 'image/jpeg'
+          const ext = mimeType.split('/')[1] ?? 'jpg'
+          const srcBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+          const srcFileName = `${userId ?? 'anon'}/src-${Date.now()}.${ext}`
+          const { error: srcUploadErr } = await adminClient.storage
+            .from('assets').upload(srcFileName, srcBytes, { contentType: mimeType, upsert: false })
+          if (srcUploadErr) throw new Error(`Source upload failed: ${srcUploadErr.message}`)
+          const { data: { publicUrl } } = adminClient.storage.from('assets').getPublicUrl(srcFileName)
+          replicateInput.first_frame_url = publicUrl
+        }
+      }
+      if (genType_ === 'img2vid' && body.end_image_url) {
+        replicateInput.last_frame_url = body.end_image_url as string
       }
     }
 
