@@ -3,18 +3,15 @@ import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 import Logo from '../Logo'
 
-type Mode = 'signin' | 'signup' | 'verify'
-
 interface AuthModalProps {
   onClose?: () => void
 }
 
+// Sign-in only: new signups closed ahead of the Oct 19, 2026 shutdown (also blocked in the DB).
 export default function AuthModal({ onClose }: AuthModalProps) {
-  const { signInWithGoogle, signInWithApple, signInWithEmail, signUp } = useAuth()
-  const [mode, setMode] = useState<Mode>('signin')
+  const { signInWithGoogle, signInWithApple, signInWithEmail } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [unconfirmedEmail, setUnconfirmedEmail] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -37,38 +34,12 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     setLoading(false)
   }
 
-  async function handleSignUp(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.')
-      return
-    }
-    setLoading(true)
-    const { error: err } = await signUp(email, password)
-    if (err) {
-      setError(err)
-    } else {
-      setMode('verify')
-    }
-    setLoading(false)
-  }
-
   async function handleResend() {
     setResendLoading(true)
     setResendDone(false)
     await supabase.auth.resend({ type: 'signup', email })
     setResendLoading(false)
     setResendDone(true)
-  }
-
-  function switchMode(m: Mode) {
-    setMode(m)
-    setError(null)
-    setUnconfirmedEmail(false)
-    setResendDone(false)
-    setPassword('')
-    setConfirmPassword('')
   }
 
   const inputCls = 'w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-sky-500/50'
@@ -103,107 +74,43 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         {/* Logo + heading */}
         <div className="text-center mb-8">
           <Logo height={35} theme="dark" style={{ marginBottom: 4 }} />
-          {mode === 'signin' && <p className="text-sm text-slate-400">Sign in to start building better prompts</p>}
-          {mode === 'signup' && <p className="text-sm text-slate-400">Create your account</p>}
-          {mode === 'verify' && <p className="text-sm text-slate-400">Almost there!</p>}
+          <p className="text-sm text-slate-400">Sign in to your account</p>
         </div>
 
-        {/* VERIFY mode */}
-        {mode === 'verify' && (
-          <div className="text-center">
-            <div className="text-5xl mb-4">📬</div>
-            <p className="text-white font-semibold mb-2">Check your email</p>
-            <p className="text-sm text-slate-400 mb-6">
-              We sent a confirmation link to <span className="text-sky-400">{email}</span>. Click it to activate your account.
-            </p>
-            {resendDone && <p className="text-xs text-green-400 mb-3">Email resent! Check your inbox.</p>}
-            <button
-              onClick={handleResend}
-              disabled={resendLoading}
-              className="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50 mb-3"
-            >
-              {resendLoading ? 'Sending…' : 'Resend email'}
-            </button>
-            <button
-              onClick={() => switchMode('signin')}
-              className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
-            >
-              Back to sign in
-            </button>
-          </div>
-        )}
-
-        {/* SIGNIN mode */}
-        {mode === 'signin' && (
-          <>
-            {oauthButtons}
-            {divider}
-            <form onSubmit={handleSignIn} className="flex flex-col gap-3">
-              <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className={inputCls} />
-              <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required className={inputCls} />
-              {unconfirmedEmail && (
-                <div className="text-xs text-amber-400">
-                  Please confirm your email first. Check your inbox.{' '}
-                  {resendDone
-                    ? <span className="text-green-400">Email resent!</span>
-                    : <button type="button" onClick={handleResend} disabled={resendLoading} className="underline hover:text-amber-300 transition-colors">
-                        {resendLoading ? 'Sending…' : 'Resend email'}
-                      </button>
-                  }
-                </div>
-              )}
-              {error && <p className="text-xs text-red-400">{error}</p>}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 rounded-xl text-sm font-semibold text-white transition-all"
-              >
-                {loading ? 'Signing in…' : 'Sign in with email'}
-              </button>
-            </form>
-            <p className="text-center text-xs text-slate-600 mt-4">
-              By signing in you agree to our{' '}
-              <a href="/tos" className="text-sky-500 hover:underline">Terms</a>{' '}
-              and{' '}
-              <a href="/privacy" className="text-sky-500 hover:underline">Privacy Policy</a>
-            </p>
-            <p className="text-center text-xs text-slate-500 mt-3">
-              Don't have an account?{' '}
-              <button onClick={() => switchMode('signup')} className="text-sky-400 hover:underline">Sign up</button>
-            </p>
-          </>
-        )}
-
-        {/* SIGNUP mode */}
-        {mode === 'signup' && (
-          <>
-            {oauthButtons}
-            {divider}
-            <form onSubmit={handleSignUp} className="flex flex-col gap-3">
-              <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className={inputCls} />
-              <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required className={inputCls} />
-              <input type="password" placeholder="Confirm password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className={inputCls} />
-              {error && <p className="text-xs text-red-400">{error}</p>}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 rounded-xl text-sm font-semibold text-white transition-all"
-              >
-                {loading ? 'Creating account…' : 'Create account'}
-              </button>
-            </form>
-            <p className="text-center text-xs text-slate-600 mt-4">
-              By signing up you agree to our{' '}
-              <a href="/tos" className="text-sky-500 hover:underline">Terms</a>{' '}
-              and{' '}
-              <a href="/privacy" className="text-sky-500 hover:underline">Privacy Policy</a>
-            </p>
-            <p className="text-center text-xs text-slate-500 mt-3">
-              Already have an account?{' '}
-              <button onClick={() => switchMode('signin')} className="text-sky-400 hover:underline">Sign in</button>
-            </p>
-          </>
-        )}
+        {oauthButtons}
+        {divider}
+        <form onSubmit={handleSignIn} className="flex flex-col gap-3">
+          <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className={inputCls} />
+          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required className={inputCls} />
+          {unconfirmedEmail && (
+            <div className="text-xs text-amber-400">
+              Please confirm your email first. Check your inbox.{' '}
+              {resendDone
+                ? <span className="text-green-400">Email resent!</span>
+                : <button type="button" onClick={handleResend} disabled={resendLoading} className="underline hover:text-amber-300 transition-colors">
+                    {resendLoading ? 'Sending…' : 'Resend email'}
+                  </button>
+              }
+            </div>
+          )}
+          {error && <p className="text-xs text-red-400">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 rounded-xl text-sm font-semibold text-white transition-all"
+          >
+            {loading ? 'Signing in…' : 'Sign in with email'}
+          </button>
+        </form>
+        <p className="text-center text-xs text-slate-600 mt-4">
+          By signing in you agree to our{' '}
+          <a href="/tos" className="text-sky-500 hover:underline">Terms</a>{' '}
+          and{' '}
+          <a href="/privacy" className="text-sky-500 hover:underline">Privacy Policy</a>
+        </p>
+        <p className="text-center text-xs text-slate-500 mt-3">
+          New signups are closed. prmptVAULT is shutting down on October 19.
+        </p>
 
         {onClose && (
           <button

@@ -17,6 +17,7 @@ import NotFound from './pages/NotFound'
 import AuthCallback from './pages/AuthCallback'
 import FeedbackWidget from './components/support/FeedbackWidget'
 import SupportWidget from './components/support/SupportWidget'
+import ShutdownBanner from './components/ShutdownBanner'
 
 export default function App() {
   return (
@@ -67,6 +68,7 @@ export default function App() {
         </Routes>
         <FeedbackWidget />
         <SupportWidget />
+        <ShutdownBanner />
       </LearningModeProvider>
       </ThemeProvider>
       </AuthProvider>
