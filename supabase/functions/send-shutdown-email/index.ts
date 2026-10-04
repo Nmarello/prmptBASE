@@ -6,14 +6,15 @@ import { buildShutdownHtml, buildShutdownText, shutdownSubject } from './templat
 //   mode 'dry_run'  → recipient count only
 //   mode 'test'     → sends now to test_to only
 //   mode 'schedule' → schedules for every user; refuses after SEND_DEADLINE
+//   mode 'reschedule' → moves already-scheduled emails (ids) to SEND_AT and reads each back
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
 const FROM_EMAIL = 'prmptVAULT <noreply@prmptvault.ai>'
 const REPLY_TO = 'nick@marello.productions'
 const SHUTDOWN_DATE = 'Monday, October 19, 2026'
 const SHUTDOWN_DATE_SHORT = 'October 19'
-const SEND_AT = '2026-10-05T13:00:00Z' // Monday 9:00am ET
-const SEND_DEADLINE = Date.parse('2026-10-05T12:00:00Z')
+const SEND_AT = '2026-10-05T17:00:00Z' // Monday 10:00am PT
+const SEND_DEADLINE = Date.parse('2026-10-05T16:00:00Z')
 const TOKEN_SHA256 = '21070319f4aa47111cbfc53d778b0f963a81db1c8a0010d92568ac98f57593bb'
 
 async function sha256Hex(s: string): Promise<string> {
@@ -47,11 +48,44 @@ async function sendOne(to: string, firstName: string, opts: { scheduledAt?: stri
   return { ok: false, status: 429, data: { message: 'rate limited' } }
 }
 
+async function resend(method: 'GET' | 'PATCH', path: string, body?: unknown) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await fetch(`https://api.resend.com${path}`, {
+      method,
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (res.status !== 429) return { ok: res.ok, status: res.status, data }
+    await sleep(1500 * (attempt + 1))
+  }
+  return { ok: false, status: 429, data: { message: 'rate limited' } }
+}
+
 Deno.serve(async (req) => {
   try {
-    const { token, mode, test_to } = await req.json() as { token?: string; mode?: string; test_to?: string }
+    const { token, mode, test_to, ids } = await req.json() as { token?: string; mode?: string; test_to?: string; ids?: { email: string; id: string }[] }
     if (!token || (await sha256Hex(token)) !== TOKEN_SHA256) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
+    }
+
+    if (mode === 'reschedule') {
+      if (!Array.isArray(ids) || ids.length === 0) throw new Error('Missing ids')
+      if (Date.now() > SEND_DEADLINE) throw new Error('Past SEND_DEADLINE — update SEND_AT/SEND_DEADLINE and redeploy')
+      const results: { email: string; id: string; patched: number; scheduled_at?: string; last_event?: string }[] = []
+      for (const { email, id } of ids) {
+        const patched = await resend('PATCH', `/emails/${encodeURIComponent(id)}`, { scheduled_at: SEND_AT })
+        await sleep(500)
+        const check = await resend('GET', `/emails/${encodeURIComponent(id)}`)
+        const d = check.data as { scheduled_at?: string; last_event?: string }
+        results.push({ email, id, patched: patched.status, scheduled_at: d.scheduled_at, last_event: d.last_event })
+        console.log(JSON.stringify(results[results.length - 1]))
+        await sleep(500)
+      }
+      const confirmed = results.filter(r => r.patched === 200 && r.scheduled_at && Date.parse(r.scheduled_at) === Date.parse(SEND_AT)).length
+      return new Response(JSON.stringify({ mode, send_at: SEND_AT, total: ids.length, confirmed, results }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
     }
 
     if (mode === 'test') {
