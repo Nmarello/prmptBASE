@@ -10,6 +10,12 @@ const SIGNED_URL_TTL = 60 * 60 * 24 * 3 // 3 days
 const DEFAULT_DEST = '/Volumes/Marello Productions/02-Products/prmptVault/User Assets'
 const CONCURRENCY = 8
 
+// Signed URLs carry a long JWT that got mangled when copied out of chat, so the generated
+// script is also served from GET ?code=… — a short code that pastes cleanly into a terminal.
+const DOWNLOAD_OBJECT = 'prmptvault-export-1791084066218.sh'
+const DOWNLOAD_CODE_SHA256 = '833751012d3fdd50487bbc39a4685661825bdbef460eab4d94cfceb50d6d2e89'
+const DOWNLOAD_EXPIRES = Date.parse('2026-10-07T03:21:00Z')
+
 interface Entry {
   folder: string
   file: string
@@ -143,7 +149,25 @@ exit 0
 `
 }
 
+async function serveDownload(req: Request): Promise<Response> {
+  const code = new URL(req.url).searchParams.get('code') ?? ''
+  if (Date.now() > DOWNLOAD_EXPIRES || !code || (await sha256Hex(code)) !== DOWNLOAD_CODE_SHA256) {
+    return new Response('Not found\n', { status: 404 })
+  }
+  const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+  const { data, error } = await db.storage.from(BUCKET).download(DOWNLOAD_OBJECT)
+  if (error || !data) return new Response(`Download failed: ${error?.message ?? 'no data'}\n`, { status: 500 })
+  return new Response(data, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="prmptvault-export.sh"',
+      'Cache-Control': 'no-store',
+    },
+  })
+}
+
 Deno.serve(async (req) => {
+  if (req.method === 'GET') return serveDownload(req)
   try {
     const { token, entries } = await req.json() as { token?: string; entries?: Entry[] }
     if (!token || (await sha256Hex(token)) !== TOKEN_SHA256) {
