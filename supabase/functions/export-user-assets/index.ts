@@ -169,14 +169,30 @@ async function serveDownload(req: Request): Promise<Response> {
 Deno.serve(async (req) => {
   if (req.method === 'GET') return serveDownload(req)
   try {
-    const { token, entries } = await req.json() as { token?: string; entries?: Entry[] }
+    const { token, entries, action } = await req.json() as { token?: string; entries?: Entry[]; action?: string }
     if (!token || (await sha256Hex(token)) !== TOKEN_SHA256) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
     }
-    if (!Array.isArray(entries) || entries.length === 0) throw new Error('No entries')
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const db = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+
+    // The script holds user emails and prompts — remove it and the bucket once downloaded.
+    if (action === 'cleanup') {
+      const { data: objects, error: listError } = await db.storage.from(BUCKET).list('', { limit: 1000 })
+      if (listError) throw listError
+      const removed = (objects ?? []).map(o => o.name)
+      if (removed.length > 0) {
+        const { error: removeError } = await db.storage.from(BUCKET).remove(removed)
+        if (removeError) throw removeError
+      }
+      const { error: bucketError } = await db.storage.deleteBucket(BUCKET)
+      return new Response(JSON.stringify({ ok: true, removed, bucket_deleted: !bucketError, bucket_error: bucketError?.message ?? null }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (!Array.isArray(entries) || entries.length === 0) throw new Error('No entries')
 
     const script = buildScript(entries, `${supabaseUrl}/storage/v1/object/public/assets/`)
 
